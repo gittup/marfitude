@@ -654,12 +654,12 @@ int MainInit()
 
 	mainTexes[0] = TEX_Slate;
 	mainTexes[1] = TEX_Walnut;
-	mainTexes[2] = TEX_Parque;
+	mainTexes[2] = TEX_ElectricBlue;
 	mainTexes[3] = TEX_Clovers;
 	mainTexes[4] = TEX_Lava;
 	mainTexes[5] = TEX_Slate;
 	mainTexes[6] = TEX_Walnut;
-	mainTexes[7] = TEX_Parque;
+	mainTexes[7] = TEX_ElectricBlue;
 
 	for(x=0;x<wam->numCols;x++) {
 		glNewList(rowList+x, GL_COMPILE); {
