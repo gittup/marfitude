@@ -14,6 +14,7 @@ extern int rowIndex;
 extern struct wam *wam;
 extern int highscore;
 extern int score;
+extern int newhighscore;
 extern int multiplier;
 extern double modTime;
 /*extern struct attackPattern ap;*/
@@ -22,28 +23,16 @@ extern double modTime;
 static int scoreboard_init(void);
 static void scoreboard_exit(void);
 static void draw_scoreboard(const void *);
-static void high_score(const void *);
-
-static int newhighscore = 0;
 
 int scoreboard_init(void)
 {
 	RegisterEvent("draw opaque", draw_scoreboard, EVENTTYPE_MULTI);
-	RegisterEvent("new high score", high_score, EVENTTYPE_MULTI);
 	return 0;
 }
 
 void scoreboard_exit(void)
 {
-	DeregisterEvent("new high score", high_score);
 	DeregisterEvent("draw opaque", draw_scoreboard);
-}
-
-void high_score(const void *data)
-{
-	const int *p = data;
-
-	newhighscore = *p;
 }
 
 void draw_scoreboard(const void *data)

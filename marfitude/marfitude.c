@@ -124,7 +124,7 @@ static struct slist *notesList;	/* notes on the screen, not hit */
 static struct slist *hitList;	/* notes on the screen, hit */
 static int numNotes;	/* max number of notes on screen (wam->numCols * NUM_TICKS) */
 static char *cursong;
-static int newhighscore;
+int newhighscore;
 int highscore;
 int score;
 int multiplier;
@@ -657,7 +657,6 @@ void Press(int button)
 					if(score > highscore) {
 						highscore = score;
 						newhighscore = 1;
-						FireEvent("new high score", &score);
 					}
 					if(multiplier < 8) multiplier++;
 					ap.notesHit = 0;
