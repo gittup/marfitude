@@ -122,6 +122,7 @@ char *Mod2Wam(char *modFile)
 	strcpy(s, "wam/");
 	strncat(s, base, len);
 	strcat(s, ".wam");
+	free(base);
 	Log(("Wam name generated\n"));
 	return s;
 }
