@@ -418,7 +418,7 @@ void UpdateRowData(Track *t, int trklen, Wam *wam, int startRow, int patnum)
 			Log("Place: %i\n", y);
 			if(y == -1)
 			{
-				Log("ERROR: No empty column!\n");
+				ELog("ERROR: No empty column!\n");
 			}
 			SetColumn(col, trk, wam, y, patnum, trklen, startRow);
 		}
@@ -685,7 +685,7 @@ int SaveWam(Wam *wam, char *wamFile)
 	f = fopen(wamFile, "w");
 	if(f == NULL)
 	{
-		Log("Error opening '%s'\n", wamFile);
+		ELog("Error opening '%s'\n", wamFile);
 		Error("Opening Wam for write.");
 		return 0;
 	}
@@ -715,7 +715,7 @@ int WriteWam(char *modFile)
 	Log("MOD: %s\nWAM: %s\n", modFile, wamFile);
 	if(!StartModule(modFile))
 	{
-		Log("Error: Couldn't start module.\n");
+		ELog("Error: Couldn't start module.\n");
 		return 0;
 	}
 	Log("Loading track data...\n");
@@ -723,7 +723,7 @@ int WriteWam(char *modFile)
 	Log("Saving Wam...\n");
 	if(!SaveWam(wam, wamFile))
 	{
-		Log("Error: Couldn't save wam\n");
+		ELog("Error: Couldn't save wam\n");
 		return 0;
 	}
 	free(wamFile);
@@ -768,7 +768,7 @@ Wam *LoadWamWrite(char *modFile, int write)
 		}
 		else
 		{
-			Log("Error: Couldn't load WAM file after creation!\n");
+			ELog("Error: Couldn't load WAM file after creation!\n");
 			return NULL;
 		}
 	}
