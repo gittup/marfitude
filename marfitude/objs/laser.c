@@ -50,7 +50,7 @@ void laser_init(void)
 	numLasers = 0;
 	RegisterEvent("shoot", make_laser, EVENTTYPE_MULTI);
 	RegisterEvent("draw transparent", draw_lasers, EVENTTYPE_MULTI);
-	fireball_handle = dlopen("./fireball.so", RTLD_NOW);
+	fireball_handle = load_plugin("fireball");
 	if(fireball_handle)
 		fireball = (float*)dlsym(fireball_handle, "fireball");
 	else
@@ -59,8 +59,7 @@ void laser_init(void)
 
 void laser_exit(void)
 {
-	if(fireball_handle)
-		dlclose(fireball_handle);
+	free_plugin(fireball_handle);
 	DeregisterEvent("draw transparent", draw_lasers);
 	DeregisterEvent("shoot", make_laser);
 }
