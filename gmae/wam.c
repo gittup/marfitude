@@ -21,6 +21,10 @@
 
 #define GRP_SIZE 32
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 typedef struct {
 	int note;
 	int ins;
@@ -692,7 +696,7 @@ int SaveWam(Wam *wam, char *wamFile)
 	int x;
 	int y;
 	int fno;
-	fno = open(wamFile, O_CREAT | O_WRONLY, 0644);
+	fno = open(wamFile, O_CREAT | O_WRONLY | O_BINARY, 0644);
 	if(fno == -1)
 	{
 		ELog(("Error opening '%s'\n", wamFile));
@@ -764,7 +768,7 @@ Wam *LoadWamWrite(char *modFile, int wamwrite)
 	Wam *wam;
 
 	wamFile = Mod2Wam(modFile);
-	fno = open(wamFile, O_RDONLY);
+	fno = open(wamFile, O_RDONLY | O_BINARY);
 	free(wamFile);
 	if(fno == -1)
 	{
