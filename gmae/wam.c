@@ -25,9 +25,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "SDL_mixer.h"
-#include "mikmod.h"
-#include "mikmod_internals.h"
+#include "sdl_mixer/SDL_mixer.h"
+#include "sdl_mixer/mikmod/mikmod.h"
+#include "sdl_mixer/mikmod/mikmod_internals.h"
 
 #include "wam.h"
 #include "cfg.h"

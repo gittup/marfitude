@@ -20,8 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "SDL_mixer.h"
-#include "mikmod.h"
+#include "sdl_mixer/SDL_mixer.h"
 
 #include "module.h"
 #include "cfg.h"

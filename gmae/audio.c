@@ -19,7 +19,7 @@
 
 #include <stdio.h>
 
-#include "SDL_mixer.h"
+#include "sdl_mixer/SDL_mixer.h"
 
 #include "audio.h"
 #include "cfg.h"

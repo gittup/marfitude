@@ -22,7 +22,7 @@
 #include <string.h>
 #include <dirent.h>
 
-#include "SDL_mixer.h"
+#include "sdl_mixer/SDL_mixer.h"
 
 #include "sounds.h"
 #include "log.h"

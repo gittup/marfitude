@@ -18,7 +18,7 @@
 */
 
 #ifndef _MIKMOD_H_
-#include "mikmod.h"
+#include "gmae/sdl_mixer/mikmod/mikmod.h"
 #endif
 
 int StartModule(char *modFile);
