@@ -6,7 +6,7 @@
 typedef struct {
 	size_t size;
 	int line;
-	char *file;
+	const char *file;
 	void *ptr;
 	int active;
 	} MemBlock;
@@ -17,7 +17,7 @@ static MemBlock *mb = NULL;
 static int numBlocks = 0;
 static int startBlock = 0;
 
-void *MyMalloc(size_t x, int line, char *file)
+void *MyMalloc(size_t x, int line, const char *file)
 {
 	void *p;
 	p = malloc(x);
@@ -32,7 +32,7 @@ void *MyMalloc(size_t x, int line, char *file)
 	return p;
 }
 
-void MyFree(void *p, int line, char *file)
+void MyFree(void *p, int line, const char *file)
 {
 	int i;
 	for(i=startBlock;i<numBlocks;i++)
@@ -51,7 +51,7 @@ void MyFree(void *p, int line, char *file)
 	fprintf(stderr, "Mem Error: Can't free ptr in %s line %i!\n", file, line);
 }
 
-void *MyRealloc(void *p, int x, int line, char *file)
+void *MyRealloc(void *p, int x, int line, const char *file)
 {
 	int i;
 	if(p == NULL) return MyMalloc(x, line, file);
@@ -75,7 +75,7 @@ void *MyRealloc(void *p, int x, int line, char *file)
 	return NULL;
 }
 
-void *MyCalloc(size_t nm, size_t x, int line, char *file)
+void *MyCalloc(size_t nm, size_t x, int line, const char *file)
 {
 	void *p;
 	p = calloc(nm, x);

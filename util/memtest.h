@@ -5,9 +5,9 @@
 #define calloc(x, y) MyCalloc(x, y, __LINE__, __FILE__)
 #endif
 
-void *MyMalloc(size_t x, int line, char *file);
-void MyFree(void *p, int line, char *file);
-void *MyRealloc(void *p, int x, int line, char *file);
-void *MyCalloc(size_t nm, size_t x, int line, char *file);
+void *MyMalloc(size_t x, int line, const char *file);
+void MyFree(void *p, int line, const char *file);
+void *MyRealloc(void *p, int x, int line, const char *file);
+void *MyCalloc(size_t nm, size_t x, int line, const char *file);
 void CheckMemUsage(void); /* checks all blocks to see if they're active */
 int QueryMemUsage(void);  /* returns current mem usage in bytes */
