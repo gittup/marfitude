@@ -149,6 +149,7 @@ int InitGL(void)
 	SDL_Surface *screen;
 	float ambientLight[4] = {0.7, 0.7, 0.7, 0.7};
 	float diffuseLight[4] = {1.0, 1.0, 1.0, 1.0};
+	float blackLight[4] = {0.0, 0.0, 0.0, 1.0};
 	float light0[4] = {0.0, 1.0, 0.0, 0.0};
 	float light0amb[4] = {0.3, 0.3, 0.3, 1.0};
 	float light0dif[4] = {0.4, 0.4, 0.4, 1.0};
@@ -202,6 +203,9 @@ int InitGL(void)
 	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_DEPTH_TEST);
 	glShadeModel(GL_SMOOTH);
+	glEnable(GL_COLOR_MATERIAL);
+	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+	glMaterialfv(GL_FRONT, GL_EMISSION, blackLight);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
