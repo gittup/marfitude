@@ -7,27 +7,90 @@ GLuint LoadTexture(char *filename);
 int InitTextures(void);
 void QuitTextures(void);
 
-#define NUM_TEXTURES 21
+#define NUM_TEXTURES 41
 extern GLuint *GLTexture;
 
-#define TEX_BlueNova GLTexture[0]
-#define TEX_BlueStar GLTexture[1]
-#define TEX_ButtonConfigure GLTexture[2]
-#define TEX_ButtonFight GLTexture[3]
-#define TEX_ButtonQuit GLTexture[4]
-#define TEX_Cloth GLTexture[5]
-#define TEX_EdgeSmoke GLTexture[6]
-#define TEX_Fireball GLTexture[7]
-#define TEX_FlatlandFiery GLTexture[8]
-#define TEX_Lava GLTexture[9]
-#define TEX_Marble2 GLTexture[10]
-#define TEX_Marble GLTexture[11]
-#define TEX_Noise GLTexture[12]
-#define TEX_Parque2 GLTexture[13]
-#define TEX_Parque GLTexture[14]
-#define TEX_Rain GLTexture[15]
-#define TEX_Slate GLTexture[16]
-#define TEX_Target GLTexture[17]
-#define TEX_Test GLTexture[18]
-#define TEX_Title GLTexture[19]
-#define TEX_Walnut GLTexture[20]
+#define TEX_BlackyOily GLTexture[0]
+#define TEX_BlueCanyon GLTexture[1]
+#define TEX_BlueMetal GLTexture[2]
+#define TEX_BlueNova GLTexture[3]
+#define TEX_BlueSpikes GLTexture[4]
+#define TEX_BlueStar GLTexture[5]
+#define TEX_ButtonConfigure GLTexture[6]
+#define TEX_ButtonFight GLTexture[7]
+#define TEX_ButtonQuit GLTexture[8]
+#define TEX_Chroma GLTexture[9]
+#define TEX_Cloth GLTexture[10]
+#define TEX_Clovers GLTexture[11]
+#define TEX_ContraWhirl GLTexture[12]
+#define TEX_DuneMaze GLTexture[13]
+#define TEX_EdgeSmoke GLTexture[14]
+#define TEX_Fireball GLTexture[15]
+#define TEX_FlatlandFiery GLTexture[16]
+#define TEX_Lava GLTexture[17]
+#define TEX_Marble2 GLTexture[18]
+#define TEX_Marble GLTexture[19]
+#define TEX_MeltedColors GLTexture[20]
+#define TEX_Neurons GLTexture[21]
+#define TEX_Noise GLTexture[22]
+#define TEX_Parque2 GLTexture[23]
+#define TEX_Parque GLTexture[24]
+#define TEX_Psycho GLTexture[25]
+#define TEX_RainbowReed GLTexture[26]
+#define TEX_Rain GLTexture[27]
+#define TEX_RedMess GLTexture[28]
+#define TEX_SandySlate GLTexture[29]
+#define TEX_Silver GLTexture[30]
+#define TEX_Slate GLTexture[31]
+#define TEX_StarBurst GLTexture[32]
+#define TEX_StarCenter GLTexture[33]
+#define TEX_SunBurst GLTexture[34]
+#define TEX_SunCenter GLTexture[35]
+#define TEX_Target GLTexture[36]
+#define TEX_Test GLTexture[37]
+#define TEX_Title GLTexture[38]
+#define TEX_Tubes GLTexture[39]
+#define TEX_Walnut GLTexture[40]
+
+typedef enum {
+	T_BlackyOily,
+	T_BlueCanyon,
+	T_BlueMetal,
+	T_BlueNova,
+	T_BlueSpikes,
+	T_BlueStar,
+	T_ButtonConfigure,
+	T_ButtonFight,
+	T_ButtonQuit,
+	T_Chroma,
+	T_Cloth,
+	T_Clovers,
+	T_ContraWhirl,
+	T_DuneMaze,
+	T_EdgeSmoke,
+	T_Fireball,
+	T_FlatlandFiery,
+	T_Lava,
+	T_Marble2,
+	T_Marble,
+	T_MeltedColors,
+	T_Neurons,
+	T_Noise,
+	T_Parque2,
+	T_Parque,
+	T_Psycho,
+	T_RainbowReed,
+	T_Rain,
+	T_RedMess,
+	T_SandySlate,
+	T_Silver,
+	T_Slate,
+	T_StarBurst,
+	T_StarCenter,
+	T_SunBurst,
+	T_SunCenter,
+	T_Target,
+	T_Test,
+	T_Title,
+	T_Tubes,
+	T_Walnut} TexOffset;
