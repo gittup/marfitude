@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <glob.h>
+#include <dirent.h>
+#include <glib.h>
 
 #include "GL/gl.h"
 
@@ -284,9 +285,9 @@ void MenuDown()
 	activeMenuItem++;
 	if(activeMenuItem >= numItems)
 	{
-		if(BoundsCheck()) PlaySound(SND_wepnsel1);
+		if(BoundsCheck()) SDLPlaySound(SND_wepnsel1);
 	}
-	else PlaySound(SND_wepnsel1);
+	else SDLPlaySound(SND_wepnsel1);
 }
 
 void MenuUp()
@@ -294,9 +295,9 @@ void MenuUp()
 	activeMenuItem--;
 	if(activeMenuItem < 0)
 	{
-		if(BoundsCheck()) PlaySound(SND_wepnsel1);
+		if(BoundsCheck()) SDLPlaySound(SND_wepnsel1);
 	}
-	else PlaySound(SND_wepnsel1);
+	else SDLPlaySound(SND_wepnsel1);
 }
 
 void MenuDec()
@@ -311,7 +312,7 @@ void MenuInc()
 
 void MenuActivate()
 {
-	PlaySound(SND_spnray03);
+	SDLPlaySound(SND_spnray03);
 	ButtonParam *bp;
 	switch(items[activeMenuItem].type)
 	{
@@ -328,7 +329,7 @@ void MenuActivate()
 
 void MenuBack()
 {
-	PlaySound(SND_spnray02);
+	SDLPlaySound(SND_spnray02);
 	SwitchMenu(activeMenu->back);
 }
 
@@ -347,7 +348,7 @@ void ShowMenu(void)
 {
 	if(menuActive) return;
 	RegisterMenuEvents();
-	PlaySound(SND_spnray03);
+	SDLPlaySound(SND_spnray03);
 	FireEvent(EVENT_SHOWMENU);
 	SwitchMenu(MAINMENU);
 }
@@ -445,12 +446,23 @@ void MainMenu()
 }
 
 #define FILE_LIST_SIZE 10
-glob_t globbuf;
 int fileStart;
+GSList *fileList;
+
+char *CatStr(char *a, char *b)
+{
+	char *s;
+	s = (char*)malloc(sizeof(char) * (strlen(a) + strlen(b) + 1));
+	strcpy(s, a);
+	strcat(s, b);
+	return s;
+}
 
 void FightActivate()
 {
-	CfgSetS("main.song", globbuf.gl_pathv[activeMenuItem]);
+	char *s = CatStr(MUSICDIR, (char*)g_slist_nth(fileList, activeMenuItem)->data);
+	CfgSetS("main.song", s);
+	free(s);
 	SwitchMenu(NOMENU);
 	Log("FightActivate SwitchScene\n");
 	SwitchScene(MAINSCENE);
@@ -463,36 +475,65 @@ void FightPageUp()
 	{
 		activeMenuItem -= FILE_LIST_SIZE;
 		MenuClamp();
-		PlaySound(SND_wepnsel1);
+		SDLPlaySound(SND_wepnsel1);
 	}
 }
 
 void FightPageDown()
 {
-	if(fileStart < globbuf.gl_pathc - FILE_LIST_SIZE)
+	if(fileStart < g_slist_length(fileList) - FILE_LIST_SIZE)
 	{
 		activeMenuItem += FILE_LIST_SIZE;
 		MenuClamp();
-		PlaySound(SND_wepnsel1);
+		SDLPlaySound(SND_wepnsel1);
 	}
+}
+
+int ValidMusicFile(char *s)
+{
+	if(s[0] == '.') return 0;
+	while(*s)
+	{
+		if(*s == '.') return 1;
+		s++;
+	}
+	return 0;
+}
+
+char *StringCopy(char *s)
+{
+	char *d;
+	d = (char*)malloc(sizeof(char) * (strlen(s) + 1));
+	strcpy(d, s);
+	return d;
 }
 
 int FightMenuInit()
 {
-	int x;
+	char *s;
+	DIR *dir;
+	struct dirent *d;
+
 	menuX = 200;
 	menuY = 200;
 	fileStart = 0;
 	BoundsCheck = MenuClamp;
-	if(glob(MUSICDIR"*.*", 0, NULL, &globbuf))
+	fileList = NULL;
+
+	dir = opendir(MUSICDIR);
+	if(dir == NULL)
 	{
 		Error("Generating playlist");
 		return 0;
 	}
-	for(x=0;x<globbuf.gl_pathc;x++)
+	while((d = readdir(dir)) != NULL)
 	{
-		if(fileStart+x == globbuf.gl_pathc) break;
-		CreateButton(globbuf.gl_pathv[fileStart+x]+strlen(MUSICDIR), FightActivate);
+		if(ValidMusicFile(d->d_name))
+		{
+			s = StringCopy(d->d_name);
+			fileList = g_slist_append(fileList, s);
+			CreateButton(s, FightActivate);
+		}
 	}
 	RegisterEvent(EVENT_PAGEUP, FightPageUp, EVENTTYPE_STOP);
 	RegisterEvent(EVENT_PAGEDOWN, FightPageDown, EVENTTYPE_STOP);
@@ -501,7 +542,11 @@ int FightMenuInit()
 
 void FightMenuQuit(void)
 {
-	globfree(&globbuf);
+	while(fileList)
+	{
+		free(fileList->data);
+		fileList = g_slist_next(fileList);
+	}
 	ClearMenuItems();
 	DeregisterEvent(EVENT_PAGEUP, FightPageUp);
 	DeregisterEvent(EVENT_PAGEDOWN, FightPageDown);
@@ -537,7 +582,7 @@ void FightMenu()
 			EQTriangle();
 		glPopMatrix();
 	}
-	if(fileStart < globbuf.gl_pathc - FILE_LIST_SIZE)
+	if(fileStart < g_slist_length(fileList) - FILE_LIST_SIZE)
 	{
 		glPushMatrix();
 			glTranslatef(180, 350, 0.0);
@@ -572,7 +617,7 @@ void ConfigKeyHandler(JoyKey *jk)
 	{
 		ELog("Error setting configure button %i!\n", configuring);
 	}
-	PlaySound(SND_spnray03);
+	SDLPlaySound(SND_spnray03);
 	DeregisterKeyEvent();
 	waitForKey = 0;
 	EventMode(MENU);
