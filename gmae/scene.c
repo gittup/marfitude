@@ -158,7 +158,7 @@ void MoveSlower(void)
 #define NEGATIVE_TICKS 7*6
 #define POSITIVE_TICKS 57*6
 #define NUM_TICKS 64*6
-#define TIC_ERROR 4 // number of tics we can be off when hitting a button
+#define TIC_ERROR 5 // number of tics we can be off when hitting a button
 #define LINES_PER_AP 8
 
 int curTic; // tick counter from 0 - total ticks in the song
@@ -754,10 +754,6 @@ void UpdatePosition()
 				RegisterEvent(EVENT_BUTTON2, Press2, EVENTTYPE_MULTI);
 				RegisterEvent(EVENT_BUTTON3, Press3, EVENTTYPE_MULTI);
 				RegisterEvent(EVENT_BUTTON4, Press4, EVENTTYPE_MULTI);
-			}
-			if(wam->rowData[Row(curRow)].line == 2)
-			{
-				bounceTime = 0.0;
 			}
 		}
 

@@ -594,6 +594,14 @@ Wam *LoadTrackData()
 				// then :)
 				if(mod->sngpos != 0)
 				{
+					// reset groups on a line break
+					for(x=0;x<numgrps;x++)
+					{
+						*grpptrs[x] = grpCount;
+					}
+					numgrps = 0;
+					grpCount = 0;
+
 					wam->patterns = (Pattern*)realloc(wam->patterns, sizeof(Pattern) * (wam->numPats+1));
 					UpdateRowData(tracks, trklen, wam, startRow, wam->numPats);
 					UpdateProgress(mod->sngpos, mod->numpos);
