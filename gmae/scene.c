@@ -641,9 +641,6 @@ int MainInit()
 
 	glNewList(noteList, GL_COMPILE);
 	{
-		glDisable(GL_TEXTURE_2D);
-		glColor4f(0.3, 0.7, 0.6, 1.0);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, lightNormal);
 		glBegin(GL_TRIANGLE_FAN);
 		{
 			glNormal3f( 0.0, 1.0, 0.0);
@@ -666,7 +663,6 @@ int MainInit()
 			glVertex3f(0.2, 0.0, 0.2);
 
 		} glEnd();
-		glEnable(GL_TEXTURE_2D);
 		glPopMatrix();
 	} glEndList();
 	InitTimer();
@@ -1011,17 +1007,17 @@ void DrawNote(gpointer snp, gpointer not_used)
 {
 	float temp[4] = {.7, 0.0, 0.0, 1.0};
 	ScreenNote *sn = (ScreenNote*)snp;
+	int mat = abs(sn->tic - curTic) <= TIC_ERROR;
 
 	glPushMatrix();
 	glTranslated(	sn->pos.x,
 			sn->pos.y,
 			sn->pos.z+0.3);
-	if(abs(sn->tic - curTic) <= TIC_ERROR)
-		glMaterialfv(GL_FRONT, GL_EMISSION, temp);
+	if(mat) glMaterialfv(GL_FRONT, GL_EMISSION, temp);
 	glRotatef(theta, 0.0, 1.0, 0.0);
 	Log("Dn\n");
 	glCallList(noteList);
-	glMaterialfv(GL_FRONT, GL_EMISSION, lightNone);
+	if(mat) glMaterialfv(GL_FRONT, GL_EMISSION, lightNone);
 }
 
 void DrawHitNote(gpointer snp, gpointer not_used)
@@ -1042,7 +1038,10 @@ void DrawHitNote(gpointer snp, gpointer not_used)
 void DrawNotes()
 {
 	Log("DN: %i, %i, %i\n", g_slist_length(notesList), g_slist_length(hitList), g_slist_length(unusedList));
+	glDisable(GL_TEXTURE_2D);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, lightNormal);
 	g_slist_foreach(notesList, DrawNote, NULL);
+	glEnable(GL_TEXTURE_2D);
 	Log("dn\n");
 }
 
@@ -1141,6 +1140,18 @@ void DrawLasers()
 	}
 }
 
+int BelowBoard(Particle *p)
+{
+	if(p->o->pos.y < 0.0) return 1;
+	return 0;
+}
+
+int AboveBoard(Particle *p)
+{
+	if(p->o->pos.y >= 0.0) return 1;
+	return 0;
+}
+
 void MainScene()
 {
 	float temp[4] = {.35, 0.0, 0.0, .5};
@@ -1195,18 +1206,21 @@ void MainScene()
 	DrawLines();
 	Log("D");
 
-	DrawTargets();
 	Log("E");
 	DrawScoreboard();
 	Log("F");
 
 	StartParticles();
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	Log("F1\n");
+	DrawParticlesTest(BelowBoard);
+	Log("F2\n");
 	DrawHitNotes();
+	Log("F3\n");
+	DrawTargets();
+	Log("F4\n");
 	DrawLasers();
 	Log("G");
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-	DrawParticles();
+	DrawParticlesTest(AboveBoard);
 	Log("g");
 	StopParticles();
 
