@@ -67,6 +67,7 @@ int InitTextures(void)
 		s = IMG_Load(TEX_LIST[x]);
 		if(!s)
 		{
+			SDLError("opening texture");
 			ELog(("\nERROR: Couldn't load texture '%s': %s\n", TEX_LIST[x], IMG_GetError()));
 			return 0;
 		}
