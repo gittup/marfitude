@@ -34,7 +34,7 @@ sounds.h: sounds/
 	./gensounds.pl
 sounds.o: sounds.c sounds.h log.h ../util/memtest.h ../util/textprogress.h ../util/fatalerror.h ../util/sdlfatalerror.h
 	$(CC) $(CFLAGS) sounds.c
-particles.o: particles.c particles.h cfg.h log.h phys.h textures.h ../util/memtest.h
+particles.o: particles.c particles.h cfg.h log.h phys.h textures.h timer.h ../util/memtest.h
 	$(CC) $(CFLAGS) particles.c
 phys.o: phys.c phys.h log.h
 	$(CC) $(CFLAGS) phys.c
