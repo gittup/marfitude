@@ -1,6 +1,6 @@
-project: $(src_gmae)/$(ARCH)/gmae
+project: $(src_gmae)/$(ARCH)/gmae$(BINARYEXT)
 
-EXTRACFLAGS = `sdl-config --cflags`
+EXTRACFLAGS = `$(SDL_CONFIG) --cflags`
 
 ifeq ($(CONFIG_LOG),1)
 EXTRACFLAGS += -DLOG
@@ -11,7 +11,7 @@ endif
 
 INCDIRS = $(src_util) $(src_gmae)/$(ARCH)
 
-EXTRALDFLAGS = `sdl-config --libs` -lm -lSDL_image -lSDL_mixer -lGL -lGLU
+EXTRALDFLAGS = `$(SDL_CONFIG) --libs` -lm -lSDL_image -lSDL_mixer $(GLLIB) $(GLULIB)
 
 LIBS = $(src_util)/$(ARCH)/libmarf.a
 
