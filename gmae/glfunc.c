@@ -248,7 +248,7 @@ void SetOrthoProjection(void)
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix(); /* popped in ResetProjection() */
 	glLoadIdentity();
-	gluOrtho2D(0, screenWidth, 0, screenHeight);
+	gluOrtho2D(0, screenWidth-1, 0, screenHeight-1);
 	glScalef(1.0, -1.0, 1.0);
 	glTranslatef(0.0, (float)-screenHeight, 0.0);
 	glMatrixMode(GL_MODELVIEW);
