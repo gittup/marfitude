@@ -226,6 +226,7 @@ static void DrawTargets(void);
 static void DrawScoreboard(void);
 static void MoveHitNotes(int tic, int col);
 static void UpdateClearedCols(void);
+static void CheckHighScore(void);
 static void UpdatePosition(void);
 static void DrawRows(double startTic, double stopTic);
 static void RandomColor(float col[4]);
@@ -247,6 +248,7 @@ static slist *unusedList;	/* unused notes */
 static slist *notesList;	/* notes on the screen, not hit */
 static slist *hitList;	/* notes on the screen, hit */
 static int numNotes;	/* max number of notes on screen (wam->numCols * NUM_TICKS) */
+static int highscore;
 static int score;
 static int multiplier;
 /*static float light[4] = {0.0, 1.0, -8.0, 1.0}; */
@@ -580,6 +582,7 @@ int MainInit()
 	/* module and module data (where to place the notes) are now loaded, */
 	/* and the module is paused */
 	Log(("Module ready\n"));
+	highscore = CfgIp("highscore", CfgS("main.song"));
 	score = 0;
 	multiplier = 1;
 	tickCounter = 0;
@@ -923,6 +926,13 @@ void UpdateClearedCols(void)
 	}
 }
 
+void CheckHighScore(void)
+{
+	if(score > highscore) {
+		CfgSetIp("highscore", CfgS("main.song"), score);
+	}
+}
+
 void UpdatePosition(void)
 {
 	int tmpAdj;
@@ -952,6 +962,8 @@ void UpdatePosition(void)
 		if(curVb >= wam->rowData[Row(curRow)].sngspd) {
 			curVb -= wam->rowData[Row(curRow)].sngspd;
 			curRow++;
+			if(curRow == wam->numRows)
+				CheckHighScore();
 			if(curRow > ap.stopRow) ResetAp();
 			CheckColumn(Row(curRow));
 			if(curRow == 0) { /* start the song! */
@@ -1117,7 +1129,12 @@ void DrawScoreboard(void)
 /*		PrintGL(0, 75+x*14, "Col %i  Hit %i, %i Clear %4i", x, ac[x].hit, ac[x].miss, ac[x].cleared); */
 /*	} */
 	PrintGL(50, 0, "Playing: %s", mod->songname);
-	if(curRow == wam->numRows) PrintGL(50, 15, "Song complete!");
+	if(curRow == wam->numRows) {
+		PrintGL(50, 15, "Song complete!");
+		if(score > highscore) {
+			PrintGL(DisplayWidth() / 2 - 85, 150, "New High Score!!!");
+		}
+	}
 	else if(curRow >= 0) {
 /*		if(!TIMEADJ) glColor4f(1.0, 0.0, 0.0, 1.0);
 		PrintGL(50, 15, "Song: %i (%i)/%i, Row: %i (%i)/%i Pattern: %i/%i", mod->sngpos, wam->rowData[curRow].sngpos, mod->numpos, mod->patpos, wam->rowData[curRow].patpos, NumPatternsAtSngPos(mod->sngpos),  mod->positions[mod->sngpos], mod->numpat);
@@ -1130,7 +1147,7 @@ void DrawScoreboard(void)
 /*	if(curRow >= 0 && curRow < wam->numRows) PrintGL(0, 62, "Tick: %i, %i.%f / %i\n", wam->rowData[curRow].ticpos, curTic, partialTic, wam->numTics); */
 	PrintGL(50, 30, "Speed: %2i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
 	PrintGL(0, 50, "%i - %i, note: %i, hit: %i/%i\n", ap.startTic, ap.stopTic, ap.lastTic, ap.notesHit, ap.notesTotal);
-	PrintGL(400, 20, "Score: %i\nMultiplier: %i\n", score, multiplier);
+	PrintGL(350, 20, "Score: %i      High: %i\nMultiplier: %i\n", score, highscore, multiplier);
 /*	PrintGL(400, 50, "DN: %i, %i, %i\n", slist_length(notesList), slist_length(hitList), slist_length(unusedList)); */
 
 
