@@ -23,7 +23,7 @@ void DeleteObj(Obj *o)
 	objs = g_slist_remove(objs, (gpointer)o);
 }
 
-void FreeObj(gpointer data, gpointer user_data)
+void FreeObj(gpointer data, gpointer not_used)
 {
 	free(data);
 }
