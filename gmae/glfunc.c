@@ -15,7 +15,9 @@
 #include "memtest.h"
 #include "sdlfatalerror.h"
 
+#ifdef __STRICT_ANSI__
 extern int vsnprintf(char *buf, size_t size, const char *fmt, va_list args);
+#endif
 
 static int LoadFont(void);
 
