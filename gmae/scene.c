@@ -891,11 +891,14 @@ void UpdateClearedCols(void)
 	int x;
 	int tic;
 	float col[4];
+	Row *r;
 	Obj *o;
 	for(x=0;x<wam->numCols;x++) {
-		ac[x].part += (double)ticDiff / 40.0;
+		r = &wam->rowData[Row(ac[x].minRow)];
+		/* Yes I realize this is a bunch of magic numbers. Sue me. */
+		ac[x].part += (double)ticDiff * (double)r->bpm / (833.0 * (double)r->sngspd);
 		while(ac[x].part >= 1.0 && ac[x].minRow < ac[x].cleared) {
-			tic = wam->rowData[Row(ac[x].minRow)].ticpos;
+			tic = r->ticpos;
 			MoveHitNotes(tic, x);
 			ac[x].part -= 1.0;
 			ac[x].minRow++;
