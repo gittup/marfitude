@@ -18,3 +18,4 @@
 
 int IntLen(int x);
 int StrEq(const char *a, const char *b);
+char *CatStr(const char *a, const char *b);

@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 #include <math.h>
 #include "memtest.h"
 
@@ -41,4 +42,13 @@ int StrEq(const char *a, const char *b)
 	}
 	if(!*a && !*b) return 1;
 	return 0;
+}
+
+char *CatStr(const char *a, const char *b)
+{
+	char *s;
+	s = (char*)malloc(sizeof(char) * (strlen(a) + strlen(b) + 1));
+	strcpy(s, a);
+	strcat(s, b);
+	return s;
 }
