@@ -163,7 +163,7 @@ int RegisterKeyEvent(KeyHandler handler)
 	}
 	else
 	{
-		Log("Error: KeyHandler already set!\n");
+		ELog("Error: KeyHandler already set!\n");
 		return 0;
 	}
 }
@@ -171,7 +171,7 @@ int RegisterKeyEvent(KeyHandler handler)
 void DeregisterKeyEvent()
 {
 	if(keyHandler) keyHandler = NULL;
-	else Log("Error: KeyHandler not set!\n");
+	else ELog("Error: KeyHandler not set!\n");
 }
 
 int RegisterEvent(int event, EventHandler handler, int stopHere)
@@ -207,7 +207,7 @@ void DeregisterEvent(int event, EventHandler handler)
 		prev = e;
 		e = e->next;
 	}
-	if(e == NULL) Log("Error: Event %i not available for deregister.\n", event);
+	if(e == NULL) ELog("Error: Event %i not available for deregister.\n", event);
 	else free(e);
 }
 
