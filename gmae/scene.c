@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <math.h>
-#include <glib.h>
 
 #include "SDL_mixer.h"
 #include "GL/gl.h"
@@ -19,48 +18,52 @@
 #include "textures.h"
 #include "timer.h"
 #include "wam.h"
-#include "../util/fatalerror.h"
-#include "../util/memtest.h"
-#include "../util/sdlfatalerror.h"
-#include "../util/myrand.h"
 
-#include "mikmod_internals.h" // test
+#include "fatalerror.h"
+#include "memtest.h"
+#include "sdlfatalerror.h"
+#include "myrand.h"
+#include "slist.h"
+
+#include "mikmod_internals.h" /* test */
 
 #define MAXNUM 2
 
-int NullInit();
-void NullScene();
-void NullQuit();
-int IntroInit();
-void IntroScene();
-void IntroQuit();
-int MainInit();
-void MainScene();
-void MainQuit();
+static int NullInit(void);
+static void NullScene(void);
+static void NullQuit(void);
+static int IntroInit(void);
+static void IntroScene(void);
+static void IntroQuit(void);
+static int MainInit(void);
+static void MainScene(void);
+static void MainQuit(void);
+static void MoveFaster(void);
+static void MoveSlower(void);
 
 #define NUMSCENES 3
-Scene scenes[NUMSCENES] = {	{NullInit, NullQuit, NullScene},
+static Scene scenes[NUMSCENES] = {	{NullInit, NullQuit, NullScene},
 				{IntroInit, IntroQuit, IntroScene},
 				{MainInit, MainQuit, MainScene}};
 
-float lightFull[4] = {1.0, 1.0, 1.0, 1.0};
-float lightHalf[4] = {0.5, 0.5, 0.5, 0.5};
-float lightNone[4] = {0.0, 0.0, 0.0, 1.0};
-float lightNormal[4] = {0.8, 0.8, 0.8, 1.0};
+/*static float lightFull[4] = {1.0, 1.0, 1.0, 1.0};
+static float lightHalf[4] = {0.5, 0.5, 0.5, 0.5};*/
+static float lightNone[4] = {0.0, 0.0, 0.0, 1.0};
+static float lightNormal[4] = {0.8, 0.8, 0.8, 1.0};
 
 int SwitchScene(int scene)
 {
 	if(scene < 0 || scene >= NUMSCENES) return 0;
-	Log("Switching scene: %i\n", scene);
+	Log(("Switching scene: %i\n", scene));
 	if(activeScene) activeScene->QuitScene();
 	if(!scenes[scene].InitScene())
 	{
 		activeScene = &(scenes[NULLSCENE]);
-		ELog("Scene switch failed\n");
+		ELog(("Scene switch failed\n"));
 		return 0;
 	}
 	activeScene = &(scenes[scene]);
-	Log("Scene switched\n");
+	Log(("Scene switched\n"));
 	return 1;
 }
 
@@ -70,8 +73,8 @@ int SceneActive(int scene)
 	return 0;
 }
 
-void NullScene() {}
-void NullQuit() {}
+void NullScene(void) {}
+void NullQuit(void) {}
 int NullInit() {return 1;}
 
 int IntroInit()
@@ -79,56 +82,54 @@ int IntroInit()
 	return 1;
 }
 
-void IntroQuit()
+void IntroQuit(void)
 {
 }
 
-void IntroScene()
+void IntroScene(void)
 {
 	static float theta = 0.0;
-  GLLoadIdentity();				// Reset The View
+  glLoadIdentity();				/* Reset The View */
 
-  GLTranslatef(-1.5f,0.0f,-6.0f);		// Move Left 1.5 Units And Into The Screen 6.0
+  glTranslatef(-1.5f,0.0f,-6.0f);		/* Move Left 1.5 Units And Into The Screen 6.0 */
 	
-  GLBindTexture(GL_TEXTURE_2D, TEX_FlatlandFiery);
-  // draw a triangle
-  glBegin(GL_POLYGON);				// start drawing a polygon
-  glTexCoord2f(0.0, 0.0); glVertex3f( 0.0f, 1.0f, 0.0f);		// Top
-  glTexCoord2f(1.0, 1.0); glVertex3f( 1.0f,-1.0f, 0.0f);		// Bottom Right
-  glTexCoord2f(0.0, 1.0); glVertex3f(-1.0f,-1.0f, 0.0f);		// Bottom Left	
-  glEnd();					// we're done with the polygon
+  glBindTexture(GL_TEXTURE_2D, TEX_FlatlandFiery);
+  /* draw a triangle */
+  glBegin(GL_POLYGON);				/* start drawing a polygon */
+  glTexCoord2f(0.0, 0.0); glVertex3f( 0.0f, 1.0f, 0.0f);		/* Top */
+  glTexCoord2f(1.0, 1.0); glVertex3f( 1.0f,-1.0f, 0.0f);		/* Bottom Right */
+  glTexCoord2f(0.0, 1.0); glVertex3f(-1.0f,-1.0f, 0.0f);		/* Bottom Left	 */
+  glEnd();					/* we're done with the polygon */
 
-  glTranslatef(3.0f,0.0f,0.0f);		        // Move Right 3 Units
+  glTranslatef(3.0f,0.0f,0.0f);		        /* Move Right 3 Units */
 	
-  // draw a square (quadrilateral)
-  glBegin(GL_QUADS);				// start drawing a polygon (4 sided)
-  glTexCoord2f(0.0, 0.0); glVertex3f(-cos(theta), cos(theta), sin(theta));	// Top Left
-  glTexCoord2f(1.0, 0.0); glVertex3f( cos(theta), cos(theta), sin(theta));	// Top Right
-  glTexCoord2f(1.0, 1.0); glVertex3f( cos(theta),-cos(theta), sin(theta));	// Bottom Right
-  glTexCoord2f(0.0, 1.0); glVertex3f(-cos(theta),-cos(theta), sin(theta));	// Bottom Left	
-  glEnd();					// done with the polygon
+  /* draw a square (quadrilateral) */
+  glBegin(GL_QUADS);				/* start drawing a polygon (4 sided) */
+  glTexCoord2f(0.0, 0.0); glVertex3f(-cos(theta), cos(theta), sin(theta));	/* Top Left */
+  glTexCoord2f(1.0, 0.0); glVertex3f( cos(theta), cos(theta), sin(theta));	/* Top Right */
+  glTexCoord2f(1.0, 1.0); glVertex3f( cos(theta),-cos(theta), sin(theta));	/* Bottom Right */
+  glTexCoord2f(0.0, 1.0); glVertex3f(-cos(theta),-cos(theta), sin(theta));	/* Bottom Left	 */
+  glEnd();					/* done with the polygon */
   theta += .01;
-  // swap buffers to display, since we're double buffered.
+  /* swap buffers to display, since we're double buffered. */
 }
 
-Uint32 rowTime;
-Uint32 ticTime;
-GLuint rowList;
-GLuint noteList;
-GLuint mainTexes[MAX_COLS];
-int channelFocus = 0;
-Wam *wam;	// note file
+static Uint32 rowTime;
+static Uint32 ticTime;
+static GLuint rowList;
+static GLuint noteList;
+static GLuint mainTexes[MAX_COLS];
+static int channelFocus = 0;
+static Wam *wam;	/* note file */
 
-float theta = 0.0;
-
-void ResetAp();
+static float theta = 0.0;
 
 #define BLOCK_HEIGHT .75
 #define TIC_HEIGHT .25
 #define BLOCK_WIDTH 2.0
 #define NOTE_WIDTH .75
 
-int TIMEADJ = 1;
+static int TIMEADJ = 1;
 void MoveFaster(void)
 {
 	ticTime += 25000;
@@ -141,7 +142,7 @@ void MoveSlower(void)
 #define NEGATIVE_TICKS 7*6
 #define POSITIVE_TICKS 57*6
 #define NUM_TICKS 64*6
-#define TIC_ERROR 5 // number of tics we can be off when hitting a button
+#define TIC_ERROR 5 /* number of tics we can be off when hitting a button */
 #define LINES_PER_AP 8
 #define ROWS_PER_LINE 4
 
@@ -151,18 +152,18 @@ void MoveSlower(void)
 #define UNMUTE 0
 #define MUTE 1
 
-// returns 1 if the row is valid, 0 otherwise
+/* returns 1 if the row is valid, 0 otherwise */
 #define IsValidRow(row) ((row >= 0 && row < wam->numRows) ? 1 : 0)
-// return a clamped row number
+/* return a clamped row number */
 #define Row(row) (row < 0 ? 0 : (row >= wam->numRows ? wam->numRows - 1: row))
 #define Max(a, b) ((a) > (b) ? (a) : (b))
 
-int curTic; // tick counter from 0 - total ticks in the song
-int firstVb, curVb, lastVb;	// tick counters for the three rows
-int firstRow, curRow, lastRow;	// first row on screen, current row playing,
-				// and the last row on screen
-
-double partialTic;
+static int curTic; /* tick counter from 0 - total ticks in the song */
+static int firstVb, curVb, lastVb;     /* tick counters for the three rows */
+static int firstRow, curRow, lastRow;  /* first row on screen, current row
+                                        * playing and the last row on screen
+                                        */
+static double partialTic;
 typedef struct {
 	Point pos;
 	int tic;
@@ -180,63 +181,110 @@ typedef struct {
 	float time;
 	} Laser;
 typedef struct {
-	int startTic;	// first tic that we need to play
-	int stopTic;	// last tic that we need to play
-	int stopRow;	// corresponding row to stopTic
-	int nextStartRow;//which row the game is cleared to.
-	int lastTic;	// last note played is in lastTic
-	int notesHit;	// number of notes we hit so far
-	int notesTotal;	// total number of notes we need to play
+	int startTic;	/* first tic that we need to play */
+	int stopTic;	/* last tic that we need to play */
+	int stopRow;	/* corresponding row to stopTic */
+	int nextStartRow;/*which row the game is cleared to. */
+	int lastTic;	/* last note played is in lastTic */
+	int notesHit;	/* number of notes we hit so far */
+	int notesTotal;	/* total number of notes we need to play */
 	} AttackPattern;
 typedef struct {
-	double part;	// cumulative row adder, when >= 1.0 inc minRow
-	int minRow;	// equal to cleared, but doesn't get set to 0
-			// after the column is recreated
-	int cleared;	// equals the last row this col is cleared to, 0 if
-			// not cleared
-	int hit;	// equals the tic of the last hit note
-	int miss;	// equals the tic of the last missed note
+	double part;	/* cumulative row adder, when >= 1.0 inc minRow */
+	int minRow;	/* equal to cleared, but doesn't get set to 0 */
+			/* after the column is recreated */
+	int cleared;	/* equals the last row this col is cleared to, 0 if */
+			/* not cleared */
+	int hit;	/* equals the tic of the last hit note */
+	int miss;	/* equals the tic of the last missed note */
 	} AttackCol;
 
-AttackPattern ap;
-AttackCol ac[MAX_COLS];
-ScreenNote *notesOnScreen; // little ring buffer of notes
-GSList *unusedList;	// unused notes
-GSList *notesList;	// notes on the screen, not hit
-GSList *hitList;	// notes on the screen, hit
-int numNotes;	// max number of notes on screen (wam->numCols * NUM_TICKS)
-int score;
-//float light[4] = {0.0, 1.0, -8.0, 1.0};
-float light[4] = {0.0, 0.5, 0.0, 1.0};
+static void ResetAp(void);
+static void ChannelUp(void);
+static void ChannelDown(void);
+static Column *ColumnFromNum(int col);
+static void Setmute(Column *c, int mute);
+static void UpdateModule(void);
+static void AddNotes(int row);
+static slist *RemoveList(slist *list, int tic);
+static void RemoveNotes(int row);
+static void AddLine(int row);
+static void RemoveLine(int row);
+static double LaserAdj(double a, double b, double dt);
+static void DrawLaser(Laser *l);
+static void DrawLasers(void);
+static int BelowBoard(Particle *p);
+static int AboveBoard(Particle *p);
+static void Press(int button);
+static void Press1(void);
+static void Press2(void);
+static void Press3(void);
+static void Press4(void);
+static void SetMainView(void);
+static void DrawNote(void *snp, void *not_used);
+static void DrawHitNote(void *snp, void *not_used);
+static void DrawNotes(void);
+static void DrawHitNotes(void);
+static void DrawTargets(void);
+static void DrawScoreboard(void);
+static void MoveHitNotes(int tic, int col);
+static void UpdateClearedCols(void);
+static void UpdatePosition(void);
+static void DrawRows(double startTic, double stopTic);
+static void RandomColor(float col[4]);
+static int RowByTic(int tic);
+static ScreenNote *FindNote(slist *list, int tic, int col);
+static void FixVb(int *vb, int *row);
+static void TickHandler(void);
+static void DrawLine(int line);
+static void DrawLines(void);
+static void CheckMissedNotes(void);
+static void CheckColumn(int row);
+static int NoteListTic(const void *snp, const void *tp);
+static int SortByTic(const void *a, const void *b);
 
-Laser laser[NUM_LASERS];
-int numLasers;
-float bounceTime;
-Line *linesOnScreen;
-int startLine;
-int stopLine;
-int numLines;
-int *noteOffset;
-MikMod_player_t oldHand;
-int tickCounter;
-int songStarted;	// this is set once we get to the first row, and the
-			// song is unpaused
+static AttackPattern ap;
+static AttackCol ac[MAX_COLS];
+static ScreenNote *notesOnScreen; /* little ring buffer of notes */
+static slist *unusedList;	/* unused notes */
+static slist *notesList;	/* notes on the screen, not hit */
+static slist *hitList;	/* notes on the screen, hit */
+static int numNotes;	/* max number of notes on screen (wam->numCols * NUM_TICKS) */
+static int score;
+static int multiplier;
+/*static float light[4] = {0.0, 1.0, -8.0, 1.0}; */
+static float light[4] = {0.0, 0.5, 0.0, 1.0};
 
-void ChannelUp()
+static Laser laser[NUM_LASERS];
+static int numLasers;
+static float bounceTime;
+static Line *linesOnScreen;
+static int startLine;
+static int stopLine;
+static int numLines;
+static int *noteOffset;
+static MikMod_player_t oldHand;
+static int tickCounter;
+static int songStarted;	/* this is set once we get to the first row, and the */
+			/* song is unpaused */
+
+void ChannelUp(void)
 {
 	if(channelFocus + 1 < wam->numCols)
 	{
 		channelFocus++;
+		if(ap.notesHit > 0) multiplier = 1;
 		ResetAp();
 		ac[channelFocus].hit = ap.startTic - 1;
 	}
 }
 
-void ChannelDown()
+void ChannelDown(void)
 {
 	if(channelFocus != 0)
 	{
 		channelFocus--;
+		if(ap.notesHit > 0) multiplier = 1;
 		ResetAp();
 		ac[channelFocus].hit = ap.startTic - 1;
 	}
@@ -257,8 +305,8 @@ void Setmute(Column *c, int mute)
 	}
 }
 
-// update which channels are playing based on AttackCol coontents
-void UpdateModule()
+/* update which channels are playing based on AttackCol coontents */
+void UpdateModule(void)
 {
 	int x;
 	for(x=0;x<wam->numCols;x++)
@@ -283,13 +331,13 @@ void AddNotes(int row)
 			sn = unusedList->data;
 			if(row < ac[x].minRow)
 			{
-				hitList = g_slist_append(hitList, sn);
+				hitList = slist_append(hitList, sn);
 			}
 			else
 			{
-				notesList = g_slist_append(notesList, sn);
+				notesList = slist_append(notesList, sn);
 			}
-			unusedList = g_slist_remove(unusedList, sn);
+			unusedList = slist_remove(unusedList, sn);
 			sn->pos.x = -x * BLOCK_WIDTH - NOTE_WIDTH * (double)noteOffset[(int)wam->rowData[row].notes[x]];
 			sn->pos.y = 0.0;
 			sn->pos.z = TIC_HEIGHT * (double)wam->rowData[row].ticpos;
@@ -299,15 +347,15 @@ void AddNotes(int row)
 	}
 }
 
-GSList *RemoveList(GSList *list, int tic)
+slist *RemoveList(slist *list, int tic)
 {
 	ScreenNote *sn;
 	while(list)
 	{
 		sn = (ScreenNote*)list->data;
 		if(sn->tic != tic) break;
-		unusedList = g_slist_append(unusedList, list->data);
-		list = g_slist_next(list);
+		unusedList = slist_append(unusedList, list->data);
+		list = slist_next(list);
 	}
 	return list;
 }
@@ -317,11 +365,11 @@ void RemoveNotes(int row)
 	int tic;
 	if(row < 0 || row >= wam->numRows) return;
 	tic = wam->rowData[row].ticpos;
-	Log("RM\n");
+	Log(("RM\n"));
 	notesList = RemoveList(notesList, tic);
-	Log("RMHit: %i\n", hitList);
+	Log(("RMHit: %i\n", hitList));
 	hitList = RemoveList(hitList, tic);
-	Log("done: %i\n", hitList);
+	Log(("done: %i\n", hitList));
 }
 
 void AddLine(int row)
@@ -353,16 +401,6 @@ void RemoveLine(int row)
 	}
 }
 
-void SetMute(/*ModChannel *c, */int mute)
-{
-/*	int j;
-	for(j=0;j<c->numModChannels;j++)
-	{
-		if(mute) Player_Mute(c->modChannels[j]);
-		else Player_Unmute(c->modChannels[j]);
-	}*/
-}
-
 void RandomColor(float col[4])
 {
 	int x = (int)(7.0 * rand() / (RAND_MAX+1.0)) + 1;
@@ -375,14 +413,14 @@ void RandomColor(float col[4])
 	if(x&4) col[BLUE] = 1.0;
 }
 
-ScreenNote *FindNote(GSList *list, int tic, int col)
+ScreenNote *FindNote(slist *list, int tic, int col)
 {
 	ScreenNote *sn;
 	while(list)
 	{
 		sn = (ScreenNote*)list->data;
 		if(sn->tic == tic && sn->col == col) return sn;
-		list = g_slist_next(list);
+		list = slist_next(list);
 	}
 	return NULL;
 }
@@ -394,12 +432,12 @@ void Press(int button)
 	ScreenNote *sn;
 	Row *r;
 
-	// p1 is set to the light position
+	/* p1 is set to the light position */
 	laser[numLasers].p1.x = light[0];
 	laser[numLasers].p1.y = light[1];
 	laser[numLasers].p1.z = light[2];
 
-	// p2 is set to where the note is
+	/* p2 is set to where the note is */
 	laser[numLasers].p2.x = -channelFocus * BLOCK_WIDTH - NOTE_WIDTH * noteOffset[button];
 	laser[numLasers].p2.y = 0.0;
 	laser[numLasers].p2.z = TIC_HEIGHT * ((double)curTic + partialTic);
@@ -412,10 +450,10 @@ void Press(int button)
 		if(curRow + i >= 0 && curRow + i < wam->numRows)
 		{
 			r = &wam->rowData[curRow+i];
-			// if we're in the attackpattern limits, and
-			// if we didn't already play this row, and this row
-			// is within our acceptable error, and we hit the
-			// right note, then yay
+			/* if we're in the attackpattern limits, and */
+			/* if we didn't already play this row, and this row */
+			/* is within our acceptable error, and we hit the */
+			/* right note, then yay */
 			if(	
 				r->ticpos >= ap.startTic &&
 				r->ticpos < ap.stopTic &&
@@ -426,11 +464,11 @@ void Press(int button)
 				sn = FindNote(notesList, r->ticpos, channelFocus);
 				if(!sn)
 				{
-					ELog("Error: Struck note not found!\n");
+					ELog(("Error: Struck note not found!\n"));
 					break;
 				}
-				notesList = g_slist_remove(notesList, (gpointer)sn);
-				unusedList = g_slist_append(unusedList, (gpointer)sn);
+				notesList = slist_remove(notesList, (void *)sn);
+				unusedList = slist_append(unusedList, (void *)sn);
 				ap.lastTic = r->ticpos;
 				ap.notesHit++;
 				if(ap.notesHit == ap.notesTotal)
@@ -439,6 +477,9 @@ void Press(int button)
 					ac[channelFocus].cleared = ap.stopRow + LINES_PER_AP * ROWS_PER_LINE * wam->numCols;
 					ac[channelFocus].minRow = curRow;
 					ac[channelFocus].part = 0.0;
+					score += ap.notesHit * multiplier;
+					if(multiplier < 8) multiplier++;
+					ap.notesHit = 0;
 				}
 				ac[channelFocus].hit = r->ticpos;
 				noteHit = 1;
@@ -448,8 +489,9 @@ void Press(int button)
 	}
 
 	r = &wam->rowData[Row(curRow)];
-	if(!noteHit && r->ticpos >= ap.startTic && r->ticpos < ap.stopTic) // oops, we missed!
+	if(!noteHit && r->ticpos >= ap.startTic && r->ticpos < ap.stopTic) /* oops, we missed! */
 	{
+		if(ap.notesHit > 0) multiplier = 1;
 		ResetAp();
 		if(IsValidRow(curRow) && r->ticpos >= ap.startTic && r->ticpos < ap.stopTic)
 			ac[channelFocus].miss = r->ticpos;
@@ -457,19 +499,20 @@ void Press(int button)
 	UpdateModule();
 }
 
-// i really should fix the event system...i suck!
-void Press1() {Press(1);}
+static int lastkeypressed = 1;
+/* i really should fix the event system...i suck! */
+void Press1(void) {lastkeypressed = 1; Press(1);}
 
-void Press2() {Press(2);}
+void Press2(void) {lastkeypressed = 2; Press(2);}
 
-void Press3() {Press(4);} // yes, this is really 4 (3rd bit)
+void Press3(void) {lastkeypressed = 4; Press(4);} /* yes, this is really 4 (3rd bit) */
 
-void Press4()
+void Press4(void)
 {
-	printf("Autocatcher! Hehe\n");
+	Press(lastkeypressed);
 }
 
-void SetMainView()
+void SetMainView(void)
 {
 	float mainPos[3] = {0.0, 3.0, -8.0};
 	float mainView[3] = {0.0, 0.8, 0.0};
@@ -507,8 +550,8 @@ void FixVb(int *vb, int *row)
 	}
 }
 
-// keep track of the number of actual ticks played by the mod player,
-// so we know if we're off
+/* keep track of the number of actual ticks played by the mod player, */
+/* so we know if we're off */
 void TickHandler(void)
 {
 	if(songStarted)
@@ -521,24 +564,25 @@ void TickHandler(void)
 int MainInit()
 {
 	int x;
-	Log("Load Wam\n");
+	Log(("Load Wam\n"));
 	wam = LoadWam(CfgS("main.song"));
 	if(wam == NULL)
 	{
-		ELog("Error: Couldn't load WAM file\n");
+		ELog(("Error: Couldn't load WAM file\n"));
 		return 0;
 	}
-	Log("Start module\n");
+	Log(("Start module\n"));
 	if(!StartModule(CfgS("main.song")))
 	{
-		ELog("Error: Couldn't start module\n");
+		ELog(("Error: Couldn't start module\n"));
 		return 0;
 	}
-	// module and module data (where to place the notes) are now loaded,
-	// and the module is paused
-	Log("Module ready\n");
-	tickCounter = 0;
+	/* module and module data (where to place the notes) are now loaded, */
+	/* and the module is paused */
+	Log(("Module ready\n"));
 	score = 0;
+	multiplier = 1;
+	tickCounter = 0;
 	songStarted = 0;
 	numLasers = 0;
 	oldHand = MikMod_RegisterPlayer(TickHandler);
@@ -562,16 +606,16 @@ int MainInit()
 		ac[x].miss = -2;
 	}
 
-	// start back about 3.5 seconds worth of ticks
-	// doesn't need to be exact, we just need some time for
-	// the player to get ready
+	/* start back about 3.5 seconds worth of ticks */
+	/* doesn't need to be exact, we just need some time for */
+	/* the player to get ready */
 	curTic = (int)(-3500.0 * (double)wam->rowData[0].bpm / 2500.0);
-	// set the tic positions of where we can see and where we're looking
+	/* set the tic positions of where we can see and where we're looking */
 	firstVb = curTic - NEGATIVE_TICKS;
 	curVb = curTic;
 	lastVb = curTic + POSITIVE_TICKS;
-	// convert tic values to rows, now the ticks are all within
-	// [0 .. wam->rowData[xRow].sngspd - 1]
+	/* convert tic values to rows, now the ticks are all within */
+	/* [0 .. wam->rowData[xRow].sngspd - 1] */
 	FixVb(&firstVb, &firstRow);
 	FixVb(&curVb, &curRow);
 	FixVb(&lastVb, &lastRow);
@@ -585,7 +629,7 @@ int MainInit()
 	hitList = NULL;
 	for(x=0;x<numNotes;x++)
 	{
-		unusedList = g_slist_append(unusedList, (gpointer)&notesOnScreen[x]);
+		unusedList = slist_append(unusedList, (void *)&notesOnScreen[x]);
 	}
 	for(x=0;x<=lastRow;x++) AddNotes(x);
 
@@ -605,9 +649,9 @@ int MainInit()
 	RegisterEvent(EVENT_BUTTON2, Press2, EVENTTYPE_MULTI);
 	RegisterEvent(EVENT_BUTTON3, Press3, EVENTTYPE_MULTI);
 	RegisterEvent(EVENT_BUTTON4, Press4, EVENTTYPE_MULTI);
-	Log("Creating lists\n");
-	rowList = GLGenLists(wam->numCols);
-	noteList = GLGenLists(1);
+	Log(("Creating lists\n"));
+	rowList = glGenLists(wam->numCols);
+	noteList = glGenLists(1);
 
 	mainTexes[0] = TEX_Slate;
 	mainTexes[1] = TEX_Walnut;
@@ -666,53 +710,53 @@ int MainInit()
 		glPopMatrix();
 	} glEndList();
 	InitTimer();
-	Log("Lists created\n");
+	Log(("Lists created\n"));
 	return 1;
 }
 
-void MainQuit()
+void MainQuit(void)
 {
-	Log("Main Scene quit\n");
+	Log(("Main Scene quit\n"));
 	oldHand = MikMod_RegisterPlayer(oldHand);
-	Log("A\n");
+	Log(("A\n"));
 	if(songStarted)
 	{
 		DeregisterEvent(EVENT_SHOWMENU, Player_TogglePause);
 		DeregisterEvent(EVENT_HIDEMENU, Player_TogglePause);
 	}
-	Log("A\n");
+	Log(("A\n"));
 	songStarted = 0;
 	DeregisterEvent(EVENT_BUTTON1, Press1);
 	DeregisterEvent(EVENT_BUTTON2, Press2);
 	DeregisterEvent(EVENT_BUTTON3, Press3);
 	DeregisterEvent(EVENT_BUTTON4, Press4);
-	Log("A\n");
+	Log(("A\n"));
 	DeregisterEvent(EVENT_RIGHT, ChannelUp);
-	Log("A\n");
+	Log(("A\n"));
 	DeregisterEvent(EVENT_LEFT, ChannelDown);
-	Log("A\n");
+	Log(("A\n"));
 	DeregisterEvent(EVENT_UP, MoveFaster);
-	Log("A\n");
+	Log(("A\n"));
 	DeregisterEvent(EVENT_DOWN, MoveSlower);
-	Log("A\n");
-	GLDeleteLists(rowList, wam->numCols);
-	Log("A\n");
-	GLDeleteLists(noteList, 1);
-	Log("A\n");
+	Log(("A\n"));
+	glDeleteLists(rowList, wam->numCols);
+	Log(("A\n"));
+	glDeleteLists(noteList, 1);
+	Log(("A\n"));
 	free(notesOnScreen);
-	Log("A\n");
+	Log(("A\n"));
 	free(linesOnScreen);
-	Log("A\n");
+	Log(("A\n"));
 	free(noteOffset);
-	Log("A\n");
+	Log(("A\n"));
 	ClearParticles();
-	Log("A\n");
+	Log(("A\n"));
 	CheckObjs();
-	Log("A\n");
+	Log(("A\n"));
 	FreeWam(wam);
-	Log("A\n");
+	Log(("A\n"));
 	StopModule();
-	Log("Main scene quit finished\n");
+	Log(("Main scene quit finished\n"));
 }
 
 void DrawLine(int line)
@@ -723,7 +767,7 @@ void DrawLine(int line)
 	glVertex3f( linesOnScreen[line].p2.x, linesOnScreen[line].p2.y, linesOnScreen[line].p2.z);
 }
 
-void DrawLines()
+void DrawLines(void)
 {
 	int x;
 	glDisable(GL_TEXTURE_2D);
@@ -747,52 +791,52 @@ void DrawLines()
 	glEnable(GL_TEXTURE_2D);
 }
 
-// gets either curRow or curRow+1, depending on which one tic is closest to
-// (eg within acceptable error)
+/* gets either curRow or curRow+1, depending on which one tic is closest to */
+/* (eg within acceptable error) */
 int RowByTic(int tic)
 {
 	if(tic - wam->rowData[Row(curRow)].ticpos < TIC_ERROR) return curRow;
 	return curRow+1;
 }
 
-void ResetAp()
+void ResetAp(void)
 {
 	int start;
 	int end;
-	int numLines = 0;
+	int apLines = 0;
 	ap.notesHit = 0;
 	ap.notesTotal = 0;
 	start = Row(Max(Max(RowByTic(curTic), ap.nextStartRow), ac[channelFocus].cleared));
 	while(start < wam->numRows && wam->rowData[start].line == 0) start++;
 	end = start;
-	while(numLines < LINES_PER_AP && end < wam->numRows)
+	while(apLines < LINES_PER_AP && end < wam->numRows)
 	{
-		// don't count the note on the last row, since that will
-		// be the beginning of the next "AttackPattern"
+		/* don't count the note on the last row, since that will */
+		/* be the beginning of the next "AttackPattern" */
 		if(wam->rowData[end].notes[channelFocus]) ap.notesTotal++;
 		end++;
-		if(wam->rowData[end].line != 0) numLines++;
+		if(wam->rowData[end].line != 0) apLines++;
 	}
-	if(numLines < LINES_PER_AP)
+	if(apLines < LINES_PER_AP)
 	{
-		// at the end of the song we can't find a valid pattern to do
+		/* at the end of the song we can't find a valid pattern to do */
 		ap.startTic = -1;
 		ap.stopTic = -1;
 		ap.lastTic = -1;
 		ap.stopRow = -1;
 		return;
 	}
-	Log("StarT: %i, End: %i\n", start, end);
+	Log(("StarT: %i, End: %i\n", start, end));
 	ap.startTic = wam->rowData[start].ticpos;
 	ap.stopTic = wam->rowData[end].ticpos;
 	ap.lastTic = wam->rowData[start].ticpos - 1;
 	ap.stopRow = end;
 }
 
-void CheckMissedNotes()
+void CheckMissedNotes(void)
 {
 	ScreenNote *sn;
-	GSList *list;
+	slist *list;
 	list = notesList;
 	while(list)
 	{
@@ -802,9 +846,12 @@ void CheckMissedNotes()
 		{
 			ac[sn->col].miss = sn->tic;
 			if(sn->col == channelFocus && sn->tic >= ap.startTic && sn->tic < ap.stopTic)
+			{
+				if(ap.notesHit > 0) multiplier = 1;
 				ResetAp();
+			}
 		}
-		list = g_slist_next(list);
+		list = slist_next(list);
 	}
 }
 
@@ -817,49 +864,49 @@ void CheckColumn(int row)
 	}
 }
 
-gint NoteListTic(gconstpointer snp, gconstpointer tp)
+int NoteListTic(const void *snp, const void *tp)
 {
 	int tic = (int)tp;
-	ScreenNote *sn = (ScreenNote*)snp;
+	const ScreenNote *sn = (const ScreenNote*)snp;
 	return sn->tic - tic;
 }
 
-gint SortByTic(gconstpointer a, gconstpointer b)
+int SortByTic(const void *a, const void *b)
 {
-	ScreenNote *an = (ScreenNote*)a;
-	ScreenNote *bn = (ScreenNote*)b;
+	const ScreenNote *an = (const ScreenNote*)a;
+	const ScreenNote *bn = (const ScreenNote*)b;
 	return an->tic - bn->tic;
 }
 
 void MoveHitNotes(int tic, int col)
 {
 	ScreenNote *sn;
-	GSList *tmp;
-	GSList *holder = NULL;
-	Log("moveHIt\n");
-	tmp = g_slist_find_custom(notesList, (gpointer)tic, NoteListTic);
+	slist *tmp;
+	slist *holder = NULL;
+	Log(("moveHIt\n"));
+	tmp = slist_find_custom(notesList, (void *)tic, NoteListTic);
 	while(tmp)
 	{
 		sn = (ScreenNote*)tmp->data;
 
 		if(sn->tic == tic && sn->col == col)
 		{
-			hitList = g_slist_insert_sorted(hitList, sn, SortByTic);
-			holder = g_slist_append(holder, sn);
+			hitList = slist_insert_sorted(hitList, sn, SortByTic);
+			holder = slist_append(holder, sn);
 		}
-		tmp = g_slist_next(tmp);
+		tmp = slist_next(tmp);
 	}
 	tmp = holder;
 	while(tmp)
 	{
-		notesList = g_slist_remove(notesList, tmp->data);
-		tmp = g_slist_next(tmp);
+		notesList = slist_remove(notesList, tmp->data);
+		tmp = slist_next(tmp);
 	}
-	g_slist_free(holder);
-	Log("movehit\n");
+	slist_free(holder);
+	Log(("movehit\n"));
 }
 
-void UpdateClearedCols()
+void UpdateClearedCols(void)
 {
 	int x;
 	int tic;
@@ -886,27 +933,27 @@ void UpdateClearedCols()
 			CreateParticle(o, col, P_StarBurst, 1.0);
 		}
 
-		// no point in going beyond where we can see
-//		if(ac[x].minRow >= lastRow) ac[x].minRow = ac[x].cleared;
+		/* no point in going beyond where we can see */
+/*		if(ac[x].minRow >= lastRow) ac[x].minRow = ac[x].cleared; */
 	}
 }
 
-void UpdatePosition()
+void UpdatePosition(void)
 {
 	int tmpAdj;
-	// calculate the amount of ticTime elapsed
-	// every 2500 ticTime is one tick
+	/* calculate the amount of ticTime elapsed */
+	/* every 2500 ticTime is one tick */
 	if(!menuActive) ticTime += ticDiff * wam->rowData[Row(curRow)].bpm;
 
-	// adjust the ticTime if our time is different from the
-	// song time.  This is needed in case a little blip in the process
-	// causes the song to be ahead or behind the game, so we can
-	// right ourselves.
+	/* adjust the ticTime if our time is different from the */
+	/* song time.  This is needed in case a little blip in the process */
+	/* causes the song to be ahead or behind the game, so we can */
+	/* right ourselves. */
 	if(songStarted)
 	{
 		tmpAdj = (tickCounter - curTic) << 5;
 		if(!TIMEADJ) tmpAdj = 0;
-		Log("Adj: %i\n", (tickCounter-curTic) << 5);
+		Log(("Adj: %i\n", (tickCounter-curTic) << 5));
 		if((signed)ticTime + tmpAdj < 0) ticTime = 0;
 		else ticTime += tmpAdj;
 	}
@@ -925,7 +972,7 @@ void UpdatePosition()
 			curRow++;
 			if(curRow > ap.stopRow) ResetAp();
 			CheckColumn(Row(curRow));
-			if(curRow == 0) // start the song!
+			if(curRow == 0) /* start the song! */
 			{
 				Player_TogglePause();
 				songStarted = 1;
@@ -938,8 +985,8 @@ void UpdatePosition()
 		if(firstVb >= wam->rowData[Row(firstRow)].sngspd)
 		{
 			firstVb -= wam->rowData[Row(firstRow)].sngspd;
-			// the remove functions check to make sure
-			// the row is valid, so it's ok to pass firstRow
+			/* the remove functions check to make sure */
+			/* the row is valid, so it's ok to pass firstRow */
 			RemoveNotes(firstRow);
 			RemoveLine(firstRow);
 			firstRow++;
@@ -949,8 +996,8 @@ void UpdatePosition()
 		{
 			lastVb -= wam->rowData[Row(lastRow)].sngspd;
 			lastRow++;
-			// the add functions check to make sure the
-			// row is valid, so it's ok to pass lastRow
+			/* the add functions check to make sure the */
+			/* row is valid, so it's ok to pass lastRow */
 			AddNotes(lastRow);
 			AddLine(lastRow);
 		}
@@ -1003,11 +1050,13 @@ void DrawRows(double startTic, double stopTic)
 	glPopMatrix();
 }
 
-void DrawNote(gpointer snp, gpointer not_used)
+void DrawNote(void *snp, void *not_used)
 {
 	float temp[4] = {.7, 0.0, 0.0, 1.0};
-	ScreenNote *sn = (ScreenNote*)snp;
+	const ScreenNote *sn = (ScreenNote*)snp;
 	int mat = abs(sn->tic - curTic) <= TIC_ERROR;
+
+	if(not_used) {}
 
 	glPushMatrix();
 	glTranslated(	sn->pos.x,
@@ -1015,14 +1064,15 @@ void DrawNote(gpointer snp, gpointer not_used)
 			sn->pos.z+0.3);
 	if(mat) glMaterialfv(GL_FRONT, GL_EMISSION, temp);
 	glRotatef(theta, 0.0, 1.0, 0.0);
-	Log("Dn\n");
+	Log(("Dn\n"));
 	glCallList(noteList);
 	if(mat) glMaterialfv(GL_FRONT, GL_EMISSION, lightNone);
 }
 
-void DrawHitNote(gpointer snp, gpointer not_used)
+void DrawHitNote(void *snp, void *not_used)
 {
 	ScreenNote *sn = (ScreenNote*)snp;
+	if(not_used) {}
 
 	glPushMatrix();
 	glTranslated(	sn->pos.x,
@@ -1035,22 +1085,22 @@ void DrawHitNote(gpointer snp, gpointer not_used)
 	glCallList(plist+P_BlueNova);
 }
 
-void DrawNotes()
+void DrawNotes(void)
 {
-	Log("DN: %i, %i, %i\n", g_slist_length(notesList), g_slist_length(hitList), g_slist_length(unusedList));
+	Log(("DN: %i, %i, %i\n", slist_length(notesList), slist_length(hitList), slist_length(unusedList)));
 	glDisable(GL_TEXTURE_2D);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, lightNormal);
-	g_slist_foreach(notesList, DrawNote, NULL);
+	slist_foreach(notesList, DrawNote, NULL);
 	glEnable(GL_TEXTURE_2D);
-	Log("dn\n");
+	Log(("dn\n"));
 }
 
-void DrawHitNotes()
+void DrawHitNotes(void)
 {
-	g_slist_foreach(hitList, DrawHitNote, NULL);
+	slist_foreach(hitList, DrawHitNote, NULL);
 }
 
-void DrawTargets()
+void DrawTargets(void)
 {
 	int x;
 	glPushMatrix();
@@ -1076,21 +1126,21 @@ void DrawTargets()
 	glPopMatrix();
 }
 
-void DrawScoreboard()
+void DrawScoreboard(void)
 {
-//	int x;
+/*	int x; */
 	glColor4f(1.0, 1.0, 1.0, 1.0);
-//	for(x=0;x<wam->numCols;x++)
-//	{
-//		PrintGL(0, 75+x*14, "Col %i  Hit %i, %i Clear %4i", x, ac[x].hit, ac[x].miss, ac[x].cleared);
-//	}
+/*	for(x=0;x<wam->numCols;x++) */
+/*	{ */
+/*		PrintGL(0, 75+x*14, "Col %i  Hit %i, %i Clear %4i", x, ac[x].hit, ac[x].miss, ac[x].cleared); */
+/*	} */
 	PrintGL(50, 0, "Playing: %s", mod->songname);
 	if(curRow == wam->numRows) PrintGL(50, 15, "Song complete!");
 	else if(curRow >= 0)
 	{
-		if(!TIMEADJ) glColor4f(1.0, 0.0, 0.0, 1.0);
+/*		if(!TIMEADJ) glColor4f(1.0, 0.0, 0.0, 1.0);
 		PrintGL(50, 15, "Song: %i (%i)/%i, Row: %i (%i)/%i Pattern: %i/%i", mod->sngpos, wam->rowData[curRow].sngpos, mod->numpos, mod->patpos, wam->rowData[curRow].patpos, NumPatternsAtSngPos(mod->sngpos),  mod->positions[mod->sngpos], mod->numpat);
-		if(!TIMEADJ) glColor4f(1.0, 1.0, 1.0, 1.0);
+		if(!TIMEADJ) glColor4f(1.0, 1.0, 1.0, 1.0); */
 	}
 	else
 	{
@@ -1098,10 +1148,38 @@ void DrawScoreboard()
 		if(timeLeft > 0) PrintGL(50, 15, "%i...", timeLeft);
 		else PrintGL(50, 15, "GO!!");
 	}
-	if(curRow >= 0 && curRow < wam->numRows) PrintGL(0, 62, "Tick: %i, %i.%f / %i\n", wam->rowData[curRow].ticpos, curTic, partialTic, wam->numTics);
+/*	if(curRow >= 0 && curRow < wam->numRows) PrintGL(0, 62, "Tick: %i, %i.%f / %i\n", wam->rowData[curRow].ticpos, curTic, partialTic, wam->numTics); */
 	PrintGL(50, 30, "Speed: %i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
 	PrintGL(0, 50, "%i - %i, note: %i, hit: %i/%i\n", ap.startTic, ap.stopTic, ap.lastTic, ap.notesHit, ap.notesTotal);
-	PrintGL(400, 50, "DN: %i, %i, %i\n", g_slist_length(notesList), g_slist_length(hitList), g_slist_length(unusedList));
+	PrintGL(400, 20, "Score: %i\nMultiplier: %i\n", score, multiplier);
+/*	PrintGL(400, 50, "DN: %i, %i, %i\n", slist_length(notesList), slist_length(hitList), slist_length(unusedList)); */
+
+
+	glColor4f(0.0, 0.8, 0.5, 1.0);
+	SetOrthoProjection();
+	glDisable(GL_TEXTURE_2D);
+	glBegin(GL_LINE_LOOP);
+	{
+		glVertex2i(5, 80);
+		glVertex2i(15, 80);
+		glVertex2i(15, 450);
+		glVertex2i(5, 450);
+	} glEnd();
+	glBegin(GL_QUADS);
+	{
+		float mult = (double)curRow / (double)wam->numRows;
+		glColor4f(0.0, 0.8, 0.5, 1.0);
+		glVertex2i(6, 79*mult+449*(1.0-mult));
+		glColor4f(0.5, 0.8, 0.5, 1.0);
+		glVertex2i(15, 79*mult+449*(1.0-mult));
+		glColor4f(0.0, 0.5, 0.0, 1.0);
+		glVertex2i(15, 449);
+		glColor4f(0.0, 0.0, 0.0, 1.0);
+		glVertex2i(6, 449);
+	} glEnd();
+	glEnable(GL_TEXTURE_2D);
+	ResetProjection();
+	glColor4f(1.0, 1.0, 1.0, 1.0);
 }
 
 double LaserAdj(double a, double b, double dt)
@@ -1130,7 +1208,7 @@ void DrawLaser(Laser *l)
 	l->time -= timeDiff * LASER_DECAY;
 }
 
-void DrawLasers()
+void DrawLasers(void)
 {
 	int x;
 	glBindTexture(GL_TEXTURE_2D, TEX_Laser);
@@ -1152,23 +1230,23 @@ int AboveBoard(Particle *p)
 	return 0;
 }
 
-void MainScene()
+void MainScene(void)
 {
 	float temp[4] = {.35, 0.0, 0.0, .5};
 	float sintmp;
 	Row *row;
-//	int x;
+/*	int x; */
 
-	Log("MainScene\n");
+	Log(("MainScene\n"));
 
 	glLoadIdentity();
 	glPushMatrix();
 
-	Log("U");
+	Log(("U"));
 	if(curRow != wam->numRows) UpdatePosition();
-	Log("1");
+	Log(("1"));
 	UpdateObjs(timeDiff);
-	Log("u");
+	Log(("u"));
 	SetMainView();
 
 	row = &wam->rowData[Row(curRow)];
@@ -1176,55 +1254,55 @@ void MainScene()
 	sintmp = sin(bounceTime);
 	light[0] = -BLOCK_WIDTH * channelFocus + cos(bounceTime);
 	light[1] = 1.0 + sintmp * sintmp;
-//	light[2] = TIC_HEIGHT * ((double)curTic + partialTic) - sintmp * sintmp - 3.0;
+/*	light[2] = TIC_HEIGHT * ((double)curTic + partialTic) - sintmp * sintmp - 3.0; */
 	light[2] = TIC_HEIGHT * ((double)curTic + partialTic);
 	glLightfv(GL_LIGHT1, GL_POSITION, light);
 
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 
-	Log("A");
-	// usually we draw from -NEGATIVE_TICKS to +POSITIVE_TICKS, with the
-	// notes currently being played at position 0.
-	// At the beginning of the song, we start drawing instead from 
-	// 0 to +POSITIVE_TICKS, and at the end of the song we draw from
-	// -NEGATIVE_TICKS to wam->numTics.  Of course, if the song is less than
-	// NEGATIVE_TICKS + POSITIVE_TICKS long, some other combinations will
-	// arise :)
+	Log(("A"));
+	/* usually we draw from -NEGATIVE_TICKS to +POSITIVE_TICKS, with the */
+	/* notes currently being played at position 0. */
+	/* At the beginning of the song, we start drawing instead from  */
+	/* 0 to +POSITIVE_TICKS, and at the end of the song we draw from */
+	/* -NEGATIVE_TICKS to wam->numTics.  Of course, if the song is less than */
+	/* NEGATIVE_TICKS + POSITIVE_TICKS long, some other combinations will */
+	/* arise :) */
 	DrawRows(
-			// start
+			/* start */
 			curTic - NEGATIVE_TICKS >= 0 ?
 			((double)curTic + partialTic - NEGATIVE_TICKS) :
 			0.0,
-			// end
+			/* end */
 			curTic < wam->numTics - POSITIVE_TICKS ?
 			(double)curTic+partialTic+POSITIVE_TICKS :
 			(double)wam->numTics);
 
-	Log("B");
+	Log(("B"));
 	DrawNotes();
-	Log("C");
+	Log(("C"));
 	DrawLines();
-	Log("D");
+	Log(("D"));
 
-	Log("E");
+	Log(("E"));
 	DrawScoreboard();
-	Log("F");
+	Log(("F"));
 
 	StartParticles();
-	Log("F1\n");
+	Log(("F1\n"));
 	DrawParticlesTest(BelowBoard);
-	Log("F2\n");
+	Log(("F2\n"));
 	DrawHitNotes();
-	Log("F3\n");
+	Log(("F3\n"));
 	DrawTargets();
-	Log("F4\n");
+	Log(("F4\n"));
 	DrawLasers();
-	Log("G");
+	Log(("G"));
 	DrawParticlesTest(AboveBoard);
-	Log("g");
+	Log(("g"));
 	StopParticles();
 
-	Log("L");
+	Log(("L"));
 
 	glBindTexture(GL_TEXTURE_2D, TEX_Fireball);
 	temp[0] *= 3.0;
@@ -1246,6 +1324,6 @@ void MainScene()
 	glDepthMask(GL_TRUE);
 
 	theta += timeDiff * 120.0;
-	Log("H");
-	Log("endMainScene\n");
+	Log(("H"));
+	Log(("endMainScene\n"));
 }
