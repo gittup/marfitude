@@ -1,4 +1,4 @@
-EXTRACFLAGS = `sdl-config --cflags`
+EXTRACFLAGS = `$(SDL_CONFIG) --cflags` $(BDECFLAGS)
 
 TARGET = libmarf
 
