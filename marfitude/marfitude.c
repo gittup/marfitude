@@ -7,6 +7,7 @@
 #include "gmae/cfg.h"
 #include "gmae/event.h"
 #include "gmae/glfunc.h"
+#include "gmae/input.h"
 #include "gmae/log.h"
 #include "gmae/mainscene.h"
 #include "gmae/menu.h"
