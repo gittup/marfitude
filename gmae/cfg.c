@@ -348,10 +348,14 @@ int InitConfig(void)
 			return 1;
 		}
 		else
-			printf("init.cfg loaded.\n");
+		{
+			free(cfgFileName);
+			cfgFileName = malloc(strlen("init.cfg") + 1);
+			strcpy(cfgFileName, "init.cfg");
+		}
 	}
-	else
-		printf("%s loaded.\n", cfgFileName);
+
+	printf("%s loaded.\n", cfgFileName);
 
 	cfgInited = 1;
 	return 0;
