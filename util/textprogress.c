@@ -20,7 +20,12 @@
 
 #include "textprogress.h"
 
+/** The number of hash marks to display */
 #define HASHES 40
+
+/** @file
+ * Displays a text progress bar
+ */
 
 static int marks;
 

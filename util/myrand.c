@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -19,6 +19,10 @@
 #include <stdlib.h>
 
 #include "myrand.h"
+
+/** @file
+ * The implementation of random number functions
+ */
 
 /** Gets a random integer from [0, x)
  * @return The random integer

@@ -21,6 +21,10 @@
 
 #include "sdlfatalerror.h"
 
+/** @file
+ * Wraps SDL_GetError
+ */
+
 /** The underlying function called by the SDLError macro */
 void SDLFatalError(const char *file, int line, const char *msg)
 {

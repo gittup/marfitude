@@ -21,8 +21,11 @@
 
 #include "slist.h"
 
-/** Internal structure used to hold list memory
+/** @file
+ * Implements a singly-linked list
  */
+
+/** Internal structure used to hold list memory */
 struct listmem {
 	struct slist *list; /**< A pointer to a list element */
 	int active;         /**< 1 if this element is in use, 0 otherwise */

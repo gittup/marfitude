@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,10 @@
 #include <stdlib.h>
 
 #include "memtest_defs.h"
+
+/** @file
+ * The implementation of memory allocation routines to track memory leaks.
+ */
 
 /** A structure to keep track of what was allocated when and by who */
 struct memBlock {

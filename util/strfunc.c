@@ -25,6 +25,10 @@
 
 #include "strfunc.h"
 
+/** @file
+ * Implements some random string utility functions.
+ */
+
 /** Determine the length required to hold a string representing the
  * integer @a x.
  * @param x An integer

@@ -23,6 +23,10 @@
 #include "token.h"
 #include "memtest.h"
 
+/** @file
+ * Handles getting tokens from a configuration file
+ */
+
 /** Gets a token from file @a f. Stops at newline or character @a stopper.
  * Skips empty & commented lines.
  * @param f the fopen()'d file

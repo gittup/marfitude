@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,6 +21,10 @@
 #include <errno.h>
 
 #include "fatalerror.h"
+
+/** @file
+ * Wraps strerror with the file and line number.
+ */
 
 /** The underlying error function. Actually called using the Error macro. */
 void FatalError(const char *file, int line, const char *msg)
