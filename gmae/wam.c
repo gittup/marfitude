@@ -497,7 +497,6 @@ Wam *LoadTrackData()
 	int tickCount = 0;
 	int grpCount = 0;
 	int numgrps = 0;
-	int *grpptrs[GRP_SIZE];
 	int startRow = 0;
 	int rowsAlloced = 0;	// number of rows allocated in WAM file
 	int numSamples = 64;	// numSamples = how much we have allocated
@@ -562,7 +561,6 @@ Wam *LoadTrackData()
 			wam->rowData[wam->numRows].ticprt = grpCount;
 			wam->rowData[wam->numRows].patpos = mod->patpos;
 			wam->rowData[wam->numRows].sngpos = mod->sngpos;
-			grpptrs[numgrps] = &wam->rowData[wam->numRows].ticgrp;
 			tickCount += mod->sngspd;
 			grpCount += mod->sngspd;
 			numgrps++;
@@ -574,7 +572,7 @@ Wam *LoadTrackData()
 			{
 				for(x=0;x<numgrps;x++)
 				{
-					*grpptrs[x] = grpCount;
+					wam->rowData[wam->numRows-x].ticgrp = grpCount;
 				}
 				numgrps = 0;
 				grpCount = 0;
@@ -597,7 +595,7 @@ Wam *LoadTrackData()
 					// reset groups on a line break
 					for(x=0;x<numgrps;x++)
 					{
-						*grpptrs[x] = grpCount;
+						wam->rowData[wam->numRows-x].ticgrp = grpCount;
 					}
 					numgrps = 0;
 					grpCount = 0;
