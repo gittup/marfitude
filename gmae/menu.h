@@ -1,4 +1,5 @@
 int SwitchMenu(int menu);
+void ShadedBox(int, int, int, int);
 
 // NULLMENU used to shutdown, NOMENU used when there is no active menu
 // (NOMENU still has the escape key event registered
