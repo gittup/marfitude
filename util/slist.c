@@ -3,24 +3,24 @@
 
 #include "slist.h"
 
-typedef struct {
-	slist *list;
+struct listmem {
+	struct slist *list;
 	int active;
-	} Listmem;
+};
 
-static void AddSlists(Listmem *m, int x);
-static void ClearMem(slist *l);
-static slist *NextList(void);
+static void AddSlists(struct listmem *m, int x);
+static void ClearMem(struct slist *l);
+static struct slist *NextList(void);
 
-static Listmem *mem = NULL;
+static struct listmem *mem = NULL;
 static int memsize = 0;
 static int memused = 0;
 static int current = 0;
 
-void AddSlists(Listmem *m, int x)
+void AddSlists(struct listmem *m, int x)
 {
 	int i;
-	slist *s = (slist*)malloc(sizeof(slist) * x);
+	struct slist *s = (struct slist*)malloc(sizeof(struct slist) * x);
 
 	for(i=0;i<x;i++)
 	{
@@ -30,7 +30,7 @@ void AddSlists(Listmem *m, int x)
 	}
 }
 
-void ClearMem(slist *l)
+void ClearMem(struct slist *l)
 {
 	int x;
 	for(x=0;x<memsize;x++)
@@ -45,14 +45,14 @@ void ClearMem(slist *l)
 	fprintf(stderr, "SLIST ERROR: Couldn't find mem to clear!\n");
 }
 
-slist *NextList(void)
+struct slist *NextList(void)
 {
 	int x;
 	if(memused >= memsize)
 	{
 		if(!memsize) memsize = 128;
 		else memsize <<= 1;
-		mem = (Listmem*)realloc(mem, sizeof(Listmem) * memsize);
+		mem = (struct listmem*)realloc(mem, sizeof(struct listmem) * memsize);
 		AddSlists(mem+memused, memsize-memused);
 	}
 
@@ -73,7 +73,7 @@ slist *NextList(void)
 	return NULL;
 }
 
-int slist_length(slist *l)
+int slist_length(struct slist *l)
 {
 	int len = 0;
 	while(l != NULL)
@@ -84,10 +84,10 @@ int slist_length(slist *l)
 	return len;
 }
 
-slist *slist_append(slist *l, void *d)
+struct slist *slist_append(struct slist *l, void *d)
 {
-	slist *last;
-	slist *head = l;
+	struct slist *last;
+	struct slist *head = l;
 
 	last = NextList();
 	last->next = NULL;
@@ -101,10 +101,10 @@ slist *slist_append(slist *l, void *d)
 	return head;
 }
 
-slist *slist_remove(slist *l, void *d)
+struct slist *slist_remove(struct slist *l, void *d)
 {
-	slist *head = l;
-	slist *prev;
+	struct slist *head = l;
+	struct slist *prev;
 	if(head->data == d)
 	{
 		ClearMem(head);
@@ -125,7 +125,7 @@ slist *slist_remove(slist *l, void *d)
 	return head;
 }
 
-slist *slist_nth(slist *l, int n)
+struct slist *slist_nth(struct slist *l, int n)
 {
 	while(n)
 	{
@@ -136,11 +136,11 @@ slist *slist_nth(slist *l, int n)
 	return l;
 }
 
-slist *slist_insert_sorted(slist *l, void *d, CompareFunc c)
+struct slist *slist_insert_sorted(struct slist *l, void *d, CompareFunc c)
 {
-	slist *ins = NextList();
-	slist *head = l;
-	slist *prev;
+	struct slist *ins = NextList();
+	struct slist *head = l;
+	struct slist *prev;
 
 	ins->next = NULL;
 	ins->data = d;
@@ -167,7 +167,7 @@ slist *slist_insert_sorted(slist *l, void *d, CompareFunc c)
 	return head;
 }
 
-slist *slist_find_custom(slist *l, void *d, CompareFunc c)
+struct slist *slist_find_custom(struct slist *l, void *d, CompareFunc c)
 {
 	while(l != NULL)
 	{
@@ -177,12 +177,12 @@ slist *slist_find_custom(slist *l, void *d, CompareFunc c)
 	return NULL;
 }
 
-slist *slist_next(slist *l)
+struct slist *slist_next(struct slist *l)
 {
 	return l->next;
 }
 
-void slist_foreach(slist *l, ForeachFunc f, void *user)
+void slist_foreach(struct slist *l, ForeachFunc f, void *user)
 {
 	while(l != NULL)
 	{
@@ -191,7 +191,7 @@ void slist_foreach(slist *l, ForeachFunc f, void *user)
 	}
 }
 
-void slist_free(slist *l)
+void slist_free(struct slist *l)
 {
 	while(l != NULL)
 	{

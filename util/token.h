@@ -1,10 +1,10 @@
-typedef struct {
+struct token {
 	char *token;
 	int value;
 	int type;
-	} Token;
+};
 
-int GetToken(FILE *f, char stopper, Token *t);
+int GetToken(FILE *f, char stopper, struct token *t);
 
 #define HEADER 0
 #define VALUE 1

@@ -6,7 +6,7 @@
 #include "memtest.h"
 
  /* skips empty & commented lines, NULL on EOF/error */
-int GetToken(FILE *f, char stopper, Token *t)
+int GetToken(FILE *f, char stopper, struct token *t)
 {
 	/* endofline gets increased at each newline
 	 * and cleared at each non-newline

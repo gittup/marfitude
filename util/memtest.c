@@ -3,17 +3,17 @@
 
 #include "memtest.h"
 
-typedef struct {
+struct memBlock {
 	size_t size;
 	int line;
 	const char *file;
 	void *ptr;
 	int active;
-	} MemBlock;
+};
 
 /* note that the memory used to keep track of memory is never freed
  * ... ahh sweet irony */
-static MemBlock *mb = NULL;
+static struct memBlock *mb = NULL;
 static int numBlocks = 0;
 static int startBlock = 0;
 
@@ -22,7 +22,7 @@ void *MyMalloc(size_t x, int line, const char *file)
 	void *p;
 	p = malloc(x);
 
-	mb = (MemBlock*)realloc(mb, sizeof(MemBlock) * (numBlocks+1));
+	mb = (struct memBlock*)realloc(mb, sizeof(struct memBlock) * (numBlocks+1));
 	mb[numBlocks].size = x;
 	mb[numBlocks].line = line;
 	mb[numBlocks].file = file;
@@ -79,7 +79,7 @@ void *MyCalloc(size_t nm, size_t x, int line, const char *file)
 {
 	void *p;
 	p = calloc(nm, x);
-	mb = (MemBlock*)realloc(mb, sizeof(MemBlock) * (numBlocks+1));
+	mb = (struct memBlock*)realloc(mb, sizeof(struct memBlock) * (numBlocks+1));
 	mb[numBlocks].size = x*nm;
 	mb[numBlocks].line = line;
 	mb[numBlocks].file = file;
