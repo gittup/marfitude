@@ -5,8 +5,6 @@
 #include "gmae/event.h"
 #include "gmae/textures.h"
 
-#include "util/plugin.h"
-
 /* TEmproarry */
 extern int channelFocus;
 extern int curTic;

@@ -8,8 +8,6 @@
 #include "gmae/phys.h"
 #include "gmae/wam.h"
 
-#include "util/plugin.h"
-
 /* temporry */
 extern int channelFocus;
 extern int curTic;

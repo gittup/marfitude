@@ -4,8 +4,6 @@
 #include "gmae/fft.h"
 #include "gmae/glfunc.h"
 
-#include "util/plugin.h"
-
 void __attribute__ ((constructor)) fft_curtain_init(void);
 void __attribute__ ((destructor)) fft_curtain_exit(void);
 static void fft_curtain_draw(const void *data);

@@ -7,8 +7,6 @@
 #include "gmae/module.h"
 #include "gmae/wam.h"
 
-#include "util/plugin.h"
-
 /* tmp */
 extern int rowIndex;
 extern struct wam *wam;

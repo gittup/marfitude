@@ -8,8 +8,6 @@
 #include "gmae/textures.h"
 #include "gmae/wam.h"
 
-#include "util/plugin.h"
-
 /* tmp */
 extern struct wam *wam;
 extern int curTic;
