@@ -38,21 +38,40 @@ typedef struct {
 				// 1 then grows as tracks are merged
 	} Track;
 
-// handler should stop multiple conflicting Player_HandleTick()'s to skip ticks
-// and sometimes segfault
-MikMod_player_t oldHand;
+char *BaseFileName(char *file)
+{
+	int x;
+	int start = 0;
+	char *ret;
+
+	x = 0;
+	while(file[x])
+	{
+		if(file[x] == '/') start = x + 1;
+		x++;
+	}
+	ret = (char*)malloc(sizeof(char) * (x - start + 1));
+	strcpy(ret, file+start);
+	return ret;
+}
 
 char *Mod2Wam(char *modFile)
 {
 	char *s;
+	char *base;
 	int len;
-	len = strlen(modFile);
-	while(len >= 0 && modFile[len] != '.' && modFile[len] != '/') len--;
-	if(modFile[len] == '/') len = strlen(modFile);
-	s = (char*)calloc(sizeof(char), len+5);	// 5 = ".wam\0"
-	printf("Alloc: %i\n", len+5);
-	strncpy(s, modFile, len);
+	base = BaseFileName(modFile);
+	Log("BASE: %s\n", base);
+	len = strlen(base);
+	while(len >= 0 && base[len] != '.') len--;
+	if(len == 0) len = strlen(base);
+	s = (char*)calloc(sizeof(char), len+9);	// 9 = "wam/"+".wam\0"
+	Log("Alloc: %i\n", len+9);
+	strcpy(s, "wam/");
+	strncat(s, base, len);
 	strcat(s, ".wam");
+	free(base);
+	Log("Wam name generated\n");
 	return s;
 }
 
@@ -424,6 +443,8 @@ Wam *LoadTrackData()
 				// in memory to check for redundant tracks
 				// and pick the best remaining tracks to play
 	Wam *wam;		// the wam we'll create and return
+	MikMod_player_t oldHand; // handler should stop multiple conflicting
+	// Player_HandleTick()'s to skip ticks and sometimes segfault
 
 	// use calloc to zero everything in the struct
 	wam = (Wam*)calloc(1, sizeof(Wam));
@@ -592,7 +613,7 @@ int WriteWam(char *modFile)
 	Wam *wam;
 	char *wamFile;
 	wamFile = Mod2Wam(modFile);
-	printf("MOD: %s\nWAM: %s\n", modFile, wamFile);
+	Log("MOD: %s\nWAM: %s\n", modFile, wamFile);
 	if(!StartModule(modFile))
 	{
 		Log("Error: Couldn't start module.\n");
