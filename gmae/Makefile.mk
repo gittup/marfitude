@@ -1,9 +1,4 @@
-project: $(src_gmae)/marfitude$(BINARYEXT)
-
-$(src_gmae)/marfitude$(BINARYEXT): $(src_gmae)/$(ARCH)/marfitude$(BINARYEXT)
-	$(copy)
-
-EXTRACFLAGS = `$(SDL_CONFIG) --cflags` $(BDECFLAGS)
+EXTRACFLAGS = $(SDLCFLAGS) $(BDECFLAGS)
 
 ifeq ($(CONFIG_LOG),1)
 EXTRACFLAGS += -DLOG
@@ -14,7 +9,7 @@ endif
 
 INCDIRS = $(src_util) $(src_gmae)/$(ARCH) $(src_gmae)/sdl_mixer/mikmod
 
-EXTRALDFLAGS = `$(SDL_CONFIG) --libs` -lm -lSDL_image $(GLLIB) $(GLULIB)
+EXTRALDFLAGS = $(SDLLIBS) -lm -lSDL_image $(GLLIBS) $(GLULIBS)
 
 LIBS = $(src_util)/$(ARCH)/libmarf.a $(src_gmae)/sdl_mixer/$(ARCH)/libsdl_mixer.a $(src_gmae)/sdl_mixer/mikmod/$(ARCH)/libsdl_mikmod.a
 
@@ -37,7 +32,13 @@ $(o)/autotextures.d: $(d)/gentextures.pl
 	(echo "$(dir $@)textures.h $(dir $@)texlist.h: $< $(dir $<)images"; echo '	$$(Q)$< $(dir $<) $(ARCH); $$(dotify)') > $@;\
 	$< $(dir $<) $(ARCH);\
 
+INSTALL_DIR =
+INSTALL_LIST = Font.png init.cfg $(src_gmae)/$(ARCH)/marfitude$(BINARYEXT)
 include $(MK)/tgt/program.mk
 
-dirs := wam sdl_mixer
+INSTALL_DIR =
+INSTALL_LIST = README PROPS UNTESTED TODO
+include $(MK)/tgt/text.mk
+
+dirs := wam sdl_mixer music sounds images
 include $(MK)/Recurse.mk
