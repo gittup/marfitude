@@ -7,6 +7,6 @@ sound -
 	hz - frequency (44100 is cd quality)
 	bits - 8 or 16
 joystick -
-	jsXXbYY - set to 1 to ignore button YY on joystick XX
+	ignorejsXXbYY - set to 1 to ignore button YY on joystick XX
 		- pad with 0 if less than 10
-		- eg. to ignore button 12 on joystick 1 do js01b12=1
+		- eg. to ignore button 12 on joystick 1 do ignorejs01b12=1
