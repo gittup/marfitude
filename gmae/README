@@ -3,7 +3,8 @@ Feel free to email me at marfey@cox.net
 (the email is from my cable company - honest!)
 
 This well-written document details everything you need to know about Marfitude. 
-(Ok, just the options in init.cfg for now. That is all.)
+(Ok, just the options in your ~/.marfitude.cfg or init.cfg file for now.
+That is all.)
 
 Options:
 main -
@@ -40,4 +41,4 @@ to fix slowness:
 	make sure 3d is working (eg. in Windows make sure your driver supports
 			OpenGL acceleration, otherwise it will be slow)
 	disable log (compile time option - CONFIG_LOG)
-	disable memcheck (compile time option - CONFIG_DEBUG_MEM)
+	disable memcheck (compile time option - CONFIG_MEMTEST)
