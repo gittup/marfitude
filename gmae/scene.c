@@ -1143,9 +1143,9 @@ void DrawScoreboard(void)
 	glBegin(GL_QUADS); {
 		float mult = (double)curRow / (double)wam->numRows;
 		glColor4f(0.0, 0.8, 0.5, 1.0);
-		glVertex2i(6, 79*mult+449*(1.0-mult));
+		glVertex2i(6, 81*mult+449*(1.0-mult));
 		glColor4f(0.5, 0.8, 0.5, 1.0);
-		glVertex2i(15, 79*mult+449*(1.0-mult));
+		glVertex2i(15, 81*mult+449*(1.0-mult));
 		glColor4f(0.0, 0.5, 0.0, 1.0);
 		glVertex2i(15, 449);
 		glColor4f(0.0, 0.0, 0.0, 1.0);
