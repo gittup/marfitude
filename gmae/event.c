@@ -39,6 +39,8 @@
 #define JK_MOUSE -2
 /** The axis field in struct joykey for buttonses */
 #define JK_BUTTON -1
+/** If a key hasn't been set */
+#define JK_UNSET -3
 
 /** @file
  * Handles SDL events and event registration/firing.
@@ -67,7 +69,7 @@ void button_event(int button)
 
 static int eventMode = MENU;
 static struct event *events = NULL;
-static struct joykey buttons[B_LAST] = {{0,0,0}};
+static struct joykey buttons[B_LAST];
 static const char *cfgMsg[B_LAST] = {	"buttons.up",
 					"buttons.down",
 					"buttons.left",
@@ -152,6 +154,9 @@ int CfgButton(struct joykey *key, const char *cfgParam)
 	char *s;
 	char *t;
 	if(CfgS(cfgParam) == NULL) {
+		key->type = JK_UNSET;
+		key->button = 0;
+		key->axis = 0;
 		return 1;
 	}
 	s = malloc(sizeof(char) * (strlen(CfgS(cfgParam))+1));
@@ -208,6 +213,12 @@ char *JoyKeyName(int button)
 		len = IntLen(jk->button) + 7;
 		s = malloc(sizeof(char) * len);
 		sprintf(s, "Mouse %i", jk->button);
+	}
+	else if(jk->type == JK_UNSET)
+	{
+		const char *a = "*** UNSET ***";
+		s = malloc(strlen(a) + 1);
+		strcpy(s, a);
 	}
 	else /* joystick */
 	{
