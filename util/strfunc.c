@@ -34,6 +34,10 @@ int IntLen(int x)
 
 int StrEq(const char *a, const char *b)
 {
+	if(a == NULL && b == NULL) return 1;
+	if(a == NULL && b != NULL) return 0;
+	if(a != NULL && b == NULL) return 0;
+
 	while(*a && *b)
 	{
 		if(*a != *b) return 0;
