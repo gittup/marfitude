@@ -42,9 +42,9 @@ for($x=0;$x<=$#img;$x++)
 	print HEADER "#define TEX_$img[$x] GLTexture[$x]\n";
 }
 
-print HEADER "\ntypedef enum {\n";
+print HEADER "\nenum texoffset {\n";
 for($x=0;$x<$#img;$x++)
 {
 	print HEADER "\tT_$img[$x],\n";
 }
-print HEADER "\tT_$img[$#img]} TexOffset;\n";
+print HEADER "\tT_$img[$#img]};\n";
