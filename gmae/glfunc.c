@@ -174,7 +174,7 @@ SDL_Surface *InitGL(void)
 	Log(("Video mode set: (%i, %i)\n", CfgI("video.width"), CfgI("video.height")));
 	SDL_WM_SetCaption("Gmae", NULL); /* second arg is icon */
 	InitFPS();
-	glViewport(0, 0, screenWidth, screenHeight);
+	glViewport(0, 0, screenWidth-1, screenHeight-1);
 	glEnable(GL_TEXTURE_2D);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClearDepth(1.0);
