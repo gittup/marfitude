@@ -139,11 +139,14 @@ void ChannelDown()
 #define BLOCK_WIDTH 2.0
 #define NOTE_WIDTH .75
 
+int TIMEADJ = 1;
 void MoveFaster(void)
 {
+	ticTime += 25000;
 }
 void MoveSlower(void)
 {
+	TIMEADJ = !TIMEADJ;
 }
 
 #define NEGATIVE_ROWS 7		// number of rows after the active row
@@ -202,7 +205,7 @@ void AddNotes(int row)
 	{
 		if(wam->rowData[row].notes[x])
 		{
-			notesOnScreen[stopNote].pos.x = -x * BLOCK_WIDTH - NOTE_WIDTH * (double)noteOffset[wam->rowData[row].notes[x]];
+			notesOnScreen[stopNote].pos.x = -x * BLOCK_WIDTH - NOTE_WIDTH * (double)noteOffset[(int)wam->rowData[row].notes[x]];
 			notesOnScreen[stopNote].pos.y = 0.0;
 			notesOnScreen[stopNote].pos.z = TIC_HEIGHT * (double)wam->rowData[row].ticpos;
 			notesOnScreen[stopNote].row = row;
@@ -254,8 +257,8 @@ void RemoveLine(int row)
 
 void SetMute(/*ModChannel *c, */int mute)
 {
-	int j;
-/*	for(j=0;j<c->numModChannels;j++)
+/*	int j;
+	for(j=0;j<c->numModChannels;j++)
 	{
 		if(mute) Player_Mute(c->modChannels[j]);
 		else Player_Unmute(c->modChannels[j]);
@@ -264,8 +267,8 @@ void SetMute(/*ModChannel *c, */int mute)
 
 void Press(int button)
 {
-	int i;
-/*	ModChannel *c;
+/*	int i;
+	ModChannel *c;
 	for(i=-1;i<=1;i++)
 	{
 		if(curRow + i >= 0 && curRow + i < wam->numRows)
@@ -582,7 +585,9 @@ void UpdatePosition()
 	// right ourselves.
 	if(songStarted)
 	{
-		tmpAdj = (tickCounter - curTic) << 6;
+		tmpAdj = (tickCounter - curTic) << 5;
+		if(!TIMEADJ) tmpAdj = 0;
+		Log("Adj: %i\n", (tickCounter-curTic) << 5);
 		if((signed)ticTime + tmpAdj < 0) ticTime = 0;
 		else ticTime += tmpAdj;
 	}
@@ -695,8 +700,8 @@ void DrawNotes()
 
 void CheckChannels()
 {
-	int x;
-/*	ModChannel *c;
+/*	int x;
+	ModChannel *c;
 	for(x=0;x<wam->numCols;x++)
 	{
 		if(curRow - 2 >= 0 && curRow - 2 < wam->numRows)
@@ -714,6 +719,8 @@ void CheckChannels()
 void DrawTargets()
 {
 	int x;
+	glPushMatrix();
+	glTranslated((double)channelFocus * -2.0, 0.0, TIC_HEIGHT * ((double)curTic + partialTic));
 	glBindTexture(GL_TEXTURE_2D, TEX_Target);
 	glTranslated(-NOTE_WIDTH, 0.0, 0.0);
 	glNormal3f(0.0, 1.0, 0.0);
@@ -732,6 +739,46 @@ void DrawTargets()
 		} glEnd();
 		glTranslated(NOTE_WIDTH, 0.0, 0.0);
 	}
+	glPopMatrix();
+}
+
+void DrawObjects()
+{
+	if(objActive)
+	{
+		glPushMatrix();
+		glTranslated(obj.pos.x, obj.pos.y, obj.pos.z);
+		glRotated(obj.theta, obj.axis.x, obj.axis.y, obj.axis.z);
+		glDisable(GL_TEXTURE_2D);
+		glNormal3f(0.0, 0.0, 1.0);
+		glBegin(GL_QUADS);
+		{
+			glVertex3f(-0.5, -0.5, 0.0);
+			glVertex3f(0.5, -0.5, 0.0);
+			glVertex3f(0.5, 0.5, 0.0);
+			glVertex3f(-0.5, 0.5, 0.0);
+		} glEnd();
+		glEnable(GL_TEXTURE_2D);
+		glPopMatrix();
+		UpdateObj(&obj, (double)timeDiff / 1000.0);
+	}
+}
+
+void DrawScoreboard()
+{
+	glColor4f(1.0, 1.0, 1.0, 1.0);
+	if(activeChannels[channelFocus].numCorrect >= MAXNUM) PrintGL(50, 50, "Channel cleared - move on!\n");
+	PrintGL(50, 0, "Playing: %s", mod->songname);
+	if(curRow == wam->numRows) PrintGL(50, 15, "Song complete!");
+	else if(curRow >= 0) PrintGL(50, 15, "Song: %i (%i)/%i, Row: %i (%i)/%i Pattern: %i/%i", mod->sngpos, wam->rowData[curRow].sngpos, mod->numpos, mod->patpos, wam->rowData[curRow].patpos, NumPatternsAtSngPos(mod->sngpos),  mod->positions[mod->sngpos], mod->numpat);
+	else
+	{
+		int timeLeft = (int)(0.5 + -2500.0 * (double)wam->rowData[0].sngspd * ((double)curRow) / (1000.0 * (double)wam->rowData[0].bpm));
+		if(timeLeft > 0) PrintGL(50, 15, "%i...", timeLeft);
+		else PrintGL(50, 15, "GO!!");
+	}
+	if(curRow >= 0 && curRow < wam->numRows) PrintGL(0, 62, "Tick: %i, %i.%f / %i\n", wam->rowData[curRow].ticpos, curTic, partialTic, wam->numTics);
+	PrintGL(50, 30, "Speed: %i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
 }
 
 void MainScene()
@@ -780,48 +827,14 @@ void MainScene()
 	DrawNotes();
 	Log("C");
 	DrawLines();
-	Log("2");
-
-	glPushMatrix();
-	glTranslated((double)channelFocus * -2.0, 0.0, TIC_HEIGHT * ((double)curTic + partialTic));
-	DrawTargets();
-	glPopMatrix();
 	Log("D");
 
-	if(objActive)
-	{
-		glPushMatrix();
-		glTranslated(obj.pos.x, obj.pos.y, obj.pos.z);
-		glRotated(obj.theta, obj.axis.x, obj.axis.y, obj.axis.z);
-		glDisable(GL_TEXTURE_2D);
-		glNormal3f(0.0, 0.0, 1.0);
-		glBegin(GL_QUADS);
-		{
-			glVertex3f(-0.5, -0.5, 0.0);
-			glVertex3f(0.5, -0.5, 0.0);
-			glVertex3f(0.5, 0.5, 0.0);
-			glVertex3f(-0.5, 0.5, 0.0);
-		} glEnd();
-		glEnable(GL_TEXTURE_2D);
-		glPopMatrix();
-		UpdateObj(&obj, (double)timeDiff / 1000.0);
-	}
-
-	glColor4f(1.0, 1.0, 1.0, 1.0);
-	if(activeChannels[channelFocus].numCorrect >= MAXNUM) PrintGL(50, 50, "Channel cleared - move on!\n");
-	PrintGL(50, 0, "Playing: %s", mod->songname);
-	if(curRow == wam->numRows) PrintGL(50, 15, "Song complete!");
-	else if(curRow >= 0) PrintGL(50, 15, "Song: %i (%i)/%i, Row: %i (%i)/%i Pattern: %i/%i", mod->sngpos, wam->rowData[curRow].sngpos, mod->numpos, mod->patpos, wam->rowData[curRow].patpos, NumPatternsAtSngPos(mod->sngpos),  mod->positions[mod->sngpos], mod->numpat);
-	else
-	{
-		int timeLeft = (int)(0.5 + -2500.0 * (double)wam->rowData[0].sngspd * ((double)curRow) / (1000.0 * (double)wam->rowData[0].bpm));
-		if(timeLeft > 0) PrintGL(50, 15, "%i...", timeLeft);
-		else PrintGL(50, 15, "GO!!");
-	}
-	if(curRow >= 0 && curRow < wam->numRows) PrintGL(0, 62, "Tick: %i, %i.%f / %i\n", wam->rowData[curRow].ticpos, curTic, partialTic, wam->numTics);
-	PrintGL(50, 30, "Speed: %i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
-
+	DrawTargets();
 	Log("E");
+	DrawObjects();
+	Log("F");
+	DrawScoreboard();
+	Log("G");
 
 	glPopMatrix();
 	glPushMatrix();
@@ -843,6 +856,6 @@ void MainScene()
 	glPopMatrix();
 
 	theta += (double)timeDiff * 120.0 / 1000.0;
-	Log("F");
+	Log("H");
 	Log("endMainScene\n");
 }
