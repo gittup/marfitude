@@ -22,7 +22,7 @@
 #define ELog(s) do {ELogFile(__FILE__, __LINE__); ELogMsg s; LogMsg s;} while(0)
 #else
 #define Log(s)
-#define ELog(s)
+#define ELog(s) ELogMsg s
 #endif
 
 void LogFile(const char *file, int line);
