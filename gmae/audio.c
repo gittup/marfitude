@@ -33,12 +33,12 @@ int InitAudio(void)
 	if(Mix_OpenAudio(CfgI("sound.hz"), MIX_DEFAULT_FORMAT, 2, CfgI("sound.buffersize")))
 	{
 		SDLError("initializing audio");
-		return 0;
+		return 1;
 	}
 	Mix_AllocateChannels(CfgI("sound.channels"));
 	audioInited = 1;
 	printf("Audio initialized at %iHz, %i channels\n", CfgI("sound.hz"), CfgI("sound.channels"));
-	return 1;
+	return 0;
 }
 
 void QuitAudio(void)

@@ -57,12 +57,12 @@ int InitSounds(void)
 		{
 			Log(("Error loading sound '%s'\n", SND_LIST[x]));
 			SDLError("Loading sounds");
-			return 0;
+			return 1;
 		}
 		UpdateProgress(x+1, NUM_SOUNDS);
 	}
 	EndProgressMeter();
-	return 1;
+	return 0;
 }
 
 void QuitSounds(void)

@@ -351,13 +351,13 @@ int InitConfig(void)
 	if(!LoadConfig(cfgFileName)) {
 		if(!LoadConfig("init.cfg")) {
 			ELog(("Error: Couldn't load '%s' or init.cfg config files.", cfgFileName));
-			return 0;
+			return 1;
 		}
 	}
 
 	cfgInited = 1;
 	printf("Configuration loaded.\n");
-	return 1;
+	return 0;
 }
 
 void QuitConfig(void)
