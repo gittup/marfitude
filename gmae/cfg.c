@@ -164,6 +164,19 @@ void CfgSetI(const char *key, int value)
 	free(s);
 }*/
 
+/* Copy the CfgS of header, option into a new string
+ * return value must be freed
+ */
+char *CfgSCpy(const char *header, const char *option)
+{
+	char *s;
+	char *t;
+	t = CfgSp(header, option);
+	s = (char*)malloc(strlen(t) + 1);
+	strcpy(s, t);
+	return s;
+}
+
 char *CfgSp(const char *header, const char *option)
 {
 	int x, y;
