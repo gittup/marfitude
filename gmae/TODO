@@ -1,0 +1,79 @@
+remove blank end patterns
+recursive search for best track representation?
+
+only allow adjacent channels to to mixed
+	startchan, endchan - instead of *channels
+test setting the tick handler in the mainscene - is it accurate enough
+	to set for mismatch times?
+
+change duplicate track merge till after dots are generated?
+	- buried.xm merges tracks 1-4 since they have the same ins, then
+	  finds that it matches a drum track since it has a beat on each
+	  row, but it may be (or maybe not... :) silly to match these up
+change Press to be based on ticks, not on row
+check and fix physics stuff - implement fixed point and float point physics
+	multiply timer stuff in timer.c - eg 1/2*t*t for acceleration
+	rather than multiply it over and over for each object in a frame
+fix bouncy ball when sngspd is not 6 :)
+see if mikmod supports channel masking or something similar
+check if GL_DITHER should be disabled
+
+cannona.it stops playing after row 24
+
+check with mikmod see if mikmod_internals.h and all is version specific - 
+	ie. if 3.1.10 is required or whatever
+
+use joykey.up or something, set it to 1 when SDLKEYUP/JOYBUTTONUP and 0 on SDLKEYDOWN/JOYBUTTONDOWN - refire event after a delay (rather than use the KeyRepeating thing, since this will work for joysticks too)
+
+music plays while switching song
+
+add in thing to not play the first note of a track if we're not on that track
+	(it starts not muted and so plays a little, but if we're not on the
+	track there is no chance we will hit it - make sense?)
+takes long to quit - log?
+menu sometimes doesn't update when scrolling? - fixed with event?
+
+fix newline for windows - eg snprintf(&char, 1, "\n"); to find out if it's 10 or 13, then use that number for font generation
+
+need CALLBACK thing for function pointers? - windows compatibility
+change .notes field to be bitwise OR (eg. 1 2 4 instead of 1 2 3) to allow
+	multiple buttons for a single note?
+
+change length of a block based on song speed?
+fix event system - use user events? do anything that doesn't suck?
+check for blank space at end of song - remove somehow?
+draw transparent objects after opaque ones - use readonly depth buf
+	- disable blending during opaque objects for speed??
+
+Check volume for magicrai.s3m - are all those dots really there?
+fix stuff where it says MARF in files :)
+
+clean up glinit
+difficulty - spacing of dots, timing of when you press button
+	- also include presets "easy" "medium" "hard" ?
+
+add in cfg for mods - cut out tracks 4 and 5 (maybe?) for giants.mod - will be cool!
+	- in cfg allow naming of tracks
+
+speed limit signs when the speed changes (but not when it changes every other row!)
+
+fix mod loading scheme - it blowz! - handle blank tracks too
+fix time mismatching scheme
+
+different duders:
+	fireball duder, must hit extra fireball note or explode (for a little bit)
+	darkness duder - make screen dark
+	invisible duder - make notes shift in/out of visibility
+	silencer - turns off the music
+	other duders
+
+more video options - eg texture enable/disable, lightning, etc etc
+SDL_mixer doesn't support mtm/ult/stm/669/etc, only xm, it, s3m, mod
+sort transparent objects to render them properly (or cheat) (or leave as is)
+Add 3d font?
+compress sounds with zlib?
+check mem usage?
+rename game to Wavelength - intro screen
+midi support?
+get MinGW and port to windows
+writing a gmae :)
