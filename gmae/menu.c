@@ -87,6 +87,7 @@ static void MenuInc(void);
 static void MenuActivate(void);
 static int ValidMusicFile(char *s);
 static char *StringCopy(char *s);
+static int alphabetical(const void *a, const void *b);
 static int FightMenuInit(void);
 static void FightMenuQuit(void);
 static void EQTriangle(void);
@@ -552,7 +553,7 @@ void MainMenu(void)
 	ResetProjection();
 }
 
-#define FILE_LIST_SIZE 10
+#define FILE_LIST_SIZE 11
 int fileStart;
 slist *fileList;
 
@@ -615,11 +616,32 @@ char *StringCopy(char *s)
 	return d;
 }
 
+int alphabetical(const void *a, const void *b)
+{
+	const char *s1 = a;
+	const char *s2 = b;
+	while(*s1 && *s2 && *s1 == *s2) {
+		s1++;
+		s2++;
+	}
+	if(*s1 == *s2)
+		return 0;
+	if(*s1 == 0)
+		return -1;
+	if(*s2 == 0)
+		return 1;
+	return (*s1 < *s2) ? -1 : 1;
+}
+
 int FightMenuInit(void)
 {
 	char *s;
+	char *lastFile;
 	DIR *dir;
 	struct dirent *d;
+	int cnt;
+	int len;
+	slist *tmp;
 
 	if(!menuActive) RegisterMenuEvents();
 	menuX = 200;
@@ -629,20 +651,38 @@ int FightMenuInit(void)
 	fileList = NULL;
 
 	dir = opendir(MUSICDIR);
-	if(dir == NULL)
-	{
+	if(dir == NULL) {
 		Error("Generating playlist");
 		return 0;
 	}
-	while((d = readdir(dir)) != NULL)
-	{
-		if(ValidMusicFile(d->d_name))
-		{
+
+	while((d = readdir(dir)) != NULL) {
+		if(ValidMusicFile(d->d_name)) {
 			s = StringCopy(d->d_name);
-			fileList = slist_append(fileList, s);
-			CreateButton(s, FightActivate);
+			fileList = slist_insert_sorted(fileList, s, alphabetical);
 		}
 	}
+
+	lastFile = CfgS("main.song");
+	cnt = 0;
+	tmp = fileList;
+	len = slist_length(fileList);
+	while(tmp != NULL) {
+		char *t = CatStr(MUSICDIR, (char*)tmp->data);
+		if(strcmp(t, lastFile) == 0) {
+			fileStart = cnt - FILE_LIST_SIZE/2;
+			while(fileStart < 0)
+				fileStart++;
+			while(fileStart > len - FILE_LIST_SIZE)
+				fileStart--;
+			activeMenuItem = cnt;
+		}
+		free(t);
+		CreateButton(tmp->data, FightActivate);
+		tmp = slist_next(tmp);
+		cnt++;
+	}
+
 	RegisterEvent(EVENT_PAGEUP, FightPageUp, EVENTTYPE_STOP);
 	RegisterEvent(EVENT_PAGEDOWN, FightPageDown, EVENTTYPE_STOP);
 	return 1;
