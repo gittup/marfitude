@@ -25,12 +25,8 @@ double mag(const struct cmp *a)
 	return sqrt(a->real*a->real + a->imag*a->imag);
 }
 
-double mulr(struct cmp *a, struct cmp *b)
+void mul(struct cmp *dest, struct cmp *a, struct cmp *b)
 {
-	return a->real*b->real - a->imag*b->imag;
-}
-
-double muli(struct cmp *a, struct cmp *b)
-{
-	return a->real*b->imag + a->imag*b->real;
+	dest->real = a->real*b->real - a->imag*b->imag;
+	dest->imag = a->real*b->imag + a->imag*b->real;
 }

@@ -22,6 +22,5 @@ struct cmp {
 	double imag;
 };
 
-double mulr(struct cmp *a, struct cmp *b);
-double muli(struct cmp *a, struct cmp *b);
+void mul(struct cmp *dest, struct cmp *a, struct cmp *b);
 double mag(const struct cmp *a);

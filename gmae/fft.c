@@ -213,8 +213,7 @@ void fft_process(struct cmp *x)
 				t.real = u.real;
 				t.imag = u.imag;
 
-				t2.real = mulr(&t, x+i+step);
-				t2.imag = muli(&t, x+i+step);
+				mul(&t2, &t, x+i+step);
 
 				x[i+step].real = x[i].real;
 				x[i+step].imag = x[i].imag;
