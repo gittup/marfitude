@@ -1,6 +1,5 @@
 include mk/lib/sdl.mk
 
-INCDIRS = cfg
 EXTRACFLAGS = $(BDECFLAGS)
 TARGET = libmarf
 
