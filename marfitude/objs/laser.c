@@ -1,16 +1,24 @@
 #include "SDL_opengl.h"
 
-#include "marfitude/press.h"
+#include "marfitude.h"
 
 #include "gmae/event.h"
 #include "gmae/phys.h"
 #include "gmae/textures.h"
 #include "gmae/timer.h"
 
+#include "util/dl.h"
 #include "util/plugin.h"
 
 #define NUM_LASERS 10
 #define LASER_DECAY 3.0
+
+/* TMP */
+extern int *noteOffset;
+extern int channelFocus;
+extern int curTic;
+extern double partialTic;
+/* ENDTMP */
 
 /** Defines a laser
  */
@@ -32,34 +40,67 @@ static void draw_lasers(const void *);
 static int laser_tex;
 static int numLasers;
 static struct laser laser[NUM_LASERS];
+static float *fireball;
+static void *fireball_handle = NULL;
+static float firetest[4] = {0.0, 0.0, 0.0, 0.0};
 
 int laser_init(void)
 {
 	laser_tex = TextureNum("Laser.png");
 	numLasers = 0;
-	RegisterEvent("press", make_laser, EVENTTYPE_MULTI);
+	RegisterEvent("button", make_laser, EVENTTYPE_MULTI);
 	RegisterEvent("draw transparent", draw_lasers, EVENTTYPE_MULTI);
+	fireball_handle = dlopen("./libfireball.so", RTLD_NOW);
+	if(fireball_handle)
+		fireball = (float*)dlsym(fireball_handle, "fireball");
+	else
+		fireball = firetest;
+
 	return 0;
 }
 
 void laser_exit(void)
 {
+	dlclose(fireball_handle);
 	DeregisterEvent("draw transparent", draw_lasers);
-	DeregisterEvent("press", make_laser);
+	DeregisterEvent("button", make_laser);
 }
 
 void make_laser(const void *data)
 {
-	const struct press_e *e = data;
+	static int lastbutton = 1;
+	const struct button_e *b = data;
+	int button = 1;
+
+	switch(b->button) {
+		case B_BUTTON1:
+			lastbutton = 1;
+			button = 1;
+			break;
+		case B_BUTTON2:
+			lastbutton = 2;
+			button = 2;
+			break;
+		case B_BUTTON3:
+			lastbutton = 4;
+			button = 4;
+			break;
+		case B_BUTTON4:
+			button = lastbutton;
+			break;
+		default:
+			return;
+	}
+
 	/* p1 is set to the light position */
-	laser[numLasers].p1.x = e->v1->x;
-	laser[numLasers].p1.y = e->v1->y;
-	laser[numLasers].p1.z = e->v1->z;
+	laser[numLasers].p1.x = fireball[0];
+	laser[numLasers].p1.y = fireball[1];
+	laser[numLasers].p1.z = fireball[2];
 
 	/* p2 is set to where the note is */
-	laser[numLasers].p2.x = e->v2->x;
-	laser[numLasers].p2.y = e->v2->y;
-	laser[numLasers].p2.z = e->v2->z;
+	laser[numLasers].p2.x = -channelFocus * BLOCK_WIDTH - NOTE_WIDTH * noteOffset[button];
+	laser[numLasers].p2.y = 0.0;
+	laser[numLasers].p2.z = TIC_HEIGHT * ((double)curTic + partialTic);
 	laser[numLasers].time = 1.0;
 	numLasers++;
 	if(numLasers >= NUM_LASERS) numLasers = 0;
