@@ -4,7 +4,7 @@ include mk/lib/sdl.mk
 
 EXTRACFLAGS = $(BDECFLAGS)
 
-INCDIRS = cfg util gmae/sdl_mixer gmae/sdl_mixer/mikmod
+INCDIRS = util gmae/sdl_mixer gmae/sdl_mixer/mikmod
 
 EXTRALDFLAGS = -lm
 
