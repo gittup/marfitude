@@ -7,7 +7,7 @@ ifeq ($(CONFIG_DEBUG_MEM),1)
 EXTRACFLAGS += -DDEBUG_MEM
 endif
 
-INCDIRS = $(src_util) $(src_gmae)/$(ARCH) $(src_gmae)/sdl_mixer/mikmod
+INCDIRS = $(src_util) $(src_gmae)/$(ARCH) $(src_gmae)/sdl_mixer $(src_gmae)/sdl_mixer/mikmod
 
 EXTRALDFLAGS = $(SDLLIBS) -lm -lSDL_image $(GLLIBS) $(GLULIBS)
 
