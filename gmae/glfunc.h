@@ -3,6 +3,13 @@
 #define FONT_HEIGHT 14
 #define FONT_WIDTH 10
 
+typedef struct {
+	float r;
+	float g;
+	float b;
+	float a;
+	} Color;
+
 SDL_Surface *InitGL();
 void QuitGL(void);
 void SetOrthoProjection();
