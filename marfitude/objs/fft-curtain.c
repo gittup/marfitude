@@ -6,15 +6,14 @@
 
 #include "util/plugin.h"
 
-static int fft_curtain_init(void);
-static void fft_curtain_exit(void);
+void __attribute__ ((constructor)) fft_curtain_init(void);
+void __attribute__ ((destructor)) fft_curtain_exit(void);
 static void fft_curtain_draw(const void *data);
 
-int fft_curtain_init(void)
+void fft_curtain_init(void)
 {
 	init_fft();
 	RegisterEvent("draw ortho", fft_curtain_draw, EVENTTYPE_MULTI);
-	return 0;
 }
 
 void fft_curtain_exit(void)
@@ -58,6 +57,3 @@ void fft_curtain_draw(const void *data)
 	}
 	glEnable(GL_TEXTURE_2D);
 }
-
-plugin_init(fft_curtain_init);
-plugin_exit(fft_curtain_exit);

@@ -30,10 +30,10 @@ struct laser {
 			   */
 };
 
+void __attribute__ ((constructor)) laser_init(void);
+void __attribute__ ((destructor)) laser_exit(void);
 static double laser_adj(double a, double b, double dt);
 static void draw_laser(struct laser *l);
-static int laser_init(void);
-static void laser_exit(void);
 static void make_laser(const void *);
 static void draw_lasers(const void *);
 
@@ -44,7 +44,7 @@ static float *fireball;
 static void *fireball_handle = NULL;
 static float firetest[4] = {0.0, 0.0, 0.0, 0.0};
 
-int laser_init(void)
+void laser_init(void)
 {
 	laser_tex = TextureNum("Laser.png");
 	numLasers = 0;
@@ -55,8 +55,6 @@ int laser_init(void)
 		fireball = (float*)dlsym(fireball_handle, "fireball");
 	else
 		fireball = firetest;
-
-	return 0;
 }
 
 void laser_exit(void)
@@ -120,6 +118,3 @@ void draw_lasers(const void *data)
 		draw_laser(&laser[x]);
 	}
 }
-
-plugin_init(laser_init);
-plugin_exit(laser_exit);

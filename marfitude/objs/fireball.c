@@ -20,19 +20,18 @@ extern struct row *curRow;
 
 
 
-static int fireball_init(void);
-static void fireball_exit(void);
+void __attribute__ ((constructor)) fireball_init(void);
+void __attribute__ ((destructor)) fireball_exit(void);
 static void fireball_draw(const void *);
 
 static int fireball_tex;
 float fireball[4] = {0.0, 0.5, 0.0, 1.0};
 
-int fireball_init(void)
+void fireball_init(void)
 {
 	fireball_tex = TextureNum("Fireball.png");
 
 	RegisterEvent("draw transparent", fireball_draw, EVENTTYPE_MULTI);
-	return 0;
 }
 
 void fireball_exit(void)
@@ -68,6 +67,3 @@ void fireball_draw(const void *data)
 		glVertex3f(fireball[0]-.5, fireball[1]+.5, fireball[2]);
 	} glEnd();
 }
-
-plugin_init(fireball_init);
-plugin_exit(fireball_exit);

@@ -13,17 +13,16 @@ extern int curTic;
 extern double partialTic;
 /* End TEmproarry */
 
-static int targets_init(void);
-static void targets_exit(void);
+void __attribute__ ((constructor)) targets_init(void);
+void __attribute__ ((destructor)) targets_exit(void);
 static void draw_targets(const void *);
 
 static int target_tex;
 
-int targets_init(void)
+void targets_init(void)
 {
 	target_tex = TextureNum("Target.png");
 	RegisterEvent("draw transparent", draw_targets, EVENTTYPE_MULTI);
-	return 0;
 }
 
 void targets_exit(void)
@@ -57,6 +56,3 @@ void draw_targets(const void *data)
 	}
 	glPopMatrix();
 }
-
-plugin_init(targets_init);
-plugin_exit(targets_exit);

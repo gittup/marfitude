@@ -20,14 +20,13 @@ extern double modTime;
 /*extern struct attackPattern ap;*/
 /* endtmp */
 
-static int scoreboard_init(void);
-static void scoreboard_exit(void);
+void __attribute__ ((constructor)) scoreboard_init(void);
+void __attribute__ ((destructor)) scoreboard_exit(void);
 static void draw_scoreboard(const void *);
 
-int scoreboard_init(void)
+void scoreboard_init(void)
 {
 	RegisterEvent("draw opaque", draw_scoreboard, EVENTTYPE_MULTI);
-	return 0;
 }
 
 void scoreboard_exit(void)
@@ -90,6 +89,3 @@ void draw_scoreboard(const void *data)
 	ResetProjection();
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 }
-
-plugin_init(scoreboard_init);
-plugin_exit(scoreboard_exit);

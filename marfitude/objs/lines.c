@@ -17,8 +17,8 @@ extern double partialTic;
 extern struct wam *wam;
 /* end temporry */
 
-static int lines_init(void);
-static void lines_exit(void);
+void __attribute__ ((constructor)) lines_init(void);
+void __attribute__ ((destructor)) lines_exit(void);
 static void create_line(const void *);
 static void remove_line(const void *);
 static void draw_lines(const void *);
@@ -37,7 +37,7 @@ static int startLine;
 static int stopLine;
 static int numLines;
 
-int lines_init(void)
+void lines_init(void)
 {
 	numLines = NUM_TICKS;
 	lines = malloc(sizeof(struct line) * numLines);
@@ -47,7 +47,6 @@ int lines_init(void)
 	RegisterEvent("draw opaque", draw_lines, EVENTTYPE_MULTI);
 	RegisterEvent("row", create_line, EVENTTYPE_MULTI);
 	RegisterEvent("de-row", remove_line, EVENTTYPE_MULTI);
-	return 0;
 }
 
 void lines_exit(void)
@@ -118,6 +117,3 @@ void draw_lines(const void *data)
 	glEnable(GL_LIGHTING);
 	glEnable(GL_TEXTURE_2D);
 }
-
-plugin_init(lines_init);
-plugin_exit(lines_exit);
