@@ -7,6 +7,7 @@
 #include "cfg.h"
 #include "log.h"
 #include "textures.h"
+#include "timer.h"
 #include "../util/memtest.h"
 
 int particlesInited = 0;
@@ -167,7 +168,8 @@ void DrawParticle(Particle *p)
 		glScalef(p->size, p->size, p->size);
 	glColor4fv(p->col);
 	glCallList(plist+p->type);
-	if(p->o->pos.y < 0.0)
+	p->life -= timeDiff;
+	if(p->life < 0.0)
 	{
 	       	p->active = 0;
 		DeleteObj(p->o);
@@ -178,15 +180,25 @@ void DrawParticles()
 {
 	int x;
 	Log("Draw Particles()\n");
-	glDisable(GL_LIGHTING);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 	for(x=0;x<numParticles;x++)
 	{
 		if(particles[x].active) DrawParticle(&particles[x]);
 	}
+	Log("Draw Particles done\n");
+}
+
+void StartParticles()
+{
+	glDisable(GL_LIGHTING);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	glDepthMask(GL_FALSE);
+}
+
+void StopParticles()
+{
+	glDepthMask(GL_TRUE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_LIGHTING);
-	Log("Draw Particles done\n");
 }
 
 void CreateParticle(Obj *o, float col[4], int type, float size)
@@ -204,6 +216,7 @@ void CreateParticle(Obj *o, float col[4], int type, float size)
 	p->type = type;
 	p->size = size;
 	p->active = 1;
+	p->life = 3.00;
 	curParticle++;
 	if(curParticle >= numParticles) curParticle = 0;
 	Log("Create Particle done\n");
