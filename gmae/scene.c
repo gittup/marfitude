@@ -161,6 +161,19 @@ void MoveSlower(void)
 #define NUM_TICKS 64*6
 #define TIC_ERROR 5 // number of tics we can be off when hitting a button
 #define LINES_PER_AP 8
+#define ROWS_PER_LINE 4
+
+#define NUM_LASERS 10
+#define LASER_DECAY 3.0
+
+#define UNMUTE 0
+#define MUTE 1
+
+// returns 1 if the row is valid, 0 otherwise
+#define IsValidRow(row) ((row >= 0 && row < wam->numRows) ? 1 : 0)
+// return a clamped row number
+#define Row(row) (row < 0 ? 0 : (row >= wam->numRows ? wam->numRows - 1: row))
+#define Max(a, b) ((a) > (b) ? (a) : (b))
 
 int curTic; // tick counter from 0 - total ticks in the song
 int firstVb, curVb, lastVb;	// tick counters for the three rows
@@ -180,6 +193,11 @@ typedef struct {
 	int row;
 	} Line;
 typedef struct {
+	Point p1;
+	Point p2;
+	float time;
+	} Laser;
+typedef struct {
 	int startTic;	// first tic that we need to play
 	int stopTic;	// last tic that we need to play
 	int stopRow;	// corresponding row to stopTic
@@ -194,7 +212,8 @@ typedef struct {
 			// after the column is recreated
 	int cleared;	// equals the last row this col is cleared to, 0 if
 			// not cleared
-	int hit;	// 1 if the last note was hit
+	int hit;	// equals the tic of the last hit note
+	int miss;	// equals the tic of the last missed note
 	} AttackCol;
 
 AttackPattern ap;
@@ -203,11 +222,13 @@ ScreenNote *notesOnScreen; // little ring buffer of notes
 GSList *unusedList;	// unused notes
 GSList *notesList;	// notes on the screen, not hit
 GSList *hitList;	// notes on the screen, hit
-//int startNote;	// first note on screen
-//int stopNote;	// last note +1 on screen
 int numNotes;	// max number of notes on screen (wam->numCols * NUM_TICKS)
 int score;
+//float light[4] = {0.0, 1.0, -8.0, 1.0};
+float light[4] = {0.0, 0.5, 0.0, 1.0};
 
+Laser laser[NUM_LASERS];
+int numLasers;
 float bounceTime;
 Line *linesOnScreen;
 int startLine;
@@ -218,6 +239,33 @@ MikMod_player_t oldHand;
 int tickCounter;
 int songStarted;	// this is set once we get to the first row, and the
 			// song is unpaused
+
+Column *ColumnFromNum(int col)
+{
+	return &wam->patterns[wam->rowData[Row(curRow)].patnum].columns[col];
+}
+
+void Setmute(Column *c, int mute)
+{
+	int x;
+	for(x=0;x<c->numchn;x++)
+	{
+		if(mute) Player_Mute(c->chan[x]);
+		else Player_Unmute(c->chan[x]);
+	}
+}
+
+// update which channels are playing based on AttackCol coontents
+void UpdateModule()
+{
+	int x;
+	for(x=0;x<wam->numCols;x++)
+	{
+		if(ac[x].cleared || ac[x].hit > ac[x].miss) Setmute(ColumnFromNum(x), UNMUTE);
+		else Setmute(ColumnFromNum(x), MUTE);
+	}
+	Setmute(&wam->patterns[wam->rowData[Row(curRow)].patnum].unplayed, UNMUTE);
+}
 
 void AddNotes(int row)
 {
@@ -340,8 +388,23 @@ ScreenNote *FindNote(GSList *list, int tic, int col)
 void Press(int button)
 {
 	int i;
+	int noteHit = 0;
 	ScreenNote *sn;
 	Row *r;
+
+	// p1 is set to the light position
+	laser[numLasers].p1.x = light[0];
+	laser[numLasers].p1.y = light[1];
+	laser[numLasers].p1.z = light[2];
+
+	// p2 is set to where the note is
+	laser[numLasers].p2.x = -channelFocus * BLOCK_WIDTH - NOTE_WIDTH * noteOffset[button];
+	laser[numLasers].p2.y = 0.0;
+	laser[numLasers].p2.z = TIC_HEIGHT * ((double)curTic + partialTic);
+	laser[numLasers].time = 1.0;
+	numLasers++;
+	if(numLasers >= NUM_LASERS) numLasers = 0;
+
 	for(i=-1;i<=1;i++)
 	{
 		if(curRow + i >= 0 && curRow + i < wam->numRows)
@@ -362,6 +425,7 @@ void Press(int button)
 				if(!sn)
 				{
 					ELog("Error: Struck note not found!\n");
+					break;
 				}
 				notesList = g_slist_remove(notesList, (gpointer)sn);
 				unusedList = g_slist_append(unusedList, (gpointer)sn);
@@ -370,15 +434,25 @@ void Press(int button)
 				if(ap.notesHit == ap.notesTotal)
 				{
 					ap.nextStartRow = ap.stopRow;
-					ac[channelFocus].cleared = ap.stopRow + LINES_PER_AP * 4 * wam->numCols;
+					ac[channelFocus].cleared = ap.stopRow + LINES_PER_AP * ROWS_PER_LINE * wam->numCols;
 					ac[channelFocus].minRow = curRow;
 					ac[channelFocus].part = 0.0;
 				}
-				ac[channelFocus].hit = 1;
+				ac[channelFocus].hit = r->ticpos;
+				noteHit = 1;
 				break;
 			}
 		}
 	}
+
+	r = &wam->rowData[Row(curRow)];
+	if(!noteHit && r->ticpos >= ap.startTic && r->ticpos < ap.stopTic) // oops, we missed!
+	{
+		ResetAp();
+		if(IsValidRow(curRow) && r->ticpos >= ap.startTic && r->ticpos < ap.stopTic)
+			ac[channelFocus].miss = r->ticpos;
+	}
+	UpdateModule();
 }
 
 // i really should fix the event system...i suck!
@@ -386,7 +460,7 @@ void Press1() {Press(1);}
 
 void Press2() {Press(2);}
 
-void Press3() {Press(4);}
+void Press3() {Press(4);} // yes, this is really 4 (3rd bit)
 
 void Press4()
 {
@@ -402,8 +476,8 @@ void SetMainView()
 	mainPos[2] = mainView[2] - 8.0;
 
 	glLoadIdentity();
-	gluLookAt(	mainPos[0] - channelFocus * 2.0, mainPos[1], mainPos[2],
-			mainView[0] - channelFocus * 2.0, mainView[1], mainView[2],
+	gluLookAt(	mainPos[0] - channelFocus * BLOCK_WIDTH, mainPos[1], mainPos[2],
+			mainView[0] - channelFocus * BLOCK_WIDTH, mainView[1], mainView[2],
 			0.0, 1.0, 0.0);
 }
 
@@ -464,6 +538,7 @@ int MainInit()
 	tickCounter = 0;
 	score = 0;
 	songStarted = 0;
+	numLasers = 0;
 	oldHand = MikMod_RegisterPlayer(TickHandler);
 	noteOffset = (int*)malloc(sizeof(int) * (MAX_NOTE+1));
 
@@ -481,7 +556,8 @@ int MainInit()
 		ac[x].part = 0.0;
 		ac[x].minRow = 0;
 		ac[x].cleared = 0;
-		ac[x].hit = 0;
+		ac[x].hit = -1;
+		ac[x].miss = -2;
 	}
 
 	// start back about 3.5 seconds worth of ticks
@@ -509,8 +585,6 @@ int MainInit()
 	{
 		unusedList = g_slist_append(unusedList, (gpointer)&notesOnScreen[x]);
 	}
-//	startNote = 0;
-//	stopNote = 0;
 	for(x=0;x<=lastRow;x++) AddNotes(x);
 
 	numLines = NUM_TICKS;
@@ -525,6 +599,10 @@ int MainInit()
 	RegisterEvent(EVENT_LEFT, ChannelDown, EVENTTYPE_MULTI);
 	RegisterEvent(EVENT_UP, MoveFaster, EVENTTYPE_MULTI);
 	RegisterEvent(EVENT_DOWN, MoveSlower, EVENTTYPE_MULTI);
+	RegisterEvent(EVENT_BUTTON1, Press1, EVENTTYPE_MULTI);
+	RegisterEvent(EVENT_BUTTON2, Press2, EVENTTYPE_MULTI);
+	RegisterEvent(EVENT_BUTTON3, Press3, EVENTTYPE_MULTI);
+	RegisterEvent(EVENT_BUTTON4, Press4, EVENTTYPE_MULTI);
 	Log("Creating lists\n");
 	rowList = GLGenLists(wam->numCols);
 	noteList = GLGenLists(1);
@@ -603,13 +681,13 @@ void MainQuit()
 	{
 		DeregisterEvent(EVENT_SHOWMENU, Player_TogglePause);
 		DeregisterEvent(EVENT_HIDEMENU, Player_TogglePause);
-		DeregisterEvent(EVENT_BUTTON1, Press1);
-		DeregisterEvent(EVENT_BUTTON2, Press2);
-		DeregisterEvent(EVENT_BUTTON3, Press3);
-		DeregisterEvent(EVENT_BUTTON4, Press4);
 	}
 	Log("A\n");
 	songStarted = 0;
+	DeregisterEvent(EVENT_BUTTON1, Press1);
+	DeregisterEvent(EVENT_BUTTON2, Press2);
+	DeregisterEvent(EVENT_BUTTON3, Press3);
+	DeregisterEvent(EVENT_BUTTON4, Press4);
 	Log("A\n");
 	DeregisterEvent(EVENT_RIGHT, ChannelUp);
 	Log("A\n");
@@ -671,11 +749,13 @@ void DrawLines()
 	glEnable(GL_TEXTURE_2D);
 }
 
-// returns 1 if the row is valid, 0 otherwise
-#define IsValidRow(row) ((row >= 0 && row < wam->numRows) ? 1 : 0)
-// return a clamped row number
-#define Row(row) (row < 0 ? 0 : (row >= wam->numRows ? wam->numRows - 1: row))
-#define Max(a, b) ((a) > (b) ? (a) : (b))
+// gets either curRow or curRow+1, depending on which one tic is closest to
+// (eg within acceptable error)
+int RowByTic(int tic)
+{
+	if(tic - wam->rowData[Row(curRow)].ticpos < TIC_ERROR) return curRow;
+	return curRow+1;
+}
 
 void ResetAp()
 {
@@ -684,7 +764,7 @@ void ResetAp()
 	int numLines = 0;
 	ap.notesHit = 0;
 	ap.notesTotal = 0;
-	start = Row(Max(Max(curRow, ap.nextStartRow), ac[channelFocus].cleared));
+	start = Row(Max(Max(RowByTic(curTic), ap.nextStartRow), ac[channelFocus].cleared));
 	while(start < wam->numRows && wam->rowData[start].line == 0) start++;
 	end = start;
 	while(numLines < LINES_PER_AP && end < wam->numRows)
@@ -709,7 +789,26 @@ void ResetAp()
 	ap.stopTic = wam->rowData[end].ticpos;
 	ap.lastTic = wam->rowData[start].ticpos - 1;
 	ap.stopRow = end;
-	ac[channelFocus].hit = 1;
+	ac[channelFocus].hit = ap.startTic - 1;
+}
+
+void CheckMissedNotes()
+{
+	ScreenNote *sn;
+	GSList *list;
+	list = notesList;
+	while(list)
+	{
+		sn = (ScreenNote*)list->data;
+		if(	curTic - sn->tic > TIC_ERROR &&
+			sn->tic > ac[sn->col].miss)
+		{
+			ac[sn->col].miss = sn->tic;
+			if(sn->col == channelFocus && sn->tic >= ap.startTic && sn->tic < ap.stopTic)
+				ResetAp();
+		}
+		list = g_slist_next(list);
+	}
 }
 
 void CheckColumn(int row)
@@ -719,20 +818,6 @@ void CheckColumn(int row)
 	{
 		if(ac[x].cleared == row) ac[x].cleared = 0;
 	}
-/*	int x;
-	ModChannel *c;
-	for(x=0;x<wam->numCols;x++)
-	{
-		if(curRow - 2 >= 0 && curRow - 2 < wam->numRows)
-		{
-			c = &(wam->rowData[curRow-2].chans[x]);
-			if(c->note && !c->struck && activeChannels[x].numCorrect < MAXNUM)
-			{
-				activeChannels[x].active = 0;
-				SetMute(c, 1);
-			}
-		}
-	}*/
 }
 
 gint NoteListTic(gconstpointer snp, gconstpointer tp)
@@ -785,13 +870,13 @@ void UpdateClearedCols()
 	Obj *o;
 	for(x=0;x<wam->numCols;x++)
 	{
-		ac[x].part += (double)timeDiff / 40.0;
+		ac[x].part += (double)ticDiff / 40.0;
 		while(ac[x].part >= 1.0 && ac[x].minRow < ac[x].cleared)
 		{
-			ac[x].part -= 1.0;
-			ac[x].minRow++;
 			tic = wam->rowData[Row(ac[x].minRow)].ticpos;
 			MoveHitNotes(tic, x);
+			ac[x].part -= 1.0;
+			ac[x].minRow++;
 			o = NewObj();
 			o->pos.x = -x * 2.0;
 			o->pos.z = TIC_HEIGHT * (double)tic;
@@ -799,7 +884,7 @@ void UpdateClearedCols()
 			o->vel.y = 2.0 + FloatRand();
 			o->vel.z = 13.0 + FloatRand();
 			o->rotvel = FloatRand() * 720.0 - 360.0;
-			o->acc.y = -.98;
+			o->acc.y = -3.98;
 			RandomColor(col);
 			CreateParticle(o, col, P_StarBurst, 1.0);
 		}
@@ -814,7 +899,7 @@ void UpdatePosition()
 	int tmpAdj;
 	// calculate the amount of ticTime elapsed
 	// every 2500 ticTime is one tick
-	if(!menuActive) ticTime += timeDiff * wam->rowData[Row(curRow)].bpm;
+	if(!menuActive) ticTime += ticDiff * wam->rowData[Row(curRow)].bpm;
 
 	// adjust the ticTime if our time is different from the
 	// song time.  This is needed in case a little blip in the process
@@ -836,6 +921,7 @@ void UpdatePosition()
 		curVb++;
 		firstVb++;
 		lastVb++;
+		CheckMissedNotes();
 		if(curVb >= wam->rowData[Row(curRow)].sngspd)
 		{
 			curVb -= wam->rowData[Row(curRow)].sngspd;
@@ -848,12 +934,9 @@ void UpdatePosition()
 				songStarted = 1;
 				RegisterEvent(EVENT_SHOWMENU, Player_TogglePause, EVENTTYPE_MULTI);
 				RegisterEvent(EVENT_HIDEMENU, Player_TogglePause, EVENTTYPE_MULTI);
-				RegisterEvent(EVENT_BUTTON1, Press1, EVENTTYPE_MULTI);
-				RegisterEvent(EVENT_BUTTON2, Press2, EVENTTYPE_MULTI);
-				RegisterEvent(EVENT_BUTTON3, Press3, EVENTTYPE_MULTI);
-				RegisterEvent(EVENT_BUTTON4, Press4, EVENTTYPE_MULTI);
 			}
 		}
+		UpdateModule();
 
 		if(firstVb >= wam->rowData[Row(firstRow)].sngspd)
 		{
@@ -959,20 +1042,19 @@ void DrawNotes()
 {
 	Log("DN: %i, %i, %i\n", g_slist_length(notesList), g_slist_length(hitList), g_slist_length(unusedList));
 	g_slist_foreach(notesList, DrawNote, NULL);
-
-	glDisable(GL_LIGHTING);
-	glDepthMask(GL_FALSE);
-	g_slist_foreach(hitList, DrawHitNote, NULL);
-	glDepthMask(GL_TRUE);
-	glEnable(GL_LIGHTING);
 	Log("dn\n");
+}
+
+void DrawHitNotes()
+{
+	g_slist_foreach(hitList, DrawHitNote, NULL);
 }
 
 void DrawTargets()
 {
 	int x;
 	glPushMatrix();
-	glTranslated((double)channelFocus * -2.0, 0.0, TIC_HEIGHT * ((double)curTic + partialTic));
+	glTranslated((double)channelFocus * -BLOCK_WIDTH, 0.0, TIC_HEIGHT * ((double)curTic + partialTic));
 	glBindTexture(GL_TEXTURE_2D, TEX_Target);
 	glTranslated(-NOTE_WIDTH, 0.0, 0.0);
 	glNormal3f(0.0, 1.0, 0.0);
@@ -996,12 +1078,12 @@ void DrawTargets()
 
 void DrawScoreboard()
 {
-	int x;
+//	int x;
 	glColor4f(1.0, 1.0, 1.0, 1.0);
-	for(x=0;x<wam->numCols;x++)
-	{
-		PrintGL(0, 75+x*14, "Col %i  Hit %i  Clear %4i", x, ac[x].hit, ac[x].cleared);
-	}
+//	for(x=0;x<wam->numCols;x++)
+//	{
+//		PrintGL(0, 75+x*14, "Col %i  Hit %i, %i Clear %4i", x, ac[x].hit, ac[x].miss, ac[x].cleared);
+//	}
 	PrintGL(50, 0, "Playing: %s", mod->songname);
 	if(curRow == wam->numRows) PrintGL(50, 15, "Song complete!");
 	else if(curRow >= 0)
@@ -1022,9 +1104,44 @@ void DrawScoreboard()
 	PrintGL(400, 50, "DN: %i, %i, %i\n", g_slist_length(notesList), g_slist_length(hitList), g_slist_length(unusedList));
 }
 
+double LaserAdj(double a, double b, double dt)
+{
+	return a * (1.0 - dt) + b * dt;
+}
+
+void DrawLaser(Laser *l)
+{
+	glColor4f(1.0, 0.0, 1.0, l->time);
+	glBegin(GL_QUADS);
+	{
+		glTexCoord2f(0.0, 0.0);
+		glVertex3f(l->p1.x-0.1, l->p1.y, l->p1.z);
+		glTexCoord2f(1.0, 0.0);
+		glVertex3f(l->p1.x+0.1, l->p1.y, l->p1.z);
+
+		glTexCoord2f(1.0, 1.0);
+		glVertex3f(l->p2.x+0.1, l->p2.y, l->p2.z);
+		glTexCoord2f(0.0, 1.0);
+		glVertex3f(l->p2.x-0.1, l->p2.y, l->p2.z);
+	} glEnd();
+	l->p1.x = LaserAdj(l->p1.x, l->p2.x, timeDiff * 4.0);
+	l->p1.y = LaserAdj(l->p1.y, l->p2.y, timeDiff * 4.0);
+	l->p1.z = LaserAdj(l->p1.z, l->p2.z, timeDiff * 4.0);
+	l->time -= timeDiff * LASER_DECAY;
+}
+
+void DrawLasers()
+{
+	int x;
+	glBindTexture(GL_TEXTURE_2D, TEX_Laser);
+	for(x=0;x<NUM_LASERS;x++)
+	{
+		DrawLaser(&laser[x]);
+	}
+}
+
 void MainScene()
 {
-	float light[4] = {0.0, 1.0, -8.0, 1.0};
 	float temp[4] = {.35, 0.0, 0.0, .5};
 	float sintmp;
 	Row *row;
@@ -1033,13 +1150,7 @@ void MainScene()
 	Log("MainScene\n");
 
 	glLoadIdentity();
-	row = &wam->rowData[Row(curRow)];
-	bounceTime = 2.0 * 3.1415 * ((double)row->ticprt + (double)curTic - (double)row->ticpos + partialTic) / (double)row->ticgrp;
-	sintmp = sin(bounceTime);
-	light[0] += cos(bounceTime);
-	light[1] += sintmp * sintmp;
 	glPushMatrix();
-	glLightfv(GL_LIGHT1, GL_POSITION, light);
 
 	Log("U");
 	if(curRow != wam->numRows) UpdatePosition();
@@ -1047,6 +1158,15 @@ void MainScene()
 	UpdateObjs(timeDiff);
 	Log("u");
 	SetMainView();
+
+	row = &wam->rowData[Row(curRow)];
+	bounceTime = 2.0 * 3.1415 * ((double)row->ticprt + (double)curTic - (double)row->ticpos + partialTic) / (double)row->ticgrp;
+	sintmp = sin(bounceTime);
+	light[0] = -BLOCK_WIDTH * channelFocus + cos(bounceTime);
+	light[1] = 1.0 + sintmp * sintmp;
+//	light[2] = TIC_HEIGHT * ((double)curTic + partialTic) - sintmp * sintmp - 3.0;
+	light[2] = TIC_HEIGHT * ((double)curTic + partialTic);
+	glLightfv(GL_LIGHT1, GL_POSITION, light);
 
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 
@@ -1078,12 +1198,18 @@ void MainScene()
 	Log("E");
 	DrawScoreboard();
 	Log("F");
-	glDepthMask(GL_FALSE);
-	DrawParticles();
-	Log("G");
 
-	glPopMatrix();
-	glPushMatrix();
+	StartParticles();
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	DrawHitNotes();
+	DrawLasers();
+	Log("G");
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	DrawParticles();
+	Log("g");
+	StopParticles();
+
+	Log("L");
 
 	glBindTexture(GL_TEXTURE_2D, TEX_Fireball);
 	temp[0] *= 3.0;
@@ -1104,7 +1230,7 @@ void MainScene()
 	glPopMatrix();
 	glDepthMask(GL_TRUE);
 
-	theta += (double)timeDiff * 120.0 / 1000.0;
+	theta += timeDiff * 120.0;
 	Log("H");
 	Log("endMainScene\n");
 }
