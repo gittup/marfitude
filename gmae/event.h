@@ -59,18 +59,19 @@ struct button_e {
 };
 
 /** A list of event structures */
-struct eventHandler {
+struct event_handler {
 	EventHandler handler;        /**< The function to call on an event */
 	int stopHere;                /**< Don't call all other handlers */
-	struct eventHandler *next;   /**< Next handler in the list */
+	int registered;              /**< 1 if enabled, 0 if not */
+	struct event_handler *next;  /**< Next handler in the list */
 };
 
 /** An event - relates a name to a set of event handlers */
 struct event {
-	char *name;                    /**< The name of the event */
-	int fired;                     /**< Number of times its been fired */
-	struct eventHandler *handlers; /**< The first handler in the list */
-	struct event *next;            /**< Next event in the list */
+	char *name;                     /**< The name of the event */
+	int fired;                      /**< Number of times its been fired */
+	struct event_handler *handlers; /**< The first handler in the list */
+	struct event *next;             /**< Next event in the list */
 };
 
 void ClearEvents(void);

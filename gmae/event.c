@@ -290,17 +290,27 @@ void FireEvent(const char *event, const void *data)
  * @a data. Can be used with GetEvent() as a replacement for FireEvent()
  * if speed is a concern.
  */
+static int handling = 0;
 void HandleEvent(struct event *e, const void *data)
 {
-	struct eventHandler *h;
+	struct event_handler *h;
+	int x = 0;
+	int y = 0;
+
+	handling++;
 
 	e->fired++;
 	h = e->handlers;
 	while(h != NULL) {
-		h->handler(data);
-		if(h->stopHere) break;
+		if(h->registered) {
+			h->handler(data);
+			if(h->stopHere) break;
+			y++;
+		}
 		h = h->next;
+		x++;
 	}
+	handling--;
 }
 
 /** Register's the @a handler with event named @a event. Normally, all
@@ -311,48 +321,62 @@ void HandleEvent(struct event *e, const void *data)
 void RegisterEvent(const char *event, EventHandler handler, int stopHere)
 {
 	struct event *e;
-	struct eventHandler *h;
+	struct event_handler *h;
 
 	e = GetEvent(event);
-	h = malloc(sizeof(struct eventHandler));
+	h = e->handlers;
+	if(stopHere) {
+		if(h && h->registered)
+			h = NULL;
+	} else {
+		while(h != NULL && h->registered)
+			h = h->next;
+	}
+	if(h == NULL) {
+		h = malloc(sizeof(struct event_handler));
+		h->next = e->handlers;
+		e->handlers = h;
+	}
 	h->handler = handler;
 	h->stopHere = stopHere;
-	h->next = e->handlers;
-	e->handlers = h;
+	h->registered = 1;
 }
 
 /** Deregisters the @a handler from the event named @a event. */
 void DeregisterEvent(const char *event, EventHandler handler)
 {
 	struct event *e;
-	struct eventHandler *h;
-	struct eventHandler *prev = NULL;
+	struct event_handler *h;
 
 	e = FindEvent(event);
 	if(e == NULL) {
-		ELog(("Error: Event %s not available for deregister.\n", event));
+		ELog(("Error: %s not available for deregister.\n", event));
 		return;
 	}
 	h = e->handlers;
 	while(h != NULL) {
 		if(h->handler == handler) {
-			if(prev)
-				prev->next = h->next;
-			else
-				e->handlers = h->next;
+			h->registered = 0;
 			break;
 		}
-		prev = h;
 		h = h->next;
 	}
-	if(h == NULL) ELog(("Error: Event %s not available for deregister.\n", event));
-	else free(h);
+	if(h == NULL)
+		ELog(("Error: %s not available for deregister.\n", event));
 }
 
 void ChkEvent(struct event *e)
 {
-	if(e->handlers != NULL) {
-		printf("Warning: Event \"%s\" is still registered.\n", e->name);
+	struct event_handler *h;
+
+	h = e->handlers;
+	while(h != NULL) {
+		if(h->registered) {
+			printf("Event \"%s\" is still registered.\n", e->name);
+		}
+		h = h->next;
+		free(e->handlers);
+		e->handlers = h;
 	}
 	printf("Free Event: \"%s\" fired %i times.\n", e->name, e->fired);
 }
