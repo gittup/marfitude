@@ -25,9 +25,6 @@
 
 #include "util/slist.h" 
 
-static void FreeObj(void *data, void *not_used);
-static void UpdateObj(void *op, void *tp);
-
 struct slist *objs = NULL; 
 
 struct obj *NewObj(void)
@@ -46,44 +43,38 @@ void DeleteObj(struct obj *o)
 	objs = slist_remove(objs, (void *)o);
 }
 
-void FreeObj(void *data, void *not_used)
-{
-	if(not_used) {}
-	free(data);
-}
-
 void ClearObjs(void)
 {
-	slist_foreach(objs, FreeObj, NULL);
-}
+	struct slist *t;
 
-void UpdateObj(void *op, void *tp)
-{
-	double tmpx, tmpy, tmpz, tmpr;
-	double t;
-	struct obj *o;
-	t = *(double*)tp;
-	o = (struct obj*)op;
-
-	tmpx = o->acc.x * t;
-	tmpy = o->acc.y * t;
-	tmpz = o->acc.z * t;
-	tmpr = o->rotacc * t;
-
-	o->pos.x += o->vel.x * t + tmpx * t / 2.0;
-	o->pos.y += o->vel.y * t + tmpy * t / 2.0;
-	o->pos.z += o->vel.z * t + tmpz * t / 2.0;
-	o->theta += o->rotvel * t + tmpr * t / 2.0;
-
-	o->vel.x += tmpx;
-	o->vel.y += tmpy;
-	o->vel.z += tmpz;
-	o->rotvel += tmpr;
+	slist_foreach(t, objs) {
+		free(t->data);
+	}
 }
 
 void UpdateObjs(double dt)
 {
-	slist_foreach(objs, UpdateObj, &dt);
+	struct slist *t;
+
+	slist_foreach(t, objs) {
+		struct obj *o = t->data;
+		double tmpx, tmpy, tmpz, tmpr;
+
+		tmpx = o->acc.x * dt;
+		tmpy = o->acc.y * dt;
+		tmpz = o->acc.z * dt;
+		tmpr = o->rotacc * dt;
+
+		o->pos.x += o->vel.x * dt + tmpx * dt / 2.0;
+		o->pos.y += o->vel.y * dt + tmpy * dt / 2.0;
+		o->pos.z += o->vel.z * dt + tmpz * dt / 2.0;
+		o->theta += o->rotvel * dt + tmpr * dt / 2.0;
+
+		o->vel.x += tmpx;
+		o->vel.y += tmpy;
+		o->vel.z += tmpz;
+		o->rotvel += tmpr;
+	}
 }
 
 void CheckObjs(void)

@@ -33,6 +33,7 @@
 #include "menu.h"
 #include "module.h"
 #include "particles.h"
+#include "phys.h"
 #include "sounds.h"
 #include "textures.h"
 #include "timer.h"
@@ -234,8 +235,8 @@ static void Press2(void);
 static void Press3(void);
 static void Press4(void);
 static void SetMainView(void);
-static void DrawNote(void *snp, void *not_used);
-static void DrawHitNote(void *snp, void *not_used);
+/*static void DrawNote(void *snp, void *not_used);*/
+/*static void DrawHitNote(void *snp, void *not_used);*/
 static void DrawNotes(void);
 static void DrawHitNotes(void);
 static void DrawTargets(void);
@@ -1074,57 +1075,11 @@ void DrawRows(double startTic, double stopTic)
 	glPopMatrix();
 }
 
-GLuint rotnoteList;
-void DrawNote(void *snp, void *not_used)
-{
-	float temp[4] = {.7, 0.0, 0.0, 1.0};
-	const struct screenNote *sn = (struct screenNote*)snp;
-	int mat = abs(sn->tic - curTic) <= TIC_ERROR;
-
-	if(not_used) {}
-
-	glPushMatrix();
-	glTranslated(	sn->pos.x,
-			sn->pos.y,
-			sn->pos.z+0.3);
-	if(mat) glMaterialfv(GL_FRONT, GL_EMISSION, temp);
-/*	glRotatef(theta, 0.0, 1.0, 0.0); */
-	Log(("Dn\n"));
-	glCallList(rotnoteList);
-	if(mat) glMaterialfv(GL_FRONT, GL_EMISSION, lightNone);
-}
-
-void DrawHitNote(void *snp, void *not_used)
-{
-	int i;
-	int j;
-	float mat[16];
-	struct screenNote *sn = (struct screenNote*)snp;
-
-	if(not_used) {}
-
-	glPushMatrix();
-	glTranslated(	sn->pos.x,
-			sn->pos.y,
-			sn->pos.z+0.3);
-	glGetFloatv(GL_MODELVIEW_MATRIX, mat);
-	for(i=0;i<3;i++)
-		for(j=0;j<3;j++)
-		{
-			if(i == j) mat[i+j*4] = 1.0;
-			else mat[i+j*4] = 0.0;
-		}
-	glLoadMatrixf(mat);
-
-	if(sn->tic - curTic <= 0)
-		glColor4f(1.0, 1.0, 1.0, 1.0);
-	else
-		glColor4f(0.5, 0.5, 0.5, 1.0);
-	glCallList(plist+P_BlueNova);
-}
-
 void DrawNotes(void)
 {
+	struct slist *t;
+	GLuint rotnoteList;
+
 	Log(("DN: %i, %i, %i\n", slist_length(notesList), slist_length(hitList), slist_length(unusedList)));
 	glDisable(GL_TEXTURE_2D);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, lightNormal);
@@ -1135,7 +1090,20 @@ void DrawNotes(void)
 		glCallList(noteList);
 	} glEndList();
 
-	slist_foreach(notesList, DrawNote, NULL);
+	slist_foreach(t, notesList) {
+		float temp[4] = {.7, 0.0, 0.0, 1.0};
+		struct screenNote *sn = t->data;
+		int mat = abs(sn->tic - curTic) <= TIC_ERROR;
+
+		glPushMatrix();
+		glTranslated(	sn->pos.x,
+				sn->pos.y,
+				sn->pos.z+0.3);
+		if(mat) glMaterialfv(GL_FRONT, GL_EMISSION, temp);
+		Log(("Dn\n"));
+		glCallList(rotnoteList);
+		if(mat) glMaterialfv(GL_FRONT, GL_EMISSION, lightNone);
+	}
 	glDeleteLists(rotnoteList, 1);
 	glEnable(GL_TEXTURE_2D);
 	Log(("dn\n"));
@@ -1143,7 +1111,33 @@ void DrawNotes(void)
 
 void DrawHitNotes(void)
 {
-	slist_foreach(hitList, DrawHitNote, NULL);
+	struct slist *t;
+
+	slist_foreach(t, hitList) {
+		int i;
+		int j;
+		float mat[16];
+		struct screenNote *sn = t->data;
+
+		glPushMatrix();
+		glTranslated(	sn->pos.x,
+				sn->pos.y,
+				sn->pos.z+0.3);
+		glGetFloatv(GL_MODELVIEW_MATRIX, mat);
+		for(i=0;i<3;i++)
+			for(j=0;j<3;j++)
+			{
+				if(i == j) mat[i+j*4] = 1.0;
+				else mat[i+j*4] = 0.0;
+			}
+		glLoadMatrixf(mat);
+
+		if(sn->tic - curTic <= 0)
+			glColor4f(1.0, 1.0, 1.0, 1.0);
+		else
+			glColor4f(0.5, 0.5, 0.5, 1.0);
+		glCallList(plist+P_BlueNova);
+	}
 }
 
 void DrawTargets(void)
