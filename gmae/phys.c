@@ -38,7 +38,7 @@ void UpdateObj(gpointer op, gpointer tp)
 	double tmpx, tmpy, tmpz, tmpr;
 	double t;
 	Obj *o;
-	t = (double)(*(int*)tp) / 1000.0;
+	t = *(double*)tp;
 	o = (Obj*)op;
 
 	tmpx = o->acc.x * t;
@@ -57,7 +57,7 @@ void UpdateObj(gpointer op, gpointer tp)
 	o->rotvel += tmpr;
 }
 
-void UpdateObjs(int dt)
+void UpdateObjs(double dt)
 {
 	g_slist_foreach(objs, UpdateObj, &dt);
 }
