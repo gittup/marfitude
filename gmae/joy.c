@@ -25,6 +25,7 @@ void InitJoystick()
 {
 	int i;
 	const char *name;
+	if(CfgI("joystick.joystickenable") == 0) return;
 	Log("Starting joystick...\n");
 	i = SDL_NumJoysticks();
 	if(i)
