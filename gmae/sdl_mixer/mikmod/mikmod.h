@@ -527,10 +527,10 @@ MIKMODAPI extern struct MLOADER load_xm;  /* FastTracker 2 (by Triton) */
 MIKMODAPI extern MODULE* Player_LoadRW(SDL_RWops*,int,BOOL);
 #endif /* USE_RWOPS */
 /* End SDL_RWops compatability */
-MIKMODAPI extern MODULE* Player_Load(CHAR*,int,BOOL);
+MIKMODAPI extern MODULE* Player_Load(const CHAR*,int,BOOL);
 MIKMODAPI extern MODULE* Player_LoadFP(FILE*,int,BOOL);
 MIKMODAPI extern MODULE* Player_LoadGeneric(MREADER*,int,BOOL);
-MIKMODAPI extern CHAR*   Player_LoadTitle(CHAR*);
+MIKMODAPI extern CHAR*   Player_LoadTitle(const CHAR*);
 MIKMODAPI extern void    Player_Free(MODULE*);
 MIKMODAPI extern void    Player_Start(MODULE*);
 MIKMODAPI extern BOOL    Player_Active(void);

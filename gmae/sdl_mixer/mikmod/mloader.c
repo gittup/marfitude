@@ -377,7 +377,7 @@ static CHAR* Player_LoadTitle_internal(MREADER *reader)
 	return l->LoadTitle();
 }
 
-CHAR* Player_LoadTitle(CHAR* filename)
+CHAR* Player_LoadTitle(const CHAR* filename)
 {
 	CHAR* result=NULL;
 	FILE* fp;
@@ -527,7 +527,7 @@ MODULE* Player_LoadFP(FILE* fp,int maxchan,BOOL curious)
 
 /* Open a module via its filename.  The loader will initialize the specified
    song-player 'player'. */
-MODULE* Player_Load(CHAR* filename,int maxchan,BOOL curious)
+MODULE* Player_Load(const CHAR* filename,int maxchan,BOOL curious)
 {
 	FILE *fp;
 	MODULE *mf=NULL;
