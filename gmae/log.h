@@ -27,8 +27,8 @@ extern int logging;
 
 /** Write the logged message to a file, if logging is enabled */
 #define Log(s) do {if(logging) {LogFile(__FILE__, __LINE__); LogMsg s;}} while(0)
-/** Write the logged message to a file and stderr, if logging is enabled */
-#define ELog(s) do {if(logging) {ELogFile(__FILE__, __LINE__); ELogMsg s; LogMsg s;}} while(0)
+/** Write the logged message stderr. Also write to the log if enabled */
+#define ELog(s) do {ELogFile(__FILE__, __LINE__); ELogMsg s; if(logging) {LogMsg s;}} while(0)
 
 void LogFile(const char *file, int line);
 void LogMsg(const char *s, ...);
