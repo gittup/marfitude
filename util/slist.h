@@ -15,3 +15,4 @@ slist *slist_find_custom(slist *l, void *d, CompareFunc c);
 slist *slist_next(slist *l);
 void slist_foreach(slist *l, ForeachFunc f, void *user);
 void slist_free(slist *l);
+void slist_usage(void);

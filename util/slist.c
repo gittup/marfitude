@@ -199,3 +199,12 @@ void slist_free(slist *l)
 		l = l->next;
 	}
 }
+
+void slist_usage(void)
+{
+	int x;
+	for(x=0;x<memsize;x++)
+		if(mem[x].active)
+			printf("%i active\n", x);
+	printf("%i / %i mem used, at %i\n", memused, memsize, current);
+}
