@@ -332,10 +332,8 @@ void MenuBack()
 	SwitchMenu(activeMenu->back);
 }
 
-void ShowMenu(void)
+void RegisterMenuEvents(void)
 {
-	if(menuActive) return;
-	PlaySound(SND_spnray03);
 	menuActive = 1;
 	RegisterEvent(EVENT_UP, MenuUp, EVENTTYPE_STOP);
 	RegisterEvent(EVENT_DOWN, MenuDown, EVENTTYPE_STOP);
@@ -343,6 +341,13 @@ void ShowMenu(void)
 	RegisterEvent(EVENT_RIGHT, MenuInc, EVENTTYPE_STOP);
 	RegisterEvent(EVENT_MENU, MenuBack, EVENTTYPE_STOP);
 	RegisterEvent(EVENT_ENTER, MenuActivate, EVENTTYPE_STOP);
+}
+
+void ShowMenu(void)
+{
+	if(menuActive) return;
+	RegisterMenuEvents();
+	PlaySound(SND_spnray03);
 	FireEvent(EVENT_SHOWMENU);
 	SwitchMenu(MAINMENU);
 }
@@ -401,6 +406,7 @@ void Retry()
 
 int MainMenuInit()
 {
+	if(!menuActive) RegisterMenuEvents();
 	EventMode(MENU);
 	menuX = 200;
 	menuY = 200;
