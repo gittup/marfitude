@@ -1,4 +1,3 @@
-include mk/lib/sdl.mk
-
+PACKAGES = sdl
 TARGET = marf
 include mk/tgt/staticlib.mk
