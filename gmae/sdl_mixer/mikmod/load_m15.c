@@ -27,10 +27,6 @@
 
 ==============================================================================*/
 
-#ifdef __STRICT_ANSI__
-extern char *strdup(const char *s);
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -392,9 +388,9 @@ static BOOL M15_Load(BOOL curious)
 	}
 
 	if(ust_loader)
-		of.modtype = strdup("Ultimate Soundtracker");
+		of.modtype = Mstrdup("Ultimate Soundtracker");
 	else
-		of.modtype = strdup("Soundtracker");
+		of.modtype = Mstrdup("Soundtracker");
 
 	/* set module variables */
 	of.initspeed = 6;

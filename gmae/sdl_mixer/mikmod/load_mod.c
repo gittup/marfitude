@@ -26,10 +26,6 @@
 
 ==============================================================================*/
 
-#ifdef __STRICT_ANSI__
-extern char *strdup(const char *s);
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -425,7 +421,7 @@ static BOOL MOD_Load(BOOL curious)
 		q++;
 	}
 
-	of.modtype = strdup(descr);
+	of.modtype = Mstrdup(descr);
 
 	if (!ML_LoadPatterns())
 		return 0;

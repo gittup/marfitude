@@ -32,10 +32,6 @@
 
 */
 
-#ifdef __STRICT_ANSI__
-extern char *strdup(const char *s);
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -313,10 +309,10 @@ static BOOL STX_Load(BOOL curious)
 	version=_mm_read_I_UWORD(modreader);
 	if(version==mh->patsize) {
 		version    = 0x10;
-		of.modtype = strdup("STMIK 0.2 (STM2STX 1.0)");
+		of.modtype = Mstrdup("STMIK 0.2 (STM2STX 1.0)");
 	} else {
 		version    = 0x11;
-		of.modtype = strdup("STMIK 0.2 (STM2STX 1.1)");
+		of.modtype = Mstrdup("STMIK 0.2 (STM2STX 1.1)");
 	}
 
 	/* read the order data */

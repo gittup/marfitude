@@ -26,10 +26,6 @@
 
 ==============================================================================*/
 
-#ifdef __STRICT_ANSI__
-extern char *strdup(const char *s);
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -277,7 +273,7 @@ BOOL S69_Load(BOOL curious)
 	of.initspeed=4;
 	of.inittempo=78;
 	of.songname=DupStr(mh->message,36,1);
-	of.modtype=strdup(S69_Version[memcmp(mh->marker,"JN",2)==0]);
+	of.modtype=Mstrdup(S69_Version[memcmp(mh->marker,"JN",2)==0]);
 	of.numchn=8;
 	of.numpat=mh->nop;
 	of.numins=of.numsmp=mh->nos;

@@ -33,10 +33,6 @@
 
 */
 
-#ifdef __STRICT_ANSI__
-extern char *strdup(const char *s);
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -326,9 +322,9 @@ BOOL OKT_Load(BOOL curious)
 	if(curious) {}
 	/* skip OKTALYZER header */
 	_mm_fseek(modreader, 8, SEEK_SET);
-	of.songname = strdup("");
+	of.songname = Mstrdup("");
 
-	of.modtype = strdup("Amiga Oktalyzer");
+	of.modtype = Mstrdup("Amiga Oktalyzer");
 	of.numpos = of.reppos = 0;
 	
 	/* default values */
@@ -435,7 +431,7 @@ BOOL OKT_Load(BOOL curious)
 CHAR *OKT_LoadTitle(void);
 CHAR *OKT_LoadTitle(void)
 {
-	return strdup("");
+	return Mstrdup("");
 }
 
 /*========== Loader information */

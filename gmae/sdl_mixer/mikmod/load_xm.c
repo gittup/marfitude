@@ -26,10 +26,6 @@
 
 ==============================================================================*/
 
-#ifdef __STRICT_ANSI__
-extern char *strdup(const char *s);
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -630,7 +626,7 @@ BOOL XM_Load(BOOL curious)
 	sprintf(modtype,"%s (XM format %d.%02d)",
 	                tracker,mh->version>>8,mh->version&0xff);
 #endif
-	of.modtype   = strdup(modtype);
+	of.modtype   = Mstrdup(modtype);
 	of.numchn    = mh->numchn;
 	of.numpat    = mh->numpat;
 	of.numtrk    = (UWORD)of.numpat*of.numchn;   /* get number of channels */

@@ -29,6 +29,8 @@
 #ifndef _MIKMOD_INTERNALS_H
 #define _MIKMOD_INTERNALS_H
 
+char *Mstrdup(const char *s);
+
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
@@ -43,16 +45,6 @@
 #ifndef __MWERKS__
 #define __STDC__=1
 #endif
-static char *strdup(const char *str)
-{
-	char *newstr;
-	
-	newstr = (char *)malloc(strlen(str)+1);
-	if ( newstr != NULL ) {
-		strcpy(newstr, str);
-	}
-	return(newstr);
-}
 #endif
 
 #ifdef WIN32

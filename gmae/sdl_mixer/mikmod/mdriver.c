@@ -25,9 +25,21 @@
   These routines are used to access the available soundcard drivers.
 
 ==============================================================================*/
-#ifdef __STRICT_ANSI__
-extern int strcasecmp(const char *s1, const char *s2);
-#endif
+#include <ctype.h>
+#define ccmp(a, b) ((a) == (b) ? 0 : ((a) > (b) ? 1 : -1))
+static int Mstrcasecmp(const char *s1, const char *s2);
+static int Mstrcasecmp(const char *s1, const char *s2)
+{
+	while(*s1 && *s2 && toupper(*s1) == toupper(*s2)) {
+		s1++;
+		s2++;
+	}
+	if(*s1 > *s2)
+		return 1;
+	if(*s1 < *s2)
+		return -1;
+	return 0;
+}
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -239,7 +251,7 @@ int MikMod_DriverFromAlias(CHAR *alias)
 	cruise=firstdriver;
 	while(cruise) {
 		if (cruise->Alias) {
-			if (!(strcasecmp(alias,cruise->Alias))) break;
+			if (!(Mstrcasecmp(alias,cruise->Alias))) break;
 			rank++;
 		}
 		cruise=cruise->next;

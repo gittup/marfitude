@@ -26,10 +26,6 @@
 
 ==============================================================================*/
 
-#ifdef __STRICT_ANSI__
-extern char *strdup(const char *s);
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -165,7 +161,7 @@ BOOL MTM_Load(BOOL curious)
 	/* set module variables */
 	of.initspeed = 6;
 	of.inittempo = 125;
-	of.modtype   = strdup(MTM_Version);
+	of.modtype   = Mstrdup(MTM_Version);
 	of.numchn    = mh->numchannels;
 	of.numtrk    = mh->numtracks+1;           /* get number of channels */
 	of.songname  = DupStr(mh->songname,20,1); /* make a cstr of songname */

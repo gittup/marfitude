@@ -26,10 +26,6 @@
 
 ==============================================================================*/
 
-#ifdef __STRICT_ANSI__
-extern char *strdup(const char *s);
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -374,7 +370,7 @@ BOOL AMF_Load(BOOL curious)
 	of.inittempo = mh->songbpm;
 	AMF_Version[AMFTEXTLEN-3]='0'+(mh->version/10);
 	AMF_Version[AMFTEXTLEN-1]='0'+(mh->version%10);
-	of.modtype   = strdup(AMF_Version);
+	of.modtype   = Mstrdup(AMF_Version);
 	of.numchn    = mh->numchannels;
 	of.numtrk    = mh->numorders*mh->numchannels;
 	if(mh->numtracks>of.numtrk) of.numtrk=mh->numtracks;

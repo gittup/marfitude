@@ -34,10 +34,6 @@
 
 */
 
-#ifdef __STRICT_ANSI__
-extern char *strdup(const char *s);
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -399,7 +395,7 @@ BOOL GDM_Load(BOOL curious)
 	}
 
 	/* now we fill */
-	of.modtype=strdup(GDM_Version);
+	of.modtype=Mstrdup(GDM_Version);
 	of.modtype[18]=mh->majorver+'0';
 	of.modtype[20]=mh->minorver/10+'0';
 	of.modtype[21]=mh->minorver%10+'0';

@@ -26,10 +26,6 @@
 
 ==============================================================================*/
 
-#ifdef __STRICT_ANSI__
-extern char *strdup(const char *s);
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -391,7 +387,7 @@ BOOL S3M_Load(BOOL curious)
 			t=NUMTRACKERS; /* IT 2.14p3 */
 		else t--;
 	}
-	of.modtype = strdup(S3M_Version[t]);
+	of.modtype = Mstrdup(S3M_Version[t]);
 	if(t<NUMTRACKERS) {
 		of.modtype[numeric[t]] = ((mh->tracker>>8) &0xf)+'0';
 		of.modtype[numeric[t]+2] = ((mh->tracker>>4)&0xf)+'0';
