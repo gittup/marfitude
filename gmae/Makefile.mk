@@ -14,8 +14,6 @@ TARGET = marfitude
 
 include mk/lang/c.mk
 
-INSTALL_DIR = $(BINDIR)
-INSTALL_LIST = $(o)/marfitude$(BINARYEXT)
 include mk/tgt/program.mk
 
 INSTALL_DIR = $(DATADIR)

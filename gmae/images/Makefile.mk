@@ -1,3 +1,3 @@
 INSTALL_DIR = $(DATADIR)/images
-INSTALL_LIST := $(wildcard $(d)/*.png)
+INSTALL_LIST := *.png
 include mk/tgt/data.mk
