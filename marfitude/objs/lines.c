@@ -40,7 +40,7 @@ static int numLines;
 int lines_init(void)
 {
 	numLines = NUM_TICKS;
-	lines = (struct line*)malloc(sizeof(struct line) * numLines);
+	lines = malloc(sizeof(struct line) * numLines);
 	startLine = 0;
 	stopLine = 0;
 
