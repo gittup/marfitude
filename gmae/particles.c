@@ -144,7 +144,7 @@ void QuitParticles(void)
 {
 	free(particles);
 	glDeleteLists(plist, sizeof(particleTypes) / sizeof(Particle));
-	printf("Particles Shutdown\n");
+	printf("Particles shutdown\n");
 	return;
 }
 
