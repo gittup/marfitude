@@ -47,64 +47,98 @@
 #define MENU_TEXT 4
 #define MENU_SELECTABLE 4 /* items from 0 to MENU_SELECTABLE are selectable */
 #define MUSICDIR "music/"
+#define SCENEDIR "scenes/"
 
 #define NOBOX -1 /* for the bounding box */
 #define BBO 5	/* bounding box offset */
 
+/** A slider menu object
+ */
 struct slider {
-	int min;
-	int max;
-	int del;
-	int val;
+	int min; /**< The minimum value */
+	int max; /**< The maximum value */
+	int del; /**< The delta */
+	int val; /**< The actual value */
 };
 
+/** A boolean menu object
+ */
 struct boolean {
-	char *trueString;
-	char *falseString;
-	int val;
+	char *trueString;  /**< String if true */
+	char *falseString; /**< String if false */
+	int val;           /**< Value (1 or 0) */
 };
 
+/** A button menu object
+ */
 struct button {
-	void (*activeFunc)(void);
+	void (*activeFunc)(void); /**< The function to execute when activated */
 };
 
+/** A button menu object that takes a parameter
+ */
 struct buttonParam {
-	int (*activeFunc)(int);
-	int param;
+	int (*activeFunc)(int); /**< The function to execute when activated */
+	int param;              /**< The parameter to send the function */
 };
 
+/** A text menu object
+ */
 struct text {
-	float c[4];
-	int x;
-	int y;
-	int active;
+	float c[4]; /**< The color of the object */
+	int x;      /**< The x position */
+	int y;      /**< The y position */
+	int active; /**< true if the text is to be displayed*/
 };
 
+/** A menu item
+ */
 struct menuItem {
-	int type;
-	char *name;
-	void *item;
+	int type;   /**< One of the MENU_ defines above */
+	char *name; /**< The name of this menu item */
+	void *item; /**< Pointer to one of the item structs above */
 };
 
-static void DrawPartialMenu(int start, int stop);
-static void DrawMenu(void);
-static void AddMenuItem(const char *name, void *item, int type);
-static void ClearMenuItems(void);
-static void UpdateBox(int x1, int y1, int x2, int y2);
+/** Describes a menu box on the screen
+ */
+struct screenMenu {
+	int activeMenuItem;       /**< The menu item that is highlighted */
+	struct menuItem *items;   /**< Pointers to item elements */
+	int numItems;             /**< The number of items in the menu */
+	int itemStart;            /**< The item to start displaying */
+	int menuSize;             /**< The number of items displayed at once */
+	int (*BoundsCheck)(struct screenMenu *m); /**< A bounds checking
+						   * function - returns 1 if a
+						   * sound is to be played
+						   */
+	int menuX; /**< X position of the menu */
+	int menuY; /**< Y position of the menu */
+	int minX;  /**< Left side of the bounding box */
+	int minY;  /**< Top side of the bounding box */
+	int maxX;  /**< Right side of the bounding box */
+	int maxY;  /**< Bottom side of the bounding box */
+};
+
+static void DrawPartialMenu(struct screenMenu *m, int start, int stop);
+static void DrawMenu(struct screenMenu *m);
+static void AddMenuItem(struct screenMenu *m, const char *name, void *item, int type);
+static void ClearMenuItems(struct screenMenu *m);
+static void UpdateBox(struct screenMenu *m, int x1, int y1, int x2, int y2);
 /*static struct slider *CreateSlider(const char *name, int min, int max, int delta, int initVal);
 static struct boolean *CreateBoolean(const char *name, const char *trueString, const char *falseString, int initVal);*/
-static struct button *CreateButton(const char *name, void (*activeFunc)(void));
-static struct buttonParam *CreateButtonParam(const char *name, int (*activeFunc)(int), int param);
-static struct text *CreateText(const char *name, float *c, int x, int y);
-static int MenuClamp(void);
-static int MenuWrap(void);
-static int DownOne(void);
+static struct button *CreateButton(struct screenMenu *m, const char *name, void (*activeFunc)(void));
+static struct buttonParam *CreateButtonParam(struct screenMenu *m, const char *name, int (*activeFunc)(int), int param);
+static struct text *CreateText(struct screenMenu *m, const char *name, float *c, int x, int y);
+static int MenuClamp(struct screenMenu *m);
+static int MenuWrap(struct screenMenu *m);
+static int DownOne(struct screenMenu *m);
 static void MenuDown(void);
-static int UpOne(void);
+static int UpOne(struct screenMenu *m);
 static void MenuUp(void);
 static void MenuDec(void);
 static void MenuInc(void);
-static void MenuActivate(void);
+static void MenuActivate(const void *);
+static void MenuSelect(void);
 static int valid_music_file(const char *s);
 static int alphabetical(const void *a, const void *b);
 static int FightMenuInit(void);
@@ -113,7 +147,7 @@ static void EQTriangle(void);
 static void FightMenu(void);
 static void MenuBack(void);
 static void RegisterMenuEvents(void);
-static void ShowMenu(void);
+static void ShowMenu(const void *);
 static void HideMenu(void);
 static int NullMenuInit(void);
 static void NullMenuQuit(void);
@@ -126,14 +160,14 @@ static int MainMenuInit(void);
 static void MainMenuQuit(void);
 static void MainMenu(void);
 static void FightActivate(void);
-static void FightPageUp(void);
-static void FightPageDown(void);
-static void FightHome(void);
-static void FightEnd(void);
+static void FightPageUp(const void *);
+static void FightPageDown(const void *);
+static void FightHome(const void *);
+static void FightEnd(const void *);
 static int FindActiveItem(struct menuItem *activeItems, int numActiveItems);
 /*static void DrawButton(GLuint button, int x, int y, int on);*/
 static void ConfigCreateItems(void);
-static void ConfigKeyHandler(struct joykey *jk);
+static void ConfigKeyHandler(const void *data);
 static int ConfigButton(int b);
 static int ConfigMenuInit(void);
 static void ConfigMenuQuit(void);
@@ -142,21 +176,45 @@ static void Quit(void);
 static int QuitMenuInit(void);
 static void QuitMenuQuit(void);
 static void QuitMenu(void);
+static void button_handler(const void *data);
 
 int menuActive = 0;
 
-/* when the active menu item goes out of bounds */
-/* returns 1 if a sound is to be played, 0 otherwise */
-static int (*BoundsCheck)(void);
-static int activeMenuItem = 0;
-static int numItems = 0;
-static int menuX = 200, menuY = 200; /* where to start placing menu items */
-static int minX = NOBOX, minY = 0, maxX = 0, maxY = 0; /* bounding box of menu items */
-static struct menuItem *items = NULL;
+int curMenu;
+int numScreenMenus = 1;
+struct screenMenu screenMenus[2];
+struct screenMenu *mainMenu = &screenMenus[0];
 
 static int snd_tick;
 static int snd_push;
 static int snd_back;
+
+void button_handler(const void *data)
+{
+	const struct button_e *b = data;
+	switch(b->button) {
+		case B_UP:
+			MenuUp();
+			break;
+		case B_DOWN:
+			MenuDown();
+			break;
+		case B_LEFT:
+			MenuDec();
+			break;
+		case B_RIGHT:
+			MenuInc();
+			break;
+		case B_MENU:
+			MenuBack();
+			break;
+		case B_SELECT:
+			MenuSelect();
+			break;
+		default:
+			break;
+	}
+}
 
 void ShadedBox(int x1, int y1, int x2, int y2)
 {
@@ -183,15 +241,36 @@ void ShadedBox(int x1, int y1, int x2, int y2)
 	ResetProjection();
 }
 
-void DrawPartialMenu(int start, int stop)
+void EQTriangle(void)
+{
+	glDisable(GL_TEXTURE_2D);
+	glBegin(GL_TRIANGLES);
+	{
+		glVertex2f(-1.0, 0.0);
+		glVertex2f(1.0, 0.0);
+		glVertex2f(0.0, 1.732050807);
+	} glEnd();
+	glEnable(GL_TEXTURE_2D);
+}
+
+void DrawPartialMenu(struct screenMenu *m, int start, int stop)
 {
 	int x;
+	int bottom;
 	struct text *t;
-	if(start < 0 || start >= numItems) start = 0;
-	if(stop < 0 || stop >= numItems) stop = numItems;
+
+	if(m->menuSize == -1) {
+		bottom = m->maxY;
+	} else {
+		x = m->minY + FONT_HEIGHT * m->menuSize;
+		bottom = (m->maxY < x) ? m->maxY : x;
+	}
+	ShadedBox(m->minX-BBO, m->minY-BBO, m->maxX+BBO, bottom + BBO);
+	if(start < 0 || start >= m->numItems) start = 0;
+	if(stop < 0 || stop >= m->numItems) stop = m->numItems;
 	for(x=start;x<stop;x++)
 	{
-		switch(items[x].type)
+		switch(m->items[x].type)
 		{
 			case MENU_SLIDER:
 				break;
@@ -199,55 +278,81 @@ void DrawPartialMenu(int start, int stop)
 				break;
 			case MENU_BUTTON:
 			case MENU_BUTTONPARAM:
-				if(x == activeMenuItem) glColor3f(1.0, 0.0, 0.0);
+				if(x == m->activeMenuItem) {
+					if(m == &screenMenus[curMenu])
+						glColor3f(1.0, 0.0, 0.0);
+					else
+						glColor3f(0.0, 0.0, 1.0);
+				}
 				else glColor3f(1.0, 1.0, 1.0);
-				PrintGL(menuX, menuY+(x-start)*FONT_HEIGHT, items[x].name);
+				PrintGL(m->menuX, m->menuY+(x-start)*FONT_HEIGHT, m->items[x].name);
 				break;
 			case MENU_TEXT:
-				t = (struct text*)items[x].item;
+				t = (struct text*)m->items[x].item;
 				if(t->active)
 				{
 					glColor4f(t->c[RED], t->c[GREEN], t->c[BLUE], t->c[ALPHA]);
-					PrintGL(t->x, t->y, items[x].name);
+					PrintGL(t->x, t->y, m->items[x].name);
 				}
 		}
 	}
+
+	glColor3f(1.0, 1.0, 1.0);
+	SetOrthoProjection();
+	if(m->itemStart)
+	{
+		glPushMatrix();
+			glTranslatef(m->menuX-20, m->menuY, 0.0);
+			glScalef(10.0, -10.0, 1.0);
+			EQTriangle();
+		glPopMatrix();
+	}
+	if(m->menuSize != -1 && m->itemStart < m->numItems - m->menuSize)
+	{
+		int tmp = m->minY + FONT_HEIGHT * m->menuSize;
+		glPushMatrix();
+			glTranslatef(m->menuX-20, tmp, 0.0);
+			glScalef(10.0, 10.0, 1.0);
+			EQTriangle();
+		glPopMatrix();
+	}
+	ResetProjection();
 }
 
-void DrawMenu(void)
+void DrawMenu(struct screenMenu *m)
 {
-	DrawPartialMenu(0, numItems);
+	DrawPartialMenu(m, 0, m->numItems);
 }
 
-void AddMenuItem(const char *name, void *item, int type)
+void AddMenuItem(struct screenMenu *m, const char *name, void *item, int type)
 {
-	items = (struct menuItem*)realloc(items, sizeof(struct menuItem) * (numItems+1));
-	items[numItems].name = (char*)malloc(sizeof(char) * (strlen(name)+1));
-	strcpy(items[numItems].name, name);
-	items[numItems].item = item;
-	items[numItems].type = type;
-	numItems++;
+	m->items = (struct menuItem*)realloc(m->items, sizeof(struct menuItem) * (m->numItems+1));
+	m->items[m->numItems].name = (char*)malloc(sizeof(char) * (strlen(name)+1));
+	strcpy(m->items[m->numItems].name, name);
+	m->items[m->numItems].item = item;
+	m->items[m->numItems].type = type;
+	m->numItems++;
 }
 
-void ClearMenuItems(void)
+void ClearMenuItems(struct screenMenu *m)
 {
 	int x;
 	struct boolean *b;
 	Log(("Clearing items...\n"));
-	minX = NOBOX;
-	minY = 0;
-	maxX = 0;
-	maxY = 0;
-	for(x=0;x<numItems;x++)
+	m->minX = NOBOX;
+	m->minY = 0;
+	m->maxX = 0;
+	m->maxY = 0;
+	for(x=0;x<m->numItems;x++)
 	{
-		free(items[x].name);
-		switch(items[x].type)
+		free(m->items[x].name);
+		switch(m->items[x].type)
 		{
 			case MENU_SLIDER:
-				free(items[x].item);
+				free(m->items[x].item);
 				break;
 			case MENU_BOOLEAN:
-				b = (struct boolean*)items[x].item;
+				b = (struct boolean*)m->items[x].item;
 				free(b->trueString);
 				free(b->falseString);
 				free(b);
@@ -255,35 +360,35 @@ void ClearMenuItems(void)
 			case MENU_BUTTON:
 			case MENU_BUTTONPARAM:
 			case MENU_TEXT:
-				free(items[x].item);
+				free(m->items[x].item);
 				break;
 			default:
 				ELog(("Error: Invalid menu item type!\n"));
 				break;
 		}
 	}
-	numItems = 0;
-	activeMenuItem = 0;
-	free(items);
-	items = NULL;
+	m->numItems = 0;
+	m->activeMenuItem = 0;
+	free(m->items);
+	m->items = NULL;
 	Log(("All items freed.\n"));
 }
 
-void UpdateBox(int x1, int y1, int x2, int y2)
+void UpdateBox(struct screenMenu *m, int x1, int y1, int x2, int y2)
 {
-	if(minX == NOBOX)
+	if(m->minX == NOBOX)
 	{
-		minX = x1;
-		minY = y1;
-		maxX = x2;
-		maxY = y2;
+		m->minX = x1;
+		m->minY = y1;
+		m->maxX = x2;
+		m->maxY = y2;
 	}
 	else
 	{
-		if(x1 < minX) minX = x1;
-		if(y1 < minY) minY = y1;
-		if(x2 > maxX) maxX = x2;
-		if(y2 > maxY) maxY = y2;
+		if(x1 < m->minX) m->minX = x1;
+		if(y1 < m->minY) m->minY = y1;
+		if(x2 > m->maxX) m->maxX = x2;
+		if(y2 > m->maxY) m->maxY = y2;
 	}
 }
 
@@ -312,29 +417,29 @@ struct boolean *CreateBoolean(const char *name, const char *trueString, const ch
 	return b;
 }*/
 
-struct button *CreateButton(const char *name, void (*activeFunc)(void))
+struct button *CreateButton(struct screenMenu *m, const char *name, void (*activeFunc)(void))
 {
 	struct button *b;
 	b = (struct button*)malloc(sizeof(struct button));
 	b->activeFunc = activeFunc;
-	UpdateBox(menuX, menuY + FONT_HEIGHT * numItems, menuX + strlen(name) * FONT_WIDTH, menuY + FONT_HEIGHT * (numItems+1));
-	AddMenuItem(name, (void*)b, MENU_BUTTON);
+	UpdateBox(m, m->menuX, m->menuY + FONT_HEIGHT * m->numItems, m->menuX + strlen(name) * FONT_WIDTH, m->menuY + FONT_HEIGHT * (m->numItems+1));
+	AddMenuItem(m, name, (void*)b, MENU_BUTTON);
 	return b;
 }
 
-struct buttonParam *CreateButtonParam(const char *name, int (*activeFunc)(int), int param)
+struct buttonParam *CreateButtonParam(struct screenMenu *m, const char *name, int (*activeFunc)(int), int param)
 {
 	struct buttonParam *b;
 	b = (struct buttonParam*)malloc(sizeof(struct buttonParam));
 	b->activeFunc = activeFunc;
 	b->param = param;
-	UpdateBox(menuX, menuY + FONT_HEIGHT * numItems, menuX + strlen(name) * FONT_WIDTH, menuY + FONT_HEIGHT * (numItems+1));
-	AddMenuItem(name, (void*)b, MENU_BUTTONPARAM);
+	UpdateBox(m, m->menuX, m->menuY + FONT_HEIGHT * m->numItems, m->menuX + strlen(name) * FONT_WIDTH, m->menuY + FONT_HEIGHT * (m->numItems+1));
+	AddMenuItem(m, name, (void*)b, MENU_BUTTONPARAM);
 	return b;
 }
 
 /* assumes text is on a single line for bounding box purposes */
-struct text *CreateText(const char *name, float *c, int x, int y)
+struct text *CreateText(struct screenMenu *m, const char *name, float *c, int x, int y)
 {
 	struct text *t;
 	t = (struct text*)malloc(sizeof(struct text));
@@ -345,39 +450,39 @@ struct text *CreateText(const char *name, float *c, int x, int y)
 	t->x = x;
 	t->y = y;
 	t->active = 1;
-	UpdateBox(x, y, x + strlen(name) * FONT_WIDTH, y + FONT_HEIGHT);
-	AddMenuItem(name, (void*)t, MENU_TEXT);
+	UpdateBox(m, x, y, x + strlen(name) * FONT_WIDTH, y + FONT_HEIGHT);
+	AddMenuItem(m, name, (void*)t, MENU_TEXT);
 	return t;
 }
 
-int MenuClamp(void)
+int MenuClamp(struct screenMenu *m)
 {
-	if(activeMenuItem < 0)
+	if(m->activeMenuItem < 0)
 	{
-		activeMenuItem = 0;
+		m->activeMenuItem = 0;
 		return 0;
 	}
-	if(activeMenuItem >= numItems)
+	if(m->activeMenuItem >= m->numItems)
 	{
-		activeMenuItem = numItems >= 0 ? numItems - 1 : 0;
+		m->activeMenuItem = m->numItems >= 0 ? m->numItems - 1 : 0;
 		return 0;
 	}
 	return 1;
 }
 
-int MenuWrap(void)
+int MenuWrap(struct screenMenu *m)
 {
-	if(activeMenuItem >= numItems) activeMenuItem = 0;
-	else if(activeMenuItem < 0) activeMenuItem = numItems >= 0 ? numItems -1 : 0;
+	if(m->activeMenuItem >= m->numItems) m->activeMenuItem = 0;
+	else if(m->activeMenuItem < 0) m->activeMenuItem = m->numItems >= 0 ? m->numItems -1 : 0;
 	return 1;
 }
 
-int DownOne(void)
+int DownOne(struct screenMenu *m)
 {
-	activeMenuItem++;
-	if(activeMenuItem >= numItems)
+	m->activeMenuItem++;
+	if(m->activeMenuItem >= m->numItems)
 	{
-		if(BoundsCheck()) return 1;
+		if(m->BoundsCheck(m)) return 1;
 		else return 0;
 	}
 	else return 1;
@@ -385,29 +490,28 @@ int DownOne(void)
 
 void MenuDown(void)
 {
-	int old = activeMenuItem;
+	struct screenMenu *m = &screenMenus[curMenu];
+	int old = m->activeMenuItem;
 	int play = 0;
-	do
-	{
-		if(DownOne())
-		{
-			if(items[activeMenuItem].type < MENU_SELECTABLE)
-			{
+
+	do {
+		if(DownOne(m)) {
+			if(m->items[m->activeMenuItem].type < MENU_SELECTABLE) {
 				play = 1;
 				break;
 			}
 		}
 		else break;
-	} while(activeMenuItem != old);
+	} while(m->activeMenuItem != old);
 	if(play) MPlaySound(snd_tick);
 }
 
-int UpOne(void)
+int UpOne(struct screenMenu *m)
 {
-	activeMenuItem--;
-	if(activeMenuItem < 0)
+	m->activeMenuItem--;
+	if(m->activeMenuItem < 0)
 	{
-		if(BoundsCheck()) return 1;
+		if(m->BoundsCheck(m)) return 1;
 		else return 0;
 	}
 	else return 1;
@@ -415,20 +519,19 @@ int UpOne(void)
 
 void MenuUp(void)
 {
-	int old = activeMenuItem;
+	struct screenMenu *m = &screenMenus[curMenu];
+	int old = m->activeMenuItem;
 	int play = 0;
-	do
-	{
-		if(UpOne())
-		{
-			if(items[activeMenuItem].type < MENU_SELECTABLE)
-			{
+
+	do {
+		if(UpOne(m)) {
+			if(m->items[m->activeMenuItem].type < MENU_SELECTABLE) {
 				play = 1;
 				break;
 			}
 		}
 		else break;
-	} while(activeMenuItem != old);
+	} while(m->activeMenuItem != old);
 	if(play) MPlaySound(snd_tick);
 }
 
@@ -442,22 +545,34 @@ void MenuInc(void)
 	printf("Menu item incremented\n");
 }
 
-void MenuActivate(void)
+void MenuActivate(const void *data)
 {
 	struct buttonParam *bp;
+	struct screenMenu *m = &screenMenus[curMenu];
+
+	if(data) {}
 
 	MPlaySound(snd_push);
-	switch(items[activeMenuItem].type)
+	switch(m->items[m->activeMenuItem].type)
 	{
 		case MENU_BUTTON:
-			((struct button*)items[activeMenuItem].item)->activeFunc();
+			((struct button*)m->items[m->activeMenuItem].item)->activeFunc();
 			break;
 		case MENU_BUTTONPARAM:
-			bp = (struct buttonParam*)items[activeMenuItem].item;
+			bp = (struct buttonParam*)m->items[m->activeMenuItem].item;
 			bp->activeFunc(bp->param);
 		default:
 			break;
 	}
+}
+
+void MenuSelect(void)
+{
+	int oldMenu = curMenu;
+
+	curMenu = (curMenu + 1) % numScreenMenus;
+	if(oldMenu != curMenu)
+		MPlaySound(snd_tick);
 }
 
 void MenuBack(void)
@@ -469,40 +584,41 @@ void MenuBack(void)
 void RegisterMenuEvents(void)
 {
 	menuActive = 1;
-	RegisterEvent(EVENT_UP, MenuUp, EVENTTYPE_STOP);
-	RegisterEvent(EVENT_DOWN, MenuDown, EVENTTYPE_STOP);
-	RegisterEvent(EVENT_LEFT, MenuDec, EVENTTYPE_STOP);
-	RegisterEvent(EVENT_RIGHT, MenuInc, EVENTTYPE_STOP);
-	RegisterEvent(EVENT_MENU, MenuBack, EVENTTYPE_STOP);
-	RegisterEvent(EVENT_ENTER, MenuActivate, EVENTTYPE_STOP);
+	curMenu = 0;
+	RegisterEvent("button", button_handler, EVENTTYPE_STOP);
+	RegisterEvent("enter", MenuActivate, EVENTTYPE_STOP);
 }
 
-void ShowMenu(void)
+void ShowMenu(const void *data)
 {
+	struct menu_e m;
+	const struct button_e *b = data;
+
 	if(menuActive) return;
+	if(b->button != B_MENU) return;
+
 	RegisterMenuEvents();
 	MPlaySound(snd_push);
-	FireEvent(EVENT_SHOWMENU);
+	m.active = 1;
+	FireEvent("menu", &m);
 	SwitchMenu(MAINMENU);
 }
 
 void HideMenu(void)
 {
+	struct menu_e m;
 	if(!menuActive) return;
 	menuActive = 0;
-	DeregisterEvent(EVENT_UP, MenuUp);
-	DeregisterEvent(EVENT_DOWN, MenuDown);
-	DeregisterEvent(EVENT_LEFT, MenuDec);
-	DeregisterEvent(EVENT_RIGHT, MenuInc);
-	DeregisterEvent(EVENT_MENU, MenuBack);
-	DeregisterEvent(EVENT_ENTER, MenuActivate);
-	FireEvent(EVENT_HIDEMENU);
+	DeregisterEvent("enter", MenuActivate);
+	DeregisterEvent("button", button_handler);
+	m.active = 0;
+	FireEvent("menu", &m);
 }
 
 int NullMenuInit(void)
 {
 	HideMenu(); /* deregister events for good measure */
-	return 1;
+	return 0;
 }
 
 void NullMenuQuit(void)
@@ -517,13 +633,13 @@ int NoMenuInit(void)
 {
 	EventMode(GAME);
 	HideMenu();
-	RegisterEvent(EVENT_MENU, ShowMenu, EVENTTYPE_STOP);
-	return 1;
+	RegisterEvent("button", ShowMenu, EVENTTYPE_MULTI);
+	return 0;
 }
 
 void NoMenuQuit(void)
 {
-	DeregisterEvent(EVENT_MENU, ShowMenu);
+	DeregisterEvent("button", ShowMenu);
 }
 
 void NoMenu(void)
@@ -542,18 +658,18 @@ int MainMenuInit(void)
 {
 	if(!menuActive) RegisterMenuEvents();
 	EventMode(MENU);
-	menuX = 200;
-	menuY = 200;
-	CreateButtonParam("Fight", SwitchMenu, FIGHTMENU);
-	if(SceneActive(MAINSCENE)) CreateButton("Retry", Retry);
-	CreateButtonParam("Configure", SwitchMenu, CONFIGMENU);
-	CreateButtonParam("Quit", SwitchMenu, QUITMENU);
-	return 1;
+	mainMenu->menuX = 200;
+	mainMenu->menuY = 200;
+	CreateButtonParam(mainMenu, "Fight", SwitchMenu, FIGHTMENU);
+	if(SceneActive(MAINSCENE)) CreateButton(mainMenu, "Retry", Retry);
+	CreateButtonParam(mainMenu, "Configure", SwitchMenu, CONFIGMENU);
+	CreateButtonParam(mainMenu, "Quit", SwitchMenu, QUITMENU);
+	return 0;
 }
 
 void MainMenuQuit(void)
 {
-	ClearMenuItems();
+	ClearMenuItems(mainMenu);
 }
 
 void MainMenu(void)
@@ -561,7 +677,6 @@ void MainMenu(void)
 	SetOrthoProjection();
 	glLoadIdentity();
 
-	ShadedBox(minX-BBO, minY-BBO, maxX+BBO, maxY+BBO);
 	glBindTexture(GL_TEXTURE_2D, TextureNum("Title.png"));
 	glDisable(GL_LIGHTING);
 	glColor4f(1.0, 1.0, 1.0, 1.0);
@@ -573,19 +688,24 @@ void MainMenu(void)
 	glEnd();
 	glEnable(GL_LIGHTING);
 
-	DrawMenu();
+	DrawMenu(mainMenu);
 
 	ResetProjection();
 }
 
-#define FILE_LIST_SIZE 11
-int fileStart;
 struct slist *fileList;
+struct slist *sceneList;
+struct screenMenu *fightSceneSelect = &screenMenus[1];
 
 void FightActivate(void)
 {
-	char *s = CatStr(MUSICDIR, (char*)slist_nth(fileList, activeMenuItem)->data);
-	CfgSetS("main.song", s);
+	char *m = CatStr(MUSICDIR, (char*)slist_nth(fileList, mainMenu->activeMenuItem)->data);
+	char *s = CatStr(SCENEDIR, (char*)slist_nth(sceneList, fightSceneSelect->activeMenuItem)->data);
+
+	printf("Activating %i, %i\n", mainMenu->activeMenuItem, fightSceneSelect->activeMenuItem);
+	CfgSetS("main.song", m);
+	CfgSetS("main.scene", s);
+	free(m);
 	free(s);
 	SwitchMenu(NOMENU);
 	Log(("FightActivate SwitchScene\n"));
@@ -593,38 +713,48 @@ void FightActivate(void)
 	Log(("FightActivate SceneSwitched\n"));
 }
 
-void FightPageUp(void)
+void FightPageUp(const void *data)
 {
-	int oldItem = activeMenuItem;
+	struct screenMenu *m = &screenMenus[curMenu];
+	int oldItem = m->activeMenuItem;
 
-	activeMenuItem -= FILE_LIST_SIZE;
-	MenuClamp();
-	if(activeMenuItem != oldItem)
+	if(data) {}
+	m->activeMenuItem -= m->menuSize;
+	MenuClamp(m);
+	if(m->activeMenuItem != oldItem)
 		MPlaySound(snd_tick);
 }
 
-void FightPageDown(void)
+void FightPageDown(const void *data)
 {
-	int oldItem = activeMenuItem;
+	struct screenMenu *m = &screenMenus[curMenu];
+	int oldItem = m->activeMenuItem;
 
-	activeMenuItem += FILE_LIST_SIZE;
-	MenuClamp();
-	if(activeMenuItem != oldItem)
+	if(data) {}
+	m->activeMenuItem += m->menuSize;
+	MenuClamp(m);
+	if(m->activeMenuItem != oldItem)
 		MPlaySound(snd_tick);
 }
 
-void FightHome(void)
+void FightHome(const void *data)
 {
-	if(activeMenuItem) {
-		activeMenuItem = 0;
+	struct screenMenu *m = &screenMenus[curMenu];
+
+	if(data) {}
+	if(m->activeMenuItem) {
+		m->activeMenuItem = 0;
 		MPlaySound(snd_tick);
 	}
 }
 
-void FightEnd(void)
+void FightEnd(const void *data)
 {
-	if(activeMenuItem < (signed)slist_length(fileList) - 1) {
-		activeMenuItem = (signed)slist_length(fileList) - 1;
+	struct screenMenu *m = &screenMenus[curMenu];
+
+	if(data) {}
+	if(m->activeMenuItem < (signed)slist_length(fileList) - 1) {
+		m->activeMenuItem = (signed)slist_length(fileList) - 1;
 		MPlaySound(snd_tick);
 	}
 }
@@ -666,11 +796,32 @@ int FightMenuInit(void)
 	struct slist *tmp;
 
 	if(!menuActive) RegisterMenuEvents();
-	menuX = 200;
-	menuY = 200;
-	fileStart = 0;
-	BoundsCheck = MenuClamp;
+	mainMenu->menuX = 200;
+	mainMenu->menuY = 150;
+	mainMenu->BoundsCheck = MenuClamp;
+	mainMenu->menuSize = 11;
 	fileList = NULL;
+	sceneList = NULL;
+
+	numScreenMenus = 2;
+
+	fightSceneSelect->menuX = 200;
+	fightSceneSelect->menuY = 350;
+	fightSceneSelect->BoundsCheck = MenuClamp;
+	fightSceneSelect->activeMenuItem = 0;
+	fightSceneSelect->items = NULL;
+	fightSceneSelect->numItems = 0;
+	fightSceneSelect->menuSize = 5;
+	fightSceneSelect->minX = NOBOX;
+	fightSceneSelect->minY = 0;
+	fightSceneSelect->maxX = 0;
+	fightSceneSelect->maxY = 0;
+	flist_foreach(&f, SCENEDIR) {
+		char *s;
+		s = StringCopy(f.filename);
+		sceneList = slist_insert_sorted(sceneList, s, alphabetical);
+	}
+	sceneList = slist_insert(sceneList, StringCopy("default"));
 
 	flist_foreach(&f, MUSICDIR) {
 		if(valid_music_file(f.filename)) {
@@ -686,92 +837,85 @@ int FightMenuInit(void)
 
 	lastFile = CfgS("main.song");
 	cnt = 0;
-	tmp = fileList;
 	len = slist_length(fileList);
-	while(tmp != NULL) {
+	slist_foreach(tmp, fileList) {
 		char *t = CatStr(MUSICDIR, (char*)tmp->data);
 		if(strcmp(t, lastFile) == 0) {
-			fileStart = cnt - FILE_LIST_SIZE/2;
-			while(fileStart > len - FILE_LIST_SIZE)
-				fileStart--;
-			while(fileStart < 0)
-				fileStart++;
-			activeMenuItem = cnt;
+			mainMenu->itemStart = cnt - mainMenu->menuSize/2;
+			while(mainMenu->itemStart > len - mainMenu->menuSize)
+				mainMenu->itemStart--;
+			while(mainMenu->itemStart < 0)
+				mainMenu->itemStart++;
+			mainMenu->activeMenuItem = cnt;
 		}
 		free(t);
-		CreateButton(tmp->data, FightActivate);
-		tmp = slist_next(tmp);
+		CreateButton(mainMenu, tmp->data, FightActivate);
 		cnt++;
 	}
 
-	RegisterEvent(EVENT_PAGEUP, FightPageUp, EVENTTYPE_STOP);
-	RegisterEvent(EVENT_PAGEDOWN, FightPageDown, EVENTTYPE_STOP);
-	RegisterEvent(EVENT_HOME, FightHome, EVENTTYPE_STOP);
-	RegisterEvent(EVENT_END, FightEnd, EVENTTYPE_STOP);
-	return 1;
+	cnt = 0;
+	len = slist_length(sceneList);
+	slist_foreach(tmp, sceneList) {
+		char *t = CatStr(MUSICDIR, (char*)tmp->data);
+		if(strcmp(t, lastFile) == 0) {
+			fightSceneSelect->itemStart = cnt - fightSceneSelect->menuSize/2;
+			while(fightSceneSelect->itemStart > len - fightSceneSelect->menuSize)
+				fightSceneSelect->itemStart--;
+			while(fightSceneSelect->itemStart < 0)
+				fightSceneSelect->itemStart++;
+			fightSceneSelect->activeMenuItem = cnt;
+		}
+		free(t);
+		CreateButton(fightSceneSelect, tmp->data, FightActivate);
+		cnt++;
+	}
+
+	RegisterEvent("pageup", FightPageUp, EVENTTYPE_STOP);
+	RegisterEvent("pagedown", FightPageDown, EVENTTYPE_STOP);
+	RegisterEvent("home", FightHome, EVENTTYPE_STOP);
+	RegisterEvent("end", FightEnd, EVENTTYPE_STOP);
+	return 0;
 }
 
 void FightMenuQuit(void)
 {
 	struct slist *tmp;
 
-	tmp = fileList;
-	while(tmp)
-	{
+	slist_foreach(tmp, fileList) {
 		free(tmp->data);
-		tmp = slist_next(tmp);
 	}
 	slist_free(fileList);
-	ClearMenuItems();
-	DeregisterEvent(EVENT_PAGEUP, FightPageUp);
-	DeregisterEvent(EVENT_PAGEDOWN, FightPageDown);
-	DeregisterEvent(EVENT_HOME, FightHome);
-	DeregisterEvent(EVENT_END, FightEnd);
-}
 
-void EQTriangle(void)
-{
-	glDisable(GL_TEXTURE_2D);
-	glBegin(GL_TRIANGLES);
-	{
-		glVertex2f(-1.0, 0.0);
-		glVertex2f(1.0, 0.0);
-		glVertex2f(0.0, 1.732050807);
-	} glEnd();
-	glEnable(GL_TEXTURE_2D);
+	slist_foreach(tmp, sceneList) {
+		free(tmp->data);
+	}
+	slist_free(sceneList);
+
+	ClearMenuItems(mainMenu);
+	DeregisterEvent("pageup", FightPageUp);
+	DeregisterEvent("pagedown", FightPageDown);
+	DeregisterEvent("home", FightHome);
+	DeregisterEvent("end", FightEnd);
 }
 
 void FightMenu(void)
 {
-	while(activeMenuItem >= fileStart+FILE_LIST_SIZE)
-		fileStart++;
-	while(activeMenuItem < fileStart)
-		fileStart--;
-	ShadedBox(minX-BBO, minY-BBO, maxX+BBO, minY + FONT_HEIGHT * FILE_LIST_SIZE + BBO);
-	DrawPartialMenu(fileStart, fileStart+FILE_LIST_SIZE);
-	glColor3f(1.0, 1.0, 1.0);
-	SetOrthoProjection();
-	if(fileStart)
-	{
-		glPushMatrix();
-			glTranslatef(180, 200, 0.0);
-			glScalef(10.0, -10.0, 1.0);
-			EQTriangle();
-		glPopMatrix();
-	}
-	if(fileStart < (signed)slist_length(fileList) - FILE_LIST_SIZE)
-	{
-		glPushMatrix();
-			glTranslatef(180, 350, 0.0);
-			glScalef(10.0, 10.0, 1.0);
-			EQTriangle();
-		glPopMatrix();
-	}
-	ResetProjection();
+	while(mainMenu->activeMenuItem >= mainMenu->itemStart+mainMenu->menuSize)
+		mainMenu->itemStart++;
+	while(mainMenu->activeMenuItem < mainMenu->itemStart)
+		mainMenu->itemStart--;
+
+	DrawPartialMenu(mainMenu, mainMenu->itemStart, mainMenu->itemStart+mainMenu->menuSize);
+
+	while(fightSceneSelect->activeMenuItem >= fightSceneSelect->itemStart+fightSceneSelect->menuSize)
+		fightSceneSelect->itemStart++;
+	while(fightSceneSelect->activeMenuItem < fightSceneSelect->itemStart)
+		fightSceneSelect->itemStart--;
+	DrawPartialMenu(fightSceneSelect, fightSceneSelect->itemStart, fightSceneSelect->itemStart+fightSceneSelect->menuSize);
 }
 
-int configuring = 0;
-const char *cfglabels[] = {"Up", "Down", "Left", "Right", "Laser 1", "Laser 2", "Laser 3", "Repeat", "Menu"};
+int configuring = -1;
+const char *cfglabels[] = {"Up", "Down", "Left", "Right", "Laser 1", "Laser 2", "Laser 3", "Repeat", "Select", "Menu"};
 struct text *newKeyText;
 
 void ConfigCreateItems(void)
@@ -780,42 +924,40 @@ void ConfigCreateItems(void)
 	char *s;
 	float c[4] = {0.0, 1.0, 1.0, 1.0};
 
-	menuX = 290;
-	menuY = 200;
-	for(x=0;x<B_LAST;x++)
-	{
+	mainMenu->menuX = 290;
+	mainMenu->menuY = 200;
+	for(x=0;x<B_LAST;x++) {
 		s = JoyKeyName(x);
-		CreateButtonParam(s, ConfigButton, x);
+		CreateButtonParam(mainMenu, s, ConfigButton, x);
 		free(s);
 	}
-	for(x=0;x<(signed)(sizeof(cfglabels)/sizeof(*cfglabels));x++)
-	{
-		CreateText(cfglabels[x], c, 200, 200 + x * FONT_HEIGHT);
+	for(x=0;x<(signed)(sizeof(cfglabels)/sizeof(*cfglabels));x++) {
+		CreateText(mainMenu, cfglabels[x], c, 200, 200 + x * FONT_HEIGHT);
 	}
-	newKeyText = CreateText("Press a new key", c, menuX-90, menuY-FONT_HEIGHT);
+	newKeyText = CreateText(mainMenu, "Press a new key", c, mainMenu->menuX-90, mainMenu->menuY-FONT_HEIGHT);
 	newKeyText->active = 0;
 }
 
-void ConfigKeyHandler(struct joykey *jk)
+void ConfigKeyHandler(const void *data)
 {
-	int tmp = activeMenuItem;
-	if(!SetButton(configuring, jk))
-	{
+	int tmp = mainMenu->activeMenuItem;
+	const struct joykey *jk = data;
+
+	if(!SetButton(configuring, jk)) {
 		ELog(("Error setting configure button %i!\n", configuring));
 	}
 	MPlaySound(snd_push);
-	DeregisterKeyEvent();
 	newKeyText->active = 0;
 	EventMode(MENU);
-	ClearMenuItems();
+	ClearMenuItems(mainMenu);
 	ConfigCreateItems();
-	activeMenuItem = tmp;
+	mainMenu->activeMenuItem = tmp;
 }
 
 int ConfigButton(int b)
 {
 	configuring = b;
-	RegisterKeyEvent(ConfigKeyHandler);
+	RegisterEvent("key", ConfigKeyHandler, EVENTTYPE_STOP);
 	newKeyText->active = 1;
 	EventMode(KEY);
 	return 1;
@@ -826,18 +968,21 @@ int ConfigMenuInit(void)
 	if(!menuActive) RegisterMenuEvents();
 	EventMode(MENU);
 	ConfigCreateItems();
-	return 1;
+	return 0;
 }
 
 void ConfigMenuQuit(void)
 {
-	ClearMenuItems();
+	ClearMenuItems(mainMenu);
 }
 
 void ConfigMenu(void)
 {
-	ShadedBox(minX-BBO, minY-BBO, maxX+BBO, maxY+BBO);
-	DrawMenu();
+	if(configuring != -1 && newKeyText->active == 0) {
+		configuring = -1;
+		DeregisterEvent("key", ConfigKeyHandler);
+	}
+	DrawMenu(mainMenu);
 }
 
 void Quit(void)
@@ -850,24 +995,23 @@ int QuitMenuInit(void)
 	float c[4] = {0.0, 1.0, 1.0, 1.0};
 	if(!menuActive) RegisterMenuEvents();
 	EventMode(MENU);
-	menuX = 350;
-	menuY = 200;
-	CreateButton("Yes", Quit);
-	CreateButton("No", MenuBack);
-	CreateText("Really Quit?", c, 200, 200);
-	activeMenuItem = 1;
-	return 1;
+	mainMenu->menuX = 350;
+	mainMenu->menuY = 200;
+	CreateButton(mainMenu, "Yes", Quit);
+	CreateButton(mainMenu, "No", MenuBack);
+	CreateText(mainMenu, "Really Quit?", c, 200, 200);
+	mainMenu->activeMenuItem = 1;
+	return 0;
 }
 
 void QuitMenuQuit(void)
 {
-	ClearMenuItems();
+	ClearMenuItems(mainMenu);
 }
 
 void QuitMenu(void)
 {
-	ShadedBox(minX-BBO, minY-BBO, maxX+BBO, maxY+BBO);
-	DrawMenu();
+	DrawMenu(mainMenu);
 }
 
 #define NUMMENUS 6
@@ -888,27 +1032,38 @@ int FindActiveItem(struct menuItem *activeItems, int numActiveItems)
 	return 0;
 }
 
-int SwitchMenu(int m)
+int SwitchMenu(int n)
 {
-	if(m < 0 || m >= NUMMENUS) return 0;
+	if(n < 0 || n >= NUMMENUS) return 0;
 
 	snd_tick = SoundNum("wepnsel1.wav");
 	snd_push = SoundNum("spnray03.wav");
 	snd_back = SoundNum("spnray02.wav");
 
-	BoundsCheck = MenuWrap;
-	Log(("Switching Menu: %i\n", m));
+	Log(("Switching Menu: %i\n", n));
 	if(activeMenu) activeMenu->QuitMenu();
 	else NullMenuQuit(); /* called for the first menu switch */
-	if(!menus[m].InitMenu())
+
+	mainMenu->BoundsCheck = MenuWrap;
+	mainMenu->menuX = 200;
+	mainMenu->menuY = 200;
+	mainMenu->minX = NOBOX;
+	mainMenu->minY = 0;
+	mainMenu->maxX = 0;
+	mainMenu->maxY = 0;
+	mainMenu->itemStart = 0;
+	mainMenu->menuSize = -1;
+	numScreenMenus = 1;
+	curMenu = 0;
+	if(menus[n].InitMenu())
 	{
 		activeMenu = &(menus[NULLMENU]);
 		Log(("Menu switch failed\n"));
 		return 1;
 	}
-	activeMenu = &(menus[m]);
-	if(activeMenuItem < numItems && items[activeMenuItem].type >= MENU_SELECTABLE)
-		activeMenuItem = FindActiveItem(items, numItems);
+	activeMenu = &(menus[n]);
+	if(mainMenu->activeMenuItem < mainMenu->numItems && mainMenu->items[mainMenu->activeMenuItem].type >= MENU_SELECTABLE)
+		mainMenu->activeMenuItem = FindActiveItem(mainMenu->items, mainMenu->numItems);
 	Log(("Menu switched\n"));
 	return 0;
 }
