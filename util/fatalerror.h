@@ -16,5 +16,13 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** @file
+ * Provides an easy way to display the strerror along with the file and line
+ * number.
+ */
+
+/** Called to display one of the standard errno errors along with the file and
+ * line number.
+ */
 #define Error(err) FatalError(__FILE__, __LINE__, err);
 void FatalError(const char *, int, const char *);

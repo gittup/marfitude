@@ -16,6 +16,10 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** @file
+ * Allows display of a simple text based progress bar
+ */
+
 void ProgressMeter(const char *text);
 void UpdateProgress(int part, int whole); /* part/whole the way there */
 void EndProgressMeter(void);

@@ -1,5 +1,5 @@
 /** @file
-  * @brief Support for plugins.
+  * Support for plugins.
   *
   * Plugins here are defined as shared libraries that export two symbols:
   * @a init_plugin - defined as int init_plugin(void)

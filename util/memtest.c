@@ -21,12 +21,13 @@
 
 #include "memtest_defs.h"
 
+/** A structure to keep track of what was allocated when and by who */
 struct memBlock {
-	size_t size;
-	int line;
-	const char *file;
-	void *ptr;
-	int active;
+	size_t size;      /**< The size of the allocated memory block */
+	int line;         /**< The line number it was allocated on */
+	const char *file; /**< The file that made the allocation */
+	void *ptr;        /**< Where the block points to */
+	int active;       /**< 1 if this memBlock structure is in use */
 };
 
 /* note that the memory used to keep track of memory is never freed
@@ -36,6 +37,7 @@ static struct memBlock *mb = NULL;
 static int numBlocks = 0;
 static int startBlock = 0;
 
+/** Overrides malloc if CONFIG_MEMTEST == 1 */
 void *MyMalloc(size_t x, int line, const char *file)
 {
 	void *p;
@@ -51,6 +53,7 @@ void *MyMalloc(size_t x, int line, const char *file)
 	return p;
 }
 
+/** Overrides free if CONFIG_MEMTEST == 1 */
 void MyFree(void *p, int line, const char *file)
 {
 	int i;
@@ -70,6 +73,7 @@ void MyFree(void *p, int line, const char *file)
 	fprintf(stderr, "Mem Error: Can't free ptr in %s line %i!\n", file, line);
 }
 
+/** Overrides realloc if CONFIG_MEMTEST == 1 */
 void *MyRealloc(void *p, int x, int line, const char *file)
 {
 	int i;
@@ -94,6 +98,7 @@ void *MyRealloc(void *p, int x, int line, const char *file)
 	return NULL;
 }
 
+/** Overrides calloc if CONFIG_MEMTEST == 1 */
 void *MyCalloc(size_t nm, size_t x, int line, const char *file)
 {
 	void *p;
@@ -108,10 +113,11 @@ void *MyCalloc(size_t nm, size_t x, int line, const char *file)
 	return p;
 }
 
-/* checks to see if any memories have not been deallocated
- * usually called at the end of the program, after all cleanup code
+/** Checks all blocks to see if they're active. If any memories have not been
+ * deallocated, a message is displayed on stdout. This is usually called at
+ * the end of a program, after all cleanup code.
  */
-void CheckMemUsage()
+void CheckMemUsage(void)
 {
 	int x;
 	for(x=0;x<numBlocks;x++)
@@ -123,8 +129,8 @@ void CheckMemUsage()
 	}
 }
 
-/* returns the amount of bytes currently in use */
-int QueryMemUsage()
+/** Returns the amount of bytes currently in use */
+int QueryMemUsage(void)
 {
 	int x;
 	int total = 0;

@@ -16,9 +16,15 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** @file
+ * Defines the memory test functions that can track memory leaks.
+ * Note that the My* functions are used by macros and don't need to be
+ * called directly.
+ */
+
 void *MyMalloc(size_t x, int line, const char *file);
 void MyFree(void *p, int line, const char *file);
 void *MyRealloc(void *p, int x, int line, const char *file);
 void *MyCalloc(size_t nm, size_t x, int line, const char *file);
-void CheckMemUsage(void); /* checks all blocks to see if they're active */
-int QueryMemUsage(void);  /* returns current mem usage in bytes */
+void CheckMemUsage(void);
+int QueryMemUsage(void);

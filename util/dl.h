@@ -1,3 +1,6 @@
+/** @file
+ * Wraps libdl for arches that don't have it
+ */
 #if defined(__linux__) || defined(__FreeBSD__)
 #include <dlfcn.h>
 #else

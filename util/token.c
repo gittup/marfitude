@@ -23,7 +23,13 @@
 #include "token.h"
 #include "memtest.h"
 
- /* skips empty & commented lines, NULL on EOF/error */
+/** Gets a token from file @a f. Stops at newline or character @a stopper.
+ * Skips empty & commented lines.
+ * @param f the fopen()'d file
+ * @param stopper a character to stop at, other than newline
+ * @param t pointer to a struct token to fill with the next token.
+ * @return 1 if a token was received, 0 if there are no more tokens
+ */
 int GetToken(FILE *f, char stopper, struct token *t)
 {
 	/* endofline gets increased at each newline

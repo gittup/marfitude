@@ -17,7 +17,7 @@
 */
 
 /** @file
- * @brief A pretty crappy singly-linked list implementation, based off of glib
+ * A pretty crappy singly-linked list implementation, based off of glib
  */
 
 /** A singly-linked list element

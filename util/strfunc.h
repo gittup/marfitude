@@ -17,7 +17,7 @@
 */
 
 /** @file
- * @brief Some simple string functions.
+ * Some simple string functions.
  *
  * This file adds some string manipulation functions to the utility
  * library.

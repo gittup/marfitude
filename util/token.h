@@ -16,13 +16,21 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** @file
+ * A pretty crappy token parsing implementation
+ */
+
+/** A token structure for parsing configuration files */
 struct token {
-	char *token;
-	int value;
-	int type;
+	char *token; /**< The text of the token */
+	int value;   /**< The value of the token if it's a VALUE type */
+	int type;    /**< Either HEADER or VALUE  */
 };
 
 int GetToken(FILE *f, char stopper, struct token *t);
 
+/** Defines a token as a header type. It has no value, only text */
 #define HEADER 0
+
+/** Defines a token as a value type. It has both text and an integer value */
 #define VALUE 1

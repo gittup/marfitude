@@ -16,5 +16,12 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** @file
+ * Provides a way to print SDL errors along with file and line number
+ */
+
+/** Displays the error returned from SDL_GetError() along with the file and
+ * line number.
+ */
 #define SDLError(err) SDLFatalError(__FILE__, __LINE__, err);
 void SDLFatalError(const char *, int, const char *);
