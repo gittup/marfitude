@@ -111,11 +111,14 @@ char *Mod2Wam(char *modFile)
 	char *s;
 	char *base;
 	int len;
+
 	base = BaseFileName(modFile);
 	Log(("BASE: %s\n", base));
 	len = strlen(base);
-	while(len >= 0 && base[len] != '.') len--;
-	if(len == 0) len = strlen(base);
+	while(len >= 0 && base[len] != '.')
+		len--;
+	if(len == -1)
+		len = strlen(base);
 	s = (char*)calloc(sizeof(char), len+9);	/* 9 = "wam/"+".wam\0" */
 	Log(("Alloc: %i\n", len+9));
 	strcpy(s, "wam/");
