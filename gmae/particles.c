@@ -25,6 +25,7 @@
 #include "particles.h"
 #include "cfg.h"
 #include "log.h"
+#include "phys.h"
 #include "textures.h"
 #include "timer.h"
 
