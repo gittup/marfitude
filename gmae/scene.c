@@ -226,7 +226,6 @@ static void DrawTargets(void);
 static void DrawScoreboard(void);
 static void MoveHitNotes(int tic, int col);
 static void UpdateClearedCols(void);
-static void CheckHighScore(void);
 static void UpdatePosition(void);
 static void DrawRows(double startTic, double stopTic);
 static void RandomColor(float col[4]);
@@ -248,6 +247,8 @@ static slist *unusedList;	/* unused notes */
 static slist *notesList;	/* notes on the screen, not hit */
 static slist *hitList;	/* notes on the screen, hit */
 static int numNotes;	/* max number of notes on screen (wam->numCols * NUM_TICKS) */
+static char *cursong;
+static int newhighscore;
 static int highscore;
 static int score;
 static int multiplier;
@@ -475,6 +476,10 @@ void Press(int button)
 					ac[channelFocus].minRow = curRow;
 					ac[channelFocus].part = 0.0;
 					score += ap.notesHit * multiplier;
+					if(score > highscore) {
+						highscore = score;
+						newhighscore = 1;
+					}
 					if(multiplier < 8) multiplier++;
 					ap.notesHit = 0;
 				}
@@ -569,20 +574,23 @@ int MainInit()
 {
 	int x;
 	Log(("Load Wam\n"));
-	wam = LoadWam(CfgS("main.song"));
+	cursong = CfgSCpy("main", "song");
+
+	wam = LoadWam(cursong);
 	if(wam == NULL) {
 		ELog(("Error: Couldn't load WAM file\n"));
 		return 0;
 	}
 	Log(("Start module\n"));
-	if(!StartModule(CfgS("main.song"))) {
+	if(!StartModule(cursong)) {
 		ELog(("Error: Couldn't start module\n"));
 		return 0;
 	}
 	/* module and module data (where to place the notes) are now loaded, */
 	/* and the module is paused */
 	Log(("Module ready\n"));
-	highscore = CfgIp("highscore", CfgS("main.song"));
+	highscore = CfgIp("highscore", cursong);
+	newhighscore = 0;
 	score = 0;
 	multiplier = 1;
 	tickCounter = 0;
@@ -714,6 +722,10 @@ int MainInit()
 void MainQuit(void)
 {
 	Log(("Main Scene quit\n"));
+	if(newhighscore) {
+		CfgSetIp("highscore", cursong, highscore);
+	}
+	free(cursong);
 	oldHand = MikMod_RegisterPlayer(oldHand);
 	Log(("A\n"));
 	if(songStarted) {
@@ -926,13 +938,6 @@ void UpdateClearedCols(void)
 	}
 }
 
-void CheckHighScore(void)
-{
-	if(score > highscore) {
-		CfgSetIp("highscore", CfgS("main.song"), score);
-	}
-}
-
 void UpdatePosition(void)
 {
 	int tmpAdj;
@@ -962,8 +967,6 @@ void UpdatePosition(void)
 		if(curVb >= wam->rowData[Row(curRow)].sngspd) {
 			curVb -= wam->rowData[Row(curRow)].sngspd;
 			curRow++;
-			if(curRow == wam->numRows)
-				CheckHighScore();
 			if(curRow > ap.stopRow) ResetAp();
 			CheckColumn(Row(curRow));
 			if(curRow == 0) { /* start the song! */
@@ -1131,7 +1134,7 @@ void DrawScoreboard(void)
 	PrintGL(50, 0, "Playing: %s", mod->songname);
 	if(curRow == wam->numRows) {
 		PrintGL(50, 15, "Song complete!");
-		if(score > highscore) {
+		if(newhighscore) {
 			PrintGL(DisplayWidth() / 2 - 85, 150, "New High Score!!!");
 		}
 	}
