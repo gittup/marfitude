@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,6 +17,10 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** @file
+ * Get access to a MikMod module
+ */
+
 #ifndef _MIKMOD_H_
 #include "gmae/sdl_mixer/mikmod/mikmod.h"
 #endif
@@ -26,7 +30,5 @@ void StopModule(void);
 
 extern MODULE *mod;
 
-#define NumPatternsAtSngPos(s) mod->pattrows[mod->positions[s]]
-#define TrackAtSngPosForChannel(s, c) mod->patterns[(mod->positions[s]*mod->numchn)+c]
-#define RowsInTrack(t) mod->pattrows[PatternForTrack(t)]
+/** Converts the sngspd @a s and bpm @a b parameters to a time in seconds */
 #define BpmToSec(s, b) (2.5 * (double)s / (double)b)

@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by

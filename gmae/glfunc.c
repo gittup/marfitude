@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -34,14 +34,18 @@
 #include "util/memtest.h"
 #include "util/sdlfatalerror.h"
 
+/** @file
+ * Initializes SDL/OpenGL and sets up default OpenGL parameters.
+ */
+
 #ifdef __STRICT_ANSI__
 extern int vsnprintf(char *buf, size_t size, const char *fmt, va_list args);
 #endif
 
 static int LoadFont(void);
 
-#define FONT_SIZE 96    /* number of fonts stored in the Font.png file */
-			/* (assumed 16 characters wide) */
+/** number of fonts stored in the Font.png file (assumed 16 characters wide) */
+#define FONT_SIZE 96
 static char newline;  /* offset of a newline character */
 static char space;    /* offset of a space character */
 static unsigned char numChars; /* total number of characters = FONT_SIZE+space-newline */

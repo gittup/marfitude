@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,10 +29,22 @@
 
 #include "util/memtest.h"
 
-SDL_Joystick **joys = NULL;
-char joyButtonCfg[23] = "joystick.ignorejs00b00";
-int joyInited = 0;
+/** @file
+ * Loads joysticks from SDL, and can ignore button events.
+ */
 
+static SDL_Joystick **joys = NULL;
+static char joyButtonCfg[23] = "joystick.ignorejs00b00";
+static int joyInited = 0;
+
+/** Checks if a joystick button has been set to be ignored by the config file.
+ * This is really just here cuz my joystick makes an SDL button event
+ * whenever I hit the axis. Since all button events activate the menu, it was
+ * pretty annoying.
+ * @param joy the joystick (event.jbutton.which)
+ * @param button the button (event.jbutton.button)
+ * @return 1 if the button is ignored, 0 if not.
+ */
 int JoyIgnoreButton(int joy, int button)
 {
 	joyButtonCfg[17] = joy / 10 + '0';
@@ -42,6 +54,7 @@ int JoyIgnoreButton(int joy, int button)
 	return CfgI(joyButtonCfg);
 }
 
+/** Opens all of the joysticks from SDL */
 void InitJoystick(void)
 {
 	int i;
@@ -74,6 +87,7 @@ void InitJoystick(void)
 	joyInited = 1;
 }
 
+/** Closes all of the SDL joysticks */
 void QuitJoystick(void)
 {
 	int i;

@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,7 +25,11 @@
 
 #include "util/slist.h" 
 
-struct slist *objs = NULL; 
+/** @file
+ * Keeps track of objects and updates them based on some uber fake physics
+ */
+
+static struct slist *objs = NULL; 
 
 /** Creates a new object structure and returns it. All parameters are zero
  * except the rotation axis, which is (0.0, 0.0, 1.0) and the mass, which is

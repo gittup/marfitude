@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -38,11 +38,20 @@
 #include "util/memtest.h"
 #include "util/textprogress.h"
 
+/** The max number of rows in a group */
 #define GRP_SIZE 32
 
+/** Defined for windows compatibility. Stupid windows. Who wouldn't want to
+ * read in binary data? That's right. Nobody. stupid.
+ */
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
+
+/** @file
+ * Creates, loads, and provides access to WAM files. I just made these up
+ * to squish a Mod file down into like 3 notes.
+ */
 
 /** Describes a sample. This information is taken from MikMod */
 struct sample {
@@ -671,9 +680,10 @@ struct wam *LoadTrackData(void)
 			grpCount += mod->sngspd;
 			time += BpmToSec(mod->sngspd, mod->bpm);
 			numgrps++;
-			/* only break on a group mod 8 when we have enough */
-			/* ticks in the group */
-			/* or break if we've already got GRP_SIZE rows */
+			/* only break on a group mod 8 when we have enough
+			 * ticks in the group
+			 * or break if we've already got GRP_SIZE rows
+			 */
 			if((grpCount >= GRP_SIZE && !(numgrps&7)) ||
 					numgrps == GRP_SIZE)
 			{
@@ -790,7 +800,7 @@ struct wam *CreateWam(const char *modFile)
 {
 	struct wam *wam;
 
-	if(!StartModule(modFile))
+	if(StartModule(modFile))
 	{
 		ELog(("Error: Couldn't start module.\n"));
 		return NULL;

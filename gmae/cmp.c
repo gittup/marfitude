@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -19,6 +19,10 @@
 
 #include <math.h>
 #include "cmp.h"
+
+/** @file
+ * Contains all the mathematical secrets of complex numbers
+ */
 
 /** Finds the linear magnitude of a complex number
  * @param a Pointer to a complex number

@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,9 +30,20 @@
 #include "util/fatalerror.h"
 #include "util/sdlfatalerror.h"
 
-Mix_Music *modMusic = NULL;
+/** @file
+ * Gets access to the modules. Also sets up some MikMod parameters based
+ * on configuration values.
+ */
+
+/** The module currently being played by MikMod */
 MODULE *mod = NULL;
 
+static Mix_Music *modMusic = NULL;
+
+/** Start the mod @a modFile
+ * @param modFile Only the coolest files can be modFiles
+ * @return 0 on success, else on error
+ */
 int StartModule(const char *modFile)
 {
 	Log(("Loading module...\n"));
@@ -41,20 +52,20 @@ int StartModule(const char *modFile)
 	if(!modMusic)
 	{
 		SDLError("Loading mod file");
-		return 0;
+		return 1;
 	}
 	Log(("Mod loaded\n"));
 	if(Mix_PlayMusic(modMusic, 1) == -1)
 	{
 		SDLError("Playing mod file");
-		return 0;
+		return 2;
 	}
 	Log(("Mod ready\n"));
 
 	mod = Player_GetModule();
 	if(mod == NULL) {
 		Error("retrieving module with MikMod's Player_GetModule()");
-		return 0;
+		return 3;
 	}
 
 	mod->loop = 0; /* don't want to keep looping forever! */
@@ -64,9 +75,10 @@ int StartModule(const char *modFile)
 	else
 		md_mode &= !DMODE_INTERP;
 	Log(("interp mode set\n"));
-	return 1;
+	return 0;
 }
 
+/** Stop the currently playing mod, if any */
 void StopModule(void)
 {
 	if(!modMusic) return;

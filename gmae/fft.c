@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,8 +17,6 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-/* Because all awesome programs need an fft.c file */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -26,6 +24,10 @@
 #include "cmp.h"
 #include "sdl_mixer/mikmod/sample_callback.h"
 #include "sdl_mixer/mikmod/mikmod.h"
+
+/** @file
+ * Because all awesome programs need an FFT library
+ */
 
 static struct fft_data my_fft;
 static int num_registers = 0;

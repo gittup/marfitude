@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,12 +18,12 @@
 */
 
 /** @file
-  * Handles all input from SDL and some event registration/firing.
-  *
-  * This file handles input from SDL (eg: keyboard, mouse, joystick) and
-  * attempts to make it all somewhat generic. This file also provides a
-  * mechanism to register with named events and fire them.
-  */
+ * Handles all input from SDL and some event registration/firing.
+ *
+ * This file handles input from SDL (eg: keyboard, mouse, joystick) and
+ * attempts to make it all somewhat generic. This file also provides a
+ * mechanism to register with named events and fire them.
+ */
 
 /** Lists the types of buttons that can be configured. This probably shouldn't
  * be here, but in the actual game code instead.

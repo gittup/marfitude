@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -33,7 +33,12 @@
 #include "util/sdlfatalerror.h"
 #include "util/strfunc.h"
 
+/** The directory all the .wav files are located */
 #define SOUNDDIR "sounds/"
+
+/** @file
+ * Provides access to all the wavs in the sounds/ directory
+ */
 
 /** Maps a filename to a Mix_Chunk */
 struct snd_entry {

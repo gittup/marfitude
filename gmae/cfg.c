@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -28,6 +28,10 @@
 #include "util/fatalerror.h"
 #include "util/token.h"
 #include "util/strfunc.h"
+
+/** @file
+ * Provides access to read/write the configuration file
+ */
 
 /** Maps a configuration key to a value */
 struct option {

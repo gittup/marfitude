@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,15 +24,23 @@
 
 #include "util/memtest.h"
 
-FILE *logFile = NULL;
 int logging = 0;
+static FILE *logFile = NULL;
 
+/** The internal log function, called by the Log macro
+ * @param file The file that generated the log message
+ * @param line The line number in the file
+ */
 void LogFile(const char *file, int line)
 {
 	if(logFile)
 		fprintf(logFile, "%s line %i ", file, line);
 }
 
+/** The internal log function, called by the Log macro. This piece actually
+ * writes the log message.
+ * @param s The log message
+ */
 void LogMsg(const char *s, ...)
 {
 	va_list ap;
@@ -44,12 +52,19 @@ void LogMsg(const char *s, ...)
 	}
 }
 
+/** The internal error log function, called by the ELog macro.
+ * @param file The file that generated the log message
+ * @param line The line number in the file
+ */
 void ELogFile(const char *file, int line)
 {
 	LogFile(file, line);
 	fprintf(stderr, "%s line %i: ", file, line);
 }
 
+/** The internal error log function, called by the ELog macro.
+ * @param s The log message
+ */
 void ELogMsg(const char *s, ...)
 {
 	va_list ap;
@@ -58,6 +73,9 @@ void ELogMsg(const char *s, ...)
 	va_end(ap);
 }
 
+/** Opens the log file if logging has been requested on the command line.
+ * @return 0 on success, 1 if the log could not be opened
+ */
 int InitLog(void)
 {
 	if(logging) {
@@ -68,6 +86,8 @@ int InitLog(void)
 	return 0;
 }
 
+/** Closes the log file. Also checks for memory usage if CONFIG_MEMTEST
+ * has been enabled. */
 void QuitLog(void)
 {
 	if(logging) {

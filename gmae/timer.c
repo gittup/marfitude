@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,10 @@
 #include "SDL.h"
 
 #include "timer.h"
+
+/** @file
+ * Updates some timer variables each frame
+ */
 
 Uint32 curTime;  /**< current time since initialization */
 Uint32 ticDiff;	 /**< number of ticks between frames */

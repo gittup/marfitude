@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -40,20 +40,37 @@
 #include "util/slist.h"
 #include "util/strfunc.h"
 
+/** A slider menu item. Currently not implemented */
 #define MENU_SLIDER 0
+/** A boolean menu item. Currently not implemented */
 #define MENU_BOOLEAN 1
+/** A button menu item. Can be activated to call a function */
 #define MENU_BUTTON 2
+/** A button param menu item. Can be activated to call a function with a
+ * parameter.
+ */
 #define MENU_BUTTONPARAM 3
+/** A test menu item. Just writes text somewhere */
 #define MENU_TEXT 4
-#define MENU_SELECTABLE 4 /* items from 0 to MENU_SELECTABLE are selectable */
+/** Items from 0 to MENU_SELECTABLE are selectable */
+#define MENU_SELECTABLE 4
+/** Where music files are located */
 #define MUSICDIR "music/"
+/** Where scenes are located */
 #define SCENEDIR "scenes/"
 
-#define NOBOX -1 /* for the bounding box */
-#define BBO 5	/* bounding box offset */
+/** For the bounding box */
+#define NOBOX -1
+/** Bounding box offset */
+#define BBO 5
 
-/** A slider menu object
+/** @file
+ * Draws a bunch of different menus and allows switching between them.
  */
+
+static struct menu *activeMenu = NULL;
+
+/** A slider menu object */
 struct slider {
 	int min; /**< The minimum value */
 	int max; /**< The maximum value */
@@ -61,29 +78,25 @@ struct slider {
 	int val; /**< The actual value */
 };
 
-/** A boolean menu object
- */
+/** A boolean menu object */
 struct boolean {
 	char *trueString;  /**< String if true */
 	char *falseString; /**< String if false */
 	int val;           /**< Value (1 or 0) */
 };
 
-/** A button menu object
- */
+/** A button menu object */
 struct button {
 	void (*activeFunc)(void); /**< The function to execute when activated */
 };
 
-/** A button menu object that takes a parameter
- */
+/** A button menu object that takes a parameter */
 struct buttonParam {
 	int (*activeFunc)(int); /**< The function to execute when activated */
 	int param;              /**< The parameter to send the function */
 };
 
-/** A text menu object
- */
+/** A text menu object */
 struct text {
 	float c[4]; /**< The color of the object */
 	int x;      /**< The x position */
@@ -91,16 +104,14 @@ struct text {
 	int active; /**< true if the text is to be displayed*/
 };
 
-/** A menu item
- */
+/** A menu item */
 struct menuItem {
 	int type;   /**< One of the MENU_ defines above */
 	char *name; /**< The name of this menu item */
 	void *item; /**< Pointer to one of the item structs above */
 };
 
-/** Describes a menu box on the screen
- */
+/** Describes a menu box on the screen */
 struct screenMenu {
 	int activeMenuItem;       /**< The menu item that is highlighted */
 	struct menuItem *items;   /**< Pointers to item elements */
@@ -119,6 +130,7 @@ struct screenMenu {
 	int maxY;  /**< Bottom side of the bounding box */
 };
 
+static void ShadedBox(int x1, int y1, int x2, int y2);
 static void DrawPartialMenu(struct screenMenu *m, int start, int stop);
 static void DrawMenu(struct screenMenu *m);
 static void AddMenuItem(struct screenMenu *m, const char *name, void *item, int type);
@@ -178,12 +190,13 @@ static void QuitMenuQuit(void);
 static void QuitMenu(void);
 static void button_handler(const void *data);
 
+/** Set to 1 if a menu is active, 0 otherwise */
 int menuActive = 0;
 
-int curMenu;
-int numScreenMenus = 1;
-struct screenMenu screenMenus[2];
-struct screenMenu *mainMenu = &screenMenus[0];
+static int curMenu;
+static int numScreenMenus = 1;
+static struct screenMenu screenMenus[2];
+static struct screenMenu *mainMenu = &screenMenus[0];
 
 static int snd_tick;
 static int snd_push;
@@ -672,7 +685,7 @@ int MainMenuInit(void)
 	mainMenu->menuX = 200;
 	mainMenu->menuY = 200;
 	CreateButtonParam(mainMenu, "Fight", SwitchMenu, FIGHTMENU);
-	if(SceneActive(MAINSCENE)) CreateButton(mainMenu, "Retry", Retry);
+	if(IsSceneActive(MAINSCENE)) CreateButton(mainMenu, "Retry", Retry);
 	CreateButtonParam(mainMenu, "Configure", SwitchMenu, CONFIGMENU);
 	CreateButtonParam(mainMenu, "Quit", SwitchMenu, QUITMENU);
 	return 0;
@@ -704,9 +717,9 @@ void MainMenu(void)
 	ResetProjection();
 }
 
-struct slist *fileList;
-struct slist *sceneList;
-struct screenMenu *fightSceneSelect = &screenMenus[1];
+static struct slist *fileList;
+static struct slist *sceneList;
+static struct screenMenu *fightSceneSelect = &screenMenus[1];
 
 void FightActivate(void)
 {
@@ -925,9 +938,9 @@ void FightMenu(void)
 	DrawPartialMenu(fightSceneSelect, fightSceneSelect->itemStart, fightSceneSelect->itemStart+fightSceneSelect->menuSize);
 }
 
-int configuring = -1;
-const char *cfglabels[] = {"Up", "Down", "Left", "Right", "Laser 1", "Laser 2", "Laser 3", "Repeat", "Select", "Menu"};
-struct text *newKeyText;
+static int configuring = -1;
+static const char *cfglabels[] = {"Up", "Down", "Left", "Right", "Laser 1", "Laser 2", "Laser 3", "Repeat", "Select", "Menu"};
+static struct text *newKeyText;
 
 void ConfigCreateItems(void)
 {
@@ -1025,13 +1038,16 @@ void QuitMenu(void)
 	DrawMenu(mainMenu);
 }
 
+/** The number of menus that are defined */
 #define NUMMENUS 6
-struct menu menus[NUMMENUS] = {	{NullMenuInit, NullMenuQuit, NullMenu, NULLMENU},
-				{NoMenuInit, NoMenuQuit, NoMenu, NULLMENU},
-				{MainMenuInit, MainMenuQuit, MainMenu, NOMENU},
-				{FightMenuInit, FightMenuQuit, FightMenu, MAINMENU},
-				{ConfigMenuInit, ConfigMenuQuit, ConfigMenu, MAINMENU},
-				{QuitMenuInit, QuitMenuQuit, QuitMenu, MAINMENU}};
+static struct menu menus[NUMMENUS] = {
+	{NullMenuInit, NullMenuQuit, NullMenu, NULLMENU},
+	{NoMenuInit, NoMenuQuit, NoMenu, NULLMENU},
+	{MainMenuInit, MainMenuQuit, MainMenu, NOMENU},
+	{FightMenuInit, FightMenuQuit, FightMenu, MAINMENU},
+	{ConfigMenuInit, ConfigMenuQuit, ConfigMenu, MAINMENU},
+	{QuitMenuInit, QuitMenuQuit, QuitMenu, MAINMENU}
+};
 
 int FindActiveItem(struct menuItem *activeItems, int numActiveItems)
 {
@@ -1043,6 +1059,18 @@ int FindActiveItem(struct menuItem *activeItems, int numActiveItems)
 	return 0;
 }
 
+/** Get the active menu
+ * @return the struct menu
+ */
+const struct menu *ActiveMenu(void)
+{
+	return activeMenu;
+}
+
+/** Switch to menu @a n
+ * @param n The menu number to switch to
+ * @return 0 if the menu is switched in, 1 if not
+ */
 int SwitchMenu(int n)
 {
 	if(n < 0 || n >= NUMMENUS) return 0;

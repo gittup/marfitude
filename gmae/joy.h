@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,7 +17,15 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** @file
+ * Loads joysticks for use by SDL
+ */
+
 int JoyIgnoreButton(int joy, int button);
 void InitJoystick(void);
 void QuitJoystick(void);
+
+/** How far an analog axis can be pushed before it is enabled. Currently,
+ * this sucks. Consider analog joysticks borked.
+ */
 #define JOY_THRESHOLD 5000

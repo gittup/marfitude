@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -35,7 +35,12 @@
 #include "util/sdlfatalerror.h"
 #include "util/strfunc.h"
 
+/** The directory where .png files are located */
 #define TEXDIR "images/"
+
+/** @file
+ * Loads and provides access to all png files in the images/ directory
+ */
 
 /** Maps a filename to an OpenGL texture */
 struct tex_entry {

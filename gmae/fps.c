@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,6 +23,10 @@
 #include "fps.h"
 #include "glfunc.h"
 #include "timer.h"
+
+/** @file
+ * Calculates and displays FPS
+ */
 
 static Uint32 fpsticks, frames;
 static float fps;

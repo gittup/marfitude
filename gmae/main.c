@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -45,8 +45,6 @@
 static void Shutdown(void);
 
 int quit = 0;
-struct scene *activeScene = NULL;
-struct menu *activeMenu = NULL;
 
 void Shutdown(void)
 {
@@ -188,9 +186,9 @@ int main(int argc, char **argv)
 		Log(("UpdateTimer\n"));
 		UpdateTimer();
 		Log(("Scene Render\n"));
-		activeScene->Render();
+		ActiveScene()->Render();
 		Log(("Menu Render\n"));
-		activeMenu->Render();
+		ActiveMenu()->Render();
 		Log(("Update Screen\n"));
 		UpdateScreen();
 		Log(("Next loop\n"));

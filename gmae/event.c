@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -33,9 +33,16 @@
 #include "util/memtest.h"
 #include "util/strfunc.h"
 
+/** The type field in struct joykey for keyboardses */
 #define JK_KEYBOARD -1
+/** The type field in struct joykey for mouses */
 #define JK_MOUSE -2
+/** The axis field in struct joykey for buttonses */
 #define JK_BUTTON -1
+
+/** @file
+ * Handles SDL events and event registration/firing.
+ */
 
 static char *NextDot(char *s);
 static int CfgButton(struct joykey *key, const char *cfgParam);
@@ -58,10 +65,10 @@ void button_event(int button)
 	FireEvent("button", &b);
 }
 
-int eventMode = MENU;
-struct event *events = NULL;
-struct joykey buttons[B_LAST] = {{0,0,0}};
-const char *cfgStrings[B_LAST] = {	"buttons.up",
+static int eventMode = MENU;
+static struct event *events = NULL;
+static struct joykey buttons[B_LAST] = {{0,0,0}};
+static const char *cfgMsg[B_LAST] = {	"buttons.up",
 					"buttons.down",
 					"buttons.left",
 					"buttons.right",
@@ -132,7 +139,7 @@ int SetButton(int b, const struct joykey *jk)
 	if(b < 0 || b >= B_LAST) return 0;
 	s = (char*)malloc(IntLen(jk->type)+IntLen(jk->button)+IntLen(jk->axis)+3);
 	sprintf(s, "%i.%i.%i", jk->type, jk->button, jk->axis);
-	CfgSetS(cfgStrings[b], s);
+	CfgSetS(cfgMsg[b], s);
 	free(s);
 	buttons[b].type = jk->type;
 	buttons[b].button = jk->button;
@@ -175,7 +182,7 @@ int ConfigureJoyKey(void)
 	int x;
 	int err = 0;
 	for(x=0;x<B_LAST;x++) {
-		err += CfgButton(&(buttons[x]), cfgStrings[x]);
+		err += CfgButton(&(buttons[x]), cfgMsg[x]);
 	}
 	return err;
 }

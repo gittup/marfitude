@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,8 +24,11 @@
 
 #include "scene.h"
 #include "log.h"
-#include "main.h"
 #include "mainscene.h"
+
+/** @file
+ * Contains some basic scene stuff and the ability to switch scenes.
+ */
 
 static int NullInit(void);
 static void NullScene(void);
@@ -34,6 +37,7 @@ static int IntroInit(void);
 static void IntroScene(void);
 static void IntroQuit(void);
 
+/** The number of scenes available to switch */
 #define NUMSCENES 3
 static struct scene scenes[NUMSCENES] = {
 	{NullInit, NullQuit, NullScene},
@@ -41,6 +45,20 @@ static struct scene scenes[NUMSCENES] = {
 	{MainInit, MainQuit, MainScene}
 };
 
+static struct scene *activeScene = NULL;
+
+/** Gets a pointer to the active scene.
+ * @return the struct scene
+ */
+const struct scene *ActiveScene(void)
+{
+	return activeScene;
+}
+
+/** Switch to the @a scene
+ * @param scene one of NULLSCENE, INTROSCENE, or MAINSCENE
+ * @return 0 if the scene could be switched to, 1 if not
+ */
 int SwitchScene(int scene)
 {
 	if(scene < 0 || scene >= NUMSCENES) return 0;
@@ -56,7 +74,11 @@ int SwitchScene(int scene)
 	return 0;
 }
 
-int SceneActive(int scene)
+/** Is the @a scene active?
+ * @param scene one of NULLSCENE, INTROSCENE, MAINSCENE
+ * @return 1 if the scene is active, 0 if not
+ */
+int IsSceneActive(int scene)
 {
 	if(activeScene == &(scenes[scene])) return 1;
 	return 0;

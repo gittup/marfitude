@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,6 +31,10 @@
 
 #include "util/memtest.h"
 
+/** @file
+ * Creates and draws particles
+ */
+
 static void GenPoint(void);
 static void GenLine(void);
 static void GenTQuad(GLuint tex);
@@ -43,7 +47,7 @@ static int particlesInited = 0;
 static int numParticles;
 static int curParticle;
 static struct particle *particles;
-struct particleType particleTypes[] = {
+static struct particleType particleTypes[] = {
 	{PT_POINT, 0, 0, 0},
 	{PT_LINE, 0, 0, 0},
 	{PT_TQUAD, 1, "BlueNova.png", 0},

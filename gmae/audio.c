@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,8 +25,15 @@
 #include "cfg.h"
 #include "util/sdlfatalerror.h"
 
-int audioInited = 0;
+/** @file
+ * Starts SDL_Mixer based on configuration parameters
+ */
 
+static int audioInited = 0;
+
+/** Initializes SDL_Mixer
+ * @return 0 on success, 1 on failure
+ */
 int InitAudio(void)
 {
 	int stereo;
@@ -54,6 +61,7 @@ int InitAudio(void)
 	return 0;
 }
 
+/** Quits SDL_Mixer if the audio has been initialized. */
 void QuitAudio(void)
 {
 	if(!audioInited) return;

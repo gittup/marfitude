@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,23 +17,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-/** Contains functions to display a scene
+/** @file
+ * Provides access to the quit global
  */
-struct scene {
-	int (*InitScene)(void);  /**< Pointer to the init function */
-	void (*QuitScene)(void); /**< Pointer to the quit function */
-	void (*Render)(void);    /**< Pointer to the runtime function */
-};
 
-/** Contains data to display a menu
- */
-struct menu {
-	int (*InitMenu)(void);  /**< Pointer to the init function */
-	void (*QuitMenu)(void); /**< pointer to the quit function */
-	void (*Render)(void);   /**< Pointer to the runtime function */
-	int back;               /**< Refers to the 'previous' menu */
-};
-
+/** Set to 1 and the program will exit */
 extern int quit;
-extern struct menu *activeMenu;
-extern struct scene *activeScene;

@@ -1,6 +1,6 @@
 /*
    Marfitude
-   Copyright (C) 2004 Mike Shal
+   Copyright (C) 2005 Mike Shal
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,9 +17,24 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-int SwitchScene(int scene); /* switch to this scene */
-int SceneActive(int scene); /* is this scene active */
+/** @file
+ * Manages scene objects and switching between them.
+ */
 
+/** Contains functions to display a scene */
+struct scene {
+	int (*InitScene)(void);  /**< Pointer to the init function */
+	void (*QuitScene)(void); /**< Pointer to the quit function */
+	void (*Render)(void);    /**< Pointer to the runtime function */
+};
+
+const struct scene *ActiveScene(void);
+int SwitchScene(int scene);
+int IsSceneActive(int scene); /* is this scene active */
+
+/** An empty scene */
 #define NULLSCENE 0
+/** The intro scene, if i ever made an intro */
 #define INTROSCENE 1
+/** The main game scene */
 #define MAINSCENE 2
