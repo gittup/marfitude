@@ -1,3 +1,4 @@
+multiple buttons for single action
 mk GRAPH=1 install fails to generate graph and leaves dep.dot around
 fix cfg.c - don't use header.option thing
 allow user to enter initials
