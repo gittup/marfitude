@@ -1,3 +1,5 @@
+ace_unrel.it - is it supposed to be so empty in the beginning?
+	- also segfaults later -- too many notes?
 remove blank end patterns
 recursive search for best track representation?
 
@@ -36,10 +38,7 @@ menu sometimes doesn't update when scrolling? - fixed with event?
 fix newline for windows - eg snprintf(&char, 1, "\n"); to find out if it's 10 or 13, then use that number for font generation
 
 need CALLBACK thing for function pointers? - windows compatibility
-change .notes field to be bitwise OR (eg. 1 2 4 instead of 1 2 3) to allow
-	multiple buttons for a single note?
 
-change length of a block based on song speed?
 fix event system - use user events? do anything that doesn't suck?
 check for blank space at end of song - remove somehow?
 draw transparent objects after opaque ones - use readonly depth buf
@@ -58,7 +57,6 @@ add in cfg for mods - cut out tracks 4 and 5 (maybe?) for giants.mod - will be c
 speed limit signs when the speed changes (but not when it changes every other row!)
 
 fix mod loading scheme - it blowz! - handle blank tracks too
-fix time mismatching scheme
 
 different duders:
 	fireball duder, must hit extra fireball note or explode (for a little bit)
