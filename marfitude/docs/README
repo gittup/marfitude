@@ -41,3 +41,6 @@ to fix slowness:
 			OpenGL acceleration, otherwise it will be slow)
 	disable log (compile time option - CONFIG_LOG)
 	disable memcheck (compile time option - CONFIG_MEMTEST)
+
+GOOGLE COUNT!
+2005/02/24: 36
