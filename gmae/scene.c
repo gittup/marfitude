@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include <glib.h>
 
 #include "SDL_mixer.h"
 #include "GL/gl.h"
@@ -199,8 +200,11 @@ typedef struct {
 AttackPattern ap;
 AttackCol ac[MAX_COLS];
 ScreenNote *notesOnScreen; // little ring buffer of notes
-int startNote;	// first note on screen
-int stopNote;	// last note +1 on screen
+GSList *unusedList;	// unused notes
+GSList *notesList;	// notes on the screen, not hit
+GSList *hitList;	// notes on the screen, hit
+//int startNote;	// first note on screen
+//int stopNote;	// last note +1 on screen
 int numNotes;	// max number of notes on screen (wam->numCols * NUM_TICKS)
 int score;
 
@@ -219,21 +223,43 @@ void AddNotes(int row)
 {
 	int x;
 	int tic;
+	ScreenNote *sn;
 	if(row < 0 || row >= wam->numRows) return;
 	tic = wam->rowData[row].ticpos;
 	for(x=0;x<wam->numCols;x++)
 	{
 		if(wam->rowData[row].notes[x])
 		{
-			notesOnScreen[stopNote].pos.x = -x * BLOCK_WIDTH - NOTE_WIDTH * (double)noteOffset[(int)wam->rowData[row].notes[x]];
-			notesOnScreen[stopNote].pos.y = 0.0;
-			notesOnScreen[stopNote].pos.z = TIC_HEIGHT * (double)wam->rowData[row].ticpos;
-			notesOnScreen[stopNote].tic = tic;
-			notesOnScreen[stopNote].col = x;
-			stopNote++;
-			if(stopNote == numNotes) stopNote = 0;
+			sn = unusedList->data;
+			if(row < ac[x].minRow)
+			{
+				hitList = g_slist_append(hitList, sn);
+			}
+			else
+			{
+				notesList = g_slist_append(notesList, sn);
+			}
+			unusedList = g_slist_remove(unusedList, sn);
+			sn->pos.x = -x * BLOCK_WIDTH - NOTE_WIDTH * (double)noteOffset[(int)wam->rowData[row].notes[x]];
+			sn->pos.y = 0.0;
+			sn->pos.z = TIC_HEIGHT * (double)wam->rowData[row].ticpos;
+			sn->tic = tic;
+			sn->col = x;
 		}
 	}
+}
+
+GSList *RemoveList(GSList *list, int tic)
+{
+	ScreenNote *sn;
+	while(list)
+	{
+		sn = (ScreenNote*)list->data;
+		if(sn->tic != tic) break;
+		unusedList = g_slist_append(unusedList, list->data);
+		list = g_slist_next(list);
+	}
+	return list;
 }
 
 void RemoveNotes(int row)
@@ -241,12 +267,11 @@ void RemoveNotes(int row)
 	int tic;
 	if(row < 0 || row >= wam->numRows) return;
 	tic = wam->rowData[row].ticpos;
-	while(notesOnScreen[startNote].tic == tic)
-	{
-		notesOnScreen[startNote].tic = -1; // just in case ;)
-		startNote++;
-		if(startNote == numNotes) startNote = 0;
-	}
+	Log("RM\n");
+	notesList = RemoveList(notesList, tic);
+	Log("RMHit: %i\n", hitList);
+	hitList = RemoveList(hitList, tic);
+	Log("done: %i\n", hitList);
 }
 
 void AddLine(int row)
@@ -300,29 +325,52 @@ void RandomColor(float col[4])
 	if(x&4) col[BLUE] = 1.0;
 }
 
+ScreenNote *FindNote(GSList *list, int tic, int col)
+{
+	ScreenNote *sn;
+	while(list)
+	{
+		sn = (ScreenNote*)list->data;
+		if(sn->tic == tic && sn->col == col) return sn;
+		list = g_slist_next(list);
+	}
+	return NULL;
+}
+
 void Press(int button)
 {
 	int i;
+	ScreenNote *sn;
 	Row *r;
 	for(i=-1;i<=1;i++)
 	{
 		if(curRow + i >= 0 && curRow + i < wam->numRows)
 		{
 			r = &wam->rowData[curRow+i];
+			// if we're in the attackpattern limits, and
 			// if we didn't already play this row, and this row
 			// is within our acceptable error, and we hit the
 			// right note, then yay
-			if(	r->ticpos > ap.lastTic &&
+			if(	
+				r->ticpos >= ap.startTic &&
+				r->ticpos < ap.stopTic &&
+				r->ticpos > ap.lastTic &&
 				abs(r->ticpos - curTic) <= TIC_ERROR &&
 				button == r->notes[channelFocus])
 			{
+				sn = FindNote(notesList, r->ticpos, channelFocus);
+				if(!sn)
+				{
+					ELog("Error: Struck note not found!\n");
+				}
+				notesList = g_slist_remove(notesList, (gpointer)sn);
+				unusedList = g_slist_append(unusedList, (gpointer)sn);
 				ap.lastTic = r->ticpos;
 				ap.notesHit++;
 				if(ap.notesHit == ap.notesTotal)
 				{
 					ap.nextStartRow = ap.stopRow;
 					ac[channelFocus].cleared = ap.stopRow + LINES_PER_AP * 4 * wam->numCols;
-//					ac[channelFocus].minRow = ac[channelFocus].cleared;
 					ac[channelFocus].minRow = curRow;
 					ac[channelFocus].part = 0.0;
 				}
@@ -440,7 +488,6 @@ int MainInit()
 	// doesn't need to be exact, we just need some time for
 	// the player to get ready
 	curTic = (int)(-3500.0 * (double)wam->rowData[0].bpm / 2500.0);
-	bounceTime = 0.0;
 	// set the tic positions of where we can see and where we're looking
 	firstVb = curTic - NEGATIVE_TICKS;
 	curVb = curTic;
@@ -455,8 +502,15 @@ int MainInit()
 
 	numNotes = wam->numCols * NUM_TICKS;
 	notesOnScreen = (ScreenNote*)malloc(sizeof(ScreenNote) * numNotes);
-	startNote = 0;
-	stopNote = 0;
+	unusedList = NULL;
+	notesList = NULL;
+	hitList = NULL;
+	for(x=0;x<numNotes;x++)
+	{
+		unusedList = g_slist_append(unusedList, (gpointer)&notesOnScreen[x]);
+	}
+//	startNote = 0;
+//	stopNote = 0;
 	for(x=0;x<=lastRow;x++) AddNotes(x);
 
 	numLines = NUM_TICKS;
@@ -681,9 +735,52 @@ void CheckColumn(int row)
 	}*/
 }
 
+gint NoteListTic(gconstpointer snp, gconstpointer tp)
+{
+	int tic = (int)tp;
+	ScreenNote *sn = (ScreenNote*)snp;
+	return sn->tic - tic;
+}
+
+gint SortByTic(gconstpointer a, gconstpointer b)
+{
+	ScreenNote *an = (ScreenNote*)a;
+	ScreenNote *bn = (ScreenNote*)b;
+	return an->tic - bn->tic;
+}
+
+void MoveHitNotes(int tic, int col)
+{
+	ScreenNote *sn;
+	GSList *tmp;
+	GSList *holder = NULL;
+	Log("moveHIt\n");
+	tmp = g_slist_find_custom(notesList, (gpointer)tic, NoteListTic);
+	while(tmp)
+	{
+		sn = (ScreenNote*)tmp->data;
+
+		if(sn->tic == tic && sn->col == col)
+		{
+			hitList = g_slist_insert_sorted(hitList, sn, SortByTic);
+			holder = g_slist_append(holder, sn);
+		}
+		tmp = g_slist_next(tmp);
+	}
+	tmp = holder;
+	while(tmp)
+	{
+		notesList = g_slist_remove(notesList, tmp->data);
+		tmp = g_slist_next(tmp);
+	}
+	g_slist_free(holder);
+	Log("movehit\n");
+}
+
 void UpdateClearedCols()
 {
 	int x;
+	int tic;
 	float col[4];
 	Obj *o;
 	for(x=0;x<wam->numCols;x++)
@@ -693,9 +790,11 @@ void UpdateClearedCols()
 		{
 			ac[x].part -= 1.0;
 			ac[x].minRow++;
+			tic = wam->rowData[Row(ac[x].minRow)].ticpos;
+			MoveHitNotes(tic, x);
 			o = NewObj();
 			o->pos.x = -x * 2.0;
-			o->pos.z = TIC_HEIGHT * (double)wam->rowData[Row(ac[x].minRow)].ticpos;
+			o->pos.z = TIC_HEIGHT * (double)tic;
 			o->vel.x = FloatRand() - 0.5;
 			o->vel.y = 2.0 + FloatRand();
 			o->vel.z = 13.0 + FloatRand();
@@ -706,7 +805,7 @@ void UpdateClearedCols()
 		}
 
 		// no point in going beyond where we can see
-		if(ac[x].minRow >= lastRow) ac[x].minRow = ac[x].cleared;
+//		if(ac[x].minRow >= lastRow) ac[x].minRow = ac[x].cleared;
 	}
 }
 
@@ -730,7 +829,6 @@ void UpdatePosition()
 		else ticTime += tmpAdj;
 	}
 
-	UpdateClearedCols();
 	while(ticTime >= 2500)
 	{
 		ticTime -= 2500;
@@ -777,6 +875,7 @@ void UpdatePosition()
 			AddLine(lastRow);
 		}
 	}
+	UpdateClearedCols();
 	partialTic = (double)ticTime / 2500.0;
 }
 
@@ -824,52 +923,48 @@ void DrawRows(double startTic, double stopTic)
 	glPopMatrix();
 }
 
-void DrawNote(int note)
+void DrawNote(gpointer snp, gpointer not_used)
 {
 	float temp[4] = {.7, 0.0, 0.0, 1.0};
+	ScreenNote *sn = (ScreenNote*)snp;
+
 	glPushMatrix();
-	glTranslated(	notesOnScreen[note].pos.x,
-			notesOnScreen[note].pos.y,
-			notesOnScreen[note].pos.z+0.3);
-	if(ac[notesOnScreen[note].col].cleared)
-	{
-		if(notesOnScreen[note].tic - curTic <= 0)
-			glColor4f(1.0, 1.0, 1.0, 1.0);
-		else
-			glColor4f(0.5, 0.5, 0.5, 1.0);
-		glDisable(GL_LIGHTING);
-		glDepthMask(GL_FALSE);
-		glCallList(plist+P_BlueNova);
-		glDepthMask(GL_TRUE);
-		glEnable(GL_LIGHTING);
-	}
+	glTranslated(	sn->pos.x,
+			sn->pos.y,
+			sn->pos.z+0.3);
+	if(abs(sn->tic - curTic) <= TIC_ERROR)
+		glMaterialfv(GL_FRONT, GL_EMISSION, temp);
+	glRotatef(theta, 0.0, 1.0, 0.0);
+	Log("Dn\n");
+	glCallList(noteList);
+	glMaterialfv(GL_FRONT, GL_EMISSION, lightNone);
+}
+
+void DrawHitNote(gpointer snp, gpointer not_used)
+{
+	ScreenNote *sn = (ScreenNote*)snp;
+
+	glPushMatrix();
+	glTranslated(	sn->pos.x,
+			sn->pos.y,
+			sn->pos.z+0.3);
+	if(sn->tic - curTic <= 0)
+		glColor4f(1.0, 1.0, 1.0, 1.0);
 	else
-	{
-		if(abs(notesOnScreen[note].tic - curTic) <= TIC_ERROR)
-			glMaterialfv(GL_FRONT, GL_EMISSION, temp);
-		glRotatef(theta, 0.0, 1.0, 0.0);
-		Log("Dn\n");
-		glCallList(noteList);
-		glMaterialfv(GL_FRONT, GL_EMISSION, lightNone);
-	}
+		glColor4f(0.5, 0.5, 0.5, 1.0);
+	glCallList(plist+P_BlueNova);
 }
 
 void DrawNotes()
 {
-	int x;
-	Log("DN: %i, %i\n", startNote, stopNote);
-	if(startNote <= stopNote)
-	{
-		for(x=startNote;x<stopNote;x++)
-			DrawNote(x);
-	}
-	else
-	{
-		for(x=startNote;x<numNotes;x++)
-			DrawNote(x);
-		for(x=0;x<stopNote;x++)
-			DrawNote(x);
-	}
+	Log("DN: %i, %i, %i\n", g_slist_length(notesList), g_slist_length(hitList), g_slist_length(unusedList));
+	g_slist_foreach(notesList, DrawNote, NULL);
+
+	glDisable(GL_LIGHTING);
+	glDepthMask(GL_FALSE);
+	g_slist_foreach(hitList, DrawHitNote, NULL);
+	glDepthMask(GL_TRUE);
+	glEnable(GL_LIGHTING);
 	Log("dn\n");
 }
 
@@ -924,6 +1019,7 @@ void DrawScoreboard()
 	if(curRow >= 0 && curRow < wam->numRows) PrintGL(0, 62, "Tick: %i, %i.%f / %i\n", wam->rowData[curRow].ticpos, curTic, partialTic, wam->numTics);
 	PrintGL(50, 30, "Speed: %i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
 	PrintGL(0, 50, "%i - %i, note: %i, hit: %i/%i\n", ap.startTic, ap.stopTic, ap.lastTic, ap.notesHit, ap.notesTotal);
+	PrintGL(400, 50, "DN: %i, %i, %i\n", g_slist_length(notesList), g_slist_length(hitList), g_slist_length(unusedList));
 }
 
 void MainScene()
