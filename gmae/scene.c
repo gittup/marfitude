@@ -13,7 +13,7 @@
 #include "main.h"
 #include "menu.h"
 #include "module.h"
-#include "phys.h"
+#include "particles.h"
 #include "sounds.h"
 #include "textures.h"
 #include "timer.h"
@@ -21,6 +21,7 @@
 #include "../util/fatalerror.h"
 #include "../util/memtest.h"
 #include "../util/sdlfatalerror.h"
+#include "../util/myrand.h"
 
 #include "mikmod_internals.h" // test
 
@@ -54,7 +55,7 @@ int SwitchScene(int scene)
 	if(!scenes[scene].InitScene())
 	{
 		activeScene = &(scenes[NULLSCENE]);
-		Log("Scene switch failed\n");
+		ELog("Scene switch failed\n");
 		return 0;
 	}
 	activeScene = &(scenes[scene]);
@@ -90,43 +91,43 @@ void IntroScene()
 	
   GLBindTexture(GL_TEXTURE_2D, TEX_FlatlandFiery);
   // draw a triangle
-  GLBegin(GL_POLYGON);				// start drawing a polygon
-  GLTexCoord2f(0.0, 0.0); GLVertex3f( 0.0f, 1.0f, 0.0f);		// Top
-  GLTexCoord2f(1.0, 1.0); GLVertex3f( 1.0f,-1.0f, 0.0f);		// Bottom Right
-  GLTexCoord2f(0.0, 1.0); GLVertex3f(-1.0f,-1.0f, 0.0f);		// Bottom Left	
-  GLEnd();					// we're done with the polygon
+  glBegin(GL_POLYGON);				// start drawing a polygon
+  glTexCoord2f(0.0, 0.0); glVertex3f( 0.0f, 1.0f, 0.0f);		// Top
+  glTexCoord2f(1.0, 1.0); glVertex3f( 1.0f,-1.0f, 0.0f);		// Bottom Right
+  glTexCoord2f(0.0, 1.0); glVertex3f(-1.0f,-1.0f, 0.0f);		// Bottom Left	
+  glEnd();					// we're done with the polygon
 
-  GLTranslatef(3.0f,0.0f,0.0f);		        // Move Right 3 Units
+  glTranslatef(3.0f,0.0f,0.0f);		        // Move Right 3 Units
 	
   // draw a square (quadrilateral)
-  GLBegin(GL_QUADS);				// start drawing a polygon (4 sided)
-  GLTexCoord2f(0.0, 0.0); GLVertex3f(-cos(theta), cos(theta), sin(theta));	// Top Left
-  GLTexCoord2f(1.0, 0.0); GLVertex3f( cos(theta), cos(theta), sin(theta));	// Top Right
-  GLTexCoord2f(1.0, 1.0); GLVertex3f( cos(theta),-cos(theta), sin(theta));	// Bottom Right
-  GLTexCoord2f(0.0, 1.0); GLVertex3f(-cos(theta),-cos(theta), sin(theta));	// Bottom Left	
-  GLEnd();					// done with the polygon
+  glBegin(GL_QUADS);				// start drawing a polygon (4 sided)
+  glTexCoord2f(0.0, 0.0); glVertex3f(-cos(theta), cos(theta), sin(theta));	// Top Left
+  glTexCoord2f(1.0, 0.0); glVertex3f( cos(theta), cos(theta), sin(theta));	// Top Right
+  glTexCoord2f(1.0, 1.0); glVertex3f( cos(theta),-cos(theta), sin(theta));	// Bottom Right
+  glTexCoord2f(0.0, 1.0); glVertex3f(-cos(theta),-cos(theta), sin(theta));	// Bottom Left	
+  glEnd();					// done with the polygon
   theta += .01;
   // swap buffers to display, since we're double buffered.
 }
 
 Uint32 rowTime;
 Uint32 ticTime;
-GLuint mainList;
-GLuint mainTexes[4];
+GLuint rowList;
+GLuint noteList;
+GLuint mainTexes[MAX_COLS];
 int channelFocus = 0;
 Wam *wam;	// note file
 
-int oldpatpos = 0, oldvbtick = 0, oldsngspd = 1; // for UpdatePosition
 float theta = 0.0;
 
-void ResetAp(int col);
+void ResetAp();
 
 void ChannelUp()
 {
 	if(channelFocus + 1 < wam->numCols)
 	{
 		channelFocus++;
-		ResetAp(channelFocus);
+		ResetAp();
 	}
 }
 
@@ -135,11 +136,10 @@ void ChannelDown()
 	if(channelFocus != 0)
 	{
 		channelFocus--;
-		ResetAp(channelFocus);
+		ResetAp();
 	}
 }
 
-#define numMainLists 5
 #define BLOCK_HEIGHT .75
 #define TIC_HEIGHT .25
 #define BLOCK_WIDTH 2.0
@@ -159,6 +159,7 @@ void MoveSlower(void)
 #define POSITIVE_TICKS 57*6
 #define NUM_TICKS 64*6
 #define TIC_ERROR 4 // number of tics we can be off when hitting a button
+#define LINES_PER_AP 8
 
 int curTic; // tick counter from 0 - total ticks in the song
 int firstVb, curVb, lastVb;	// tick counters for the three rows
@@ -167,12 +168,9 @@ int firstRow, curRow, lastRow;	// first row on screen, current row playing,
 
 double partialTic;
 typedef struct {
-	int active; // need this? Player_Muted
-	int numCorrect;
-	} Channel;
-typedef struct {
 	Point pos;
 	int tic;
+	int col;
 	} ScreenNote;
 typedef struct {
 	Point p1;
@@ -189,9 +187,17 @@ typedef struct {
 	int notesHit;	// number of notes we hit so far
 	int notesTotal;	// total number of notes we need to play
 	} AttackPattern;
+typedef struct {
+	double part;	// cumulative row adder, when >= 1.0 inc minRow
+	int minRow;	// equal to cleared, but doesn't get set to 0
+			// after the column is recreated
+	int cleared;	// equals the last row this col is cleared to, 0 if
+			// not cleared
+	int hit;	// 1 if the last note was hit
+	} AttackCol;
 
 AttackPattern ap;
-Channel *activeChannels;
+AttackCol ac[MAX_COLS];
 ScreenNote *notesOnScreen; // little ring buffer of notes
 int startNote;	// first note on screen
 int stopNote;	// last note +1 on screen
@@ -203,8 +209,6 @@ Line *linesOnScreen;
 int startLine;
 int stopLine;
 int numLines;
-Obj obj;
-int objActive = 0;
 int *noteOffset;
 MikMod_player_t oldHand;
 int tickCounter;
@@ -225,6 +229,7 @@ void AddNotes(int row)
 			notesOnScreen[stopNote].pos.y = 0.0;
 			notesOnScreen[stopNote].pos.z = TIC_HEIGHT * (double)wam->rowData[row].ticpos;
 			notesOnScreen[stopNote].tic = tic;
+			notesOnScreen[stopNote].col = x;
 			stopNote++;
 			if(stopNote == numNotes) stopNote = 0;
 		}
@@ -283,6 +288,18 @@ void SetMute(/*ModChannel *c, */int mute)
 	}*/
 }
 
+void RandomColor(float col[4])
+{
+	int x = (int)(7.0 * rand() / (RAND_MAX+1.0)) + 1;
+	col[ALPHA] = 1.0;
+	col[RED] = 0.0;
+	col[GREEN] = 0.0;
+	col[BLUE] = 0.0;
+	if(x&1) col[RED] = 1.0;
+	if(x&2) col[GREEN] = 1.0;
+	if(x&4) col[BLUE] = 1.0;
+}
+
 void Press(int button)
 {
 	int i;
@@ -304,40 +321,16 @@ void Press(int button)
 				if(ap.notesHit == ap.notesTotal)
 				{
 					ap.nextStartRow = ap.stopRow;
-					printf("CLEAR!\n");
+					ac[channelFocus].cleared = ap.stopRow + LINES_PER_AP * 4 * wam->numCols;
+//					ac[channelFocus].minRow = ac[channelFocus].cleared;
+					ac[channelFocus].minRow = curRow;
+					ac[channelFocus].part = 0.0;
 				}
+				ac[channelFocus].hit = 1;
+				break;
 			}
-/*			if(!c->struck && button == c->note)
-			{
-				c->struck = 1;
-				activeChannels[channelFocus].active = 1;
-				activeChannels[channelFocus].numCorrect++;
-				SetMute(c, 0);
-//				objActive = 1;
-				obj.pos.x = -channelFocus * 2.0;
-				obj.pos.y = 0.0;
-				obj.pos.z = TIC_HEIGHT * ((double)curTic + partialTic);
-				obj.vel.x = 0.0;
-				obj.vel.y = 1.0;
-				obj.vel.z = 2.0;
-				obj.acc.x = 0.0;
-				obj.acc.y = -.2;
-				obj.acc.z = 0.0;
-				obj.axis.x = .3;
-				obj.axis.y = .5;
-				obj.axis.z = .8;
-				obj.theta = 3.7;
-				obj.rotvel = 38.0;
-				obj.rotacc = 0.0;
-				obj.mass = 1.0;
-				return;
-			}*/
 		}
 	}
-/*	if(activeChannels[channelFocus].numCorrect >= MAXNUM) return;
-	activeChannels[channelFocus].active = 0;
-	PlaySound(SND_zoomout6);
-	SetMute(&(rowData[curRow].chans[channelFocus]), 1);*/
 }
 
 // i really should fix the event system...i suck!
@@ -408,13 +401,13 @@ int MainInit()
 	wam = LoadWam(CfgS("main.song"));
 	if(wam == NULL)
 	{
-		Log("Error: Couldn't load WAM file\n");
+		ELog("Error: Couldn't load WAM file\n");
 		return 0;
 	}
 	Log("Start module\n");
 	if(!StartModule(CfgS("main.song")))
 	{
-		Log("Error: Couldn't start module\n");
+		ELog("Error: Couldn't start module\n");
 		return 0;
 	}
 	// module and module data (where to place the notes) are now loaded,
@@ -433,8 +426,15 @@ int MainInit()
 	rowTime = 0;
 	ticTime = 0;
 	channelFocus = 0;
-	oldpatpos = 0; oldvbtick = 0; oldsngspd = 1; // for UpdatePosition
 	theta = 0.0;
+
+	for(x=0;x<wam->numCols;x++)
+	{
+		ac[x].part = 0.0;
+		ac[x].minRow = 0;
+		ac[x].cleared = 0;
+		ac[x].hit = 0;
+	}
 
 	// start back about 3.5 seconds worth of ticks
 	// doesn't need to be exact, we just need some time for
@@ -452,7 +452,6 @@ int MainInit()
 	FixVb(&lastVb, &lastRow);
 
 	partialTic = 0.0;
-	activeChannels = (Channel*)malloc(sizeof(Channel) * wam->numCols);
 
 	numNotes = wam->numCols * NUM_TICKS;
 	notesOnScreen = (ScreenNote*)malloc(sizeof(ScreenNote) * numNotes);
@@ -466,28 +465,28 @@ int MainInit()
 	stopLine = 0;
 	for(x=0;x<=lastRow;x++) AddLine(x);
 
-	for(x=0;x<wam->numCols;x++)
-	{
-		activeChannels[x].active = 1;
-		activeChannels[x].numCorrect = 0;
-	}
 	ap.nextStartRow = -1;
-	ResetAp(channelFocus);
+	ResetAp();
 	RegisterEvent(EVENT_RIGHT, ChannelUp, EVENTTYPE_MULTI);
 	RegisterEvent(EVENT_LEFT, ChannelDown, EVENTTYPE_MULTI);
 	RegisterEvent(EVENT_UP, MoveFaster, EVENTTYPE_MULTI);
 	RegisterEvent(EVENT_DOWN, MoveSlower, EVENTTYPE_MULTI);
 	Log("Creating lists\n");
-	mainList = GLGenLists(numMainLists);
+	rowList = GLGenLists(wam->numCols);
+	noteList = GLGenLists(1);
 
 	mainTexes[0] = TEX_Slate;
 	mainTexes[1] = TEX_Walnut;
-	mainTexes[2] = TEX_Lava;
-	mainTexes[3] = TEX_Parque;
+	mainTexes[2] = TEX_Parque;
+	mainTexes[3] = TEX_Clovers;
+	mainTexes[4] = TEX_Lava;
+	mainTexes[5] = TEX_Slate;
+	mainTexes[6] = TEX_Walnut;
+	mainTexes[7] = TEX_Parque;
 
-	for(x=0;x<4;x++)
+	for(x=0;x<wam->numCols;x++)
 	{
-		glNewList(mainList+x, GL_COMPILE);
+		glNewList(rowList+x, GL_COMPILE);
 		{
 			glColor4f(1.0, 1.0, 1.0, 1.0);
 			glNormal3f(0.0, 1.0, 0.0);
@@ -506,7 +505,7 @@ int MainInit()
 		} glEndList();
 	}
 
-	glNewList(mainList+4, GL_COMPILE);
+	glNewList(noteList, GL_COMPILE);
 	{
 		glDisable(GL_TEXTURE_2D);
 		glColor4f(0.3, 0.7, 0.6, 1.0);
@@ -534,8 +533,8 @@ int MainInit()
 
 		} glEnd();
 		glEnable(GL_TEXTURE_2D);
+		glPopMatrix();
 	} glEndList();
-	printf("Mem: %i\n", QueryMemUsage());
 	InitTimer();
 	Log("Lists created\n");
 	return 1;
@@ -545,6 +544,7 @@ void MainQuit()
 {
 	Log("Main Scene quit\n");
 	oldHand = MikMod_RegisterPlayer(oldHand);
+	Log("A\n");
 	if(songStarted)
 	{
 		DeregisterEvent(EVENT_SHOWMENU, Player_TogglePause);
@@ -554,18 +554,34 @@ void MainQuit()
 		DeregisterEvent(EVENT_BUTTON3, Press3);
 		DeregisterEvent(EVENT_BUTTON4, Press4);
 	}
+	Log("A\n");
 	songStarted = 0;
+	Log("A\n");
 	DeregisterEvent(EVENT_RIGHT, ChannelUp);
+	Log("A\n");
 	DeregisterEvent(EVENT_LEFT, ChannelDown);
+	Log("A\n");
 	DeregisterEvent(EVENT_UP, MoveFaster);
+	Log("A\n");
 	DeregisterEvent(EVENT_DOWN, MoveSlower);
-	free(activeChannels);
+	Log("A\n");
+	GLDeleteLists(rowList, wam->numCols);
+	Log("A\n");
+	GLDeleteLists(noteList, 1);
+	Log("A\n");
 	free(notesOnScreen);
+	Log("A\n");
 	free(linesOnScreen);
+	Log("A\n");
 	free(noteOffset);
+	Log("A\n");
+	ClearParticles();
+	Log("A\n");
+	CheckObjs();
+	Log("A\n");
 	FreeWam(wam);
+	Log("A\n");
 	StopModule();
-	GLDeleteLists(mainList, numMainLists);
 	Log("Main scene quit finished\n");
 }
 
@@ -604,25 +620,24 @@ void DrawLines()
 // returns 1 if the row is valid, 0 otherwise
 #define IsValidRow(row) ((row >= 0 && row < wam->numRows) ? 1 : 0)
 // return a clamped row number
-#define Row(row) (row < 0 ? 0 : (row >= wam->numRows ? wam->numRows : row))
+#define Row(row) (row < 0 ? 0 : (row >= wam->numRows ? wam->numRows - 1: row))
 #define Max(a, b) ((a) > (b) ? (a) : (b))
 
-#define LINES_PER_AP 8
-void ResetAp(int col)
+void ResetAp()
 {
 	int start;
 	int end;
 	int numLines = 0;
 	ap.notesHit = 0;
 	ap.notesTotal = 0;
-	start = Row(Max(curRow, ap.nextStartRow));
+	start = Row(Max(Max(curRow, ap.nextStartRow), ac[channelFocus].cleared));
 	while(start < wam->numRows && wam->rowData[start].line == 0) start++;
 	end = start;
 	while(numLines < LINES_PER_AP && end < wam->numRows)
 	{
 		// don't count the note on the last row, since that will
 		// be the beginning of the next "AttackPattern"
-		if(wam->rowData[end].notes[col]) ap.notesTotal++;
+		if(wam->rowData[end].notes[channelFocus]) ap.notesTotal++;
 		end++;
 		if(wam->rowData[end].line != 0) numLines++;
 	}
@@ -640,10 +655,16 @@ void ResetAp(int col)
 	ap.stopTic = wam->rowData[end].ticpos;
 	ap.lastTic = wam->rowData[start].ticpos - 1;
 	ap.stopRow = end;
+	ac[channelFocus].hit = 1;
 }
 
-void CheckColumn(int tic)
+void CheckColumn(int row)
 {
+	int x;
+	for(x=0;x<wam->numCols;x++)
+	{
+		if(ac[x].cleared == row) ac[x].cleared = 0;
+	}
 /*	int x;
 	ModChannel *c;
 	for(x=0;x<wam->numCols;x++)
@@ -660,14 +681,43 @@ void CheckColumn(int tic)
 	}*/
 }
 
+void UpdateClearedCols()
+{
+	int x;
+	float col[4];
+	Obj *o;
+	for(x=0;x<wam->numCols;x++)
+	{
+		ac[x].part += (double)timeDiff / 40.0;
+		while(ac[x].part >= 1.0 && ac[x].minRow < ac[x].cleared)
+		{
+			ac[x].part -= 1.0;
+			ac[x].minRow++;
+			o = NewObj();
+			o->pos.x = -x * 2.0;
+			o->pos.z = TIC_HEIGHT * (double)wam->rowData[Row(ac[x].minRow)].ticpos;
+			o->vel.x = FloatRand() - 0.5;
+			o->vel.y = 2.0 + FloatRand();
+			o->vel.z = 13.0 + FloatRand();
+			o->rotvel = FloatRand() * 720.0 - 360.0;
+			o->acc.y = -.98;
+			RandomColor(col);
+			CreateParticle(o, col, P_StarBurst, 1.0);
+		}
+
+		// no point in going beyond where we can see
+		if(ac[x].minRow >= lastRow) ac[x].minRow = ac[x].cleared;
+	}
+}
+
 void UpdatePosition()
 {
 	int tmpAdj;
 	// calculate the amount of ticTime elapsed
-	// everyone 2500 ticTime is one tick
+	// every 2500 ticTime is one tick
 	if(!menuActive) ticTime += timeDiff * wam->rowData[Row(curRow)].bpm;
 
-	// adjust the ticTime if we're our time is different from the
+	// adjust the ticTime if our time is different from the
 	// song time.  This is needed in case a little blip in the process
 	// causes the song to be ahead or behind the game, so we can
 	// right ourselves.
@@ -680,11 +730,11 @@ void UpdatePosition()
 		else ticTime += tmpAdj;
 	}
 
+	UpdateClearedCols();
 	while(ticTime >= 2500)
 	{
 		ticTime -= 2500;
 		curTic++;
-		CheckColumn(curTic);
 		curVb++;
 		firstVb++;
 		lastVb++;
@@ -692,6 +742,8 @@ void UpdatePosition()
 		{
 			curVb -= wam->rowData[Row(curRow)].sngspd;
 			curRow++;
+			if(curRow > ap.stopRow) ResetAp();
+			CheckColumn(Row(curRow));
 			if(curRow == 0) // start the song!
 			{
 				Player_TogglePause();
@@ -713,7 +765,7 @@ void UpdatePosition()
 		{
 			firstVb -= wam->rowData[Row(firstRow)].sngspd;
 			// the remove functions check to make sure
-			// the row is valid
+			// the row is valid, so it's ok to pass firstRow
 			RemoveNotes(firstRow);
 			RemoveLine(firstRow);
 			firstRow++;
@@ -724,7 +776,7 @@ void UpdatePosition()
 			lastVb -= wam->rowData[Row(lastRow)].sngspd;
 			lastRow++;
 			// the add functions check to make sure the
-			// row is valid
+			// row is valid, so it's ok to pass lastRow
 			AddNotes(lastRow);
 			AddLine(lastRow);
 		}
@@ -734,41 +786,42 @@ void UpdatePosition()
 
 void DrawRows(double startTic, double stopTic)
 {
-	int chan;
+	int col;
+	double start, stop;
 	if(startTic >= stopTic) return;
 	glPushMatrix();
 	glDisable(GL_LIGHTING);
-	for(chan=0;chan<wam->numCols;chan++)
+	for(col=0;col<wam->numCols;col++)
 	{
-		glBindTexture(GL_TEXTURE_2D, mainTexes[chan&3]);
-		if(chan == channelFocus && ap.startTic != -1)
+		start = startTic;
+		stop = stopTic;
+		glBindTexture(GL_TEXTURE_2D, mainTexes[col]);
+		if(wam->rowData[Row(ac[col].minRow)].ticpos > start)
+			start = wam->rowData[Row(ac[col].minRow)].ticpos;
+		if(col == channelFocus && ap.startTic != -1)
 		{
-			glBegin(GL_QUADS);
-			{
-				glTexCoord2f(0.0, ap.startTic * TIC_HEIGHT/ 4.0);
-				glVertex3f(-1.0, 0.0, ap.startTic* TIC_HEIGHT);
-				glTexCoord2f(1.0, ap.startTic* TIC_HEIGHT / 4.0);
-				glVertex3f(1.0, 0.0, ap.startTic* TIC_HEIGHT);
-				glTexCoord2f(1.0, ap.stopTic* TIC_HEIGHT / 4.0);
-				glVertex3f(1.0, 0.0, ap.stopTic* TIC_HEIGHT);
-				glTexCoord2f(0.0, ap.stopTic* TIC_HEIGHT / 4.0);
-				glVertex3f(-1.0, 0.0, ap.stopTic* TIC_HEIGHT);
-			} glEnd();
+			if(ap.startTic > start) start = ap.startTic;
+			if(ap.stopTic < stop) stop = ap.stopTic;
 		}
-		else
+		if(start >= stop)
 		{
-			glBegin(GL_QUADS);
-			{
-				glTexCoord2f(0.0, startTic / 4.0);
-				glVertex3f(-1.0, 0.0, startTic);
-				glTexCoord2f(1.0, startTic / 4.0);
-				glVertex3f(1.0, 0.0, startTic);
-				glTexCoord2f(1.0, stopTic / 4.0);
-				glVertex3f(1.0, 0.0, stopTic);
-				glTexCoord2f(0.0, stopTic / 4.0);
-				glVertex3f(-1.0, 0.0, stopTic);
-			} glEnd();
+			glTranslated(-BLOCK_WIDTH, 0, 0);
+			continue;
 		}
+		start *= TIC_HEIGHT;
+		stop *= TIC_HEIGHT;
+		glBegin(GL_QUADS);
+		{
+			glTexCoord2f(0.0, start/ 4.0);
+			glVertex3f(-1.0, 0.0, start);
+			glTexCoord2f(1.0, start / 4.0);
+			glVertex3f(1.0, 0.0, start);
+			glTexCoord2f(1.0, stop / 4.0);
+			glVertex3f(1.0, 0.0, stop);
+			glTexCoord2f(0.0, stop / 4.0);
+			glVertex3f(-1.0, 0.0, stop);
+		} glEnd();
+
 		glTranslated(-BLOCK_WIDTH, 0, 0);
 	}
 	glEnable(GL_LIGHTING);
@@ -779,21 +832,36 @@ void DrawNote(int note)
 {
 	float temp[4] = {.7, 0.0, 0.0, 1.0};
 	glPushMatrix();
-	if(abs(notesOnScreen[note].tic - curTic) <= TIC_ERROR)
-		glMaterialfv(GL_FRONT, GL_EMISSION, temp);
-//	else glColor3f(0.7, 0.7, 0.7);
 	glTranslated(	notesOnScreen[note].pos.x,
 			notesOnScreen[note].pos.y,
-			notesOnScreen[note].pos.z);
-	glRotatef(theta, 0.0, 1.0, 0.0);
-	glCallList(mainList+4);
-	glMaterialfv(GL_FRONT, GL_EMISSION, lightNone);
-	glPopMatrix();
+			notesOnScreen[note].pos.z+0.3);
+	if(ac[notesOnScreen[note].col].cleared)
+	{
+		if(notesOnScreen[note].tic - curTic <= 0)
+			glColor4f(1.0, 1.0, 1.0, 1.0);
+		else
+			glColor4f(0.5, 0.5, 0.5, 1.0);
+		glDisable(GL_LIGHTING);
+		glDepthMask(GL_FALSE);
+		glCallList(plist+P_BlueNova);
+		glDepthMask(GL_TRUE);
+		glEnable(GL_LIGHTING);
+	}
+	else
+	{
+		if(abs(notesOnScreen[note].tic - curTic) <= TIC_ERROR)
+			glMaterialfv(GL_FRONT, GL_EMISSION, temp);
+		glRotatef(theta, 0.0, 1.0, 0.0);
+		Log("Dn\n");
+		glCallList(noteList);
+		glMaterialfv(GL_FRONT, GL_EMISSION, lightNone);
+	}
 }
 
 void DrawNotes()
 {
 	int x;
+	Log("DN: %i, %i\n", startNote, stopNote);
 	if(startNote <= stopNote)
 	{
 		for(x=startNote;x<stopNote;x++)
@@ -806,6 +874,7 @@ void DrawNotes()
 		for(x=0;x<stopNote;x++)
 			DrawNote(x);
 	}
+	Log("dn\n");
 }
 
 void DrawTargets()
@@ -834,35 +903,22 @@ void DrawTargets()
 	glPopMatrix();
 }
 
-void DrawObjects()
-{
-	if(objActive)
-	{
-		glPushMatrix();
-		glTranslated(obj.pos.x, obj.pos.y, obj.pos.z);
-		glRotated(obj.theta, obj.axis.x, obj.axis.y, obj.axis.z);
-		glDisable(GL_TEXTURE_2D);
-		glNormal3f(0.0, 0.0, 1.0);
-		glBegin(GL_QUADS);
-		{
-			glVertex3f(-0.5, -0.5, 0.0);
-			glVertex3f(0.5, -0.5, 0.0);
-			glVertex3f(0.5, 0.5, 0.0);
-			glVertex3f(-0.5, 0.5, 0.0);
-		} glEnd();
-		glEnable(GL_TEXTURE_2D);
-		glPopMatrix();
-		UpdateObj(&obj, (double)timeDiff / 1000.0);
-	}
-}
-
 void DrawScoreboard()
 {
+	int x;
 	glColor4f(1.0, 1.0, 1.0, 1.0);
-	if(activeChannels[channelFocus].numCorrect >= MAXNUM) PrintGL(50, 50, "Channel cleared - move on!\n");
+	for(x=0;x<wam->numCols;x++)
+	{
+		PrintGL(0, 75+x*14, "Col %i  Hit %i  Clear %4i", x, ac[x].hit, ac[x].cleared);
+	}
 	PrintGL(50, 0, "Playing: %s", mod->songname);
 	if(curRow == wam->numRows) PrintGL(50, 15, "Song complete!");
-	else if(curRow >= 0) PrintGL(50, 15, "Song: %i (%i)/%i, Row: %i (%i)/%i Pattern: %i/%i", mod->sngpos, wam->rowData[curRow].sngpos, mod->numpos, mod->patpos, wam->rowData[curRow].patpos, NumPatternsAtSngPos(mod->sngpos),  mod->positions[mod->sngpos], mod->numpat);
+	else if(curRow >= 0)
+	{
+		if(!TIMEADJ) glColor4f(1.0, 0.0, 0.0, 1.0);
+		PrintGL(50, 15, "Song: %i (%i)/%i, Row: %i (%i)/%i Pattern: %i/%i", mod->sngpos, wam->rowData[curRow].sngpos, mod->numpos, mod->patpos, wam->rowData[curRow].patpos, NumPatternsAtSngPos(mod->sngpos),  mod->positions[mod->sngpos], mod->numpat);
+		if(!TIMEADJ) glColor4f(1.0, 1.0, 1.0, 1.0);
+	}
 	else
 	{
 		int timeLeft = (int)(0.5 + -2500.0 * (double)wam->rowData[0].sngspd * ((double)curRow) / (1000.0 * (double)wam->rowData[0].bpm));
@@ -895,6 +951,8 @@ void MainScene()
 
 	Log("U");
 	if(curRow != wam->numRows) UpdatePosition();
+	Log("1");
+	UpdateObjs(timeDiff);
 	Log("u");
 	SetMainView();
 
@@ -911,12 +969,12 @@ void MainScene()
 	DrawRows(
 			// start
 			curTic - NEGATIVE_TICKS >= 0 ?
-			TIC_HEIGHT * ((double)curTic + partialTic - NEGATIVE_TICKS) :
+			((double)curTic + partialTic - NEGATIVE_TICKS) :
 			0.0,
 			// end
 			curTic < wam->numTics - POSITIVE_TICKS ?
-			TIC_HEIGHT * (double)curTic+partialTic+POSITIVE_TICKS :
-			TIC_HEIGHT * (double)wam->numTics);
+			(double)curTic+partialTic+POSITIVE_TICKS :
+			(double)wam->numTics);
 
 	Log("B");
 	DrawNotes();
@@ -926,29 +984,33 @@ void MainScene()
 
 	DrawTargets();
 	Log("E");
-	DrawObjects();
-	Log("F");
 	DrawScoreboard();
+	Log("F");
+	glDepthMask(GL_FALSE);
+	DrawParticles();
 	Log("G");
 
 	glPopMatrix();
 	glPushMatrix();
+
 	glBindTexture(GL_TEXTURE_2D, TEX_Fireball);
 	temp[0] *= 3.0;
 	glMaterialfv(GL_FRONT, GL_EMISSION, temp);
+	glNormal3f(0.0, 1.0, 0.0);
 	glBegin(GL_QUADS);
 	{
 		glTexCoord2f(0.0, 0.0);
-		glVertex3f(light[0]-.5, light[1], light[2]-.5);
+		glVertex3f(light[0]-.5, light[1]-.5, light[2]);
 		glTexCoord2f(1.0, 0.0);
-		glVertex3f(light[0]+.5, light[1], light[2]-.5);
+		glVertex3f(light[0]+.5, light[1]-.5, light[2]);
 		glTexCoord2f(1.0, 1.0);
-		glVertex3f(light[0]+.5, light[1], light[2]+.5);
+		glVertex3f(light[0]+.5, light[1]+.5, light[2]);
 		glTexCoord2f(0.0, 1.0);
-		glVertex3f(light[0]-.5, light[1], light[2]+.5);
+		glVertex3f(light[0]-.5, light[1]+.5, light[2]);
 	} glEnd();
 	glMaterialfv(GL_FRONT, GL_EMISSION, lightNone);
 	glPopMatrix();
+	glDepthMask(GL_TRUE);
 
 	theta += (double)timeDiff * 120.0 / 1000.0;
 	Log("H");
