@@ -129,6 +129,8 @@ static void MainMenu(void);
 static void FightActivate(void);
 static void FightPageUp(void);
 static void FightPageDown(void);
+static void FightHome(void);
+static void FightEnd(void);
 static int FindActiveItem(struct menuItem *activeItems, int numActiveItems);
 /*static void DrawButton(GLuint button, int x, int y, int on);*/
 static void ConfigCreateItems(void);
@@ -594,20 +596,36 @@ void FightActivate(void)
 
 void FightPageUp(void)
 {
-	if(fileStart)
-	{
-		activeMenuItem -= FILE_LIST_SIZE;
-		MenuClamp();
+	int oldItem = activeMenuItem;
+
+	activeMenuItem -= FILE_LIST_SIZE;
+	MenuClamp();
+	if(activeMenuItem != oldItem)
 		MPlaySound(snd_tick);
-	}
 }
 
 void FightPageDown(void)
 {
-	if(fileStart < (signed)slist_length(fileList) - FILE_LIST_SIZE)
-	{
-		activeMenuItem += FILE_LIST_SIZE;
-		MenuClamp();
+	int oldItem = activeMenuItem;
+
+	activeMenuItem += FILE_LIST_SIZE;
+	MenuClamp();
+	if(activeMenuItem != oldItem)
+		MPlaySound(snd_tick);
+}
+
+void FightHome(void)
+{
+	if(activeMenuItem) {
+		activeMenuItem = 0;
+		MPlaySound(snd_tick);
+	}
+}
+
+void FightEnd(void)
+{
+	if(activeMenuItem < (signed)slist_length(fileList) - 1) {
+		activeMenuItem = (signed)slist_length(fileList) - 1;
 		MPlaySound(snd_tick);
 	}
 }
@@ -700,6 +718,8 @@ int FightMenuInit(void)
 
 	RegisterEvent(EVENT_PAGEUP, FightPageUp, EVENTTYPE_STOP);
 	RegisterEvent(EVENT_PAGEDOWN, FightPageDown, EVENTTYPE_STOP);
+	RegisterEvent(EVENT_HOME, FightHome, EVENTTYPE_STOP);
+	RegisterEvent(EVENT_END, FightEnd, EVENTTYPE_STOP);
 	return 1;
 }
 
@@ -717,6 +737,8 @@ void FightMenuQuit(void)
 	ClearMenuItems();
 	DeregisterEvent(EVENT_PAGEUP, FightPageUp);
 	DeregisterEvent(EVENT_PAGEDOWN, FightPageDown);
+	DeregisterEvent(EVENT_HOME, FightHome);
+	DeregisterEvent(EVENT_END, FightEnd);
 }
 
 void EQTriangle(void)
