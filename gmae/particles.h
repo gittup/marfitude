@@ -49,10 +49,10 @@ struct particle {
 };
 
 struct particleType {
-	int type;	/* one of ParticleListTypes above */
-	int billboard;	/* 1 = billboarded, 0 = not billboarded */
-	GLuint tex1;	/* first texture (if necessary) */
-	GLuint tex2;	/* second texture (if necessary) */
+	int type;		/* one of ParticleListTypes above */
+	int billboard;		/* 1 = billboarded, 0 = not billboarded */
+	const char *tex1;	/* first texture (if necessary) */
+	const char *tex2;	/* second texture (if necessary) */
 };
 
 typedef int (*PTestFunc)(struct particle *);

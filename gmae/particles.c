@@ -44,11 +44,11 @@ struct particle *particles;
 struct particleType particleTypes[] = {
 	{PT_POINT, 0, 0, 0},
 	{PT_LINE, 0, 0, 0},
-	{PT_TQUAD, 1, T_BlueNova, 0},
-	{PT_TQUAD, 1, T_BlueStar, 0},
-	{PT_TQUAD, 1, T_Fireball, 0},
-	{PT_2TQUAD, 1, T_StarBurst, T_StarCenter},
-	{PT_2TQUAD, 1, T_SunBurst, T_SunCenter}
+	{PT_TQUAD, 1, "BlueNova.png", 0},
+	{PT_TQUAD, 1, "BlueStar.png", 0},
+	{PT_TQUAD, 1, "Fireball.png", 0},
+	{PT_2TQUAD, 1, "StarBurst.png", "StarCenter.png"},
+	{PT_2TQUAD, 1, "SunBurst.png", "SunCenter.png"}
 };
 
 void GenPoint(void)
@@ -116,6 +116,7 @@ int InitParticles(void)
 {
 	int x;
 	int numpTypes;
+	int t1, t2;
 	struct particleType *pt;
 
 	numpTypes = sizeof(particleTypes) / sizeof(struct particleType);
@@ -129,10 +130,11 @@ int InitParticles(void)
 	{
 		pt = &particleTypes[x];
 
-		/* these are defined at runtime, so we set the true texture */
-		/* values now */
-		pt->tex1 = GLTexture[pt->tex1];
-		pt->tex2 = GLTexture[pt->tex2];
+		/* these are defined at runtime, so we set the true texture
+		 * values now
+		 */
+		t1 = TextureNum(pt->tex1);
+		t2 = TextureNum(pt->tex2);
 
 		glNewList(plist+x, GL_COMPILE);
 		switch(pt->type)
@@ -145,10 +147,10 @@ int InitParticles(void)
 				break;
 			case PT_TLINE:
 			case PT_TQUAD:
-				GenTQuad(pt->tex1);
+				GenTQuad(t1);
 				break;
 			case PT_2TQUAD:
-				Gen2TQuad(pt->tex1, pt->tex2);
+				Gen2TQuad(t1, t2);
 				break;
 			default:
 				ELog(("Error: Invalid particle type\n"));

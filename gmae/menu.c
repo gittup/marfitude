@@ -561,7 +561,7 @@ void MainMenu(void)
 	glLoadIdentity();
 
 	ShadedBox(minX-BBO, minY-BBO, maxX+BBO, maxY+BBO);
-	glBindTexture(GL_TEXTURE_2D, TEX_Title);
+	glBindTexture(GL_TEXTURE_2D, TextureNum("Title.png"));
 	glDisable(GL_LIGHTING);
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_QUADS);

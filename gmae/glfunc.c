@@ -231,7 +231,7 @@ int InitGL(void)
 	pbufsize = 128;
 	pbuf = (char*)malloc(sizeof(char) * pbufsize);
 
-	if(!InitTextures())
+	if(InitTextures())
 	{
 		ELog(("ERROR: Couldn't load textures!\n"));
 		return 4;

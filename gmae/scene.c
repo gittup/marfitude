@@ -112,7 +112,7 @@ void IntroScene(void)
 
   glTranslatef(-1.5f,0.0f,-6.0f);		/* Move Left 1.5 Units And Into The Screen 6.0 */
 	
-  glBindTexture(GL_TEXTURE_2D, TEX_FlatlandFiery);
+  glBindTexture(GL_TEXTURE_2D, TextureNum("FlatlandFiery.png"));
   /* draw a triangle */
   glBegin(GL_POLYGON);				/* start drawing a polygon */
   glTexCoord2f(0.0, 0.0); glVertex3f( 0.0f, 1.0f, 0.0f);		/* Top */
@@ -288,6 +288,9 @@ static MikMod_player_t oldHand;
 static int tickCounter;
 static int songStarted;	/* this is set once we get to the first row, and the */
 			/* song is unpaused */
+static int target_tex;
+static int laser_tex;
+static int fireball_tex;
 
 void ChannelUp(void)
 {
@@ -624,6 +627,10 @@ int MainInit()
 	noteOffset[2] = 0;
 	noteOffset[4] = 1;
 
+	target_tex = TextureNum("Target.png");
+	laser_tex = TextureNum("Laser.png");
+	fireball_tex = TextureNum("Fireball.png");
+
 	rowTime = 0;
 	ticTime = 0;
 	channelFocus = 0;
@@ -637,9 +644,10 @@ int MainInit()
 		ac[x].miss = -2;
 	}
 
-	/* start back about 3.5 seconds worth of ticks */
-	/* doesn't need to be exact, we just need some time for */
-	/* the player to get ready */
+	/* start back about 3.5 seconds worth of ticks
+	 * doesn't need to be exact, we just need some time for
+	 * the player to get ready
+	 */
 	curTic = (int)(-3500.0 * (double)wam->rowData[0].bpm / 2500.0);
 	/* set the tic positions of where we can see and where we're looking */
 	firstVb = curTic - NEGATIVE_TICKS;
@@ -684,14 +692,14 @@ int MainInit()
 	rowList = glGenLists(wam->numCols);
 	noteList = glGenLists(1);
 
-	mainTexes[0] = TEX_Slate;
-	mainTexes[1] = TEX_Walnut;
-	mainTexes[2] = TEX_ElectricBlue;
-	mainTexes[3] = TEX_Clovers;
-	mainTexes[4] = TEX_Lava;
-	mainTexes[5] = TEX_Parque3;
-	mainTexes[6] = TEX_Slate;
-	mainTexes[7] = TEX_ElectricBlue;
+	mainTexes[0] = TextureNum("Slate.png");
+	mainTexes[1] = TextureNum("Walnut.png");
+	mainTexes[2] = TextureNum("ElectricBlue.png");
+	mainTexes[3] = TextureNum("Clovers.png");
+	mainTexes[4] = TextureNum("Lava.png");
+	mainTexes[5] = TextureNum("Parque3.png");
+	mainTexes[6] = TextureNum("Slate.png");
+	mainTexes[7] = TextureNum("ElectricBlue.png");
 
 	for(x=0;x<wam->numCols;x++) {
 		glNewList(rowList+x, GL_COMPILE); {
@@ -1130,9 +1138,10 @@ void DrawHitNotes(void)
 void DrawTargets(void)
 {
 	int x;
+
 	glPushMatrix();
 	glTranslated((double)channelFocus * -BLOCK_WIDTH, 0.0, TIC_HEIGHT * ((double)curTic + partialTic));
-	glBindTexture(GL_TEXTURE_2D, TEX_Target);
+	glBindTexture(GL_TEXTURE_2D, target_tex);
 	glTranslated(-NOTE_WIDTH, 0.0, 0.0);
 	glNormal3f(0.0, 1.0, 0.0);
 	for(x=-1;x<=1;x++) {
@@ -1245,7 +1254,8 @@ void DrawLaser(struct laser *l)
 void DrawLasers(void)
 {
 	int x;
-	glBindTexture(GL_TEXTURE_2D, TEX_Laser);
+
+	glBindTexture(GL_TEXTURE_2D, laser_tex);
 	for(x=0;x<NUM_LASERS;x++) {
 		DrawLaser(&laser[x]);
 	}
@@ -1336,7 +1346,7 @@ void MainScene(void)
 
 	Log(("L"));
 
-	glBindTexture(GL_TEXTURE_2D, TEX_Fireball);
+	glBindTexture(GL_TEXTURE_2D, fireball_tex);
 	temp[0] *= 3.0;
 	glMaterialfv(GL_FRONT, GL_EMISSION, temp);
 	glNormal3f(0.0, 1.0, 0.0);

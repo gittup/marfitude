@@ -17,14 +17,6 @@ TARGET = marfitude
 
 include $(MK)/lang/c.mk
 
-AUTODEPS += $(o)/autotextures.d
-
-$(o)/autotextures.d: $(d)/gentextures.pl
-	$(Q)$(createdir);\
-	echo "  AUTODEP $(MKDISPLAY)";\
-	(echo "$(dir $@)textures.h $(dir $@)texlist.h: $< $(dir $<)images"; echo '	$$(Q)$< $(dir $<) $(ARCH); $$(dotify)') > $@;\
-	$< $(dir $<) $(ARCH);\
-
 INSTALL_DIR = $(BINDIR)
 INSTALL_LIST = $(d)/$(ARCH)/marfitude$(BINARYEXT)
 include $(MK)/tgt/program.mk
