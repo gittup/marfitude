@@ -661,11 +661,28 @@ static void AddChannel(SLONG* ptr,NATIVE todo)
 #include "virtch_common.c"
 #undef _IN_VIRTCH_
 
+#include "sample_callback.h"
+
+static void (*sample_callback)(signed char *stream, int len, int flags) = NULL;
+
+void register_sample_callback(void (*c)(signed char *,int,int))
+{
+	sample_callback = c;
+}
+
+void deregister_sample_callback(void)
+{
+	sample_callback = NULL;
+}
+
 void VC1_WriteSamples(SBYTE* buf,ULONG todo)
 {
 	int left,portion=0,count;
 	SBYTE  *buffer;
 	int t, pan, vol;
+
+	SBYTE *mybuf = buf;
+	int mytodo = todo;
 
 	while(todo) {
 		if(!tickleft) {
@@ -729,6 +746,8 @@ void VC1_WriteSamples(SBYTE* buf,ULONG todo)
 			left   -= portion;
 		}
 	}
+	if(sample_callback != NULL)
+		sample_callback(mybuf, mytodo, vc_mode);
 }
 
 BOOL VC1_Init(void)
