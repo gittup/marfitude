@@ -1,3 +1,8 @@
+#define RED 0
+#define GREEN 1
+#define BLUE 2
+#define ALPHA 3
+
 typedef struct {
 	double x;
 	double y;
@@ -16,4 +21,8 @@ typedef struct {
 	float mass;	// object's mass
 	} Obj;
 
-void UpdateObj(Obj *o, double t);
+Obj *NewObj();
+void DeleteObj(Obj *o);
+void ClearObjs();
+void UpdateObjs(int dt);
+void CheckObjs();
