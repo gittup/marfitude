@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "SDL_opengl.h"
 #include "SDL_mixer.h"
-#include "GL/gl.h"
-#include "GL/glu.h"
 
 #include "scene.h"
 #include "cfg.h"

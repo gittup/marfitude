@@ -3,8 +3,7 @@
 #include <stdarg.h>
 
 #include "SDL.h"
-#include "GL/gl.h"
-#include "GL/glu.h"
+#include "SDL_opengl.h"
 
 #include "cfg.h"
 #include "fps.h"

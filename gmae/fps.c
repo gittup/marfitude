@@ -1,6 +1,5 @@
 #include "SDL.h"
-
-#include "GL/gl.h"
+#include "SDL_opengl.h"
 
 #include "fps.h"
 #include "glfunc.h"

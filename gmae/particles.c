@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "GL/gl.h"
+#include "SDL_opengl.h"
 
 #include "particles.h"
 #include "cfg.h"

@@ -1,15 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <unistd.h>
 #include <ctype.h> /* for isprint */
 #include <getopt.h>
 
 #include "SDL.h"
+#include "SDL_opengl.h"
 #include "SDL_thread.h"
 #include "SDL_image.h"
-#include "GL/gl.h"
-#include "GL/glu.h"
 
 #include "main.h"
 #include "audio.h"
