@@ -1,3 +1,4 @@
+mk GRAPH=1 install fails to generate graph and leaves dep.dot around
 fix cfg.c - don't use header.option thing
 allow user to enter initials
 keep track of multiple high scores (eg. top 5)
