@@ -50,7 +50,6 @@ int StartModule(char *modFile)
 		SDLError("Playing mod file");
 		return 0;
 	}
-	Player_TogglePause();
 	Log(("Mod ready\n"));
 
 	mod = Player_GetModule();

@@ -2587,11 +2587,12 @@ void Player_Start(MODULE *mf)
 	if (!MikMod_Active())
 		MikMod_EnableOutput();
 
-	mf->forbid=0;
+	mf->forbid=1;
 
 	MUTEX_LOCK(vars);
 	if (pf!=mf) {
-		/* new song is being started, so completely stop out the old one. */
+		/* new song is being started, so completely stop out the
+		   old one. */
 		if (pf) pf->forbid=1;
 		for (t=0;t<md_sngchn;t++) Voice_Stop_internal(t);
 	}
@@ -2680,6 +2681,9 @@ void Player_SetPosition(UWORD pos)
 	MUTEX_LOCK(vars);
 	if (pf) {
 		int t;
+		int m;
+
+		m = pf->forbid;
 
 		pf->forbid=1;
 		if (pos>=pf->numpos) pos=pf->numpos;
@@ -2697,7 +2701,8 @@ void Player_SetPosition(UWORD pos)
 			pf->control[t].i=NULL;
 			pf->control[t].s=NULL;
 		}
-		pf->forbid=0;
+		if(!m)
+			pf->forbid=0;
 
 		if (!pos)
 			Player_Init_internal(pf);
