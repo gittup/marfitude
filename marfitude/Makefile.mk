@@ -1,6 +1,6 @@
 TARGET = marfitude
 
-project: $(src_gmae)/$(ARCH)/$(TARGET)$(BINARYEXT)
+project: $(src_marfitude)/$(ARCH)/$(TARGET)$(BINARYEXT)
 
 EXTRACFLAGS = `$(SDL_CONFIG) --cflags` $(BDECFLAGS)
 
@@ -15,8 +15,8 @@ INCDIRS = $(src_util) $(src_gmae)/$(ARCH) $(src_marfitude)/sdl_mixer/mikmod
 
 EXTRALDFLAGS = `$(SDL_CONFIG) --libs` -lm -lSDL_image $(GLLIB) $(GLULIB)
 
-LIBS =  $(src_util)/$(ARCH)/libmarf.a\
-	$(src_gmae)/$(ARCH)/libgmae.a\
+LIBS =  $(src_gmae)/$(ARCH)/libgmae.a\
+	$(src_util)/$(ARCH)/libmarf.a\
 	$(src_marfitude)/sdl_mixer/$(ARCH)/libsdl_mixer.a\
 	$(src_marfitude)/sdl_mixer/mikmod/$(ARCH)/libsdl_mikmod.a
 
@@ -39,6 +39,5 @@ include $(MK)/lang/c.mk
 
 include $(MK)/tgt/program.mk
 
-#dirs := wam
-dirs := sdl_mixer
+dirs := wam sdl_mixer
 include $(MK)/Recurse.mk
