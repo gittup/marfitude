@@ -1,3 +1,4 @@
+change list foreach?
 use ace_unrel.it as theme song?
 ace_unrel.it - is it supposed to be so empty in the beginning?
 remove blank end patterns
@@ -16,7 +17,6 @@ change Press to be based on ticks, not on row
 check and fix physics stuff - implement fixed point and float point physics
 	multiply timer stuff in timer.c - eg 1/2*t*t for acceleration
 	rather than multiply it over and over for each object in a frame
-fix bouncy ball when sngspd is not 6 :)
 see if mikmod supports channel masking or something similar
 check if GL_DITHER should be disabled
 
