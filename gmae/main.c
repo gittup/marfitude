@@ -22,6 +22,7 @@
 #include <math.h>
 #include <ctype.h> /* for isprint */
 #include <getopt.h>
+#include <unistd.h>
 
 #include "SDL.h"
 #include "SDL_opengl.h"
@@ -70,8 +71,9 @@ int main(int argc, char **argv)
 	char *convertSong = NULL;
 	SDL_Surface *screen;
 
-	/* parse all the command line options */
-	/* this is pretty much verbatim from the GNU help page */
+	/* parse all the command line options
+	 * this is pretty much verbatim from the GNU help page
+	 */
 	while((c = getopt(argc, argv, "hm:")) != -1)
 	{
 		switch(c)
@@ -93,8 +95,15 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* initialize all the different subsystems, or quit */
-	/* if they fail for some reason */
+	if(chdir(DATADIR))
+	{
+		ELog(("ERROR: Couldn't change to the %s directory\n", DATADIR));
+	}
+
+
+	/* initialize all the different subsystems, or quit
+	 * if they fail for some reason
+	 */
 	if(!InitLog())
 	{
 		printf("Error creating log file!");
@@ -116,9 +125,10 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/* if the user just wanted to generate the WAM file, do that */
-	/* and quit (this can be done in a script to generate all the WAMs */
-	/* before playing the game, so the initial loads are quick) */
+	/* if the user just wanted to generate the WAM file, do that
+	 * and quit (this can be done in a script to generate all the WAMs
+	 * before playing the game, so the initial loads are quick)
+	 */
 	if(convertSong != NULL)
 	{
 		printf("Generating WAM file for: %s\n", convertSong);
@@ -173,7 +183,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	ClearEvents(); /* clears event cue, has nothing to do with registering */
+	ClearEvents(); /* clears event cue - nothing to do with registering */
 
 	while(!quit)
 	{
