@@ -87,7 +87,8 @@ static int SetSample(struct sample *s, int chan);
 static void WriteCol(int fno, struct column *col);
 static int SaveWam(struct wam *wam, char *wamFile);
 static void ReadCol(int fno, struct column *col);
-static struct wam *LoadWamWrite(char *modFile, int wamwrite);
+static struct wam *ReadWam(char *wamFile);
+static struct wam *CreateWam(char *modFile);
 
 char *BaseFileName(char *file)
 {
@@ -742,29 +743,18 @@ int SaveWam(struct wam *wam, char *wamFile)
 	return 1;
 }
 
-int WriteWam(char *modFile)
+struct wam *CreateWam(char *modFile)
 {
 	struct wam *wam;
-	char *wamFile;
-	wamFile = Mod2Wam(modFile);
-	Log(("MOD: %s\nWAM: %s\n", modFile, wamFile));
+
 	if(!StartModule(modFile))
 	{
 		ELog(("Error: Couldn't start module.\n"));
-		return 0;
+		return NULL;
 	}
 	Log(("Loading track data...\n"));
 	wam = LoadTrackData();
-	Log(("Saving Wam...\n"));
-	if(!SaveWam(wam, wamFile))
-	{
-		ELog(("Error: Couldn't save wam\n"));
-		return 0;
-	}
-	free(wamFile);
-	FreeWam(wam);
-	Log(("Wam written.\n"));
-	return 1;
+	return wam;
 }
 
 void ReadCol(int fno, struct column *col)
@@ -781,33 +771,39 @@ void ReadCol(int fno, struct column *col)
 	}
 }
 
-struct wam *LoadWamWrite(char *modFile, int wamwrite)
+int WriteWam(char *modFile)
+{
+	struct wam *wam;
+	char *wamFile;
+
+	wam = CreateWam(modFile);
+	if(wam == NULL) {
+		ELog(("Error: Couldn't create wam file.\n"));
+		return 0;
+	}
+
+	wamFile = Mod2Wam(modFile);
+	Log(("Write MOD: %s\nWAM: %s\n", modFile, wamFile));
+	if(!SaveWam(wam, wamFile)) {
+		ELog(("Error: Couldn't save wam. Make sure the wam/ directory in the data directory: '%s' is writeable\n", DATADIR));
+		free(wamFile);
+		return 0;
+	}
+
+	free(wamFile);
+	return 1;
+}
+
+struct wam *ReadWam(char *wamFile)
 {
 	int x;
 	int y;
 	int fno;
-	char *wamFile;
 	struct wam *wam;
 
-	wamFile = Mod2Wam(modFile);
 	fno = open(wamFile, O_RDONLY | O_BINARY);
-	free(wamFile);
 	if(fno == -1)
-	{
-		if(wamwrite)
-		{
-			/* if the file doesn't exist, create one */
-			Log(("WAM not found, creating...\n"));
-			WriteWam(modFile);
-			/* next time we try to load, don't create again */
-			return LoadWamWrite(modFile, 0);
-		}
-		else
-		{
-			ELog(("Error: Couldn't load WAM file after creation!\n"));
-			return NULL;
-		}
-	}
+		return NULL;
 	Log(("Loading wam\n"));
 	wam = (struct wam*)malloc(sizeof(struct wam));
 	read(fno, &wam->numCols, sizeof(int));
@@ -835,8 +831,34 @@ struct wam *LoadWamWrite(char *modFile, int wamwrite)
 
 struct wam *LoadWam(char *modFile)
 {
-	/* the first time we try to load the file we create if it doesn't exist */
-	return LoadWamWrite(modFile, 1);
+	struct wam *wam;
+	char *wamFile;
+
+	wamFile = Mod2Wam(modFile);
+	Log(("Load MOD: %s\nWAM: %s\n", modFile, wamFile));
+
+	/* the first time we try to load the file we create it
+	 * if it doesn't exist
+	 */
+	wam = ReadWam(wamFile);
+	if(wam == NULL) {
+		/* If we couldn't read the wam, create one in memory and try
+		 * to save it. Failure to save is not an error, since we can
+		 * just recreate the wam next time (it will just be slower)
+		 */
+		wam = CreateWam(modFile);
+		if(wam == NULL) {
+			ELog(("Error: Couldn't create wam file\n"));
+			free(wamFile);
+			return 0;
+		}
+		if(!SaveWam(wam, wamFile)) {
+			ELog(("Error: Couldn't save wam. Make sure the wam/ directory in the data directory: '%s' is writeable\n", DATADIR));
+		}
+	}
+
+	free(wamFile);
+	return wam;
 }
 
 void FreeWam(struct wam *wam)
