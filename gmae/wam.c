@@ -34,9 +34,9 @@
 #include "log.h"
 #include "module.h"
 
-#include "fatalerror.h"
-#include "memtest.h"
-#include "textprogress.h"
+#include "util/fatalerror.h"
+#include "util/memtest.h"
+#include "util/textprogress.h"
 
 #define GRP_SIZE 32
 

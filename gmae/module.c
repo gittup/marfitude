@@ -27,9 +27,9 @@
 #include "cfg.h"
 #include "log.h"
 
-#include "memtest.h"
-#include "fatalerror.h"
-#include "sdlfatalerror.h"
+#include "util/memtest.h"
+#include "util/fatalerror.h"
+#include "util/sdlfatalerror.h"
 
 Mix_Music *modMusic = NULL;
 MODULE *mod = NULL;

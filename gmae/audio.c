@@ -23,7 +23,7 @@
 
 #include "audio.h"
 #include "cfg.h"
-#include "sdlfatalerror.h"
+#include "util/sdlfatalerror.h"
 
 int audioInited = 0;
 

@@ -24,10 +24,10 @@
 #include "cfg.h"
 #include "log.h"
 
-#include "memtest.h"
-#include "fatalerror.h"
-#include "token.h"
-#include "strfunc.h"
+#include "util/memtest.h"
+#include "util/fatalerror.h"
+#include "util/token.h"
+#include "util/strfunc.h"
 
 struct option {
 	char *key;

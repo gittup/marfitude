@@ -23,7 +23,7 @@
 #include "phys.h"
 #include "log.h"
 
-#include "slist.h" 
+#include "util/slist.h" 
 
 static void FreeObj(void *data, void *not_used);
 static void UpdateObj(void *op, void *tp);

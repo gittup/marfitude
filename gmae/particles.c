@@ -28,7 +28,7 @@
 #include "textures.h"
 #include "timer.h"
 
-#include "memtest.h"
+#include "util/memtest.h"
 
 static void GenPoint(void);
 static void GenLine(void);

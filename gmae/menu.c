@@ -35,10 +35,10 @@
 #include "cfg.h"
 #include "log.h"
 
-#include "memtest.h"
-#include "fatalerror.h"
-#include "slist.h"
-#include "strfunc.h"
+#include "util/memtest.h"
+#include "util/fatalerror.h"
+#include "util/slist.h"
+#include "util/strfunc.h"
 
 #define MENU_SLIDER 0
 #define MENU_BOOLEAN 1

@@ -27,11 +27,11 @@
 #include "sounds.h"
 #include "log.h"
 
-#include "memtest.h"
-#include "textprogress.h"
-#include "fatalerror.h"
-#include "sdlfatalerror.h"
-#include "strfunc.h"
+#include "util/memtest.h"
+#include "util/textprogress.h"
+#include "util/fatalerror.h"
+#include "util/sdlfatalerror.h"
+#include "util/strfunc.h"
 
 #define SOUNDDIR "sounds/"
 

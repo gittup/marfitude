@@ -30,8 +30,8 @@
 #include "cfg.h"
 #include "log.h"
 
-#include "memtest.h"
-#include "strfunc.h"
+#include "util/memtest.h"
+#include "util/strfunc.h"
 
 #define JK_KEYBOARD -1
 #define JK_MOUSE -2

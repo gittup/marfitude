@@ -31,8 +31,8 @@
 #include "particles.h"
 #include "textures.h"
 
-#include "memtest.h"
-#include "sdlfatalerror.h"
+#include "util/memtest.h"
+#include "util/sdlfatalerror.h"
 
 #ifdef __STRICT_ANSI__
 extern int vsnprintf(char *buf, size_t size, const char *fmt, va_list args);

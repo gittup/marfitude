@@ -22,7 +22,7 @@
 
 #include "log.h"
 
-#include "memtest.h"
+#include "util/memtest.h"
 
 FILE *logFile = NULL;
 

@@ -37,15 +37,11 @@
 #include "timer.h"
 #include "wam.h"
 
-#include "fatalerror.h"
-#include "memtest.h"
-#include "sdlfatalerror.h"
-#include "myrand.h"
-#include "slist.h"
-
-#include "mikmod_internals.h" /* test */
-
-#define MAXNUM 2
+#include "util/fatalerror.h"
+#include "util/memtest.h"
+#include "util/sdlfatalerror.h"
+#include "util/myrand.h"
+#include "util/slist.h"
 
 static int NullInit(void);
 static void NullScene(void);
@@ -66,8 +62,6 @@ static struct scene scenes[NUMSCENES] = {
 	{MainInit, MainQuit, MainScene}
 };
 
-/*static float lightFull[4] = {1.0, 1.0, 1.0, 1.0};
-static float lightHalf[4] = {0.5, 0.5, 0.5, 0.5};*/
 static float lightNone[4] = {0.0, 0.0, 0.0, 1.0};
 static float lightNormal[4] = {0.8, 0.8, 0.8, 1.0};
 

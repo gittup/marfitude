@@ -27,7 +27,7 @@
 #include "cfg.h"
 #include "log.h"
 
-#include "memtest.h"
+#include "util/memtest.h"
 
 SDL_Joystick **joys = NULL;
 char joyButtonCfg[23] = "joystick.ignorejs00b00";
