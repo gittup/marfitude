@@ -1,4 +1,7 @@
-Add high score thing!
+fix cfg.c - don't use header.option thing
+allow user to enter initials
+keep track of multiple high scores (eg. top 5)
+
 change list foreach?
 remove blank end patterns
 recursive search for best track representation?
@@ -6,33 +9,23 @@ recursive search for best track representation?
 only allow adjacent channels to to mixed
 	startchan, endchan - instead of *channels
 
-change duplicate track merge till after dots are generated?
-	- buried.xm merges tracks 1-4 since they have the same ins, then
-	  finds that it matches a drum track since it has a beat on each
-	  row, but it may be (or maybe not... :) silly to match these up
-change Press to be based on ticks, not on row
-check and fix physics stuff - implement fixed point and float point physics
+check and fix physics stuff
 	multiply timer stuff in timer.c - eg 1/2*t*t for acceleration
 	rather than multiply it over and over for each object in a frame
-see if mikmod supports channel masking or something similar
-check if GL_DITHER should be disabled
 
 cannona.it stops playing after row 24
 
 use joykey.up or something, set it to 1 when SDLKEYUP/JOYBUTTONUP and 0 on SDLKEYDOWN/JOYBUTTONDOWN - refire event after a delay (rather than use the KeyRepeating thing, since this will work for joysticks too)
 
-music plays while switching song
+play music while switching song?
 
 add in thing to not play the first note of a track if we're not on that track
 	(it starts not muted and so plays a little, but if we're not on the
 	track there is no chance we will hit it - make sense?)
-takes long to quit - log?
 
 fix event system - use user events? do anything that doesn't suck?
 draw transparent objects after opaque ones - use readonly depth buf
 	- disable blending during opaque objects for speed??
-
-Check volume for magicrai.s3m - are all those dots really there?
 
 clean up glinit
 difficulty - spacing of dots, timing of when you press button
@@ -40,16 +33,7 @@ difficulty - spacing of dots, timing of when you press button
 
 add in cfg for mods - allow naming of tracks?
 
-speed limit signs when the speed changes (but not when it changes every other row!)
-
-fix mod loading scheme - it blowz! - handle blank tracks too
-
-different duders:
-	fireball duder, must hit extra fireball note or explode (for a little bit)
-	darkness duder - make screen dark
-	invisible duder - make notes shift in/out of visibility
-	silencer - turns off the music
-	other duders
+speed limit signs when the speed changes ?
 
 more video options - eg texture enable/disable, lightning, etc etc
 sort transparent objects to render them properly (or cheat) (or leave as is)
