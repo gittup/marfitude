@@ -91,21 +91,11 @@ void internal_init(int len, int flags)
 	double pi;
 
 	if(flags & DMODE_16BITS)
-		printf("16BIT\n");
-	else
-		printf("8BIT\n");
-	if(flags & DMODE_STEREO)
-		printf("STDEREO\n");
-	else
-		printf("MONO\n");
-
-	if(flags & DMODE_16BITS)
 		len /= 2;
 	if(flags & DMODE_STEREO)
 		len /= 2;
 
 	log_len = my_log(len);
-	printf("%i FFT = %i log\n", len, log_len);
 
 	fft.data = (int*)malloc(sizeof(int) * len);
 	fft_buf = (struct cmp*)malloc(sizeof(struct cmp) * len);
@@ -116,7 +106,6 @@ void internal_init(int len, int flags)
 	fft.cur_max = 0;
 	fft.hist_max = 0;
 	fft.max = pow(2.0, (flags & DMODE_16BITS) ? 16 : 8) * len;
-	printf("MAX: %i\n", fft.max);
 	/* Does mono/stereo affect fft.max? Probably, but...by how MUCH!? */
 
 	pi = 4.0 * atan(1.0);
