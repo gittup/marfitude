@@ -252,6 +252,7 @@ void MenuBack()
 void ShowMenu(void)
 {
 	if(menuActive) return;
+	PlaySound(SND_spnray03);
 	menuActive = 1;
 	RegisterEvent(EVENT_UP, MenuUp, EVENTTYPE_STOP);
 	RegisterEvent(EVENT_DOWN, MenuDown, EVENTTYPE_STOP);
