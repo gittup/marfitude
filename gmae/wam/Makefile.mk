@@ -2,8 +2,10 @@ INSTALL_DIR = $(DATADIR)/wam
 INSTALL_LIST = README
 EXEC = text
 
-UNINSTALL_FILES += $(wildcard $(subst //,/,$(DESTDIR)/$(INSTALL_DIR)/*.wam))
+wamdir = $(subst //,/,$(DESTDIR)/$(INSTALLDIR)/wam)
+wamfiles = $(wildcard $(wamdir)/*.wam)
+UNINSTALL_FILES += $(wamfiles)
 
-project: $(wildcard $(d)/*.wam)
-$(d)/%.wam: gmae/wam.c
+install: $(wamfiles)
+$(wamdir)/%.wam: gmae/wam.c
 	@$(call RM,$@)
