@@ -24,6 +24,7 @@ typedef struct {
 	int type;	// one of ParticleTypes above
 	float size;	// dimension of particle
 	int active;	// 1 = drawn, 0 not drawn
+	float life;	// TTL in seconds
 	} Particle;
 
 typedef struct {
@@ -36,6 +37,8 @@ typedef struct {
 int InitParticles();
 void QuitParticles();
 void DrawParticles();
+void StartParticles();	// set up OpenGL variables
+void StopParticles();	// reset OpenGL variables
 void CreateParticle(Obj *o, float col[4], int type, float size);
 void ClearParticles();
 
