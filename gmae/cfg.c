@@ -136,15 +136,21 @@ void CfgSetS(const char *key, char *value)
 	free(header);
 }
 
+void CfgSetIp(const char *header, const char *option, int value)
+{
+	char *s;
+	s = (char*)malloc(IntLen(value) + 1);
+	sprintf(s, "%i", value);
+	CfgAdd(header, option, s);
+	free(s);
+}
+
 void CfgSetI(const char *key, int value)
 {
 	char *header;
-	char *s;
-	s = (char*)malloc(IntLen(value)+1);
 	header = HeaderPart(key);
-	CfgAdd(header, OptionPart(key), s);
+	CfgSetIp(header, OptionPart(key), value);
 	free(header);
-	free(s);
 }
 
 /*void CfgSetF(const char *key, float value)
@@ -158,27 +164,37 @@ void CfgSetI(const char *key, int value)
 	free(s);
 }*/
 
-char *CfgS(const char *key)
+char *CfgSp(const char *header, const char *option)
 {
-	char *header;
 	int x, y;
-	header = HeaderPart(key);
-	for(x=0;x<numHeaders;x++)
-	{
-		if(strcmp(cfg[x].header, header) == 0)
-		{
-			for(y=0;y<cfg[x].numOps;y++)
-			{
-				if(strcmp(cfg[x].ops[y].key, OptionPart(key)) == 0)
-				{
-					free(header);
+	for(x=0;x<numHeaders;x++) {
+		if(strcmp(cfg[x].header, header) == 0) {
+			for(y=0;y<cfg[x].numOps;y++) {
+				if(strcmp(cfg[x].ops[y].key, option) == 0) {
 					return cfg[x].ops[y].value;
 				}
 			}
 		}
 	}
-	free(header);
 	return NULL;
+}
+
+char *CfgS(const char *key)
+{
+	char *header;
+	char *s;
+	header = HeaderPart(key);
+	s = CfgSp(header, OptionPart(key));
+	free(header);
+	return s;
+}
+
+int CfgIp(const char *header, const char *option)
+{
+	char *s;
+	s = CfgSp(header, option);
+	if(s == NULL) return 0;
+	return atoi(s);
 }
 
 int CfgI(const char *key)
