@@ -24,11 +24,6 @@
 #include <getopt.h>
 #include <unistd.h>
 
-#include "SDL.h"
-#include "SDL_opengl.h"
-#include "SDL_thread.h"
-#include "SDL_image.h"
-
 #include "main.h"
 #include "audio.h"
 #include "cfg.h"
@@ -69,7 +64,6 @@ int main(int argc, char **argv)
 {
 	char c;
 	char *convertSong = NULL;
-	SDL_Surface *screen;
 
 	/* parse all the command line options
 	 * this is pretty much verbatim from the GNU help page
@@ -95,30 +89,28 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if(chdir(DATADIR))
-	{
+	if(DATADIR[0] && chdir(DATADIR)) {
 		ELog(("ERROR: Couldn't change to the %s directory\n", DATADIR));
 	}
-
 
 	/* initialize all the different subsystems, or quit
 	 * if they fail for some reason
 	 */
-	if(!InitLog())
+	if(InitLog())
 	{
 		printf("Error creating log file!");
 		Shutdown();
 		return 1;
 	}
 
-	if(!InitConfig())
+	if(InitConfig())
 	{
 		ELog(("ERROR: Couldn't set configuration options!\n"));
 		Shutdown();
 		return 1;
 	}
 
-	if(!InitAudio())
+	if(InitAudio())
 	{
 		ELog(("ERROR: Couldn't start audio!\n"));
 		Shutdown();
@@ -138,15 +130,14 @@ int main(int argc, char **argv)
 	}
 
 	/* finish initializing the rest of the subsystems */
-	screen = InitGL();
-	if(screen == NULL)
+	if(InitGL())
 	{
-		ELog(("Error setting up the screen!\n"));
+		ELog(("Error initializing SDL/OpenGL!\n"));
 		Shutdown();
 		return 1;
 	}
 
-	if(!InitSounds())
+	if(InitSounds())
 	{
 		ELog(("ERROR: Couldn't load sounds!\n"));
 		Shutdown();
@@ -160,7 +151,7 @@ int main(int argc, char **argv)
 	if(ConfigureJoyKey())
 	{
 		SwitchScene(NULLSCENE);
-		if(!SwitchMenu(CONFIGMENU))
+		if(SwitchMenu(CONFIGMENU))
 		{
 			ELog(("Error switching to the configuration menu.\n"));
 			Shutdown();
@@ -170,13 +161,13 @@ int main(int argc, char **argv)
 	else
 	{
 		SwitchScene(INTROSCENE);
-		if(!SwitchMenu(NOMENU))
+		if(SwitchMenu(NOMENU))
 		{
 			ELog(("Error enabling the menu.\n"));
 			Shutdown();
 			return 1;
 		}
-		if(!SwitchScene(MAINSCENE))
+		if(SwitchScene(MAINSCENE))
 		{
 			ELog(("Error switching to main scene.\n"));
 			SwitchMenu(MAINMENU);
