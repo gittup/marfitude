@@ -12,7 +12,7 @@ if($destdir =~ /\/$/) {chop($destdir);}
 
 open(HEADER, ">$destdir/sounds.h") or die "Can't write to sounds.h!";
 open(LIST, ">$destdir/sndlist.h") or die "Can't write to sndlist.h!";
-@snd = `ls sounds/*.wav`;
+@snd = `./chksounds.pl | grep -v 'not used'`;
 chomp(@snd);
 
 print "  AUTOH   sndlist.h\n";

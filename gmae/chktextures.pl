@@ -7,8 +7,9 @@ chomp(@img);
 
 for($x=0;$x<=$#img;$x++)
 {
-	$img[$x] =~ s/\.\/images\/(.*)\.png/$1/;
-	$inf = `grep "TEX_$img[$x]" *.c; grep "T_$img[$x]" *.c`;
+	$imgname = $img[$x];
+	$imgname =~ s/\.\/images\/(.*)\.png/$1/;
+	$inf = `grep "TEX_$imgname" *.c; grep "T_$imgname" *.c`;
 	if(length($inf) == 0) {print "$img[$x] not used\n";}
 	else {print "$img[$x]\n";}
 }
