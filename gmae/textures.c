@@ -96,7 +96,7 @@ GLuint TextureNum(const char *name)
 	if(name == NULL) return -1;
 
 	for(x=0;x<num_textures;x++) {
-		if(StrEq(name, textures[x].name))
+		if(strcmp(name, textures[x].name) == 0)
 			return textures[x].texture;
 	}
 	fprintf(stderr, "Warning: Texture '%s' not found.\n", name);

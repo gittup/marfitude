@@ -70,7 +70,7 @@ int SoundNum(const char *name)
 {
 	int x;
 	for(x=0;x<num_sounds;x++) {
-		if(StrEq(name, sounds[x].name))
+		if(strcmp(name, sounds[x].name) == 0)
 			return x;
 	}
 	fprintf(stderr, "Warning: Sound '%s' not found.\n", name);
