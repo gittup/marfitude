@@ -56,6 +56,7 @@ void fireball_draw(const void *data)
 
 	glBindTexture(GL_TEXTURE_2D, fireball_tex);
 	glNormal3f(0.0, 1.0, 0.0);
+	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_QUADS); {
 		glTexCoord2f(0.0, 0.0);
 		glVertex3f(fireball[0]-.5, fireball[1]-.5, fireball[2]);
