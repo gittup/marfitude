@@ -70,8 +70,8 @@ struct track {
 };
 
 static struct wam *LoadTrackData(void);
-static char *BaseFileName(char *file);
-static char *Mod2Wam(char *modFile);
+static char *BaseFileName(const char *file);
+static char *Mod2Wam(const char *modFile);
 static int GetNote(UBYTE *trk, UWORD row);
 static int GetInstrument(UBYTE *trk, UWORD row);
 static void Handler(void);
@@ -86,12 +86,12 @@ static void UpdateRowData(struct track *t, int trklen, struct wam *wam, int star
 static void ClearTrack(struct track *t, int chan);
 static int SetSample(struct sample *s, int chan);
 static void WriteCol(int fno, struct column *col);
-static int SaveWam(struct wam *wam, char *wamFile);
+static int SaveWam(struct wam *wam, const char *wamFile);
 static void ReadCol(int fno, struct column *col);
-static struct wam *ReadWam(char *wamFile);
-static struct wam *CreateWam(char *modFile);
+static struct wam *ReadWam(const char *wamFile);
+static struct wam *CreateWam(const char *modFile);
 
-char *BaseFileName(char *file)
+char *BaseFileName(const char *file)
 {
 	int x;
 	int start = 0;
@@ -108,7 +108,7 @@ char *BaseFileName(char *file)
 	return ret;
 }
 
-char *Mod2Wam(char *modFile)
+char *Mod2Wam(const char *modFile)
 {
 	char *s;
 	char *base;
@@ -554,11 +554,12 @@ struct wam *LoadTrackData(void)
 	int trklen = 0;		/* trklen is how many samples we are actually */
 				/* using, since patterns can vary in length, */
 				/* even in the same song */
-	struct track *tracks;		/* track data */
+	struct track *tracks;	/* track data */
 				/* we keep one pattern worth of samples */
 				/* in memory to check for redundant tracks */
 				/* and pick the best remaining tracks to play */
-	struct wam *wam;		/* the wam we'll create and return */
+	struct wam *wam;	/* the wam we'll create and return */
+	double time = 0.0;      /* time in seconds */
 	MikMod_player_t oldHand; /* handler should stop multiple conflicting */
 	/* Player_HandleTick()'s to skip ticks and sometimes segfault */
 
@@ -584,7 +585,7 @@ struct wam *LoadTrackData(void)
 	if(wam->numCols >= mod->numchn) wam->numCols = mod->numchn;
 	if(wam->numCols >= MAX_COLS) wam->numCols = MAX_COLS;
 
-	Player_TogglePause(); /* start the mod up again so we can read in data */
+	Player_TogglePause(); /* start the mod again so we can read in data */
 	Log(("Starting row loop\n"));
 	ProgressMeter("Creating WAM");
 	while(mod->sngpos < mod->numpos)
@@ -604,26 +605,29 @@ struct wam *LoadTrackData(void)
 				wam->rowData = (struct row*)realloc(wam->rowData, sizeof(struct row) * rowsAlloced);
 			}
 
-			/* only designate one place the start of a */
-			/* pattern so if we loop there aren't multiple */
-			/* 'starts' */
+			/* only designate one place the start of a
+			 * pattern so if we loop there aren't multiple
+			 * 'starts'
+			 */
 			if(!mod->patpos && mod->sngpos != oldSngPos)
 			{
 				wam->rowData[wam->numRows].line = 2;
 				oldSngPos = mod->sngpos;
 				lineCount = 0;
-				/* now convert the track data to something */
-				/* usable. mod->sngpos == 0 the first time */
-				/* through, so there won't be any track data */
-				/* then :) */
+				/* now convert the track data to something
+				 * usable. mod->sngpos == 0 the first time
+				 * through, so there won't be any track data
+				 * then :)
+				 */
 				if(mod->sngpos != 0)
 				{
 				Log(("b: %i\n", grpCount));
 					/* reset groups on a line break */
 					for(x=0;x<numgrps;x++)
 					{
-						/* extra -1 since we're holding */
-						/* onto a note */
+						/* extra -1 since we're holding
+						 * onto a note
+						 */
 						wam->rowData[wam->numRows-x-1].ticgrp = grpCount;
 					}
 					numgrps = 0;
@@ -651,8 +655,10 @@ struct wam *LoadTrackData(void)
 			wam->rowData[wam->numRows].ticprt = grpCount;
 			wam->rowData[wam->numRows].patpos = mod->patpos;
 			wam->rowData[wam->numRows].sngpos = mod->sngpos;
+			wam->rowData[wam->numRows].time = time;
 			tickCount += mod->sngspd;
 			grpCount += mod->sngspd;
+			time += BpmToSec(mod->sngspd, mod->bpm);
 			numgrps++;
 			/* only break on a group mod 8 when we have enough */
 			/* ticks in the group */
@@ -718,6 +724,7 @@ struct wam *LoadTrackData(void)
 	UpdateProgress(mod->sngpos, mod->numpos);
 	EndProgressMeter();
 	wam->numPats++;
+	wam->songLength = time;
 	Log(("Row loop done\n"));
 
 	oldHand = MikMod_RegisterPlayer(oldHand);
@@ -738,7 +745,7 @@ void WriteCol(int fno, struct column *col)
 	write(fno, col->chan, sizeof(int) * col->numchn);
 }
 
-int SaveWam(struct wam *wam, char *wamFile)
+int SaveWam(struct wam *wam, const char *wamFile)
 {
 	int x;
 	int y;
@@ -754,6 +761,7 @@ int SaveWam(struct wam *wam, char *wamFile)
 	write(fno, &wam->numTics, sizeof(int));
 	write(fno, &wam->numPats, sizeof(int));
 	write(fno, &wam->numRows, sizeof(int));
+	write(fno, &wam->songLength, sizeof(double));
 	for(x=0;x<wam->numPats;x++)
 	{
 		for(y=0;y<wam->numCols;y++)
@@ -767,7 +775,7 @@ int SaveWam(struct wam *wam, char *wamFile)
 	return 1;
 }
 
-struct wam *CreateWam(char *modFile)
+struct wam *CreateWam(const char *modFile)
 {
 	struct wam *wam;
 
@@ -795,7 +803,11 @@ void ReadCol(int fno, struct column *col)
 	}
 }
 
-int WriteWam(char *modFile)
+/** Loads the @a modFile and creates and writes the appropriate WamFile
+ * @param modFile filename of the mod
+ * @returns 1 if successful, 0 on failure
+ */
+int WriteWam(const char *modFile)
 {
 	struct wam *wam;
 	char *wamFile;
@@ -818,7 +830,7 @@ int WriteWam(char *modFile)
 	return 1;
 }
 
-struct wam *ReadWam(char *wamFile)
+struct wam *ReadWam(const char *wamFile)
 {
 	int x;
 	int y;
@@ -834,6 +846,7 @@ struct wam *ReadWam(char *wamFile)
 	read(fno, &wam->numTics, sizeof(int));
 	read(fno, &wam->numPats, sizeof(int));
 	read(fno, &wam->numRows, sizeof(int));
+	read(fno, &wam->songLength, sizeof(double));
 	Log(("Main info read: %i cols, %i tics, %i pats, %i rows\n", wam->numCols, wam->numTics, wam->numPats, wam->numRows));
 	wam->patterns = (struct pattern*)malloc(sizeof(struct pattern) * wam->numPats);
 	wam->rowData = (struct row*)malloc(sizeof(struct row) * wam->numRows);
@@ -853,7 +866,12 @@ struct wam *ReadWam(char *wamFile)
 	return wam;
 }
 
-struct wam *LoadWam(char *modFile)
+/** Loads the wam related to the @a modFile and returns it.  Must be freed
+ * later by FreeWam
+ * @param modFile The filename of the mod
+ * @return The wam for the mod file
+ */
+struct wam *LoadWam(const char *modFile)
 {
 	struct wam *wam;
 	char *wamFile;
@@ -885,6 +903,7 @@ struct wam *LoadWam(char *modFile)
 	return wam;
 }
 
+/** Frees the @a wam from that was created by LoadWam */
 void FreeWam(struct wam *wam)
 {
 	int x, y;
