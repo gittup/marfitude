@@ -24,5 +24,5 @@ typedef struct {
 Obj *NewObj();
 void DeleteObj(Obj *o);
 void ClearObjs();
-void UpdateObjs(int dt);
+void UpdateObjs(double dt);
 void CheckObjs();
