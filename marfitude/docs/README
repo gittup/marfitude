@@ -43,4 +43,7 @@ to fix slowness:
 	disable memcheck (compile time option - CONFIG_MEMTEST)
 
 GOOGLE COUNT!
+2004/07/31: 0
 2005/02/24: 36
+2005/03/05: 637
+2005/03/13: 192
