@@ -91,7 +91,7 @@ int GetToken(FILE *f, char stopper, struct token *t)
 		}
 	}
 	input[x] = 0;
-	t->token = (char*)malloc(x+1);
+	t->token = malloc(x+1);
 	strcpy(t->token, input);
 	t->value = atoi(t->token);
 	return 1;

@@ -49,7 +49,7 @@ int IntLen(int x)
 char *CatStr(const char *a, const char *b)
 {
 	char *s;
-	s = (char*)malloc(sizeof(char) * (strlen(a) + strlen(b) + 1));
+	s = malloc(sizeof(char) * (strlen(a) + strlen(b) + 1));
 	strcpy(s, a);
 	strcat(s, b);
 	return s;
@@ -62,7 +62,7 @@ char *CatStr(const char *a, const char *b)
 char *StringCopy(const char *s)
 {
 	char *d;
-	d = (char*)malloc(sizeof(char) * (strlen(s) + 1));
+	d = malloc(sizeof(char) * (strlen(s) + 1));
 	strcpy(d, s);
 	return d;
 }

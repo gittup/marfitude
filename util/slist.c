@@ -43,7 +43,7 @@ static int current = 0;
 void AddSlists(struct listmem *m, int x)
 {
 	int i;
-	struct slist *s = (struct slist*)malloc(sizeof(struct slist) * x);
+	struct slist *s = malloc(sizeof(struct slist) * x);
 
 	for(i=0;i<x;i++) {
 		m->list = &s[i];

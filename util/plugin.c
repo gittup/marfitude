@@ -52,7 +52,7 @@ void *load_plugin(const char *file)
 		exitf = (void(*)(void))dlsym(handle, "exit_plugin");
 		if(initf != NULL && exitf != NULL) {
 			int ret;
-			p = (struct plugin *)malloc(sizeof(struct plugin));
+			p = malloc(sizeof(struct plugin));
 			p->handle = handle;
 			p->init = initf;
 			p->exit = exitf;
@@ -74,7 +74,7 @@ void *load_plugin(const char *file)
 /** Frees the plugin handle that was returned by load_plugin */
 void free_plugin(void *plugin)
 {
-	struct plugin *p = (struct plugin *)plugin;
+	struct plugin *p = plugin;
 	if(p != NULL) {
 		p->exit();
 		dlclose(p->handle);
