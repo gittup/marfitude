@@ -20,7 +20,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <dirent.h>
 
 #include "sdl_mixer/SDL_mixer.h"
 
@@ -30,6 +29,7 @@
 #include "util/memtest.h"
 #include "util/textprogress.h"
 #include "util/fatalerror.h"
+#include "util/flist.h"
 #include "util/sdlfatalerror.h"
 #include "util/strfunc.h"
 
@@ -80,21 +80,14 @@ int SoundNum(const char *name)
 int InitSounds(void)
 {
 	int x;
-	DIR *dir;
-	struct dirent *d;
 	char *t;
+	struct flist f;
 
-	dir = opendir(SOUNDDIR);
-	if(dir == NULL) {
-		Error("Loading sounds");
-		return 1;
-	}
-
-	while((d = readdir(dir)) != NULL) {
-		if(ValidWavFile(d->d_name)) {
+	flist_foreach(&f, SOUNDDIR) {
+		if(ValidWavFile(f.filename)) {
 			sounds = (struct snd_entry*)realloc(sounds, sizeof(struct snd_entry) * (num_sounds+1));
-			sounds[num_sounds].name = malloc(strlen(d->d_name)+1);
-			strcpy(sounds[num_sounds].name, d->d_name);
+			sounds[num_sounds].name = malloc(strlen(f.filename)+1);
+			strcpy(sounds[num_sounds].name, f.filename);
 			sounds[num_sounds].chunk = NULL;
 			num_sounds++;
 		}
