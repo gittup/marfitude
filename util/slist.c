@@ -42,7 +42,7 @@ void ClearMem(slist *l)
 			return;
 		}
 	}
-	printf("SLIST ERROR: Couldn't find mem to clear!\n");
+	fprintf(stderr, "SLIST ERROR: Couldn't find mem to clear!\n");
 }
 
 slist *NextList(void)
@@ -69,7 +69,7 @@ slist *NextList(void)
 		}
 		x++;
 	}
-	printf("SLIST ERROR: Couldn't find inactive list!\n");
+	fprintf(stderr, "SLIST ERROR: Couldn't find inactive list!\n");
 	return NULL;
 }
 
