@@ -23,6 +23,7 @@
 
 #include "sdl_mixer/SDL_mixer.h"
 
+#include "sdlfatalerror.h"
 #include "sounds.h"
 #include "log.h"
 
@@ -30,7 +31,6 @@
 #include "util/textprogress.h"
 #include "util/fatalerror.h"
 #include "util/flist.h"
-#include "util/sdlfatalerror.h"
 #include "util/strfunc.h"
 
 /** The directory all the .wav files are located */

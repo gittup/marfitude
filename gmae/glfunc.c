@@ -29,10 +29,10 @@
 #include "fps.h"
 #include "log.h"
 #include "particles.h"
+#include "sdlfatalerror.h"
 #include "textures.h"
 
 #include "util/memtest.h"
-#include "util/sdlfatalerror.h"
 
 /** @file
  * Initializes SDL/OpenGL and sets up default OpenGL parameters.

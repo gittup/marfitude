@@ -34,13 +34,13 @@
 #include "log.h"
 #include "menu.h"
 #include "scene.h"
+#include "sdlfatalerror.h"
 #include "sounds.h"
 #include "timer.h"
 #include "wam.h"
 
 #include "util/memtest.h"
 #include "util/fatalerror.h"
-#include "util/sdlfatalerror.h"
 
 static void Shutdown(void);
 

@@ -25,10 +25,10 @@
 #include "module.h"
 #include "cfg.h"
 #include "log.h"
+#include "sdlfatalerror.h"
 
 #include "util/memtest.h"
 #include "util/fatalerror.h"
-#include "util/sdlfatalerror.h"
 
 /** @file
  * Gets access to the modules. Also sets up some MikMod parameters based

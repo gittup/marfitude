@@ -23,7 +23,7 @@
 
 #include "audio.h"
 #include "cfg.h"
-#include "util/sdlfatalerror.h"
+#include "sdlfatalerror.h"
 
 /** @file
  * Starts SDL_Mixer based on configuration parameters

@@ -27,12 +27,12 @@
 #include "textures.h"
 #include "glfunc.h"
 #include "log.h"
+#include "sdlfatalerror.h"
 
 #include "util/memtest.h"
 #include "util/textprogress.h"
 #include "util/fatalerror.h"
 #include "util/flist.h"
-#include "util/sdlfatalerror.h"
 #include "util/strfunc.h"
 
 /** The directory where .png files are located */
