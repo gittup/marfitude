@@ -18,6 +18,23 @@ void LogWrite(char *file, int line, char *s, ...)
 	}
 }
 
+void ELogWrite(char *file, int line, char *s, ...)
+{
+	va_list ap;
+	if(logFile)
+	{
+		fprintf(logFile, "%s line %i: ", file, line);
+		va_start(ap, s);
+		vfprintf(logFile, s, ap);
+		fflush(logFile);
+		va_end(ap);
+	}
+	fprintf(stderr, "%s line %i: ", file, line);
+	va_start(ap, s);
+	vfprintf(stderr, s, ap);
+	va_end(ap);
+}
+
 int InitLog()
 {
 #ifdef LOG
