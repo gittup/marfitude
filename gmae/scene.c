@@ -897,11 +897,12 @@ void UpdateClearedCols(void)
 		r = &wam->rowData[Row(ac[x].minRow)];
 		/* Yes I realize this is a bunch of magic numbers. Sue me. */
 		ac[x].part += (double)ticDiff * (double)r->bpm / (833.0 * (double)r->sngspd);
-		while(ac[x].part >= 1.0 && ac[x].minRow < ac[x].cleared) {
+		while(ac[x].part >= 1.0 && ac[x].minRow < ac[x].cleared && ac[x].minRow < wam->numRows) {
 			tic = r->ticpos;
 			MoveHitNotes(tic, x);
 			ac[x].part -= 1.0;
 			ac[x].minRow++;
+			r++;
 			o = NewObj();
 			o->pos.x = -x * 2.0;
 			o->pos.z = TIC_HEIGHT * (double)tic;
