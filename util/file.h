@@ -23,4 +23,23 @@
   * library.
   */
 
-int foreach_file(const char *path, void (*action)(const char *));
+#include <dirent.h>
+
+/** Used to iterate through a list of files
+  */
+struct flist {
+	const char *filename; /**< The file name, does not include directory */
+	struct dirent *_ent; /**< Internal - struct dirent * */
+	DIR *_d; /**< Internal - DIR * */
+};
+
+/** Used to iterate through a list of files
+  * @param f struct flist *: The struct flist to put names into
+  * @param p const char *: The path to grab a list of files from
+  */
+#define foreach_file(f, p) \
+	for((f)->_d=opendir(p);\
+		((f)->_d!=NULL &&\
+		 ((f)->_ent=readdir((f)->_d))!=NULL &&\
+		 ((f)->filename=(f)->_ent->d_name)!=NULL) ||\
+		(closedir((f)->_d),0);)
