@@ -24,9 +24,9 @@
 #include "SDL.h"
 #include "SDL_opengl.h"
 
+#include "glfunc.h"
 #include "cfg.h"
 #include "fps.h"
-#include "glfunc.h"
 #include "log.h"
 #include "particles.h"
 #include "textures.h"
@@ -143,7 +143,7 @@ int LoadFont(void)
 	return 1;
 }
 
-SDL_Surface *InitGL(void)
+int InitGL(void)
 {
 	Uint32 flags = SDL_OPENGL;
 	SDL_Surface *screen;
@@ -157,7 +157,7 @@ SDL_Surface *InitGL(void)
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_TIMER) < 0)
 	{
 		SDLError("initializing");
-		return NULL;
+		return 1;
 	}
 	sdlInited = 1;
 	Log(("SDL Initialized\n"));
@@ -190,7 +190,7 @@ SDL_Surface *InitGL(void)
 	if(screen == NULL)
 	{
 		SDLError("setting video mode");
-		return NULL;
+		return 2;
 	}
 	Log(("Video mode set: (%i, %i)\n", CfgI("video.width"), CfgI("video.height")));
 	SDL_WM_SetCaption("Gmae", NULL); /* second arg is icon */
@@ -224,7 +224,7 @@ SDL_Surface *InitGL(void)
 
 	if(!LoadFont())
 	{
-		return NULL;
+		return 3;
 	}
 	fontInited = 1;
 
@@ -234,16 +234,16 @@ SDL_Surface *InitGL(void)
 	if(!InitTextures())
 	{
 		ELog(("ERROR: Couldn't load textures!\n"));
-		return NULL;
+		return 4;
 	}
 
 	if(!InitParticles())
 	{
 		ELog(("ERROR: Couldn't load particles!\n"));
-		return NULL;
+		return 5;
 	}
 
-	return screen;
+	return 0;
 }
 
 void QuitGL(void)
@@ -269,10 +269,7 @@ void SetOrthoProjection(void)
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix(); /* popped in ResetProjection() */
 	glLoadIdentity();
-/*	gluOrtho2D(0, screenWidth-1, 0, screenHeight-1);*/
 	glOrtho(0, screenWidth, screenHeight, 0, 0, 1);
-/*	glScalef(1.0, -1.0, 1.0);*/
-/*	glTranslatef(0.0, (float)-screenHeight+1, 0.0);*/
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix(); /* popped in ResetProjection() */
 	glLoadIdentity();
