@@ -244,12 +244,23 @@ void ShadedBox(int x1, int y1, int x2, int y2)
 void EQTriangle(void)
 {
 	glDisable(GL_TEXTURE_2D);
-	glBegin(GL_TRIANGLES);
-	{
-		glVertex2f(-1.0, 0.0);
-		glVertex2f(1.0, 0.0);
-		glVertex2f(0.0, 1.732050807);
+
+	glColor4f(0.3, 0.3, 0.3, 0.5);
+	glTranslated(0.0, 0.0, -0.3);
+	glBegin(GL_TRIANGLES); {
+		glVertex3f(-1.0, 0.0, 0.0);
+		glVertex3f(1.0, 0.0, 0.0);
+		glVertex3f(0.0, 1.732050807, 0.0);
 	} glEnd();
+
+	glColor4f(1.0, 1.0, 1.0, 1.0);
+	glTranslatef(0.0, 0.0, 0.3);
+	glBegin(GL_LINE_LOOP); {
+		glVertex3f(-1.0, 0.0, 0.0);
+		glVertex3f(1.0, 0.0, 0.0);
+		glVertex3f(0.0, 1.732050807, 0.0);
+	} glEnd();
+
 	glEnable(GL_TEXTURE_2D);
 }
 
