@@ -22,6 +22,11 @@
 #define BOOLEAN 1
 #define BUTTON 2
 #define BUTTONPARAM 3
+#define TEXT 4
+#define MUSICDIR "music/"
+
+#define NOBOX -1 // for the bounding box
+#define BBO 5	// bounding box offset
 
 typedef struct {
 	int min;
@@ -47,6 +52,12 @@ typedef struct {
 	} ButtonParam;
 
 typedef struct {
+	Color c;
+	int x;
+	int y;
+	} Text;
+
+typedef struct {
 	int type;
 	char *name;
 	void *item;
@@ -58,18 +69,43 @@ int (*BoundsCheck)();
 int activeMenuItem = 0;
 int numItems = 0;
 int menuX = 200, menuY = 200; // where to start placing menu items
+int minX = NOBOX, minY = 0, maxX = 0, maxY = 0; // bounding box of menu items
 int menuActive = 0;
 MenuItem *items = NULL;
+
+void ShadedBox(int x1, int y1, int x2, int y2)
+{
+	SetOrthoProjection();
+	glColor4f(.3, .3, .3, .5);
+	glDisable(GL_TEXTURE_2D);
+	glBegin(GL_QUADS);
+	{
+		glVertex2i(x1, y1);
+		glVertex2i(x1, y2);
+		glVertex2i(x2, y2);
+		glVertex2i(x2, y1);
+	} glEnd();
+
+	glColor4f(1.0, 1.0, 1.0, 1.0);
+	glBegin(GL_LINE_LOOP);
+	{
+		glVertex2i(x1, y1);
+		glVertex2i(x1, y2);
+		glVertex2i(x2, y2);
+		glVertex2i(x2, y1);
+	} glEnd();
+	glEnable(GL_TEXTURE_2D);
+	ResetProjection();
+}
 
 void DrawPartialMenu(int start, int stop)
 {
 	int x;
+	Text *t;
 	if(start < 0 || start >= numItems) start = 0;
 	if(stop < 0 || stop >= numItems) stop = numItems;
 	for(x=start;x<stop;x++)
 	{
-		if(x == activeMenuItem) glColor3f(1.0, 0.0, 0.0);
-		else glColor3f(1.0, 1.0, 1.0);
 		switch(items[x].type)
 		{
 			case SLIDER:
@@ -78,8 +114,14 @@ void DrawPartialMenu(int start, int stop)
 				break;
 			case BUTTON:
 			case BUTTONPARAM:
+				if(x == activeMenuItem) glColor3f(1.0, 0.0, 0.0);
+				else glColor3f(1.0, 1.0, 1.0);
 				PrintGL(menuX, menuY+(x-start)*FONT_HEIGHT, items[x].name);
 				break;
+			case TEXT:
+				t = (Text*)items[x].item;
+				glColor4f(t->c.r, t->c.g, t->c.b, t->c.a);
+				PrintGL(t->x, t->y, items[x].name);
 		}
 	}
 }
@@ -104,6 +146,10 @@ void ClearMenuItems()
 	int x;
 	Boolean *b;
 	Log("Clearing items...\n");
+	minX = NOBOX;
+	minY = 0;
+	maxX = 0;
+	maxY = 0;
 	for(x=0;x<numItems;x++)
 	{
 		free(items[x].name);
@@ -120,6 +166,7 @@ void ClearMenuItems()
 				break;
 			case BUTTON:
 			case BUTTONPARAM:
+			case TEXT:
 				free(items[x].item);
 				break;
 			default:
@@ -132,6 +179,26 @@ void ClearMenuItems()
 	free(items);
 	items = NULL;
 	Log("All items freed.\n");
+}
+
+void UpdateBox(int x1, int y1, int x2, int y2)
+{
+	if(minX == NOBOX)
+	{
+		minX = x1;
+		minY = y1;
+		maxX = x2;
+		maxY = y2;
+		printf("(W, H) = (%i, %i, %i, %i) Box: (%i, %i) - (%i, %i)\n", x1, y1, x2, y2, minX, minY, maxX, maxY);
+	}
+	else
+	{
+		if(x1 < minX) minX = x1;
+		if(y1 < minY) minY = y1;
+		if(x2 > maxX) maxX = x2;
+		if(y2 > maxY) maxY = y2;
+		printf("(W, H) = (%i, %i, %i, %i) Box: (%i, %i) - (%i, %i)\n", x1, y1, x2, y2, minX, minY, maxX, maxY);
+	}
 }
 
 void CreateSlider(char *name, int min, int max, int delta, int initVal)
@@ -162,6 +229,7 @@ void CreateButton(char *name, void (*activeFunc)())
 	Button *b;
 	b = (Button*)malloc(sizeof(Button));
 	b->activeFunc = activeFunc;
+	UpdateBox(menuX, menuY + FONT_HEIGHT * numItems, menuX + strlen(name) * FONT_WIDTH, menuY + FONT_HEIGHT * (numItems+1));
 	AddMenuItem(name, (void*)b, BUTTON);
 }
 
@@ -171,7 +239,23 @@ void CreateButtonParam(char *name, int (*activeFunc)(int), int param)
 	b = (ButtonParam*)malloc(sizeof(ButtonParam));
 	b->activeFunc = activeFunc;
 	b->param = param;
+	UpdateBox(menuX, menuY + FONT_HEIGHT * numItems, menuX + strlen(name) * FONT_WIDTH, menuY + FONT_HEIGHT * (numItems+1));
 	AddMenuItem(name, (void*)b, BUTTONPARAM);
+}
+
+// assumes text is on a single line for bounding box purposes
+void CreateText(char *name, Color *c, int x, int y)
+{
+	Text *t;
+	t = (Text*)malloc(sizeof(Text));
+	t->c.r = c->r;
+	t->c.g = c->g;
+	t->c.b = c->b;
+	t->c.a = c->a;
+	t->x = x;
+	t->y = y;
+	UpdateBox(x, y, x + strlen(name) * FONT_WIDTH, y + FONT_HEIGHT);
+	AddMenuItem(name, (void*)t, TEXT);
 }
 
 int MenuClamp()
@@ -338,6 +422,7 @@ void MainMenu()
 	SetOrthoProjection();
 	GLLoadIdentity();
 
+	ShadedBox(minX-BBO, minY-BBO, maxX+BBO, maxY+BBO);
 	GLBindTexture(GL_TEXTURE_2D, TEX_Title);
 	glBegin(GL_QUADS);
 	glColor3f(1.0, 1.0, 1.0);
@@ -392,7 +477,7 @@ int FightMenuInit()
 	menuY = 200;
 	fileStart = 0;
 	BoundsCheck = MenuClamp;
-	if(glob("music/*", 0, NULL, &globbuf))
+	if(glob(MUSICDIR"*.*", 0, NULL, &globbuf))
 	{
 		Error("Generating playlist");
 		return 0;
@@ -400,7 +485,7 @@ int FightMenuInit()
 	for(x=0;x<globbuf.gl_pathc;x++)
 	{
 		if(fileStart+x == globbuf.gl_pathc) break;
-		CreateButton(globbuf.gl_pathv[fileStart+x], FightActivate);
+		CreateButton(globbuf.gl_pathv[fileStart+x]+strlen(MUSICDIR), FightActivate);
 	}
 	RegisterEvent(EVENT_PAGEUP, FightPageUp, EVENTTYPE_STOP);
 	RegisterEvent(EVENT_PAGEDOWN, FightPageDown, EVENTTYPE_STOP);
@@ -433,6 +518,7 @@ void FightMenu()
 		fileStart++;
 	while(activeMenuItem < fileStart)
 		fileStart--;
+	ShadedBox(minX-BBO, minY-BBO, maxX+BBO, minY + FONT_HEIGHT * FILE_LIST_SIZE + BBO);
 	DrawPartialMenu(fileStart, fileStart+FILE_LIST_SIZE);
 	glColor3f(1.0, 1.0, 1.0);
 	SetOrthoProjection();
@@ -456,13 +542,14 @@ void FightMenu()
 }
 
 int configuring = 0;
+int waitForKey = 0;
 int ConfigButton();
 void ConfigCreateItems()
 {
 	int x;
 	char *s;
-	menuX = 150;
-	menuY = 150;
+	menuX = 290;
+	menuY = 200;
 	for(x=0;x<B_LAST;x++)
 	{
 		s = JoyKeyName(x);
@@ -480,6 +567,7 @@ void ConfigKeyHandler(JoyKey *jk)
 	}
 	PlaySound(SND_spnray03);
 	DeregisterKeyEvent();
+	waitForKey = 0;
 	EventMode(MENU);
 	ClearMenuItems();
 	ConfigCreateItems();
@@ -490,14 +578,23 @@ int ConfigButton(int b)
 {
 	configuring = b;
 	RegisterKeyEvent(ConfigKeyHandler);
+	waitForKey = 1;
 	EventMode(KEY);
 	return 1;
 }
 
+char *cfglabels[] = {"Up", "Down", "Left", "Right", "Button 1", "Button 2", "Button 3", "Button 4", "Menu"};
+
 int ConfigMenuInit()
 {
+	int x;
+	Color c = {0.0, 1.0, 1.0, 1.0};
 	EventMode(MENU);
 	ConfigCreateItems();
+	for(x=0;x<sizeof(cfglabels)/sizeof(*cfglabels);x++)
+	{
+		CreateText(cfglabels[x], &c, 200, 200 + x * FONT_HEIGHT);
+	}
 	return 1;
 }
 
@@ -508,9 +605,13 @@ void ConfigMenuQuit()
 
 void ConfigMenu()
 {
+	ShadedBox(minX-BBO, minY-BBO, maxX+BBO, maxY+BBO);
 	glPushAttrib(GL_CURRENT_BIT);
 	glColor3f(0.0, 1.0, 1.0);
-	PrintGL(60, 150, "Up\nDown\nLeft\nRight\nButton 1\nButton 2\nButton 3\nButton 4\nMenu\n");
+	if(waitForKey)
+	{
+		PrintGL(menuX-90, menuY-14, "Press a new key");
+	}
 	glPopAttrib();
 	DrawMenu();
 }
@@ -522,11 +623,16 @@ void Quit()
 
 int QuitMenuInit()
 {
+	Color c = {0.0, 1.0, 1.0, 1.0};
 	EventMode(MENU);
-	menuX = 200;
+	menuX = 350;
 	menuY = 200;
+	printf("Yes\n");
 	CreateButton("Yes", Quit);
+	printf("no\n");
 	CreateButton("No", MenuBack);
+	printf("really\n");
+	CreateText("Really Quit?", &c, 200, 200);
 	activeMenuItem = 1;
 	return 1;
 }
@@ -538,7 +644,7 @@ void QuitMenuQuit()
 
 void QuitMenu()
 {
-	PrintGL(50, 200, "Really Quit? ");
+	ShadedBox(minX-BBO, minY-BBO, maxX+BBO, maxY+BBO);
 	DrawMenu();
 }
 
