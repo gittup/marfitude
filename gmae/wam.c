@@ -13,6 +13,7 @@
 #include "module.h"
 #include "../util/fatalerror.h"
 #include "../util/memtest.h"
+#include "../util/textprogress.h"
 
 typedef struct {
 	int note;
@@ -36,6 +37,7 @@ typedef struct {
 				// have been merged
 	int numChannels;	// valid channels in list above.  Starts out as
 				// 1 then grows as tracks are merged
+	int lastCol;		// last column this track was placed in
 	} Track;
 
 char *BaseFileName(char *file)
@@ -281,12 +283,44 @@ int BestTrack(Track *t, int trklen)
 	return bestTrack;
 }
 
+void SetColumn(Column *col, Track *trk, Wam *wam, int colnum, int patnum, int trklen, int startRow)
+{
+	int y;
+	trk->isEmpty = 2;
+	trk->lastCol = colnum;
+	col->numchn = trk->numChannels;
+	col->chan = (int*)malloc(sizeof(int) * col->numchn);
+	memcpy(col->chan, trk->channels, sizeof(int) * col->numchn);
+	for(y=0;y<trklen;y++)
+	{
+		wam->rowData[startRow+y].notes[colnum] = trk->notes[y];
+		wam->rowData[startRow+y].patnum = patnum;
+	}
+}
+
+int EmptyCol(Column *cols, int numCols, Column **retptr)
+{
+	int x;
+	for(x=0;x<numCols;x++)
+	{
+		if(cols[x].chan == NULL)
+		{
+			*retptr = &cols[x];
+			return x;
+		}
+	}
+	*retptr = NULL;
+	return -1;
+}
+
 void UpdateRowData(Track *t, int trklen, Wam *wam, int startRow, int patnum)
 {
-	int x, y, trk;
+	int x, y;
 	int bestStart, bestCount, tmpCount;
+	int bestTrks[MAX_COLS];
 	Column *col;
 	Pattern *pat;
+	Track *trk;
 
 	pat = &wam->patterns[patnum];
 	// try to combine tracks that are one instrument line that is
@@ -339,38 +373,69 @@ void UpdateRowData(Track *t, int trklen, Wam *wam, int startRow, int patnum)
 		}
 	}*/
 
+	// get a list of the best tracks
+	// mark them empty as we go through, BestTrack picks up the best
+	// "non-empty" track
+	Log("A\n");
+	for(x=0;x<wam->numCols;x++)
+	{
+		bestTrks[x] = BestTrack(t, trklen);
+		Log("Best: %i, Old: %i\n", bestTrks[x], t[x].lastCol);
+		if(bestTrks[x] != -1) t[bestTrks[x]].isEmpty = 1;
+		col = &pat->columns[x];
+		col->numchn = 0;
+		col->chan = NULL;
+	}
+	Log("B\n");
+
+	// place all the best tracks that can be placed in their previous slots
+	for(x=0;x<wam->numCols;x++)
+	{
+		if(bestTrks[x] == -1) continue;
+		trk = &t[bestTrks[x]];
+		if(trk->lastCol != -1)
+		{
+			col = &pat->columns[trk->lastCol];
+			if(col->chan == NULL)
+			{
+				Log("Replace: %i\n", trk->lastCol);
+				SetColumn(col, trk, wam, trk->lastCol, patnum, trklen, startRow);
+			}
+		}
+	}
+	Log("C\n");
+
+	// now place all the tracks that didn't fit, or weren't in previously
+	for(x=0;x<wam->numCols;x++)
+	{
+		if(bestTrks[x] == -1) continue;
+		trk = &t[bestTrks[x]];
+		if(trk->isEmpty != 2)
+		{
+			y = EmptyCol(pat->columns, wam->numCols, &col);
+			Log("Place: %i\n", y);
+			if(y == -1)
+			{
+				Log("ERROR: No empty column!\n");
+			}
+			SetColumn(col, trk, wam, y, patnum, trklen, startRow);
+		}
+	}
+	// set empty rowdata for unused columns
 	for(x=0;x<wam->numCols;x++)
 	{
 		col = &pat->columns[x];
-		trk = BestTrack(t, trklen);
-		if(trk == -1)
+		if(col->chan == NULL)
 		{
-			col->numchn = 0;
-			col->chan = NULL;
+			Log("Empty: %i\n", x);
 			for(y=0;y<trklen;y++)
 			{
 				wam->rowData[startRow+y].notes[x] = 0;
 				wam->rowData[startRow+y].patnum = patnum;
 			}
 		}
-		else
-		{
-			t[trk].isEmpty = 1;
-			col->numchn = t[trk].numChannels;
-			col->chan = (int*)malloc(sizeof(int) * col->numchn);
-			memcpy(col->chan, t[trk].channels, sizeof(int) * col->numchn);
-			for(y=0;y<trklen;y++)
-			{
-				wam->rowData[startRow+y].notes[x] = t[trk].notes[y];
-				wam->rowData[startRow+y].patnum = patnum;
-//				startRow[y].chans[x].note = t[trk].notes[y];
-//				startRow[y].chans[x].struck = 0;
-//				startRow[y].chans[x].numModChannels = t[trk].numChannels;
-//				startRow[y].chans[x].modChannels = (int*)malloc(sizeof(int) * t[trk].numChannels);
-//				memcpy(startRow[y].chans[x].modChannels, t[trk].channels, sizeof(int) * t[trk].numChannels);
-			}
-		}
 	}
+
 	col = &pat->unplayed;
 	col->numchn = 0;
 	col->chan = NULL;
@@ -380,9 +445,6 @@ void UpdateRowData(Track *t, int trklen, Wam *wam, int startRow, int patnum)
 		col->chan = (int*)realloc(col->chan, sizeof(int) * (col->numchn + t[x].numChannels));
 		memcpy(&(col->chan[col->numchn]), t[x].channels, sizeof(int) * t[x].numChannels);
 		col->numchn += t[x].numChannels;
-		printf("Track: %i: Interest: %i Channels: ", x, t[x].interest);
-		for(y=0;y<t[x].numChannels;y++) printf("%i ", t[x].channels[y]);
-		printf("\n");
 	}
 }
 
@@ -432,6 +494,7 @@ Wam *LoadTrackData()
 	int ins;
 	int tickCount = 0;
 	int startRow = 0;
+	int rowsAlloced = 0;	// number of rows allocated in WAM file
 	int numSamples = 64;	// numSamples = how much we have allocated
 				// start with 64, since that's the default
 				// number of rows/pattern for most mods
@@ -456,6 +519,7 @@ Wam *LoadTrackData()
 		tracks[x].notes = (int*)malloc(sizeof(int) * numSamples);
 		tracks[x].channels = (int*)malloc(sizeof(int) * mod->numchn);
 		ClearTrack(&tracks[x], x);
+		tracks[x].lastCol = -1;
 	}
 
 	Player_Mute(MUTE_INCLUSIVE, 0, mod->numchn-1);
@@ -469,12 +533,24 @@ Wam *LoadTrackData()
 
 	Player_TogglePause(); // start the mod up again so we can read in data
 	Log("Starting row loop\n");
+	ProgressMeter("Creating WAM");
 	while(mod->sngpos < mod->numpos)
 	{
 		if(!mod->vbtick)
 		{
-			Log("Sng: %i row: %i\n", mod->sngpos, wam->numRows);
-			wam->rowData = (Row*)realloc(wam->rowData, sizeof(Row) * (wam->numRows+1));
+			Log("Sng: %i row: %i, alloc: %i\n", mod->sngpos, wam->numRows, rowsAlloced);
+			if(wam->numRows >= rowsAlloced)
+			{
+				if(rowsAlloced == 0)
+				{
+					rowsAlloced = 1024;
+				}
+				else
+				{
+					rowsAlloced <<= 2;
+				}
+				wam->rowData = (Row*)realloc(wam->rowData, sizeof(Row) * rowsAlloced);
+			}
 			wam->rowData[wam->numRows].bpm = mod->bpm;
 			wam->rowData[wam->numRows].sngspd = mod->sngspd;
 			wam->rowData[wam->numRows].ticpos = tickCount;
@@ -498,6 +574,7 @@ Wam *LoadTrackData()
 				{
 					wam->patterns = (Pattern*)realloc(wam->patterns, sizeof(Pattern) * (wam->numPats+1));
 					UpdateRowData(tracks, trklen, wam, startRow, wam->numPats);
+					UpdateProgress(mod->sngpos, mod->numpos);
 					wam->numPats++;
 					startRow = wam->numRows;
 					trklen = 0;
@@ -551,13 +628,13 @@ Wam *LoadTrackData()
 			}
 			wam->numRows++;
 		}
-		Log("Handle tick\n");
 		Player_HandleTick();
 		wam->numTics++;
-		Log("handled\n");
 	}
 	wam->patterns = (Pattern*)realloc(wam->patterns, sizeof(Pattern) * (wam->numPats+1));
 	UpdateRowData(tracks, trklen, wam, startRow, wam->numPats);
+	UpdateProgress(mod->sngpos, mod->numpos);
+	EndProgressMeter();
 	wam->numPats++;
 	Log("Row loop done\n");
 
