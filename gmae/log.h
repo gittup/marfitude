@@ -3,6 +3,7 @@
 	#define ELog(...) ELogWrite(__FILE__, __LINE__, __VA_ARGS__)
 #else
 	#define Log(...)
+	#define ELog(...)
 #endif
 
 void LogWrite(char *file, int line, char *s, ...);
