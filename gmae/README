@@ -35,6 +35,7 @@ buttons -
 	if they get screwed up somehow, i guess you could edit them by hand :)
 
 to fix slowness:
-	make sure 3d is working
-	disable log or enable hd dma
-	disable memcheck
+	make sure 3d is working (eg. in Windows make sure your driver supports
+			OpenGL acceleration, otherwise it will be slow)
+	disable log (compile time option - CONFIG_LOG)
+	disable memcheck (compile time option - CONFIG_DEBUG_MEM)
