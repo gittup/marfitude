@@ -11,4 +11,3 @@
 #  error "This platform does not have dynamic library support!"
 # endif
 #endif
-/* WIN32 or _WIN32 ? MacOSX */
