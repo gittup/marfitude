@@ -46,7 +46,7 @@ struct event *GetEvent(const char *s)
 	e = FindEvent(s);
 	if(e == NULL) {
 		e = malloc(sizeof(struct event));
-		e->name = StringCopy(s);
+		e->name = string_copy(s);
 		e->handlers = NULL;
 		e->fired = 0;
 		e->next = events;

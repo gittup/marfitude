@@ -607,7 +607,7 @@ struct wam *LoadTrackData(void)
 
 	Player_TogglePause(); /* start the mod again so we can read in data */
 	Log(("Starting row loop\n"));
-	ProgressMeter("Creating WAM");
+	progress_meter("Creating WAM");
 	while(mod->sngpos < mod->numpos)
 	{
 		if(!mod->vbtick)
@@ -655,7 +655,7 @@ struct wam *LoadTrackData(void)
 
 					wam->patterns = (struct pattern*)realloc(wam->patterns, sizeof(struct pattern) * (wam->numPats+1));
 					UpdateRowData(tracks, trklen, wam, startRow, wam->numPats);
-					UpdateProgress(mod->sngpos, mod->numpos);
+					update_progress(mod->sngpos, mod->numpos);
 					wam->numPats++;
 					startRow = wam->numRows;
 					trklen = 0;
@@ -742,8 +742,8 @@ struct wam *LoadTrackData(void)
 	}
 	wam->patterns = (struct pattern*)realloc(wam->patterns, sizeof(struct pattern) * (wam->numPats+1));
 	UpdateRowData(tracks, trklen, wam, startRow, wam->numPats);
-	UpdateProgress(mod->sngpos, mod->numpos);
-	EndProgressMeter();
+	update_progress(mod->sngpos, mod->numpos);
+	end_progress_meter();
 	wam->numPats++;
 	wam->songLength = time;
 	Log(("Row loop done\n"));

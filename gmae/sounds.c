@@ -112,9 +112,9 @@ int InitSounds(void)
 	/* This just means the memory has been allocated */
 	sndInited = 1;
 
-	ProgressMeter("Loading sounds");
+	progress_meter("Loading sounds");
 	for(x=0;x<num_sounds;x++) {
-		t = CatStr(SOUNDDIR, sounds[x].name);
+		t = cat_str(SOUNDDIR, sounds[x].name);
 		sounds[x].chunk = Mix_LoadWAV(t);
 		if(!sounds[x].chunk) {
 			Log(("Error loading sound '%s'\n", t));
@@ -123,9 +123,9 @@ int InitSounds(void)
 			return 2;
 		}
 		free(t);
-		UpdateProgress(x+1, num_sounds);
+		update_progress(x+1, num_sounds);
 	}
-	EndProgressMeter();
+	end_progress_meter();
 	return 0;
 }
 

@@ -168,7 +168,7 @@ char *joykey_name(int button)
 	}
 	else if(jk->type == JK_MOUSE)
 	{
-		len = IntLen(jk->button) + 7;
+		len = int_len(jk->button) + 7;
 		s = malloc(sizeof(char) * len);
 		sprintf(s, "Mouse %i", jk->button);
 	}
@@ -182,13 +182,13 @@ char *joykey_name(int button)
 	{
 		if(jk->axis == JK_BUTTON) /* button event */
 		{
-			len = IntLen(jk->type) + IntLen(jk->button) + 13;
+			len = int_len(jk->type) + int_len(jk->button) + 13;
 			s = malloc(sizeof(char) * len);
 			sprintf(s, "Joy %i Button %i", jk->type, jk->button);
 		}
 		else /* axis event */
 		{
-			len = IntLen(jk->type) + IntLen(jk->button) + 15;
+			len = int_len(jk->type) + int_len(jk->button) + 15;
 			s = malloc(sizeof(char) * len);
 			sprintf(s, "Joy %i Axis %i (%c)", jk->type, jk->axis, (jk->button > 0) ? '+' : '-');
 		}
@@ -201,7 +201,7 @@ int set_button(int b, const struct joykey *jk)
 {
 	char *s;
 	if(b < 0 || b >= B_LAST) return 0;
-	s = malloc(IntLen(jk->type)+IntLen(jk->button)+IntLen(jk->axis)+3);
+	s = malloc(int_len(jk->type)+int_len(jk->button)+int_len(jk->axis)+3);
 	sprintf(s, "%i.%i.%i", jk->type, jk->button, jk->axis);
 	CfgSetS(cfgMsg[b], s);
 	free(s);

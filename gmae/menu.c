@@ -724,8 +724,8 @@ static struct screenMenu *fightSceneSelect = &screenMenus[1];
 
 void FightActivate(void)
 {
-	char *m = CatStr(MUSICDIR, (char*)slist_nth(fileList, mainMenu->activeMenuItem)->data);
-	char *s = CatStr(SCENEDIR, (char*)slist_nth(sceneList, fightSceneSelect->activeMenuItem)->data);
+	char *m = cat_str(MUSICDIR, (char*)slist_nth(fileList, mainMenu->activeMenuItem)->data);
+	char *s = cat_str(SCENEDIR, (char*)slist_nth(sceneList, fightSceneSelect->activeMenuItem)->data);
 
 	printf("Activating %i, %i\n", mainMenu->activeMenuItem, fightSceneSelect->activeMenuItem);
 	CfgSetS("main.song", m);
@@ -843,15 +843,15 @@ int FightMenuInit(void)
 	fightSceneSelect->maxY = 0;
 	flist_foreach(&f, SCENEDIR) {
 		char *s;
-		s = StringCopy(f.filename);
+		s = string_copy(f.filename);
 		sceneList = slist_insert_sorted(sceneList, s, alphabetical);
 	}
-	sceneList = slist_insert(sceneList, StringCopy("default"));
+	sceneList = slist_insert(sceneList, string_copy("default"));
 
 	flist_foreach(&f, MUSICDIR) {
 		if(valid_music_file(f.filename)) {
 			char *s;
-			s = StringCopy(f.filename);
+			s = string_copy(f.filename);
 			fileList = slist_insert_sorted(fileList, s, alphabetical);
 		}
 	}
@@ -864,7 +864,7 @@ int FightMenuInit(void)
 	cnt = 0;
 	len = slist_length(fileList);
 	slist_foreach(tmp, fileList) {
-		char *t = CatStr(MUSICDIR, (char*)tmp->data);
+		char *t = cat_str(MUSICDIR, (char*)tmp->data);
 		if(strcmp(t, lastFile) == 0) {
 			mainMenu->itemStart = cnt - mainMenu->menuSize/2;
 			while(mainMenu->itemStart > len - mainMenu->menuSize)
@@ -881,7 +881,7 @@ int FightMenuInit(void)
 	cnt = 0;
 	len = slist_length(sceneList);
 	slist_foreach(tmp, sceneList) {
-		char *t = CatStr(MUSICDIR, (char*)tmp->data);
+		char *t = cat_str(MUSICDIR, (char*)tmp->data);
 		if(strcmp(t, lastFile) == 0) {
 			fightSceneSelect->itemStart = cnt - fightSceneSelect->menuSize/2;
 			while(fightSceneSelect->itemStart > len - fightSceneSelect->menuSize)

@@ -30,6 +30,7 @@
 #include "event.h"
 #include "glfunc.h"
 #include "fft.h"
+#include "input.h"
 #include "joy.h"
 #include "log.h"
 #include "menu.h"

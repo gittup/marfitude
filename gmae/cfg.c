@@ -144,7 +144,7 @@ void CfgSetS(const char *key, char *value)
 void CfgSetIp(const char *header, const char *option, int value)
 {
 	char *s;
-	s = malloc(IntLen(value) + 1);
+	s = malloc(int_len(value) + 1);
 	sprintf(s, "%i", value);
 	CfgAdd(header, option, s);
 	free(s);
@@ -269,7 +269,7 @@ int LoadConfig(const char *filename)
 	header = malloc(5);
 	strcpy(header, "null");
 
-	while(GetToken(cfgfile, '=', &t))
+	while(get_token(cfgfile, '=', &t))
 	{
 		switch(t.type)
 		{
@@ -278,7 +278,7 @@ int LoadConfig(const char *filename)
 				header = t.token;
 				break;
 			case VALUE:
-				if(!GetToken(cfgfile, 0, &eq))
+				if(!get_token(cfgfile, 0, &eq))
 				{
 					Log(("Invalid format for config file. Paramaters must be <name>=<value>\n"));
 				}

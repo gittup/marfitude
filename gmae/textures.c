@@ -146,9 +146,9 @@ int InitTextures(void)
 	/* This just means the memory is allocated */
 	texInited = 1;
 
-	ProgressMeter("Loading textures");
+	progress_meter("Loading textures");
 	for(x=0;x<num_textures;x++) {
-		t = CatStr(TEXDIR, textures[x].name);
+		t = cat_str(TEXDIR, textures[x].name);
 		s = IMG_Load(t);
 		if(!s) {
 			SDLError("opening texture");
@@ -176,9 +176,9 @@ int InitTextures(void)
 		glTexImage2D(GL_TEXTURE_2D, 0, s->format->BytesPerPixel, s->w, s->h, 0, format, GL_UNSIGNED_BYTE, s->pixels);
 
 		SDL_FreeSurface(s);
-		UpdateProgress(x+1, num_textures);
+		update_progress(x+1, num_textures);
 	}
-	EndProgressMeter();
+	end_progress_meter();
 	return 0;
 }
 
