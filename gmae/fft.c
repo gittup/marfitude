@@ -27,7 +27,12 @@
 #include "sdl_mixer/mikmod/sample_callback.h"
 #include "sdl_mixer/mikmod/mikmod.h"
 
-struct fft_data fft;
+static struct fft_data my_fft;
+static int num_registers = 0;
+static int *data = NULL;
+static unsigned long samples = 0;
+
+const struct fft_data *fft = &my_fft;
 
 static struct cmp *weights = NULL;
 static double *window = NULL;
@@ -41,29 +46,48 @@ static int my_log(int x);
 
 void init_fft(void)
 {
-	register_sample_callback(fft_handler);
+	if(!num_registers)
+		register_sample_callback(fft_handler);
+	num_registers++;
 }
 
 void free_fft(void)
 {
-	deregister_sample_callback();
+	num_registers--;
+	if(!num_registers) {
+		deregister_sample_callback();
 
-	fft.len = 0;
-	fft.log_len = 0;
-	free(fft.data);
-	fft.data = NULL;
+		my_fft.len = 0;
+		my_fft.log_len = 0;
+		free(data);
+		data = NULL;
+		my_fft.data = NULL;
 
-	free(weights);
-	weights = NULL;
+		free(weights);
+		weights = NULL;
 
-	free(window);
-	window = NULL;
+		free(window);
+		window = NULL;
 
-	free(fft_bit_map);
-	fft_bit_map = NULL;
+		free(fft_bit_map);
+		fft_bit_map = NULL;
 
-	free(fft_buf);
-	fft_buf = NULL;
+		free(fft_buf);
+		fft_buf = NULL;
+	}
+}
+
+void QuitFFT(void)
+{
+	if(samples) {
+		/* 32 bits = 4294967295 samples before overflow. Sampled at
+		 * 44100Hz, this is 2^32 / 44100 ~= 97392 seconds, or ~27
+		 * hours of samples that can be counted. Of course, given
+		 * the total awesomeness of MODs, this is obviously not
+		 * enough. But I'll just let it wrap around.
+		 */
+		printf("Processed %lu FFT samples\n", samples);
+	}
 }
 
 int my_log(int x)
@@ -97,16 +121,17 @@ void internal_init(int len, int flags)
 
 	log_len = my_log(len);
 
-	fft.data = (int*)malloc(sizeof(int) * len);
+	data = (int*)malloc(sizeof(int) * len);
+	my_fft.data = data;
 	fft_buf = (struct cmp*)malloc(sizeof(struct cmp) * len);
 
 	for(x=0;x<len;x++) {
-		fft.data[x] = 0;
+		data[x] = 0;
 	}
-	fft.cur_max = 0;
-	fft.hist_max = 0;
-	fft.max = pow(2.0, (flags & DMODE_16BITS) ? 16 : 8) * len;
-	/* Does mono/stereo affect fft.max? Probably, but...by how MUCH!? */
+	my_fft.cur_max = 0;
+	my_fft.hist_max = 0;
+	my_fft.max = pow(2.0, (flags & DMODE_16BITS) ? 16 : 8) * len;
+	/* Does mono/stereo affect my_fft.max? Probably, but...by how MUCH!? */
 
 	pi = 4.0 * atan(1.0);
 	weights = (struct cmp*)malloc(sizeof(struct cmp) * len * log_len);
@@ -132,8 +157,8 @@ void internal_init(int len, int flags)
 	{
 		fft_bit_map[i] = bit_reverse(i) >> (32-log_len);
 	}
-	fft.log_len = log_len;
-	fft.len = len;
+	my_fft.log_len = log_len;
+	my_fft.len = len;
 }
 
 void fft_handler(signed char *stream, int len, int flags)
@@ -141,10 +166,12 @@ void fft_handler(signed char *stream, int len, int flags)
 	unsigned int i;
 	unsigned int j;
 
-	if(len && fft.len == 0)
+	if(len && my_fft.len == 0)
 		internal_init(len, flags);
 
-	for(i=0;i<fft.len;i++)
+	samples += len;
+
+	for(i=0;i<my_fft.len;i++)
 	{
 		j = fft_bit_map[i];
 		if(flags & DMODE_16BITS)
@@ -175,15 +202,15 @@ void fft_handler(signed char *stream, int len, int flags)
 
 	fft_process(fft_buf);
 
-	fft.cur_max = 0;
-	for(i=0;i<fft.len;i++)
+	my_fft.cur_max = 0;
+	for(i=0;i<my_fft.len;i++)
 	{
-		fft.data[i] = mag(&fft_buf[i]);
-		if(fft.data[i] > fft.cur_max)
-			fft.cur_max = fft.data[i];
+		data[i] = mag(&fft_buf[i]);
+		if(data[i] > my_fft.cur_max)
+			my_fft.cur_max = data[i];
 	}
-	if(fft.cur_max > fft.hist_max)
-		fft.hist_max = fft.cur_max;
+	if(my_fft.cur_max > my_fft.hist_max)
+		my_fft.hist_max = my_fft.cur_max;
 }
 
 void fft_process(struct cmp *x)
@@ -192,7 +219,7 @@ void fft_process(struct cmp *x)
 	unsigned int step;
 
 	step = 1;
-	for(level=0; level<fft.log_len; level++)
+	for(level=0; level<my_fft.log_len; level++)
 	{
 		unsigned int increm = step * 2;
 		unsigned int j;
@@ -202,10 +229,10 @@ void fft_process(struct cmp *x)
 			unsigned int i;
 			struct cmp u;
 
-			u.real = weights[level*fft.len + j].real;
-			u.imag = weights[level*fft.len + j].imag;
+			u.real = weights[level*my_fft.len + j].real;
+			u.imag = weights[level*my_fft.len + j].imag;
 
-			for(i=j; i<fft.len; i+=increm)
+			for(i=j; i<my_fft.len; i+=increm)
 			{
 				struct cmp t;
 				struct cmp t2;
