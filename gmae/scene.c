@@ -818,6 +818,8 @@ void ResetAp(void)
 	ap.notesTotal = 0;
 	start = Row(Max(Max(RowByTic(curTic), ap.nextStartRow), ac[channelFocus].cleared));
 	while(start < wam->numRows && (wam->rowData[start].line == 0 || wam->rowData[start].ticpos <= ac[channelFocus].miss)) start++;
+	if(start == wam->numRows)
+		start = wam->numRows - 1;
 	end = start;
 	while(apLines < LINES_PER_AP && end < wam->numRows) {
 		/* don't count the note on the last row, since that will */
@@ -834,6 +836,8 @@ void ResetAp(void)
 		ap.stopRow = -1;
 		return;
 	}
+	if(end == wam->numRows)
+		end = wam->numRows - 1;
 	Log(("StarT: %i, End: %i\n", start, end));
 	ap.startTic = wam->rowData[start].ticpos;
 	ap.stopTic = wam->rowData[end].ticpos;
