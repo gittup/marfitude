@@ -123,24 +123,6 @@ float theta = 0.0;
 
 void ResetAp();
 
-void ChannelUp()
-{
-	if(channelFocus + 1 < wam->numCols)
-	{
-		channelFocus++;
-		ResetAp();
-	}
-}
-
-void ChannelDown()
-{
-	if(channelFocus != 0)
-	{
-		channelFocus--;
-		ResetAp();
-	}
-}
-
 #define BLOCK_HEIGHT .75
 #define TIC_HEIGHT .25
 #define BLOCK_WIDTH 2.0
@@ -239,6 +221,26 @@ MikMod_player_t oldHand;
 int tickCounter;
 int songStarted;	// this is set once we get to the first row, and the
 			// song is unpaused
+
+void ChannelUp()
+{
+	if(channelFocus + 1 < wam->numCols)
+	{
+		channelFocus++;
+		ResetAp();
+		ac[channelFocus].hit = ap.startTic - 1;
+	}
+}
+
+void ChannelDown()
+{
+	if(channelFocus != 0)
+	{
+		channelFocus--;
+		ResetAp();
+		ac[channelFocus].hit = ap.startTic - 1;
+	}
+}
 
 Column *ColumnFromNum(int col)
 {
@@ -789,7 +791,6 @@ void ResetAp()
 	ap.stopTic = wam->rowData[end].ticpos;
 	ap.lastTic = wam->rowData[start].ticpos - 1;
 	ap.stopRow = end;
-	ac[channelFocus].hit = ap.startTic - 1;
 }
 
 void CheckMissedNotes()
