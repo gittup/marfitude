@@ -1040,7 +1040,7 @@ void DrawNote(void *snp, void *not_used)
 			sn->pos.z+0.3);
 	if(mat) glMaterialfv(GL_FRONT, GL_EMISSION, temp);
 /*	glRotatef(theta, 0.0, 1.0, 0.0); */
-	Log("Dn\n");
+	Log(("Dn\n"));
 	glCallList(rotnoteList);
 	if(mat) glMaterialfv(GL_FRONT, GL_EMISSION, lightNone);
 }
