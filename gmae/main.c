@@ -171,6 +171,7 @@ int main(int argc, char **argv)
 		Log(("Update Screen\n"));
 		UpdateScreen();
 		Log(("Next loop\n"));
+		SDL_Delay(1);
 	}
 	
 	Shutdown();
