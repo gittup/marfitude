@@ -32,11 +32,15 @@ $(o)/autotextures.d: $(d)/gentextures.pl
 	(echo "$(dir $@)textures.h $(dir $@)texlist.h: $< $(dir $<)images"; echo '	$$(Q)$< $(dir $<) $(ARCH); $$(dotify)') > $@;\
 	$< $(dir $<) $(ARCH);\
 
-INSTALL_DIR =
-INSTALL_LIST = Font.png init.cfg $(d)/$(ARCH)/marfitude$(BINARYEXT)
+INSTALL_DIR = $(BINDIR)
+INSTALL_LIST = $(d)/$(ARCH)/marfitude$(BINARYEXT)
 include $(MK)/tgt/program.mk
 
-INSTALL_DIR =
+INSTALL_DIR = $(DATADIR)
+INSTALL_LIST = Font.png init.cfg
+include $(MK)/tgt/data.mk
+
+INSTALL_DIR = $(DATADIR)
 INSTALL_LIST = README PROPS UNTESTED TODO README-SDL
 include $(MK)/tgt/text.mk
 

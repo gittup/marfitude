@@ -1,4 +1,4 @@
-INSTALL_DIR = wam
+INSTALL_DIR = $(DATADIR)/wam
 INSTALL_LIST = README
 include $(MK)/tgt/text.mk
 
