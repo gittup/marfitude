@@ -77,6 +77,7 @@ static int GetInstrument(UBYTE *trk, UWORD row);
 static void Handler(void);
 static void CombineSingleInsTracks(struct track *t1, struct track *t2, int trklen);
 static int TracksIntersect(struct track *t1, struct track *t2, int trklen);
+static int NextPos(int pos, int movinup, Uint32 note, Uint32 *mem);
 static int GenTrackData(struct track *t, int trklen, int pos);
 static int BestTrack(struct track *t);
 static void SetColumn(struct column *col, struct track *trk, struct wam *wam, int colnum, int patnum, int trklen, int startRow);
@@ -164,9 +165,10 @@ int GetInstrument(UBYTE *trk, UWORD row)
 				instrument = UniGetByte();
 				if(instrument >= mod->numins)
 				{
-					/* don't know why this happens, but it's */
-					/* in the libmikmod code and cures */
-					/* a segfault :) */
+					/* don't know why this happens, but it's
+					 * in the libmikmod code and cures
+					 * a segfault :)
+					 */
 					return 0;
 				}
 				return instrument;
@@ -181,15 +183,17 @@ int GetInstrument(UBYTE *trk, UWORD row)
 
 void Handler(void)
 {
-	/* This is the tick handler for when we load the song initially. */
-	/* Since we don't want the song to play while we load it, */
-	/* we do nothing with the driver generated tick */
+	/* This is the tick handler for when we load the song initially.
+	 * Since we don't want the song to play while we load it,
+	 * we do nothing with the driver generated tick
+	 */
 }
 
-/* copy t2 over t1, and then void t2 by setting isEmpty to 1 and */
-/* clearing its channels */
-/* t1 becomes the intersection of t1 and t2, with notes averaged */
-/* volumes are copied, unaveraged */
+/* copy t2 over t1, and then void t2 by setting isEmpty to 1 and
+ * clearing its channels
+ * t1 becomes the intersection of t1 and t2, with notes averaged
+ * volumes are copied, unaveraged
+ */
 void CombineSingleInsTracks(struct track *t1, struct track *t2, int trklen)
 {
 	int x;
@@ -203,8 +207,9 @@ void CombineSingleInsTracks(struct track *t1, struct track *t2, int trklen)
 		t1->numChannels++;
 	}
 
-	/* now copy all the notes/instruments from t2 into t1 */
-	/* if t1 doesn't have a note there, copy t2 over it */
+	/* now copy all the notes/instruments from t2 into t1
+	 * if t1 doesn't have a note there, copy t2 over it
+	 */
 	for(x=0;x<trklen;x++)
 	{
 		if(t2->samples[x].note)
@@ -215,8 +220,9 @@ void CombineSingleInsTracks(struct track *t1, struct track *t2, int trklen)
 			}
 			else
 			{
-				/* multiply by numChannels to discount */
-				/* averaging */
+				/* multiply by numChannels to discount
+				 * averaging
+				 */
 				t1->samples[x].note = t1->numChannels * t2->samples[x].note;
 				t1->samples[x].ins = t2->samples[x].ins;
 				t1->samples[x].vol = t2->samples[x].vol;
@@ -227,8 +233,9 @@ void CombineSingleInsTracks(struct track *t1, struct track *t2, int trklen)
 	t2->numChannels = 0;
 }
 
-/* if both t1 and t2 have a note in the same row, they 'intersect' */
-/* and a 1 is returned. otherwise, 0 */
+/* if both t1 and t2 have a note in the same row, they 'intersect'
+ * and a 1 is returned. otherwise, 0
+ */
 int TracksIntersect(struct track *t1, struct track *t2, int trklen)
 {
 	int x;
@@ -239,6 +246,24 @@ int TracksIntersect(struct track *t1, struct track *t2, int trklen)
 	return 0;
 }
 
+/* returns pos<<1 if movinup is 1 and pos>>1 if movinup is zero,
+ * unless of course note is in mem, in which case pos in mem[pos]==note
+ * is returned
+ */
+int NextPos(int pos, int movinup, Uint32 note, Uint32 *mem)
+{
+	int x;
+	for(x=1;x<=MAX_NOTE;x<<=1)
+	{
+		if(mem[x] == note)
+			return x;
+	}
+
+	if(movinup)
+		return pos<<1;
+	return pos>>1;
+}
+
 int GenTrackData(struct track *t, int trklen, int pos)
 {
 	int x;
@@ -247,6 +272,7 @@ int GenTrackData(struct track *t, int trklen, int pos)
 	Uint8 newinfo[4];
 	Uint32 *oldnote = (Uint32*)oldinfo;
 	Uint32 *newnote = (Uint32*)newinfo;
+	Uint32 mem[MAX_NOTE+1] = {0};
 	*oldnote = 0;
 	*newnote = 0;
 
@@ -267,7 +293,7 @@ int GenTrackData(struct track *t, int trklen, int pos)
 					}
 					else
 					{
-						pos <<= 1;
+						pos = NextPos(pos, 1, *newnote, mem);
 					}
 				}
 				else if(*newnote < *oldnote)
@@ -278,15 +304,17 @@ int GenTrackData(struct track *t, int trklen, int pos)
 					}
 					else
 					{
-						pos >>= 1;
+						pos = NextPos(pos, 0, *newnote, mem);
 					}
 				}
-				/* no else, position is constant if the */
-				/* consecutive notes are the same */
+				/* no else, position is constant if the
+				 * consecutive notes are the same
+				 */
 			}
 			t->interest += (*oldnote != *newnote) * (t->samples[x].vol);
 			*oldnote = *newnote;
 			t->notes[x] = pos;
+			mem[pos] = *newnote;
 		}
 		else t->notes[x] = 0;
 	}
