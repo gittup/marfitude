@@ -573,7 +573,9 @@ Wam *LoadTrackData()
 					// reset groups on a line break
 					for(x=0;x<numgrps;x++)
 					{
-						wam->rowData[wam->numRows-x].ticgrp = grpCount;
+						// extra -1 since we're holding
+						// onto a note
+						wam->rowData[wam->numRows-x-1].ticgrp = grpCount;
 					}
 					numgrps = 0;
 					grpCount = 0;
