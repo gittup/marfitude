@@ -10,3 +10,8 @@ joystick -
 	ignorejsXXbYY - set to 1 to ignore button YY on joystick XX
 		- pad with 0 if less than 10
 		- eg. to ignore button 12 on joystick 1 do ignorejs01b12=1
+
+to fix slowness:
+	make sure 3d is working
+	disable log or enable hd dma
+	disable memcheck
