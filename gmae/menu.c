@@ -106,7 +106,6 @@ static void MenuDec(void);
 static void MenuInc(void);
 static void MenuActivate(void);
 static int valid_music_file(const char *s);
-static void generate_filelist(const char *name);
 static int alphabetical(const void *a, const void *b);
 static int FightMenuInit(void);
 static void FightMenuQuit(void);
@@ -641,15 +640,6 @@ int valid_music_file(const char *s)
 	return 0;
 }
 
-void generate_filelist(const char *name)
-{
-	char *s;
-	if(valid_music_file(name)) {
-		s = StringCopy(name);
-		fileList = slist_insert_sorted(fileList, s, alphabetical);
-	}
-}
-
 int alphabetical(const void *a, const void *b)
 {
 	const char *s1 = a;
@@ -669,6 +659,7 @@ int alphabetical(const void *a, const void *b)
 
 int FightMenuInit(void)
 {
+	struct flist f;
 	char *lastFile;
 	int cnt;
 	int len;
@@ -681,7 +672,14 @@ int FightMenuInit(void)
 	BoundsCheck = MenuClamp;
 	fileList = NULL;
 
-	if(foreach_file(MUSICDIR, generate_filelist)) {
+	foreach_file(&f, MUSICDIR) {
+		if(valid_music_file(f.filename)) {
+			char *s;
+			s = StringCopy(f.filename);
+			fileList = slist_insert_sorted(fileList, s, alphabetical);
+		}
+	}
+	if(slist_length(fileList) == 0) {
 		Error("Generating playlist");
 		return 0;
 	}
