@@ -15,6 +15,8 @@
 #include "../util/memtest.h"
 #include "../util/textprogress.h"
 
+#define GRP_SIZE 32
+
 typedef struct {
 	int note;
 	int ins;
@@ -493,6 +495,9 @@ Wam *LoadTrackData()
 	int x, oldSngPos, lineCount;
 	int ins;
 	int tickCount = 0;
+	int grpCount = 0;
+	int numgrps = 0;
+	int *grpptrs[GRP_SIZE];
 	int startRow = 0;
 	int rowsAlloced = 0;	// number of rows allocated in WAM file
 	int numSamples = 64;	// numSamples = how much we have allocated
@@ -554,9 +559,26 @@ Wam *LoadTrackData()
 			wam->rowData[wam->numRows].bpm = mod->bpm;
 			wam->rowData[wam->numRows].sngspd = mod->sngspd;
 			wam->rowData[wam->numRows].ticpos = tickCount;
+			wam->rowData[wam->numRows].ticprt = grpCount;
 			wam->rowData[wam->numRows].patpos = mod->patpos;
 			wam->rowData[wam->numRows].sngpos = mod->sngpos;
+			grpptrs[numgrps] = &wam->rowData[wam->numRows].ticgrp;
 			tickCount += mod->sngspd;
+			grpCount += mod->sngspd;
+			numgrps++;
+			// only break on a group mod 8 when we have enough
+			// ticks in the group
+			// or break if we've already got GRP_SIZE rows
+			if((grpCount >= GRP_SIZE && !(numgrps&7)) ||
+					numgrps == GRP_SIZE)
+			{
+				for(x=0;x<numgrps;x++)
+				{
+					*grpptrs[x] = grpCount;
+				}
+				numgrps = 0;
+				grpCount = 0;
+			}
 
 			// only designate one place the start of a
 			// pattern so if we loop there aren't multiple
