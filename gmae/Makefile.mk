@@ -17,14 +17,7 @@ TARGET = marfitude
 
 include $(MK)/lang/c.mk
 
-AUTODEPS += $(o)/autosounds.d
 AUTODEPS += $(o)/autotextures.d
-
-$(o)/autosounds.d: $(d)/gensounds.pl
-	$(Q)$(createdir);\
-	echo "  AUTODEP $(MKDISPLAY)";\
-	(echo "$(dir $@)sounds.h $(dir $@)sndlist.h: $@ $(dir $<)sounds"; echo '	$$(Q)$< $(dir $<) $(ARCH); $$(dotify)') > $@;\
-	$< $(dir $<) $(ARCH);\
 
 $(o)/autotextures.d: $(d)/gentextures.pl
 	$(Q)$(createdir);\

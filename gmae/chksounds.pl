@@ -8,8 +8,8 @@ chomp(@snd);
 for($x=0;$x<=$#snd;$x++)
 {
 	$sndname = $snd[$x];
-	$sndname =~ s/\.\/sounds\/(.*)\.wav/$1/;
-	$inf = `grep "SND_$sndname" *.c`;
+	$sndname =~ s/\.\/sounds\/(.*)/$1/;
+	$inf = `grep "$sndname" *.c`;
 	if(length($inf) == 0) {print "$snd[$x] not used\n";}
 	else {print "$snd[$x]\n";}
 }
