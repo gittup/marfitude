@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <unistd.h>
+#include <ctype.h> // for isprint
 
 #include "SDL.h"
 #include "SDL_thread.h"
@@ -34,7 +36,6 @@ void Shutdown()
 {
 	SwitchScene(NULLSCENE);
 	SwitchMenu(NULLMENU);
-//	QuitMusic();
 	QuitSounds();
 	QuitTextures();
 	QuitJoystick();
@@ -46,7 +47,36 @@ void Shutdown()
 
 int main(int argc, char **argv)
 {
+	char c;
+	char *convertSong = NULL;
 	SDL_Surface *screen;
+
+	// option stuff from GNU help page
+	while((c = getopt(argc, argv, "hm:")) != -1)
+	{
+		switch(c)
+		{
+			case 'h':
+				printf("%s options\n\t-h: This help message\n\t-m <file>: Generate the WAM note file for the mod 'file'\n\n", argv[0]);
+				return 0;
+				break;
+			case 'm':
+				convertSong = optarg;
+				break;
+			case '?':
+				if(isprint(optopt))
+					fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+				else
+					fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+				return 1;
+				break;
+		}
+	}
+	if(convertSong != NULL)
+	{
+		printf("USING INITAL SONG: %s\n", convertSong);
+		return 1;
+	}
 
 	if(!InitLog())
 	{
