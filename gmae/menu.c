@@ -45,7 +45,6 @@ typedef struct {
 
 typedef struct {
 	void (*activeFunc)();
-	//int tex;
 	} Button;
 
 typedef struct {
@@ -57,6 +56,7 @@ typedef struct {
 	float c[4];
 	int x;
 	int y;
+	int active;
 	} Text;
 
 typedef struct {
@@ -122,8 +122,11 @@ void DrawPartialMenu(int start, int stop)
 				break;
 			case TEXT:
 				t = (Text*)items[x].item;
-				glColor4f(t->c[RED], t->c[GREEN], t->c[BLUE], t->c[ALPHA]);
-				PrintGL(t->x, t->y, items[x].name);
+				if(t->active)
+				{
+					glColor4f(t->c[RED], t->c[GREEN], t->c[BLUE], t->c[ALPHA]);
+					PrintGL(t->x, t->y, items[x].name);
+				}
 		}
 	}
 }
@@ -201,7 +204,7 @@ void UpdateBox(int x1, int y1, int x2, int y2)
 	}
 }
 
-void CreateSlider(char *name, int min, int max, int delta, int initVal)
+Slider *CreateSlider(char *name, int min, int max, int delta, int initVal)
 {
 	Slider *s;
 	s = (Slider*)malloc(sizeof(Slider));
@@ -210,9 +213,10 @@ void CreateSlider(char *name, int min, int max, int delta, int initVal)
 	s->del = delta;
 	s->val = initVal;
 	AddMenuItem(name, (void*)s, SLIDER);
+	return s;
 }
 
-void CreateBoolean(char *name, char *trueString, char *falseString, int initVal)
+Boolean *CreateBoolean(char *name, char *trueString, char *falseString, int initVal)
 {
 	Boolean *b;
 	b = (Boolean*)malloc(sizeof(Boolean));
@@ -222,18 +226,20 @@ void CreateBoolean(char *name, char *trueString, char *falseString, int initVal)
 	strcpy(b->falseString, falseString);
 	b->val = initVal;
 	AddMenuItem(name, (void*)b, BOOLEAN);
+	return b;
 }
 
-void CreateButton(char *name, void (*activeFunc)())
+Button *CreateButton(char *name, void (*activeFunc)())
 {
 	Button *b;
 	b = (Button*)malloc(sizeof(Button));
 	b->activeFunc = activeFunc;
 	UpdateBox(menuX, menuY + FONT_HEIGHT * numItems, menuX + strlen(name) * FONT_WIDTH, menuY + FONT_HEIGHT * (numItems+1));
 	AddMenuItem(name, (void*)b, BUTTON);
+	return b;
 }
 
-void CreateButtonParam(char *name, int (*activeFunc)(int), int param)
+ButtonParam *CreateButtonParam(char *name, int (*activeFunc)(int), int param)
 {
 	ButtonParam *b;
 	b = (ButtonParam*)malloc(sizeof(ButtonParam));
@@ -241,10 +247,11 @@ void CreateButtonParam(char *name, int (*activeFunc)(int), int param)
 	b->param = param;
 	UpdateBox(menuX, menuY + FONT_HEIGHT * numItems, menuX + strlen(name) * FONT_WIDTH, menuY + FONT_HEIGHT * (numItems+1));
 	AddMenuItem(name, (void*)b, BUTTONPARAM);
+	return b;
 }
 
 // assumes text is on a single line for bounding box purposes
-void CreateText(char *name, float *c, int x, int y)
+Text *CreateText(char *name, float *c, int x, int y)
 {
 	Text *t;
 	t = (Text*)malloc(sizeof(Text));
@@ -254,8 +261,10 @@ void CreateText(char *name, float *c, int x, int y)
 	t->c[ALPHA] = c[ALPHA];
 	t->x = x;
 	t->y = y;
+	t->active = 1;
 	UpdateBox(x, y, x + strlen(name) * FONT_WIDTH, y + FONT_HEIGHT);
 	AddMenuItem(name, (void*)t, TEXT);
+	return t;
 }
 
 int MenuClamp()
@@ -594,12 +603,16 @@ void FightMenu()
 }
 
 int configuring = 0;
-int waitForKey = 0;
 int ConfigButton();
+char *cfglabels[] = {"Up", "Down", "Left", "Right", "Button 1", "Button 2", "Button 3", "Button 4", "Menu"};
+Text *newKeyText;
+
 void ConfigCreateItems()
 {
 	int x;
 	char *s;
+	float c[4] = {0.0, 1.0, 1.0, 1.0};
+
 	menuX = 290;
 	menuY = 200;
 	for(x=0;x<B_LAST;x++)
@@ -608,6 +621,12 @@ void ConfigCreateItems()
 		CreateButtonParam(s, ConfigButton, x);
 		free(s);
 	}
+	for(x=0;x<sizeof(cfglabels)/sizeof(*cfglabels);x++)
+	{
+		CreateText(cfglabels[x], c, 200, 200 + x * FONT_HEIGHT);
+	}
+	newKeyText = CreateText("Press a new key", c, menuX-90, menuY-FONT_HEIGHT);
+	newKeyText->active = 0;
 }
 
 void ConfigKeyHandler(JoyKey *jk)
@@ -619,7 +638,7 @@ void ConfigKeyHandler(JoyKey *jk)
 	}
 	SDLPlaySound(SND_spnray03);
 	DeregisterKeyEvent();
-	waitForKey = 0;
+	newKeyText->active = 0;
 	EventMode(MENU);
 	ClearMenuItems();
 	ConfigCreateItems();
@@ -630,23 +649,15 @@ int ConfigButton(int b)
 {
 	configuring = b;
 	RegisterKeyEvent(ConfigKeyHandler);
-	waitForKey = 1;
+	newKeyText->active = 1;
 	EventMode(KEY);
 	return 1;
 }
 
-char *cfglabels[] = {"Up", "Down", "Left", "Right", "Button 1", "Button 2", "Button 3", "Button 4", "Menu"};
-
 int ConfigMenuInit()
 {
-	int x;
-	float c[4] = {0.0, 1.0, 1.0, 1.0};
 	EventMode(MENU);
 	ConfigCreateItems();
-	for(x=0;x<sizeof(cfglabels)/sizeof(*cfglabels);x++)
-	{
-		CreateText(cfglabels[x], c, 200, 200 + x * FONT_HEIGHT);
-	}
 	return 1;
 }
 
@@ -658,13 +669,6 @@ void ConfigMenuQuit()
 void ConfigMenu()
 {
 	ShadedBox(minX-BBO, minY-BBO, maxX+BBO, maxY+BBO);
-	glPushAttrib(GL_CURRENT_BIT);
-	glColor3f(0.0, 1.0, 1.0);
-	if(waitForKey)
-	{
-		PrintGL(menuX-90, menuY-14, "Press a new key");
-	}
-	glPopAttrib();
 	DrawMenu();
 }
 
