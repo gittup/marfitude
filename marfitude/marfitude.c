@@ -196,12 +196,12 @@ void AddPlugin(const char *s)
 
 void Load(void)
 {
-	AddPlugin("./liblaser.so");
-	AddPlugin("./libtargets.so");
-	AddPlugin("./liblines.so");
-	AddPlugin("./libfft-curtain.so");
-	AddPlugin("./libfireball.so");
-	AddPlugin("./libscoreboard.so");
+	AddPlugin("./laser.so");
+	AddPlugin("./targets.so");
+	AddPlugin("./lines.so");
+	AddPlugin("./fft-curtain.so");
+	AddPlugin("./fireball.so");
+	AddPlugin("./scoreboard.so");
 }
 
 void Unload(void)
@@ -242,9 +242,9 @@ int MainInit()
 	multiplier = 1;
 	tickCounter = 0;
 	songStarted = 0;
-	modTime = 0.0;
+	modTime = -5.0;
 	oldHand = MikMod_RegisterPlayer(TickHandler);
-	noteOffset = (int*)malloc(sizeof(int) * (MAX_NOTE+1));
+	noteOffset = malloc(sizeof(int) * (MAX_NOTE+1));
 
 	noteOffset[1] = -1;
 	noteOffset[2] = 0;
@@ -290,7 +290,7 @@ int MainInit()
 	partialTic = 0.0;
 
 	numNotes = wam->numCols * NUM_TICKS;
-	notesOnScreen = (struct screenNote*)malloc(sizeof(struct screenNote) * numNotes);
+	notesOnScreen = malloc(sizeof(struct screenNote) * numNotes);
 	unusedList = NULL;
 	notesList = NULL;
 	hitList = NULL;
@@ -616,10 +616,11 @@ void Press(int button)
 	for(i=rowStart;i<=rowStop;i++) {
 		if(i >= 0 && i < wam->numRows) {
 			r = &wam->rowData[i];
-			/* if we're in the attackpattern limits, and */
-			/* if we didn't already play this row, and this row */
-			/* is within our acceptable error, and we hit the */
-			/* right note, then yay */
+			/* if we're in the attackpattern limits, and
+			 * if we didn't already play this row, and this row 
+			 * is within our acceptable error, and we hit the
+			 * right note, then yay
+			 */
 			if(	
 				r->ticpos >= ap.startTic &&
 				r->ticpos < ap.stopTic &&
