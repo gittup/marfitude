@@ -16,13 +16,28 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** @file
+ * @brief A pretty crappy singly-linked list implementation, based off of glib
+ */
+
+/** A singly-linked list element
+ */
 struct slist {
-	struct slist *next;
-	void *data;
+	struct slist *next; /**< Pointer to the next list element */
+	void *data;         /**< Pointer to whatever data the list holds */
 };
 
-typedef void (*ForeachFunc)(void *, void *);
+/** A comparison function. CompareFunc(a, b) will return a number less than
+ * zero if a<b, 0 if a==b, and a number greater than zero if a>b
+ */
 typedef int (*CompareFunc)(const void *, const void *);
+
+/** Iterate through elements of the list.
+ * @param t struct slist * - The iterator
+ * @param l struct slist * - The list head
+ */
+#define slist_foreach(t, l) \
+	for(t=l; t!=NULL; t=t->next)
 
 int slist_length(struct slist *l);
 struct slist *slist_append(struct slist *l, void *d);
@@ -32,6 +47,5 @@ struct slist *slist_insert(struct slist *l, void *d);
 struct slist *slist_insert_sorted(struct slist *l, void *d, CompareFunc c);
 struct slist *slist_find_custom(struct slist *l, void *d, CompareFunc c);
 struct slist *slist_next(struct slist *l);
-void slist_foreach(struct slist *l, ForeachFunc f, void *user);
 void slist_free(struct slist *l);
 void slist_usage(void);
