@@ -41,7 +41,7 @@ static float theta = 0.0;
 
 int curTic; /* tick counter from 0 - total ticks in the song */
 static int firstVb, curVb, lastVb;     /* tick counters for the three rows */
-static int firstRow, rowIndex, lastRow;  /* first row on screen, current row
+int firstRow, rowIndex, lastRow;  /* first row on screen, current row
                                           * playing and the last row on screen
                                           */
 struct row *curRow;
@@ -96,18 +96,10 @@ static void AddNotes(int row);
 static struct slist *RemoveList(struct slist *list, int tic);
 static void RemoveNotes(int row);
 
-/*
-static int BelowBoard(struct particle *p);
-static int AboveBoard(struct particle *p);
-*/
 static void Press(int button);
 static void SetMainView(void);
-/*static void DrawNote(void *snp, void *not_used);*/
-/*static void DrawHitNote(void *snp, void *not_used);*/
 static void DrawNotes(void);
 static void DrawHitNotes(void);
-/*static void DrawTargets(void);*/
-static void DrawScoreboard(void);
 static void MoveHitNotes(int tic, int col);
 static void UpdateClearedCols(void);
 static void UpdatePosition(void);
@@ -124,7 +116,7 @@ static int SortByTic(const void *a, const void *b);
 static void menu_handler(const void *data);
 static void button_handler(const void *data);
 
-static struct attackPattern ap;
+struct attackPattern ap;
 static struct attackCol ac[MAX_COLS];
 static struct screenNote *notesOnScreen; /* little ring buffer of notes */
 static struct slist *unusedList;	/* unused notes */
@@ -133,9 +125,9 @@ static struct slist *hitList;	/* notes on the screen, hit */
 static int numNotes;	/* max number of notes on screen (wam->numCols * NUM_TICKS) */
 static char *cursong;
 static int newhighscore;
-static int highscore;
-static int score;
-static int multiplier;
+int highscore;
+int score;
+int multiplier;
 
 int *noteOffset;
 static MikMod_player_t oldHand;
@@ -209,6 +201,7 @@ void Load(void)
 	AddPlugin("./liblines.so");
 	AddPlugin("./libfft-curtain.so");
 	AddPlugin("./libfireball.so");
+	AddPlugin("./libscoreboard.so");
 }
 
 void Unload(void)
@@ -455,10 +448,6 @@ void MainScene(void)
 
 	FireEvent("draw opaque", NULL);
 
-	Log(("E"));
-	DrawScoreboard();
-	Log(("F"));
-
 	glDisable(GL_LIGHTING);
 	glDepthMask(GL_FALSE);
 	FireEvent("draw transparent", NULL);
@@ -614,10 +603,8 @@ void Press(int button)
 	int rowStop;
 	struct screenNote *sn;
 	struct row *r;
-	struct shoot_e shoot;
 
-	shoot.pos = button;
-	FireEvent("shoot", &shoot);
+	FireEvent("shoot", &button);
 
 	rowStart = rowIndex;
 	while(rowStart > 0 && curRow->time - wam->rowData[rowStart].time < TIME_ERROR)
@@ -670,6 +657,7 @@ void Press(int button)
 					if(score > highscore) {
 						highscore = score;
 						newhighscore = 1;
+						FireEvent("new high score", &score);
 					}
 					if(multiplier < 8) multiplier++;
 					ap.notesHit = 0;
@@ -1053,71 +1041,3 @@ void DrawHitNotes(void)
 		glCallList(plist+P_BlueNova);
 	}
 }
-
-void DrawScoreboard(void)
-{
-	glColor4f(1.0, 1.0, 1.0, 1.0);
-
-	PrintGL(50, 0, "Playing: %s", mod->songname);
-	if(rowIndex == wam->numRows) {
-		PrintGL(50, 15, "Song complete!");
-		if(newhighscore) {
-			PrintGL(DisplayWidth() / 2 - 85, 120, "New High Score!!!");
-		}
-	} else if(rowIndex < 0) {
-		int timeLeft = (int)(- BpmToSec(wam->rowData[0].sngspd, wam->rowData[0].bpm) * (double)rowIndex);
-		if(timeLeft > 0) PrintGL(50, 15, "%i...", timeLeft);
-		else PrintGL(50, 15, "GO!!");
-	}
-	PrintGL(50, 30, "Speed: %2i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
-	PrintGL(0, 50, "%i - %i, note: %i, hit: %i/%i  %.2f/%.2f\n", ap.startTic, ap.stopTic, ap.lastTic, ap.notesHit, ap.notesTotal, modTime, wam->songLength);
-	PrintGL(350, 20, "Score: %6i High: %i\nMultiplier: %i\n", score, highscore, multiplier);
-
-	SetOrthoProjection();
-	glDisable(GL_TEXTURE_2D);
-
-	glColor4f(0.0, 0.8, 0.5, 1.0);
-	glBegin(GL_QUADS); {
-		glVertex2i(5, 80);
-		glVertex2i(15, 80);
-		glVertex2i(15, 450);
-		glVertex2i(5, 450);
-	} glEnd();
-
-	glColor4f(0.0, 0.0, 0.0, 1.0);
-	glBegin(GL_QUADS); {
-		glVertex2i(6, 81);
-		glVertex2i(14, 81);
-		glVertex2i(14, 449);
-		glVertex2i(6, 449);
-	} glEnd();
-
-	glBegin(GL_QUADS); {
-		float mult = modTime / wam->songLength;
-		glColor4f(0.0, 0.8, 0.5, 1.0);
-		glVertex2i(6, 81*mult+449*(1.0-mult));
-		glColor4f(0.5, 0.8, 0.5, 1.0);
-		glVertex2i(14, 81*mult+449*(1.0-mult));
-		glColor4f(0.0, 0.5, 0.0, 1.0);
-		glVertex2i(14, 449);
-		glColor4f(0.0, 0.0, 0.0, 1.0);
-		glVertex2i(6, 449);
-	} glEnd();
-	glEnable(GL_TEXTURE_2D);
-	ResetProjection();
-	glColor4f(1.0, 1.0, 1.0, 1.0);
-}
-
-/*
-int BelowBoard(struct particle *p)
-{
-	if(p->o->pos.y < 0.0) return 1;
-	return 0;
-}
-
-int AboveBoard(struct particle *p)
-{
-	if(p->o->pos.y >= 0.0) return 1;
-	return 0;
-}
-*/
