@@ -3,26 +3,26 @@
 #define BLUE 2
 #define ALPHA 3
 
-typedef struct {
+struct vector {
 	double x;
 	double y;
 	double z;
-	} Point, Vector;
+};
 
-typedef struct {
-	Point pos;	/* position of object */
-	Vector vel;	/* velocity of object */
-	Vector acc;	/* acceleration of object */
+struct obj {
+	struct vector pos;	/* position of object */
+	struct vector vel;	/* velocity of object */
+	struct vector acc;	/* acceleration of object */
 	/* need jerk for camera movement? */
-	Vector axis;	/* axis of rotation */
+	struct vector axis;	/* axis of rotation */
 	double theta;	/* amount of rotation */
 	double rotvel;	/* rotation velocity */
 	double rotacc;	/* rotation acceleration */
 	float mass;	/* object's mass */
-	} Obj;
+};
 
-Obj *NewObj(void);
-void DeleteObj(Obj *o);
+struct obj *NewObj(void);
+void DeleteObj(struct obj *o);
 void ClearObjs(void);
 void UpdateObjs(double dt);
 void CheckObjs(void);

@@ -9,19 +9,19 @@
 static void FreeObj(void *data, void *not_used);
 static void UpdateObj(void *op, void *tp);
 
-slist *objs = NULL; 
+struct slist *objs = NULL; 
 
-Obj *NewObj(void)
+struct obj *NewObj(void)
 {
-	Obj *o;
-	o = (Obj*)calloc(1, sizeof(Obj));
+	struct obj *o;
+	o = (struct obj*)calloc(1, sizeof(struct obj));
 	o->axis.z = 1.0;
 	o->mass = 1.0;
 	objs = slist_append(objs, (void *)o);
 	return o;
 }
 
-void DeleteObj(Obj *o)
+void DeleteObj(struct obj *o)
 {
 	free(o);
 	objs = slist_remove(objs, (void *)o);
@@ -42,9 +42,9 @@ void UpdateObj(void *op, void *tp)
 {
 	double tmpx, tmpy, tmpz, tmpr;
 	double t;
-	Obj *o;
+	struct obj *o;
 	t = *(double*)tp;
-	o = (Obj*)op;
+	o = (struct obj*)op;
 
 	tmpx = o->acc.x * t;
 	tmpy = o->acc.y * t;

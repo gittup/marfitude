@@ -1,16 +1,16 @@
-typedef struct {
+struct scene {
 	int (*InitScene)(void);
 	void (*QuitScene)(void);
 	void (*Render)(void);
-	} Scene;
+};
 
-typedef struct {
+struct menu {
 	int (*InitMenu)(void);
 	void (*QuitMenu)(void);
 	void (*Render)(void);
 	int back;
-	} Menu;
+};
 
 extern int quit;
-extern Menu *activeMenu;
-extern Scene *activeScene;
+extern struct menu *activeMenu;
+extern struct scene *activeScene;

@@ -30,8 +30,8 @@
 static void Shutdown(void);
 
 int quit = 0;
-Scene *activeScene = NULL;
-Menu *activeMenu = NULL;
+struct scene *activeScene = NULL;
+struct menu *activeMenu = NULL;
 
 void Shutdown(void)
 {

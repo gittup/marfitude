@@ -41,9 +41,11 @@ static void MoveFaster(void);
 static void MoveSlower(void);
 
 #define NUMSCENES 3
-static Scene scenes[NUMSCENES] = {	{NullInit, NullQuit, NullScene},
-				{IntroInit, IntroQuit, IntroScene},
-				{MainInit, MainQuit, MainScene}};
+static struct scene scenes[NUMSCENES] = {
+	{NullInit, NullQuit, NullScene},
+	{IntroInit, IntroQuit, IntroScene},
+	{MainInit, MainQuit, MainScene}
+};
 
 /*static float lightFull[4] = {1.0, 1.0, 1.0, 1.0};
 static float lightHalf[4] = {0.5, 0.5, 0.5, 0.5};*/
@@ -118,7 +120,7 @@ static GLuint rowList;
 static GLuint noteList;
 static GLuint mainTexes[MAX_COLS];
 static int channelFocus = 0;
-static Wam *wam;	/* note file */
+static struct wam *wam;	/* note file */
 
 static float theta = 0.0;
 
@@ -160,24 +162,24 @@ static int firstRow, curRow, lastRow;  /* first row on screen, current row
                                         * playing and the last row on screen
                                         */
 static double partialTic;
-typedef struct {
-	Point pos;
+struct screenNote {
+	struct vector pos;
 	int tic;
 	int col;
 	int ins;
-	} ScreenNote;
-typedef struct {
-	Point p1;
-	Point p2;
+};
+struct line {
+	struct vector p1;
+	struct vector p2;
 	int color;
 	int row;
-	} Line;
-typedef struct {
-	Point p1;
-	Point p2;
+};
+struct laser {
+	struct vector p1;
+	struct vector p2;
 	float time;
-	} Laser;
-typedef struct {
+};
+struct attackPattern {
 	int startTic;     /* first tic that we need to play */
 	int stopTic;      /* last tic that we need to play */
 	int stopRow;      /* corresponding row to stopTic */
@@ -185,8 +187,8 @@ typedef struct {
 	int lastTic;      /* last note played is in lastTic */
 	int notesHit;     /* number of notes we hit so far */
 	int notesTotal;   /* total number of notes we need to play */
-	} AttackPattern;
-typedef struct {
+};
+struct attackCol {
 	double part;	/* cumulative row adder, when >= 1.0 inc minRow */
 	int minRow;	/* equal to cleared, but doesn't get set to 0 */
 			/* after the column is recreated */
@@ -194,24 +196,24 @@ typedef struct {
 			/* not cleared */
 	int hit;	/* equals the tic of the last hit note */
 	int miss;	/* equals the tic of the last missed note */
-	} AttackCol;
+};
 
 static void ResetAp(void);
 static void ChannelUp(void);
 static void ChannelDown(void);
-static Column *ColumnFromNum(int col);
-static void Setmute(Column *c, int mute);
+static struct column *ColumnFromNum(int col);
+static void Setmute(struct column *c, int mute);
 static void UpdateModule(void);
 static void AddNotes(int row);
-static slist *RemoveList(slist *list, int tic);
+static struct slist *RemoveList(struct slist *list, int tic);
 static void RemoveNotes(int row);
 static void AddLine(int row);
 static void RemoveLine(int row);
 static double LaserAdj(double a, double b, double dt);
-static void DrawLaser(Laser *l);
+static void DrawLaser(struct laser *l);
 static void DrawLasers(void);
-static int BelowBoard(Particle *p);
-static int AboveBoard(Particle *p);
+static int BelowBoard(struct particle *p);
+static int AboveBoard(struct particle *p);
 static void Press(int button);
 static void Press1(void);
 static void Press2(void);
@@ -230,7 +232,7 @@ static void UpdatePosition(void);
 static void DrawRows(double startTic, double stopTic);
 static void RandomColor(float col[4]);
 static int RowByTic(int tic);
-static ScreenNote *FindNote(slist *list, int tic, int col);
+static struct screenNote *FindNote(struct slist *list, int tic, int col);
 static void FixVb(int *vb, int *row);
 static void TickHandler(void);
 static void DrawLine(int line);
@@ -240,12 +242,12 @@ static void CheckColumn(int row);
 static int NoteListTic(const void *snp, const void *tp);
 static int SortByTic(const void *a, const void *b);
 
-static AttackPattern ap;
-static AttackCol ac[MAX_COLS];
-static ScreenNote *notesOnScreen; /* little ring buffer of notes */
-static slist *unusedList;	/* unused notes */
-static slist *notesList;	/* notes on the screen, not hit */
-static slist *hitList;	/* notes on the screen, hit */
+static struct attackPattern ap;
+static struct attackCol ac[MAX_COLS];
+static struct screenNote *notesOnScreen; /* little ring buffer of notes */
+static struct slist *unusedList;	/* unused notes */
+static struct slist *notesList;	/* notes on the screen, not hit */
+static struct slist *hitList;	/* notes on the screen, hit */
 static int numNotes;	/* max number of notes on screen (wam->numCols * NUM_TICKS) */
 static char *cursong;
 static int newhighscore;
@@ -255,10 +257,10 @@ static int multiplier;
 /*static float light[4] = {0.0, 1.0, -8.0, 1.0}; */
 static float light[4] = {0.0, 0.5, 0.0, 1.0};
 
-static Laser laser[NUM_LASERS];
+static struct laser laser[NUM_LASERS];
 static int numLasers;
 static float bounceTime;
-static Line *linesOnScreen;
+static struct line *linesOnScreen;
 static int startLine;
 static int stopLine;
 static int numLines;
@@ -288,12 +290,12 @@ void ChannelDown(void)
 	}
 }
 
-Column *ColumnFromNum(int col)
+struct column *ColumnFromNum(int col)
 {
 	return &wam->patterns[wam->rowData[Row(curRow)].patnum].columns[col];
 }
 
-void Setmute(Column *c, int mute)
+void Setmute(struct column *c, int mute)
 {
 	int x;
 	for(x=0;x<c->numchn;x++) {
@@ -302,7 +304,7 @@ void Setmute(Column *c, int mute)
 	}
 }
 
-/* update which channels are playing based on AttackCol coontents */
+/* update which channels are playing based on attackCol contents */
 void UpdateModule(void)
 {
 	int x;
@@ -317,7 +319,7 @@ void AddNotes(int row)
 {
 	int x;
 	int tic;
-	ScreenNote *sn;
+	struct screenNote *sn;
 	if(row < 0 || row >= wam->numRows) return;
 	tic = wam->rowData[row].ticpos;
 	for(x=0;x<wam->numCols;x++) {
@@ -340,11 +342,11 @@ void AddNotes(int row)
 	}
 }
 
-slist *RemoveList(slist *list, int tic)
+struct slist *RemoveList(struct slist *list, int tic)
 {
-	ScreenNote *sn;
+	struct screenNote *sn;
 	while(list) {
-		sn = (ScreenNote*)list->data;
+		sn = (struct screenNote*)list->data;
 		if(sn->tic != tic) break;
 		unusedList = slist_append(unusedList, list->data);
 		list = slist_remove(list, list->data);
@@ -404,11 +406,11 @@ void RandomColor(float col[4])
 	if(x&4) col[BLUE] = 1.0;
 }
 
-ScreenNote *FindNote(slist *list, int tic, int col)
+struct screenNote *FindNote(struct slist *list, int tic, int col)
 {
-	ScreenNote *sn;
+	struct screenNote *sn;
 	while(list) {
-		sn = (ScreenNote*)list->data;
+		sn = (struct screenNote*)list->data;
 		if(sn->tic == tic && sn->col == col) return sn;
 		list = slist_next(list);
 	}
@@ -419,8 +421,8 @@ void Press(int button)
 {
 	int i;
 	int noteHit = 0;
-	ScreenNote *sn;
-	Row *r;
+	struct screenNote *sn;
+	struct row *r;
 
 	/* p1 is set to the light position */
 	laser[numLasers].p1.x = light[0];
@@ -633,7 +635,7 @@ int MainInit()
 	partialTic = 0.0;
 
 	numNotes = wam->numCols * NUM_TICKS;
-	notesOnScreen = (ScreenNote*)malloc(sizeof(ScreenNote) * numNotes);
+	notesOnScreen = (struct screenNote*)malloc(sizeof(struct screenNote) * numNotes);
 	unusedList = NULL;
 	notesList = NULL;
 	hitList = NULL;
@@ -644,7 +646,7 @@ int MainInit()
 	for(x=0;x<=lastRow;x++) AddNotes(x);
 
 	numLines = NUM_TICKS;
-	linesOnScreen = (Line*)malloc(sizeof(Line) * numLines);
+	linesOnScreen = (struct line*)malloc(sizeof(struct line) * numLines);
 	startLine = 0;
 	stopLine = 0;
 	for(x=0;x<=lastRow;x++) AddLine(x);
@@ -847,11 +849,11 @@ void ResetAp(void)
 
 void CheckMissedNotes(void)
 {
-	ScreenNote *sn;
-	slist *list;
+	struct screenNote *sn;
+	struct slist *list;
 	list = notesList;
 	while(list) {
-		sn = (ScreenNote*)list->data;
+		sn = (struct screenNote*)list->data;
 		if(curTic - sn->tic > TIC_ERROR && sn->tic > ac[sn->col].miss) {
 			ac[sn->col].miss = sn->tic;
 			if(sn->col == channelFocus && sn->tic >= ap.startTic && sn->tic < ap.stopTic) {
@@ -874,26 +876,26 @@ void CheckColumn(int row)
 int NoteListTic(const void *snp, const void *tp)
 {
 	int tic = (int)tp;
-	const ScreenNote *sn = (const ScreenNote*)snp;
+	const struct screenNote *sn = (const struct screenNote*)snp;
 	return sn->tic - tic;
 }
 
 int SortByTic(const void *a, const void *b)
 {
-	const ScreenNote *an = (const ScreenNote*)a;
-	const ScreenNote *bn = (const ScreenNote*)b;
+	const struct screenNote *an = (const struct screenNote*)a;
+	const struct screenNote *bn = (const struct screenNote*)b;
 	return an->tic - bn->tic;
 }
 
 void MoveHitNotes(int tic, int col)
 {
-	ScreenNote *sn;
-	slist *tmp;
-	slist *holder = NULL;
+	struct screenNote *sn;
+	struct slist *tmp;
+	struct slist *holder = NULL;
 	Log(("moveHIt\n"));
 	tmp = slist_find_custom(notesList, (void *)tic, NoteListTic);
 	while(tmp) {
-		sn = (ScreenNote*)tmp->data;
+		sn = (struct screenNote*)tmp->data;
 
 		if(sn->tic == tic && sn->col == col) {
 			hitList = slist_insert_sorted(hitList, sn, SortByTic);
@@ -916,8 +918,8 @@ void UpdateClearedCols(void)
 	int x;
 	int tic;
 	float col[4];
-	Row *r;
-	Obj *o;
+	struct row *r;
+	struct obj *o;
 	for(x=0;x<wam->numCols;x++) {
 		r = &wam->rowData[Row(ac[x].minRow)];
 		/* Yes I realize this is a bunch of magic numbers. Sue me. */
@@ -1051,7 +1053,7 @@ GLuint rotnoteList;
 void DrawNote(void *snp, void *not_used)
 {
 	float temp[4] = {.7, 0.0, 0.0, 1.0};
-	const ScreenNote *sn = (ScreenNote*)snp;
+	const struct screenNote *sn = (struct screenNote*)snp;
 	int mat = abs(sn->tic - curTic) <= TIC_ERROR;
 
 	if(not_used) {}
@@ -1069,7 +1071,7 @@ void DrawNote(void *snp, void *not_used)
 
 void DrawHitNote(void *snp, void *not_used)
 {
-	ScreenNote *sn = (ScreenNote*)snp;
+	struct screenNote *sn = (struct screenNote*)snp;
 	if(not_used) {}
 
 	glPushMatrix();
@@ -1201,7 +1203,7 @@ double LaserAdj(double a, double b, double dt)
 	return a * (1.0 - dt) + b * dt;
 }
 
-void DrawLaser(Laser *l)
+void DrawLaser(struct laser *l)
 {
 	glColor4f(1.0, 0.0, 1.0, l->time);
 	glBegin(GL_QUADS); {
@@ -1230,13 +1232,13 @@ void DrawLasers(void)
 	}
 }
 
-int BelowBoard(Particle *p)
+int BelowBoard(struct particle *p)
 {
 	if(p->o->pos.y < 0.0) return 1;
 	return 0;
 }
 
-int AboveBoard(Particle *p)
+int AboveBoard(struct particle *p)
 {
 	if(p->o->pos.y >= 0.0) return 1;
 	return 0;
@@ -1246,8 +1248,7 @@ void MainScene(void)
 {
 	float temp[4] = {.35, 0.0, 0.0, .5};
 	float sintmp;
-	Row *row;
-/*	int x; */
+	struct row *row;
 
 	Log(("MainScene\n"));
 

@@ -15,14 +15,14 @@ static void GenPoint(void);
 static void GenLine(void);
 static void GenTQuad(GLuint tex);
 static void Gen2TQuad(GLuint tex1, GLuint tex2);
-static void DrawParticle(Particle *p);
+static void DrawParticle(struct particle *p);
 
 int particlesInited = 0;
 int numParticles;
 int curParticle;
 GLuint plist;
-Particle *particles;
-ParticleType particleTypes[] = {
+struct particle *particles;
+struct particleType particleTypes[] = {
 	{PT_POINT, 0, 0, 0},
 	{PT_LINE, 0, 0, 0},
 	{PT_TQUAD, 1, T_BlueNova, 0},
@@ -30,7 +30,7 @@ ParticleType particleTypes[] = {
 	{PT_TQUAD, 1, T_Fireball, 0},
 	{PT_2TQUAD, 1, T_StarBurst, T_StarCenter},
 	{PT_2TQUAD, 1, T_SunBurst, T_SunCenter}
-	};
+};
 
 void GenPoint(void)
 {
@@ -97,13 +97,13 @@ int InitParticles(void)
 {
 	int x;
 	int numpTypes;
-	ParticleType *pt;
+	struct particleType *pt;
 
-	numpTypes = sizeof(particleTypes) / sizeof(ParticleType);
+	numpTypes = sizeof(particleTypes) / sizeof(struct particleType);
 	printf("Init particles\n");
 	numParticles = CfgI("video.particles");
 	curParticle = 0;
-	particles = (Particle*)calloc(numParticles, sizeof(Particle));
+	particles = (struct particle*)calloc(numParticles, sizeof(struct particle));
 	plist = glGenLists(numpTypes);
 	particlesInited = 1;
 	for(x=0;x<numpTypes;x++)
@@ -143,16 +143,16 @@ int InitParticles(void)
 void QuitParticles(void)
 {
 	free(particles);
-	glDeleteLists(plist, sizeof(particleTypes) / sizeof(Particle));
+	glDeleteLists(plist, sizeof(particleTypes) / sizeof(struct particle));
 	printf("Particles shutdown\n");
 	return;
 }
 
-void DrawParticle(Particle *p)
+void DrawParticle(struct particle *p)
 {
 	float mat[16];
 	int i, j;
-	ParticleType *pt;
+	struct particleType *pt;
 
 	pt = &particleTypes[p->type];
 	glPushMatrix();
@@ -219,9 +219,9 @@ void StopParticles(void)
 	glEnable(GL_LIGHTING);
 }
 
-void CreateParticle(Obj *o, float col[4], int type, float size)
+void CreateParticle(struct obj *o, float col[4], int type, float size)
 {
-	Particle *p;
+	struct particle *p;
 	Log(("Create Particle()\n"));
 	if(numParticles <= 0) return;
 	p = &particles[curParticle];

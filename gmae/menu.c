@@ -31,51 +31,51 @@
 #define NOBOX -1 /* for the bounding box */
 #define BBO 5	/* bounding box offset */
 
-typedef struct {
+struct slider {
 	int min;
 	int max;
 	int del;
 	int val;
-	} Slider;
+};
 
-typedef struct {
+struct boolean {
 	char *trueString;
 	char *falseString;
 	int val;
-	} Boolean;
+};
 
-typedef struct {
+struct button {
 	void (*activeFunc)(void);
-	} Button;
+};
 
-typedef struct {
+struct buttonParam {
 	int (*activeFunc)(int);
 	int param;
-	} ButtonParam;
+};
 
-typedef struct {
+struct text {
 	float c[4];
 	int x;
 	int y;
 	int active;
-	} Text;
+};
 
-typedef struct {
+struct menuItem {
 	int type;
 	char *name;
 	void *item;
-	} MenuItem;
+};
 
 static void DrawPartialMenu(int start, int stop);
 static void DrawMenu(void);
 static void AddMenuItem(const char *name, void *item, int type);
 static void ClearMenuItems(void);
 static void UpdateBox(int x1, int y1, int x2, int y2);
-/*static Slider *CreateSlider(const char *name, int min, int max, int delta, int initVal);
-static Boolean *CreateBoolean(const char *name, const char *trueString, const char *falseString, int initVal);*/
-static Button *CreateButton(const char *name, void (*activeFunc)(void));
-static ButtonParam *CreateButtonParam(const char *name, int (*activeFunc)(int), int param);
-static Text *CreateText(const char *name, float *c, int x, int y);
+/*static struct slider *CreateSlider(const char *name, int min, int max, int delta, int initVal);
+static struct boolean *CreateBoolean(const char *name, const char *trueString, const char *falseString, int initVal);*/
+static struct button *CreateButton(const char *name, void (*activeFunc)(void));
+static struct buttonParam *CreateButtonParam(const char *name, int (*activeFunc)(int), int param);
+static struct text *CreateText(const char *name, float *c, int x, int y);
 static int MenuClamp(void);
 static int MenuWrap(void);
 static int DownOne(void);
@@ -110,10 +110,10 @@ static char *CatStr(const char *a, const char *b);
 static void FightActivate(void);
 static void FightPageUp(void);
 static void FightPageDown(void);
-static int FindActiveItem(MenuItem *activeItems, int numActiveItems);
+static int FindActiveItem(struct menuItem *activeItems, int numActiveItems);
 /*static void DrawButton(GLuint button, int x, int y, int on);*/
 static void ConfigCreateItems(void);
-static void ConfigKeyHandler(JoyKey *jk);
+static void ConfigKeyHandler(struct joykey *jk);
 static int ConfigButton(int b);
 static int ConfigMenuInit(void);
 static void ConfigMenuQuit(void);
@@ -131,7 +131,7 @@ int numItems = 0;
 int menuX = 200, menuY = 200; /* where to start placing menu items */
 int minX = NOBOX, minY = 0, maxX = 0, maxY = 0; /* bounding box of menu items */
 int menuActive = 0;
-MenuItem *items = NULL;
+struct menuItem *items = NULL;
 
 void ShadedBox(int x1, int y1, int x2, int y2)
 {
@@ -161,7 +161,7 @@ void ShadedBox(int x1, int y1, int x2, int y2)
 void DrawPartialMenu(int start, int stop)
 {
 	int x;
-	Text *t;
+	struct text *t;
 	if(start < 0 || start >= numItems) start = 0;
 	if(stop < 0 || stop >= numItems) stop = numItems;
 	for(x=start;x<stop;x++)
@@ -179,7 +179,7 @@ void DrawPartialMenu(int start, int stop)
 				PrintGL(menuX, menuY+(x-start)*FONT_HEIGHT, items[x].name);
 				break;
 			case MENU_TEXT:
-				t = (Text*)items[x].item;
+				t = (struct text*)items[x].item;
 				if(t->active)
 				{
 					glColor4f(t->c[RED], t->c[GREEN], t->c[BLUE], t->c[ALPHA]);
@@ -196,7 +196,7 @@ void DrawMenu(void)
 
 void AddMenuItem(const char *name, void *item, int type)
 {
-	items = (MenuItem*)realloc(items, sizeof(MenuItem) * (numItems+1));
+	items = (struct menuItem*)realloc(items, sizeof(struct menuItem) * (numItems+1));
 	items[numItems].name = (char*)malloc(sizeof(char) * (strlen(name)+1));
 	strcpy(items[numItems].name, name);
 	items[numItems].item = item;
@@ -207,7 +207,7 @@ void AddMenuItem(const char *name, void *item, int type)
 void ClearMenuItems(void)
 {
 	int x;
-	Boolean *b;
+	struct boolean *b;
 	Log(("Clearing items...\n"));
 	minX = NOBOX;
 	minY = 0;
@@ -222,7 +222,7 @@ void ClearMenuItems(void)
 				free(items[x].item);
 				break;
 			case MENU_BOOLEAN:
-				b = (Boolean*)items[x].item;
+				b = (struct boolean*)items[x].item;
 				free(b->trueString);
 				free(b->falseString);
 				free(b);
@@ -262,10 +262,10 @@ void UpdateBox(int x1, int y1, int x2, int y2)
 	}
 }
 
-/*Slider *CreateSlider(const char *name, int min, int max, int delta, int initVal)
+/*struct slider *CreateSlider(const char *name, int min, int max, int delta, int initVal)
 {
-	Slider *s;
-	s = (Slider*)malloc(sizeof(Slider));
+	struct slider *s;
+	s = (struct slider*)malloc(sizeof(struct slider));
 	s->min = min;
 	s->max = max;
 	s->del = delta;
@@ -274,10 +274,10 @@ void UpdateBox(int x1, int y1, int x2, int y2)
 	return s;
 }
 
-Boolean *CreateBoolean(const char *name, const char *trueString, const char *falseString, int initVal)
+struct boolean *CreateBoolean(const char *name, const char *trueString, const char *falseString, int initVal)
 {
-	Boolean *b;
-	b = (Boolean*)malloc(sizeof(Boolean));
+	struct boolean *b;
+	b = (struct boolean*)malloc(sizeof(struct boolean));
 	b->trueString = (char*)malloc(sizeof(char) * (strlen(trueString)+1));
 	b->falseString = (char*)malloc(sizeof(char) * (strlen(falseString)+1));
 	strcpy(b->trueString, trueString);
@@ -287,20 +287,20 @@ Boolean *CreateBoolean(const char *name, const char *trueString, const char *fal
 	return b;
 }*/
 
-Button *CreateButton(const char *name, void (*activeFunc)(void))
+struct button *CreateButton(const char *name, void (*activeFunc)(void))
 {
-	Button *b;
-	b = (Button*)malloc(sizeof(Button));
+	struct button *b;
+	b = (struct button*)malloc(sizeof(struct button));
 	b->activeFunc = activeFunc;
 	UpdateBox(menuX, menuY + FONT_HEIGHT * numItems, menuX + strlen(name) * FONT_WIDTH, menuY + FONT_HEIGHT * (numItems+1));
 	AddMenuItem(name, (void*)b, MENU_BUTTON);
 	return b;
 }
 
-ButtonParam *CreateButtonParam(const char *name, int (*activeFunc)(int), int param)
+struct buttonParam *CreateButtonParam(const char *name, int (*activeFunc)(int), int param)
 {
-	ButtonParam *b;
-	b = (ButtonParam*)malloc(sizeof(ButtonParam));
+	struct buttonParam *b;
+	b = (struct buttonParam*)malloc(sizeof(struct buttonParam));
 	b->activeFunc = activeFunc;
 	b->param = param;
 	UpdateBox(menuX, menuY + FONT_HEIGHT * numItems, menuX + strlen(name) * FONT_WIDTH, menuY + FONT_HEIGHT * (numItems+1));
@@ -309,10 +309,10 @@ ButtonParam *CreateButtonParam(const char *name, int (*activeFunc)(int), int par
 }
 
 /* assumes text is on a single line for bounding box purposes */
-Text *CreateText(const char *name, float *c, int x, int y)
+struct text *CreateText(const char *name, float *c, int x, int y)
 {
-	Text *t;
-	t = (Text*)malloc(sizeof(Text));
+	struct text *t;
+	t = (struct text*)malloc(sizeof(struct text));
 	t->c[RED] = c[RED];
 	t->c[GREEN] = c[GREEN];
 	t->c[BLUE] = c[BLUE];
@@ -419,16 +419,16 @@ void MenuInc(void)
 
 void MenuActivate(void)
 {
-	ButtonParam *bp;
+	struct buttonParam *bp;
 
 	SDLPlaySound(SND_spnray03);
 	switch(items[activeMenuItem].type)
 	{
 		case MENU_BUTTON:
-			((Button*)items[activeMenuItem].item)->activeFunc();
+			((struct button*)items[activeMenuItem].item)->activeFunc();
 			break;
 		case MENU_BUTTONPARAM:
-			bp = (ButtonParam*)items[activeMenuItem].item;
+			bp = (struct buttonParam*)items[activeMenuItem].item;
 			bp->activeFunc(bp->param);
 		default:
 			break;
@@ -555,7 +555,7 @@ void MainMenu(void)
 
 #define FILE_LIST_SIZE 11
 int fileStart;
-slist *fileList;
+struct slist *fileList;
 
 char *CatStr(const char *a, const char *b)
 {
@@ -641,7 +641,7 @@ int FightMenuInit(void)
 	struct dirent *d;
 	int cnt;
 	int len;
-	slist *tmp;
+	struct slist *tmp;
 
 	if(!menuActive) RegisterMenuEvents();
 	menuX = 200;
@@ -690,7 +690,7 @@ int FightMenuInit(void)
 
 void FightMenuQuit(void)
 {
-	slist *tmp;
+	struct slist *tmp;
 
 	tmp = fileList;
 	while(tmp)
@@ -747,7 +747,7 @@ void FightMenu(void)
 
 int configuring = 0;
 const char *cfglabels[] = {"Up", "Down", "Left", "Right", "Laser 1", "Laser 2", "Laser 3", "Repeat", "Menu"};
-Text *newKeyText;
+struct text *newKeyText;
 
 void ConfigCreateItems(void)
 {
@@ -771,7 +771,7 @@ void ConfigCreateItems(void)
 	newKeyText->active = 0;
 }
 
-void ConfigKeyHandler(JoyKey *jk)
+void ConfigKeyHandler(struct joykey *jk)
 {
 	int tmp = activeMenuItem;
 	if(!SetButton(configuring, jk))
@@ -846,14 +846,14 @@ void QuitMenu(void)
 }
 
 #define NUMMENUS 6
-Menu menus[NUMMENUS] = {	{NullMenuInit, NullMenuQuit, NullMenu, NULLMENU},
+struct menu menus[NUMMENUS] = {	{NullMenuInit, NullMenuQuit, NullMenu, NULLMENU},
 				{NoMenuInit, NoMenuQuit, NoMenu, NULLMENU},
 				{MainMenuInit, MainMenuQuit, MainMenu, NOMENU},
 				{FightMenuInit, FightMenuQuit, FightMenu, MAINMENU},
 				{ConfigMenuInit, ConfigMenuQuit, ConfigMenu, MAINMENU},
 				{QuitMenuInit, QuitMenuQuit, QuitMenu, MAINMENU}};
 
-int FindActiveItem(MenuItem *activeItems, int numActiveItems)
+int FindActiveItem(struct menuItem *activeItems, int numActiveItems)
 {
 	int x;
 	for(x=0;x<numActiveItems;x++)

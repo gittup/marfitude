@@ -10,25 +10,25 @@
 #include "token.h"
 #include "strfunc.h"
 
-typedef struct {
+struct option {
 	char *key;
 	char *value;
-	} Option;
+};
 
-typedef struct {
+struct header {
 	char *header;
-	Option *ops;
+	struct option *ops;
 	int numOps;
-	} Header;
+};
 
 /*static char *Cat(const char *header, const char *value);*/
 static const char *OptionPart(const char *s);
 static char *HeaderPart(const char *s);
 /*static int HeaderEq(const char *a, const char *b);*/
-static void AddOp(Header *h, const char *key, const char *value);
+static void AddOp(struct header *h, const char *key, const char *value);
 static void CfgAdd(const char *header, const char *key, const char *value);
 
-Header *cfg = NULL;
+struct header *cfg = NULL;
 int numHeaders = 0;
 int cfgInited = 0;
 
@@ -83,9 +83,9 @@ const char *OptionPart(const char *s)
 	return 0;
 }*/
 
-void AddOp(Header *h, const char *key, const char *value)
+void AddOp(struct header *h, const char *key, const char *value)
 {
-	h->ops = (Option*)realloc(h->ops, sizeof(Option) * (h->numOps+1));
+	h->ops = (struct option*)realloc(h->ops, sizeof(struct option) * (h->numOps+1));
 	h->ops[h->numOps].key = (char*)malloc(sizeof(char) * (strlen(key)+1));
 	h->ops[h->numOps].value = (char*)malloc(sizeof(char) * (strlen(value)+1));
 	strcpy(h->ops[h->numOps].key, key);
@@ -118,7 +118,7 @@ void CfgAdd(const char *header, const char *key, const char *value)
 	}
 	if(!foundHeader)
 	{
-		cfg = (Header*)realloc(cfg, sizeof(Header) * (numHeaders+1));
+		cfg = (struct header*)realloc(cfg, sizeof(struct header) * (numHeaders+1));
 		cfg[numHeaders].numOps = 0;
 		cfg[numHeaders].ops = 0;
 		cfg[numHeaders].header = (char*)malloc(sizeof(char) * (strlen(header)+1));
@@ -239,7 +239,7 @@ int InitConfig(void)
 {
 	char *header;
 	FILE *cfgfile;
-	Token t, eq;
+	struct token t, eq;
 
 	cfgfile = fopen("init.cfg", "r");
 	if(cfgfile == NULL)

@@ -14,25 +14,25 @@
 #include "memtest.h"
 #include "strfunc.h"
 
-typedef struct Event {
+struct event {
 	EventHandler handler;
 	int stopHere;
-	struct Event *next;
-	} Event;
+	struct event *next;
+};
 
 static char *NextDot(char *s);
-static int CfgButton(JoyKey *key, const char *cfgParam);
-static int KeyEqual(JoyKey *key, SDL_KeyboardEvent *e);
-static int JoyButtonEqual(JoyKey *key, SDL_JoyButtonEvent *e);
-static int JoyAxisEqual(JoyKey *key, SDL_JoyAxisEvent *e);
+static int CfgButton(struct joykey *key, const char *cfgParam);
+static int KeyEqual(struct joykey *key, SDL_KeyboardEvent *e);
+static int JoyButtonEqual(struct joykey *key, SDL_JoyButtonEvent *e);
+static int JoyAxisEqual(struct joykey *key, SDL_JoyAxisEvent *e);
 static void KeyDownEvent(SDL_KeyboardEvent *e);
 static void JoyButtonDownEvent(SDL_JoyButtonEvent *e);
 static void JoyAxisEvent(SDL_JoyAxisEvent *e);
 
 int eventMode = MENU;
-Event *events[EVENT_LAST] = {0};
+struct event *events[EVENT_LAST] = {0};
 KeyHandler keyHandler;
-JoyKey buttons[B_LAST] = {{0,0,0}};
+struct joykey buttons[B_LAST] = {{0,0,0}};
 const char *cfgStrings[B_LAST] = {	"buttons.up",
 					"buttons.down",
 					"buttons.left",
@@ -61,7 +61,7 @@ char *NextDot(char *s)
 	return NULL;
 }
 
-int SetButton(int b, JoyKey *jk)
+int SetButton(int b, struct joykey *jk)
 {
 	char *s;
 	if(b < 0 || b >= B_LAST) return 0;
@@ -75,7 +75,7 @@ int SetButton(int b, JoyKey *jk)
 	return 1;
 }
 
-int CfgButton(JoyKey *key, const char *cfgParam)
+int CfgButton(struct joykey *key, const char *cfgParam)
 {
 	char *s;
 	char *t;
@@ -115,7 +115,7 @@ int ConfigureJoyKey(void)
 char *JoyKeyName(int button)
 {
 	char *s = NULL;
-	JoyKey *jk = buttons+button;
+	struct joykey *jk = buttons+button;
 	if(jk->type == JK_KEYBOARD)
 	{
 		char *t;
@@ -142,7 +142,7 @@ char *JoyKeyName(int button)
 	return s;
 }
 
-int KeyEqual(JoyKey *key, SDL_KeyboardEvent *e)
+int KeyEqual(struct joykey *key, SDL_KeyboardEvent *e)
 {
 	if(	key->type == -1 &&
 		key->button == (signed)e->keysym.sym &&
@@ -151,7 +151,7 @@ int KeyEqual(JoyKey *key, SDL_KeyboardEvent *e)
 	return 0;
 }
 
-int JoyButtonEqual(JoyKey *key, SDL_JoyButtonEvent *e)
+int JoyButtonEqual(struct joykey *key, SDL_JoyButtonEvent *e)
 {
 	if(	key->type == e->which &&
 		key->button == e->button &&
@@ -160,7 +160,7 @@ int JoyButtonEqual(JoyKey *key, SDL_JoyButtonEvent *e)
 	return 0;
 }
 
-int JoyAxisEqual(JoyKey *key, SDL_JoyAxisEvent *e)
+int JoyAxisEqual(struct joykey *key, SDL_JoyAxisEvent *e)
 {
 	if(	key->type == e->which &&
 		key->button == (e->value > JOY_THRESHOLD ? 1 : e->value < -JOY_THRESHOLD ? -1 : 0) &&
@@ -171,7 +171,7 @@ int JoyAxisEqual(JoyKey *key, SDL_JoyAxisEvent *e)
 
 void FireEvent(int event)
 {
-	Event *e;
+	struct event *e;
 	e = events[event];
 	while(e != NULL)
 	{
@@ -209,8 +209,8 @@ void DeregisterKeyEvent(void)
 
 int RegisterEvent(int event, EventHandler handler, int stopHere)
 {
-	Event *e;
-	e = (Event *)malloc(sizeof(Event));
+	struct event *e;
+	e = (struct event *)malloc(sizeof(struct event));
 	e->handler = handler;
 	e->stopHere = stopHere;
 	e->next = events[event];
@@ -220,8 +220,8 @@ int RegisterEvent(int event, EventHandler handler, int stopHere)
 
 void DeregisterEvent(int event, EventHandler handler)
 {
-	Event *e;
-	Event *prev = NULL;
+	struct event *e;
+	struct event *prev = NULL;
 	e = events[event];
 	while(e != NULL)
 	{
@@ -253,7 +253,7 @@ void ClearEvents(void)
 void KeyDownEvent(SDL_KeyboardEvent *e)
 {
 	int x;
-	JoyKey jk;
+	struct joykey jk;
 	if(eventMode == KEY && keyHandler)
 	{
 		jk.type = JK_KEYBOARD;
@@ -306,7 +306,7 @@ void KeyDownEvent(SDL_KeyboardEvent *e)
 void JoyButtonDownEvent(SDL_JoyButtonEvent *e)
 {
 	int x;
-	JoyKey jk;
+	struct joykey jk;
 	if(eventMode == KEY && keyHandler)
 	{
 		jk.type = e->which;
@@ -330,7 +330,7 @@ void JoyButtonDownEvent(SDL_JoyButtonEvent *e)
 void JoyAxisEvent(SDL_JoyAxisEvent *e)
 {
 	int x;
-	JoyKey jk;
+	struct joykey jk;
 	if(e->value == 0) return;
 	if(eventMode == KEY && keyHandler)
 	{
