@@ -38,6 +38,7 @@
 #include "memtest.h"
 #include "fatalerror.h"
 #include "slist.h"
+#include "strfunc.h"
 
 #define MENU_SLIDER 0
 #define MENU_BOOLEAN 1
@@ -125,7 +126,6 @@ static void Retry(void);
 static int MainMenuInit(void);
 static void MainMenuQuit(void);
 static void MainMenu(void);
-static char *CatStr(const char *a, const char *b);
 static void FightActivate(void);
 static void FightPageUp(void);
 static void FightPageDown(void);
@@ -142,15 +142,20 @@ static int QuitMenuInit(void);
 static void QuitMenuQuit(void);
 static void QuitMenu(void);
 
+int menuActive = 0;
+
 /* when the active menu item goes out of bounds */
 /* returns 1 if a sound is to be played, 0 otherwise */
-int (*BoundsCheck)(void);
-int activeMenuItem = 0;
-int numItems = 0;
-int menuX = 200, menuY = 200; /* where to start placing menu items */
-int minX = NOBOX, minY = 0, maxX = 0, maxY = 0; /* bounding box of menu items */
-int menuActive = 0;
-struct menuItem *items = NULL;
+static int (*BoundsCheck)(void);
+static int activeMenuItem = 0;
+static int numItems = 0;
+static int menuX = 200, menuY = 200; /* where to start placing menu items */
+static int minX = NOBOX, minY = 0, maxX = 0, maxY = 0; /* bounding box of menu items */
+static struct menuItem *items = NULL;
+
+static int snd_tick;
+static int snd_push;
+static int snd_back;
 
 void ShadedBox(int x1, int y1, int x2, int y2)
 {
@@ -393,7 +398,7 @@ void MenuDown(void)
 		}
 		else break;
 	} while(activeMenuItem != old);
-	if(play) SDLPlaySound(SND_wepnsel1);
+	if(play) MPlaySound(snd_tick);
 }
 
 int UpOne(void)
@@ -423,7 +428,7 @@ void MenuUp(void)
 		}
 		else break;
 	} while(activeMenuItem != old);
-	if(play) SDLPlaySound(SND_wepnsel1);
+	if(play) MPlaySound(snd_tick);
 }
 
 void MenuDec(void)
@@ -440,7 +445,7 @@ void MenuActivate(void)
 {
 	struct buttonParam *bp;
 
-	SDLPlaySound(SND_spnray03);
+	MPlaySound(snd_push);
 	switch(items[activeMenuItem].type)
 	{
 		case MENU_BUTTON:
@@ -456,7 +461,7 @@ void MenuActivate(void)
 
 void MenuBack(void)
 {
-	SDLPlaySound(SND_spnray02);
+	MPlaySound(snd_back);
 	SwitchMenu(activeMenu->back);
 }
 
@@ -475,7 +480,7 @@ void ShowMenu(void)
 {
 	if(menuActive) return;
 	RegisterMenuEvents();
-	SDLPlaySound(SND_spnray03);
+	MPlaySound(snd_push);
 	FireEvent(EVENT_SHOWMENU);
 	SwitchMenu(MAINMENU);
 }
@@ -576,15 +581,6 @@ void MainMenu(void)
 int fileStart;
 struct slist *fileList;
 
-char *CatStr(const char *a, const char *b)
-{
-	char *s;
-	s = (char*)malloc(sizeof(char) * (strlen(a) + strlen(b) + 1));
-	strcpy(s, a);
-	strcat(s, b);
-	return s;
-}
-
 void FightActivate(void)
 {
 	char *s = CatStr(MUSICDIR, (char*)slist_nth(fileList, activeMenuItem)->data);
@@ -602,7 +598,7 @@ void FightPageUp(void)
 	{
 		activeMenuItem -= FILE_LIST_SIZE;
 		MenuClamp();
-		SDLPlaySound(SND_wepnsel1);
+		MPlaySound(snd_tick);
 	}
 }
 
@@ -612,7 +608,7 @@ void FightPageDown(void)
 	{
 		activeMenuItem += FILE_LIST_SIZE;
 		MenuClamp();
-		SDLPlaySound(SND_wepnsel1);
+		MPlaySound(snd_tick);
 	}
 }
 
@@ -797,7 +793,7 @@ void ConfigKeyHandler(struct joykey *jk)
 	{
 		ELog(("Error setting configure button %i!\n", configuring));
 	}
-	SDLPlaySound(SND_spnray03);
+	MPlaySound(snd_push);
 	DeregisterKeyEvent();
 	newKeyText->active = 0;
 	EventMode(MENU);
@@ -885,6 +881,11 @@ int FindActiveItem(struct menuItem *activeItems, int numActiveItems)
 int SwitchMenu(int m)
 {
 	if(m < 0 || m >= NUMMENUS) return 0;
+
+	snd_tick = SoundNum("wepnsel1.wav");
+	snd_push = SoundNum("spnray03.wav");
+	snd_back = SoundNum("spnray02.wav");
+
 	BoundsCheck = MenuWrap;
 	Log(("Switching Menu: %i\n", m));
 	if(activeMenu) activeMenu->QuitMenu();
