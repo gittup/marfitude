@@ -33,7 +33,6 @@
 #include "SDL_mixer.h"
 #include "load_aiff.h"
 #include "load_voc.h"
-#include "load_ogg.h"
 
 /* Magic numbers for various audio file formats */
 #define RIFF		0x46464952		/* "RIFF" */
@@ -84,7 +83,7 @@ static void *mix_postmix_data = NULL;
 static void (*channel_done_callback)(int channel) = NULL;
 
 /* Music function declarations */
-extern int open_music(SDL_AudioSpec *mixer);
+extern int open_music(SDL_AudioSpec *mymixer);
 extern void close_music(void);
 
 /* Support for user defined music functions, plus the default one */
@@ -155,9 +154,10 @@ static void *Mix_DoEffects(int chan, void *snd, int len)
 static void mix_channels(void *udata, Uint8 *stream, int len)
 {
 	Uint8 *mix_input;
-	int i, mixable, volume;
+	int i, mixable, volume=0;
 	Uint32 sdl_ticks;
 
+	if(udata) {}
 	/* Mix the music (must be done before the channels are added) */
 	if ( music_active || (mix_music != music_mixer) ) {
 		mix_music(music_data, stream, len);
@@ -193,10 +193,10 @@ static void mix_channels(void *udata, Uint8 *stream, int len)
 				}
 			}
 			if ( mix_channel[i].playing > 0 ) {
-				int index = 0;
+				int myindex = 0;
 				int remaining = len;
-				while (mix_channel[i].playing > 0 && index < len) {
-					remaining = len - index;
+				while (mix_channel[i].playing > 0 && myindex < len) {
+					remaining = len - myindex;
 					volume = (mix_channel[i].volume*mix_channel[i].chunk->volume) / MIX_MAX_VOLUME;
 					mixable = mix_channel[i].playing;
 					if ( mixable > remaining ) {
@@ -204,13 +204,13 @@ static void mix_channels(void *udata, Uint8 *stream, int len)
 					}
 
 					mix_input = Mix_DoEffects(i, mix_channel[i].samples, mixable);
-					SDL_MixAudio(stream+index,mix_input,mixable,volume);
+					SDL_MixAudio(stream+myindex,mix_input,mixable,volume);
 					if (mix_input != mix_channel[i].samples)
 						free(mix_input);
 
 					mix_channel[i].samples += mixable;
 					mix_channel[i].playing -= mixable;
-					index += mixable;
+					myindex += mixable;
 
 					/* rcg06072001 Alert app if channel is done playing. */
 					if (!mix_channel[i].playing && !mix_channel[i].looping) {
@@ -220,22 +220,22 @@ static void mix_channels(void *udata, Uint8 *stream, int len)
 
 				/* If looping the sample and we are at its end, make sure
 				   we will still return a full buffer */
-				while ( mix_channel[i].looping && index < len ) {
+				while ( mix_channel[i].looping && myindex < len ) {
 					int alen = mix_channel[i].chunk->alen;
-					remaining = len - index;
+					remaining = len - myindex;
 				    	if (remaining > alen) {
 						remaining = alen;
 				    	}
 
 					mix_input = Mix_DoEffects(i, mix_channel[i].chunk->abuf, remaining);
-					SDL_MixAudio(stream+index, mix_input, remaining, volume);
+					SDL_MixAudio(stream+myindex, mix_input, remaining, volume);
 					if (mix_input != mix_channel[i].chunk->abuf)
 						free(mix_input);
 
 					--mix_channel[i].looping;
 					mix_channel[i].samples = mix_channel[i].chunk->abuf + remaining;
 					mix_channel[i].playing = mix_channel[i].chunk->alen - remaining;
-					index += remaining;
+					myindex += remaining;
 				}
 				if ( ! mix_channel[i].playing && mix_channel[i].looping ) {
 					if ( --mix_channel[i].looping ) {
@@ -256,12 +256,14 @@ static void mix_channels(void *udata, Uint8 *stream, int len)
 	}
 }
 
+#if 0
 static void PrintFormat(char *title, SDL_AudioSpec *fmt)
 {
 	printf("%s: %d bit %s audio (%s) at %u Hz\n", title, (fmt->format&0xFF),
 			(fmt->format&0x8000) ? "signed" : "unsigned",
 			(fmt->channels > 1) ? "stereo" : "mono", fmt->freq);
 }
+#endif
 
 
 void _Mix_InitEffects(void);

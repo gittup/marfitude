@@ -1,4 +1,6 @@
-EXTRACFLAGS = `$(SDL_CONFIG) --cflags` -DMOD_MUSIC
+EXTRACFLAGS = `$(SDL_CONFIG) --cflags` -DMOD_MUSIC $(BDECFLAGS)
+
+INCDIRS := $(d)/mikmod
 
 TARGET = libsdl_mixer
 

@@ -36,6 +36,7 @@
 int _Mix_effects_max_speed = 0;
 
 
+void _Mix_InitEffects(void);
 void _Mix_InitEffects(void)
 {
     _Mix_effects_max_speed = (getenv(MIX_EFFECTSMAXSPEED) != NULL);
@@ -52,6 +53,7 @@ void *_Eff_volume_table = NULL;
  *  volume. So _Eff_volume_table[128][mysample] would be the value of
  *  mysample, at half volume.
  */
+void *_Eff_build_volume_table_u8(void);
 void *_Eff_build_volume_table_u8(void)
 {
     int volume;
@@ -87,6 +89,7 @@ void *_Eff_build_volume_table_u8(void)
  *  volume. So _Eff_volume_table[128][mysample+128] would be the value of
  *  mysample, at half volume.
  */
+void *_Eff_build_volume_table_s8(void);
 void *_Eff_build_volume_table_s8(void)
 {
     int volume;

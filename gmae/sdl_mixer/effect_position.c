@@ -156,15 +156,17 @@ static void _Eff_position_table_u8(int chan, void *stream, int len, void *udata)
 
     for (i = 0; i < len; i += sizeof (Uint32)) {
 #if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
-        *(p++) = (d[l[(*p & 0xFF000000) >> 24]] << 24) |
+        *p = (d[l[(*p & 0xFF000000) >> 24]] << 24) |
                  (d[r[(*p & 0x00FF0000) >> 16]] << 16) |
                  (d[l[(*p & 0x0000FF00) >>  8]] <<  8) |
                  (d[r[(*p & 0x000000FF)      ]]      ) ;
+	p++;
 #else
-        *(p++) = (d[r[(*p & 0xFF000000) >> 24]] << 24) |
+        *p = (d[r[(*p & 0xFF000000) >> 24]] << 24) |
                  (d[l[(*p & 0x00FF0000) >> 16]] << 16) |
                  (d[r[(*p & 0x0000FF00) >>  8]] <<  8) |
                  (d[l[(*p & 0x000000FF)      ]]      ) ;
+	p++;
 #endif
     }
 }
@@ -230,15 +232,17 @@ static void _Eff_position_table_s8(int chan, void *stream, int len, void *udata)
 
     for (i = 0; i < len; i += sizeof (Uint32)) {
 #if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
-        *(p++) = (d[l[((Sint16)(Sint8)((*p & 0xFF000000) >> 24))+128]] << 24) |
+        *p = (d[l[((Sint16)(Sint8)((*p & 0xFF000000) >> 24))+128]] << 24) |
                  (d[r[((Sint16)(Sint8)((*p & 0x00FF0000) >> 16))+128]] << 16) |
                  (d[l[((Sint16)(Sint8)((*p & 0x0000FF00) >>  8))+128]] <<  8) |
                  (d[r[((Sint16)(Sint8)((*p & 0x000000FF)      ))+128]]      ) ;
+	p++;
 #else
-        *(p++) = (d[r[((Sint16)(Sint8)((*p & 0xFF000000) >> 24))+128]] << 24) |
+        *p = (d[r[((Sint16)(Sint8)((*p & 0xFF000000) >> 24))+128]] << 24) |
                  (d[l[((Sint16)(Sint8)((*p & 0x00FF0000) >> 16))+128]] << 16) |
                  (d[r[((Sint16)(Sint8)((*p & 0x0000FF00) >>  8))+128]] <<  8) |
                  (d[l[((Sint16)(Sint8)((*p & 0x000000FF)      ))+128]]      ) ;
+	p++;
 #endif
     }
 
@@ -318,10 +322,14 @@ static void _Eff_position_s16msb(int chan, void *stream, int len, void *udata)
 
     if(chan) {}
     for (i = 0; i < len; i += sizeof (Sint16) * 2) {
-        Sint16 swapl = (Sint16) ((((float) SDL_SwapBE16(*(ptr+0))) *
-                                    args->left_f) * args->distance_f);
-        Sint16 swapr = (Sint16) ((((float) SDL_SwapBE16(*(ptr+1))) *
-                                    args->right_f) * args->distance_f);
+        Sint16 tmp;
+	Sint16 swapl;
+	Sint16 swapr;
+
+	tmp = SDL_SwapBE16(*(ptr+0));
+        swapl = (Sint16) ((((float) tmp) * args->left_f) * args->distance_f);
+	tmp = SDL_SwapBE16(*(ptr+1));
+        swapr = (Sint16) ((((float) tmp) * args->right_f) * args->distance_f);
         *(ptr++) = (Sint16) SDL_SwapBE16(swapl);
         *(ptr++) = (Sint16) SDL_SwapBE16(swapr);
     }
@@ -330,11 +338,13 @@ static void _Eff_position_s16msb(int chan, void *stream, int len, void *udata)
 
 static void init_position_args(position_args *args)
 {
+    int mychannels;
     memset(args, '\0', sizeof (position_args));
     args->in_use = 0;
     args->left_u8 = args->right_u8 = args->distance_u8 = 255;
     args->left_f  = args->right_f  = args->distance_f  = 1.0f;
-    Mix_QuerySpec(NULL, NULL, (int *) &args->channels);
+    Mix_QuerySpec(NULL, NULL, (int *) &mychannels);
+    args->channels = mychannels;
 }
 
 

@@ -59,6 +59,8 @@ static void _Eff_reversestereo16(int chan, void *stream, int len, void *udata)
     Uint32 *ptr = (Uint32 *) stream;
     int i;
 
+    if(chan) {}
+    if(udata) {}
     for (i = 0; i < len; i += sizeof (Uint32), ptr++) {
         *ptr = (((*ptr) & 0xFFFF0000) >> 16) | (((*ptr) & 0x0000FFFF) << 16);
     }
@@ -71,6 +73,8 @@ static void _Eff_reversestereo8(int chan, void *stream, int len, void *udata)
     Uint32 *ptr = (Uint32 *) stream;
     int i;
 
+    if(chan) {}
+    if(udata) {}
     /* get the last two bytes if len is not divisible by four... */
     if (len % sizeof (Uint32) != 0) {
         Uint16 *p = (Uint16 *) (((Uint8 *) stream) + (len - 2));

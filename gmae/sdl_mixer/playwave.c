@@ -282,12 +282,12 @@ static void Usage(char *argv0)
  *  permanent; here, you've got a reversed sample, and that's that until
  *  you either reverse it again, or reload it.
  */
-static void flip_sample(Mix_Chunk *wave)
+static void flip_sample(Mix_Chunk *mywave)
 {
 	Uint16 format;
 	int channels, i, incr;
-	Uint8 *start = wave->abuf;
-	Uint8 *end = wave->abuf + wave->alen;
+	Uint8 *start = mywave->abuf;
+	Uint8 *end = mywave->abuf + mywave->alen;
 
 	Mix_QuerySpec(NULL, &format, &channels);
 	incr = (format & 0xFF) * channels;
@@ -296,7 +296,7 @@ static void flip_sample(Mix_Chunk *wave)
 
 	switch (incr) {
 		case 8:
-			for (i = wave->alen / 2; i >= 0; i -= 1) {
+			for (i = mywave->alen / 2; i >= 0; i -= 1) {
 				Uint8 tmp = *start;
 				*start = *end;
 				*end = tmp;
@@ -306,7 +306,7 @@ static void flip_sample(Mix_Chunk *wave)
 			break;
 
 		case 16:
-			for (i = wave->alen / 2; i >= 0; i -= 2) {
+			for (i = mywave->alen / 2; i >= 0; i -= 2) {
 				Uint16 tmp = *start;
 				*((Uint16 *) start) = *((Uint16 *) end);
 				*((Uint16 *) end) = tmp;
@@ -316,7 +316,7 @@ static void flip_sample(Mix_Chunk *wave)
 			break;
 
 		case 32:
-			for (i = wave->alen / 2; i >= 0; i -= 4) {
+			for (i = mywave->alen / 2; i >= 0; i -= 4) {
 				Uint32 tmp = *start;
 				*((Uint32 *) start) = *((Uint32 *) end);
 				*((Uint32 *) end) = tmp;
@@ -342,6 +342,7 @@ int main(int argc, char *argv[])
 	int reverse_stereo = 0;
 	int reverse_sample = 0;
 
+	if(argc) {}
 	setbuf(stdout, NULL);    /* rcg06132001 for debugging purposes. */
 	setbuf(stderr, NULL);    /* rcg06192001 for debugging purposes, too. */
 	output_test_warnings();

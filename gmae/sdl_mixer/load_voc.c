@@ -43,7 +43,7 @@
 /* Private data for VOC file */
 typedef struct vocstuff {
 	Uint32	rest;			/* bytes remaining in current block */
-	Uint32	rate;			/* rate code (byte) of this chunk */
+	Sint32	rate;			/* rate code (byte) of this chunk */
 	int 	silent;		/* sound or silence? */
 	Uint32	srate;			/* rate code (byte) of silence */
 	Uint32	blockseek;		/* start of current output block */
@@ -121,8 +121,8 @@ static int voc_get_block(SDL_RWops *src, vs_t *v, SDL_AudioSpec *spec)
     Uint8 bits24[3];
     Uint8 uc, block;
     Uint32 sblen;
-    Uint16 new_rate_short;
-    Uint32 new_rate_long;
+    Sint16 new_rate_short;
+    Sint32 new_rate_long;
     Uint8 trash[6];
     Uint16 period;
     unsigned int i;

@@ -38,6 +38,7 @@ static int audio_open = 0;
 static Mix_Music *music = NULL;
 static int next_track = 0;
 
+void CleanUp(void);
 void CleanUp(void)
 {
 	if( Mix_PlayingMusic() ) {
@@ -55,11 +56,13 @@ void CleanUp(void)
 	SDL_Quit();
 }
 
+void Usage(char *argv0);
 void Usage(char *argv0)
 {
 	fprintf(stderr, "Usage: %s [-i] [-l] [-8] [-r rate] [-b buffers] [-v N] <musicfile>\n", argv0);
 }
 
+void Menu(void);
 void Menu(void)
 {
 	char buf[10];
@@ -82,6 +85,7 @@ void Menu(void)
 		   Mix_PausedMusic() ? "yes" : "no");
 }
 
+void IntHandler(int sig);
 void IntHandler(int sig)
 {
 	switch (sig) {
@@ -102,6 +106,7 @@ int main(int argc, char *argv[])
 	int interactive = 0;
 	int i;
 
+	if(argc) {}
 	/* Initialize variables */
 	audio_rate = 22050;
 	audio_format = AUDIO_S16;
