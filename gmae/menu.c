@@ -20,7 +20,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <dirent.h>
 
 #include "SDL_opengl.h"
 
@@ -37,6 +36,7 @@
 
 #include "util/memtest.h"
 #include "util/fatalerror.h"
+#include "util/file.h"
 #include "util/slist.h"
 #include "util/strfunc.h"
 
@@ -105,7 +105,8 @@ static void MenuUp(void);
 static void MenuDec(void);
 static void MenuInc(void);
 static void MenuActivate(void);
-static int ValidMusicFile(char *s);
+static int valid_music_file(const char *s);
+static void generate_filelist(const char *name);
 static int alphabetical(const void *a, const void *b);
 static int FightMenuInit(void);
 static void FightMenuQuit(void);
@@ -629,7 +630,7 @@ void FightEnd(void)
 	}
 }
 
-int ValidMusicFile(char *s)
+int valid_music_file(const char *s)
 {
 	if(s[0] == '.') return 0;
 	while(*s)
@@ -638,6 +639,15 @@ int ValidMusicFile(char *s)
 		s++;
 	}
 	return 0;
+}
+
+void generate_filelist(const char *name)
+{
+	char *s;
+	if(valid_music_file(name)) {
+		s = StringCopy(name);
+		fileList = slist_insert_sorted(fileList, s, alphabetical);
+	}
 }
 
 int alphabetical(const void *a, const void *b)
@@ -659,10 +669,7 @@ int alphabetical(const void *a, const void *b)
 
 int FightMenuInit(void)
 {
-	char *s;
 	char *lastFile;
-	DIR *dir;
-	struct dirent *d;
 	int cnt;
 	int len;
 	struct slist *tmp;
@@ -674,17 +681,9 @@ int FightMenuInit(void)
 	BoundsCheck = MenuClamp;
 	fileList = NULL;
 
-	dir = opendir(MUSICDIR);
-	if(dir == NULL) {
+	if(foreach_file(MUSICDIR, generate_filelist)) {
 		Error("Generating playlist");
 		return 0;
-	}
-
-	while((d = readdir(dir)) != NULL) {
-		if(ValidMusicFile(d->d_name)) {
-			s = StringCopy(d->d_name);
-			fileList = slist_insert_sorted(fileList, s, alphabetical);
-		}
 	}
 
 	lastFile = CfgS("main.song");
