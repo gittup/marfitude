@@ -9,6 +9,7 @@
 #include "main.h"
 #include "event.h"
 #include "glfunc.h"
+#include "phys.h"
 #include "textures.h"
 #include "scene.h"
 #include "sounds.h"
@@ -52,7 +53,7 @@ typedef struct {
 	} ButtonParam;
 
 typedef struct {
-	Color c;
+	float c[4];
 	int x;
 	int y;
 	} Text;
@@ -120,7 +121,7 @@ void DrawPartialMenu(int start, int stop)
 				break;
 			case TEXT:
 				t = (Text*)items[x].item;
-				glColor4f(t->c.r, t->c.g, t->c.b, t->c.a);
+				glColor4f(t->c[RED], t->c[GREEN], t->c[BLUE], t->c[ALPHA]);
 				PrintGL(t->x, t->y, items[x].name);
 		}
 	}
@@ -170,7 +171,7 @@ void ClearMenuItems()
 				free(items[x].item);
 				break;
 			default:
-				Log("Error: Invalid menu item type!\n");
+				ELog("Error: Invalid menu item type!\n");
 				break;
 		}
 	}
@@ -189,7 +190,6 @@ void UpdateBox(int x1, int y1, int x2, int y2)
 		minY = y1;
 		maxX = x2;
 		maxY = y2;
-		printf("(W, H) = (%i, %i, %i, %i) Box: (%i, %i) - (%i, %i)\n", x1, y1, x2, y2, minX, minY, maxX, maxY);
 	}
 	else
 	{
@@ -197,7 +197,6 @@ void UpdateBox(int x1, int y1, int x2, int y2)
 		if(y1 < minY) minY = y1;
 		if(x2 > maxX) maxX = x2;
 		if(y2 > maxY) maxY = y2;
-		printf("(W, H) = (%i, %i, %i, %i) Box: (%i, %i) - (%i, %i)\n", x1, y1, x2, y2, minX, minY, maxX, maxY);
 	}
 }
 
@@ -244,14 +243,14 @@ void CreateButtonParam(char *name, int (*activeFunc)(int), int param)
 }
 
 // assumes text is on a single line for bounding box purposes
-void CreateText(char *name, Color *c, int x, int y)
+void CreateText(char *name, float *c, int x, int y)
 {
 	Text *t;
 	t = (Text*)malloc(sizeof(Text));
-	t->c.r = c->r;
-	t->c.g = c->g;
-	t->c.b = c->b;
-	t->c.a = c->a;
+	t->c[RED] = c[RED];
+	t->c[GREEN] = c[GREEN];
+	t->c[BLUE] = c[BLUE];
+	t->c[ALPHA] = c[ALPHA];
 	t->x = x;
 	t->y = y;
 	UpdateBox(x, y, x + strlen(name) * FONT_WIDTH, y + FONT_HEIGHT);
@@ -424,13 +423,15 @@ void MainMenu()
 
 	ShadedBox(minX-BBO, minY-BBO, maxX+BBO, maxY+BBO);
 	GLBindTexture(GL_TEXTURE_2D, TEX_Title);
+	glDisable(GL_LIGHTING);
+	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_QUADS);
-	glColor3f(1.0, 1.0, 1.0);
 	glTexCoord2f(0.0, 0.0); glVertex2i(0, 0);
 	glTexCoord2f(1.0, 0.0); glVertex2i(512, 0);
 	glTexCoord2f(1.0, 1.0); glVertex2i(512, 256);
 	glTexCoord2f(0.0, 1.0); glVertex2i(0, 256);
 	glEnd();
+	glEnable(GL_LIGHTING);
 
 	DrawMenu();
 
@@ -563,7 +564,7 @@ void ConfigKeyHandler(JoyKey *jk)
 	int tmp = activeMenuItem;
 	if(!SetButton(configuring, jk))
 	{
-		Log("Error setting configure button %i!\n", configuring);
+		ELog("Error setting configure button %i!\n", configuring);
 	}
 	PlaySound(SND_spnray03);
 	DeregisterKeyEvent();
@@ -588,12 +589,12 @@ char *cfglabels[] = {"Up", "Down", "Left", "Right", "Button 1", "Button 2", "But
 int ConfigMenuInit()
 {
 	int x;
-	Color c = {0.0, 1.0, 1.0, 1.0};
+	float c[4] = {0.0, 1.0, 1.0, 1.0};
 	EventMode(MENU);
 	ConfigCreateItems();
 	for(x=0;x<sizeof(cfglabels)/sizeof(*cfglabels);x++)
 	{
-		CreateText(cfglabels[x], &c, 200, 200 + x * FONT_HEIGHT);
+		CreateText(cfglabels[x], c, 200, 200 + x * FONT_HEIGHT);
 	}
 	return 1;
 }
@@ -623,16 +624,13 @@ void Quit()
 
 int QuitMenuInit()
 {
-	Color c = {0.0, 1.0, 1.0, 1.0};
+	float c[4] = {0.0, 1.0, 1.0, 1.0};
 	EventMode(MENU);
 	menuX = 350;
 	menuY = 200;
-	printf("Yes\n");
 	CreateButton("Yes", Quit);
-	printf("no\n");
 	CreateButton("No", MenuBack);
-	printf("really\n");
-	CreateText("Really Quit?", &c, 200, 200);
+	CreateText("Really Quit?", c, 200, 200);
 	activeMenuItem = 1;
 	return 1;
 }
