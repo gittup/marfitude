@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "memtest.h"
+#include "memtest_defs.h"
 
 struct memBlock {
 	size_t size;
@@ -30,7 +30,8 @@ struct memBlock {
 };
 
 /* note that the memory used to keep track of memory is never freed
- * ... ahh sweet irony */
+ * ... ahh sweet irony
+ */
 static struct memBlock *mb = NULL;
 static int numBlocks = 0;
 static int startBlock = 0;
@@ -107,8 +108,9 @@ void *MyCalloc(size_t nm, size_t x, int line, const char *file)
 	return p;
 }
 
-/* checks to see if any memories have not been deallocated */
-/* usually called at the end of the program, after all cleanup code */
+/* checks to see if any memories have not been deallocated
+ * usually called at the end of the program, after all cleanup code
+ */
 void CheckMemUsage()
 {
 	int x;
