@@ -29,7 +29,7 @@ static GLuint mainTexes[MAX_COLS];
 int channelFocus = 0;
 struct wam *wam;	/* note file */
 
-#define TIME_ERROR 0.128
+#define TIME_ERROR 0.1
 
 static float theta = 0.0;
 
@@ -235,12 +235,13 @@ int MainInit()
 		return 1;
 	}
 	Log(("Start module\n"));
-	if(!StartModule(cursong)) {
+	if(StartModule(cursong)) {
 		ELog(("Error: Couldn't start module\n"));
 		return 2;
 	}
-	/* module and module data (where to place the notes) are now loaded, */
-	/* and the module is paused */
+	/* module and module data (where to place the notes) are now loaded,
+	 * and the module is paused
+	 */
 	Log(("Module ready\n"));
 	highscore = CfgIp("highscore", cursong);
 	newhighscore = 0;
