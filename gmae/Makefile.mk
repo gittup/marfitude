@@ -1,6 +1,9 @@
-project: $(src_gmae)/$(ARCH)/gmae$(BINARYEXT)
+project: $(src_gmae)/marfitude$(BINARYEXT)
 
-EXTRACFLAGS = `$(SDL_CONFIG) --cflags`
+$(src_gmae)/marfitude$(BINARYEXT): $(src_gmae)/$(ARCH)/marfitude$(BINARYEXT)
+	$(move)
+
+EXTRACFLAGS = `$(SDL_CONFIG) --cflags` $(BDECFLAGS)
 
 ifeq ($(CONFIG_LOG),1)
 EXTRACFLAGS += -DLOG
@@ -9,13 +12,13 @@ ifeq ($(CONFIG_DEBUG_MEM),1)
 EXTRACFLAGS += -DDEBUG_MEM
 endif
 
-INCDIRS = $(src_util) $(src_gmae)/$(ARCH)
+INCDIRS = $(src_util) $(src_gmae)/$(ARCH) $(src_gmae)/sdl_mixer/mikmod
 
-EXTRALDFLAGS = `$(SDL_CONFIG) --libs` -lm -lSDL_image -lSDL_mixer $(GLLIB) $(GLULIB)
+EXTRALDFLAGS = `$(SDL_CONFIG) --libs` -lm -lSDL_image $(GLLIB) $(GLULIB)
 
-LIBS = $(src_util)/$(ARCH)/libmarf.a
+LIBS = $(src_util)/$(ARCH)/libmarf.a $(src_gmae)/sdl_mixer/$(ARCH)/libsdl_mixer.a $(src_gmae)/sdl_mixer/mikmod/$(ARCH)/libsdl_mikmod.a
 
-TARGET = gmae
+TARGET = marfitude
 
 include $(MK)/lang/c.mk
 
@@ -36,5 +39,5 @@ $(o)/autotextures.d: $(d)/gentextures.pl
 
 include $(MK)/tgt/program.mk
 
-dirs := wam
+dirs := wam sdl_mixer
 include $(MK)/Recurse.mk
