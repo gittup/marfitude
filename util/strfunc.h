@@ -1,0 +1,1 @@
+char *MallocString(char *format, ...);

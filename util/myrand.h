@@ -1,0 +1,1 @@
+int IntRand(int x);
