@@ -1,3 +1,6 @@
+completing a pattern that includes the last row sometimes doesnt work
+ - eg if the last attack row is the last row in the song,
+   it may not be completable, even though it'll say it is
 multiple buttons for single action
 mk GRAPH=1 install fails to generate graph and leaves dep.dot around
 fix cfg.c - don't use header.option thing
