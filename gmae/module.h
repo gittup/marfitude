@@ -21,7 +21,7 @@
 #include "gmae/sdl_mixer/mikmod/mikmod.h"
 #endif
 
-int StartModule(char *modFile);
+int StartModule(const char *modFile);
 void StopModule(void);
 
 extern MODULE *mod;
@@ -29,3 +29,4 @@ extern MODULE *mod;
 #define NumPatternsAtSngPos(s) mod->pattrows[mod->positions[s]]
 #define TrackAtSngPosForChannel(s, c) mod->patterns[(mod->positions[s]*mod->numchn)+c]
 #define RowsInTrack(t) mod->pattrows[PatternForTrack(t)]
+#define BpmToSec(s, b) (2.5 * (double)s / (double)b)

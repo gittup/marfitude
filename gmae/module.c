@@ -33,7 +33,7 @@
 Mix_Music *modMusic = NULL;
 MODULE *mod = NULL;
 
-int StartModule(char *modFile)
+int StartModule(const char *modFile)
 {
 	Log(("Loading module...\n"));
 	modMusic = Mix_LoadMUS(modFile);
