@@ -1,3 +1,3 @@
-PACKAGES = sdl
+PACKAGES = dynamic
 TARGET = marf
 EXEC = staticlib
