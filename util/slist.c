@@ -154,6 +154,16 @@ struct slist *slist_nth(struct slist *l, int n)
 	return l;
 }
 
+struct slist *slist_insert(struct slist *l, void *d)
+{
+	struct slist *head;
+
+	head = NextList();
+	head->next = l;
+	head->data = d;
+	return head;
+}
+
 struct slist *slist_insert_sorted(struct slist *l, void *d, CompareFunc c)
 {
 	struct slist *ins = NextList();
