@@ -335,8 +335,11 @@ void JoyButtonDownEvent(SDL_JoyButtonEvent *e)
 	}
 	else if(eventMode == MENU)
 	{
-		/* all buttons activate in menu mode */
-		FireEvent(EVENT_ENTER);
+		/* all buttons activate in menu mode except the MENU button */
+		if(JoyButtonEqual(&buttons[B_MENU], e))
+			FireEvent(EVENT_MENU);
+		else
+			FireEvent(EVENT_ENTER);
 	}
 	else if(eventMode == GAME)
 	{
