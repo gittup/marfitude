@@ -132,11 +132,9 @@ static float theta = 0.0;
 static int TIMEADJ = 1;
 void MoveFaster(void)
 {
-	ticTime += 25000;
 }
 void MoveSlower(void)
 {
-	TIMEADJ = !TIMEADJ;
 }
 
 #define NEGATIVE_TICKS 7*6
@@ -168,6 +166,7 @@ typedef struct {
 	Point pos;
 	int tic;
 	int col;
+	int ins;
 	} ScreenNote;
 typedef struct {
 	Point p1;
@@ -332,10 +331,12 @@ void AddNotes(int row)
 			if(row < ac[x].minRow)
 			{
 				hitList = slist_append(hitList, sn);
+				sn->ins = __LINE__;
 			}
 			else
 			{
 				notesList = slist_append(notesList, sn);
+				sn->ins = __LINE__;
 			}
 			unusedList = slist_remove(unusedList, sn);
 			sn->pos.x = -x * BLOCK_WIDTH - NOTE_WIDTH * (double)noteOffset[(int)wam->rowData[row].notes[x]];
@@ -355,6 +356,7 @@ slist *RemoveList(slist *list, int tic)
 		sn = (ScreenNote*)list->data;
 		if(sn->tic != tic) break;
 		unusedList = slist_append(unusedList, list->data);
+		sn->ins = __LINE__;
 		list = slist_next(list);
 	}
 	return list;
@@ -465,10 +467,21 @@ void Press(int button)
 				if(!sn)
 				{
 					ELog(("Error: Struck note not found!\n"));
+					sn = FindNote(hitList, r->ticpos, channelFocus);
+					if(sn)
+					{
+						ELog(("note found in hitList: %i\n", sn->ins));
+					}
+					sn = FindNote(unusedList, r->ticpos, channelFocus);
+					if(sn)
+					{
+						ELog(("note found in unusedList: %i\n", sn->ins));
+					}
 					break;
 				}
 				notesList = slist_remove(notesList, (void *)sn);
 				unusedList = slist_append(unusedList, (void *)sn);
+				sn->ins = __LINE__;
 				ap.lastTic = r->ticpos;
 				ap.notesHit++;
 				if(ap.notesHit == ap.notesTotal)
@@ -507,10 +520,7 @@ void Press2(void) {lastkeypressed = 2; Press(2);}
 
 void Press3(void) {lastkeypressed = 4; Press(4);} /* yes, this is really 4 (3rd bit) */
 
-void Press4(void)
-{
-	Press(lastkeypressed);
-}
+void Press4(void) {Press(lastkeypressed);}
 
 void SetMainView(void)
 {
@@ -630,6 +640,7 @@ int MainInit()
 	for(x=0;x<numNotes;x++)
 	{
 		unusedList = slist_append(unusedList, (void *)&notesOnScreen[x]);
+		notesOnScreen[x].ins = __LINE__;
 	}
 	for(x=0;x<=lastRow;x++) AddNotes(x);
 
@@ -807,7 +818,7 @@ void ResetAp(void)
 	ap.notesHit = 0;
 	ap.notesTotal = 0;
 	start = Row(Max(Max(RowByTic(curTic), ap.nextStartRow), ac[channelFocus].cleared));
-	while(start < wam->numRows && wam->rowData[start].line == 0) start++;
+	while(start < wam->numRows && (wam->rowData[start].line == 0 || wam->rowData[start].ticpos <= ac[channelFocus].miss)) start++;
 	end = start;
 	while(apLines < LINES_PER_AP && end < wam->numRows)
 	{
@@ -893,6 +904,7 @@ void MoveHitNotes(int tic, int col)
 		{
 			hitList = slist_insert_sorted(hitList, sn, SortByTic);
 			holder = slist_append(holder, sn);
+			sn->ins = __LINE__;
 		}
 		tmp = slist_next(tmp);
 	}
@@ -1050,6 +1062,7 @@ void DrawRows(double startTic, double stopTic)
 	glPopMatrix();
 }
 
+GLuint rotnoteList;
 void DrawNote(void *snp, void *not_used)
 {
 	float temp[4] = {.7, 0.0, 0.0, 1.0};
@@ -1063,9 +1076,9 @@ void DrawNote(void *snp, void *not_used)
 			sn->pos.y,
 			sn->pos.z+0.3);
 	if(mat) glMaterialfv(GL_FRONT, GL_EMISSION, temp);
-	glRotatef(theta, 0.0, 1.0, 0.0);
-	Log(("Dn\n"));
-	glCallList(noteList);
+/*	glRotatef(theta, 0.0, 1.0, 0.0); */
+	Log("Dn\n");
+	glCallList(rotnoteList);
 	if(mat) glMaterialfv(GL_FRONT, GL_EMISSION, lightNone);
 }
 
@@ -1090,7 +1103,16 @@ void DrawNotes(void)
 	Log(("DN: %i, %i, %i\n", slist_length(notesList), slist_length(hitList), slist_length(unusedList)));
 	glDisable(GL_TEXTURE_2D);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, lightNormal);
+
+	rotnoteList = glGenLists(1);
+	glNewList(rotnoteList, GL_COMPILE);
+	{
+		glRotatef(theta, 0.0, 1.0, 0.0);
+		glCallList(noteList);
+	} glEndList();
+
 	slist_foreach(notesList, DrawNote, NULL);
+	glDeleteLists(rotnoteList, 1);
 	glEnable(GL_TEXTURE_2D);
 	Log(("dn\n"));
 }
