@@ -59,7 +59,7 @@ static char *strdup(const char *str)
 #ifndef __STDC__
 #define __STDC__
 #endif
-#pragma warning(disable:4761)
+/*#pragma warning(disable:4761)*/
 #endif
 
 #ifdef __cplusplus
@@ -119,7 +119,7 @@ extern void* _mm_calloc(size_t,size_t);
 #elif defined(WIN32)
 #include <windows.h>
 #define DECLARE_MUTEX(name)	\
-	extern HANDLE _mm_mutex_##name
+	extern HANDLE _mm_mutex_##name ;
 #define MUTEX_LOCK(name)	\
 	if(_mm_mutex_##name)	\
 		WaitForSingleObject(_mm_mutex_##name,INFINITE)
