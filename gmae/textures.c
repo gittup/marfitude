@@ -20,7 +20,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <dirent.h>
 
 #include "SDL.h"
 #include "SDL_image.h"
@@ -32,6 +31,7 @@
 #include "util/memtest.h"
 #include "util/textprogress.h"
 #include "util/fatalerror.h"
+#include "util/flist.h"
 #include "util/sdlfatalerror.h"
 #include "util/strfunc.h"
 
@@ -107,22 +107,15 @@ int InitTextures(void)
 {
 	int x;
 	int format;
-	DIR *dir;
-	struct dirent *d;
 	char *t;
+	struct flist f;
 	SDL_Surface *s;
 
-	dir = opendir(TEXDIR);
-	if(dir == NULL) {
-		Error("Loading textures");
-		return 1;
-	}
-
-	while((d = readdir(dir)) != NULL) {
-		if(ValidPngFile(d->d_name)) {
+	flist_foreach(&f, TEXDIR) {
+		if(ValidPngFile(f.filename)) {
 			textures = (struct tex_entry*)realloc(textures, sizeof(struct tex_entry) * (num_textures+1));
-			textures[num_textures].name = malloc(strlen(d->d_name) + 1);
-			strcpy(textures[num_textures].name, d->d_name);
+			textures[num_textures].name = malloc(strlen(f.filename) + 1);
+			strcpy(textures[num_textures].name, f.filename);
 			glGenTextures(1, &textures[num_textures].texture);
 			num_textures++;
 		}
@@ -147,8 +140,7 @@ int InitTextures(void)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		switch(s->format->BytesPerPixel)
-		{
+		switch(s->format->BytesPerPixel) {
 			case 3:
 				format = GL_RGB;
 				break;
