@@ -1,3 +1,3 @@
 INSTALL_DIR = $(DATADIR)
 INSTALL_LIST = README PROPS UNTESTED TODO
-include mk/tgt/text.mk
+EXEC = text
