@@ -351,7 +351,7 @@ void DrawMenu(struct screenMenu *m)
 void AddMenuItem(struct screenMenu *m, const char *name, void *item, int type)
 {
 	m->items = (struct menuItem*)realloc(m->items, sizeof(struct menuItem) * (m->numItems+1));
-	m->items[m->numItems].name = (char*)malloc(sizeof(char) * (strlen(name)+1));
+	m->items[m->numItems].name = malloc(sizeof(char) * (strlen(name)+1));
 	strcpy(m->items[m->numItems].name, name);
 	m->items[m->numItems].item = item;
 	m->items[m->numItems].type = type;
@@ -419,7 +419,7 @@ void UpdateBox(struct screenMenu *m, int x1, int y1, int x2, int y2)
 /*struct slider *CreateSlider(const char *name, int min, int max, int delta, int initVal)
 {
 	struct slider *s;
-	s = (struct slider*)malloc(sizeof(struct slider));
+	s = malloc(sizeof(struct slider));
 	s->min = min;
 	s->max = max;
 	s->del = delta;
@@ -431,9 +431,9 @@ void UpdateBox(struct screenMenu *m, int x1, int y1, int x2, int y2)
 struct boolean *CreateBoolean(const char *name, const char *trueString, const char *falseString, int initVal)
 {
 	struct boolean *b;
-	b = (struct boolean*)malloc(sizeof(struct boolean));
-	b->trueString = (char*)malloc(sizeof(char) * (strlen(trueString)+1));
-	b->falseString = (char*)malloc(sizeof(char) * (strlen(falseString)+1));
+	b = malloc(sizeof(struct boolean));
+	b->trueString = malloc(sizeof(char) * (strlen(trueString)+1));
+	b->falseString = malloc(sizeof(char) * (strlen(falseString)+1));
 	strcpy(b->trueString, trueString);
 	strcpy(b->falseString, falseString);
 	b->val = initVal;
@@ -444,7 +444,7 @@ struct boolean *CreateBoolean(const char *name, const char *trueString, const ch
 struct button *CreateButton(struct screenMenu *m, const char *name, void (*activeFunc)(void))
 {
 	struct button *b;
-	b = (struct button*)malloc(sizeof(struct button));
+	b = malloc(sizeof(struct button));
 	b->activeFunc = activeFunc;
 	UpdateBox(m, m->menuX, m->menuY + FONT_HEIGHT * m->numItems, m->menuX + strlen(name) * FONT_WIDTH, m->menuY + FONT_HEIGHT * (m->numItems+1));
 	AddMenuItem(m, name, (void*)b, MENU_BUTTON);
@@ -454,7 +454,7 @@ struct button *CreateButton(struct screenMenu *m, const char *name, void (*activ
 struct buttonParam *CreateButtonParam(struct screenMenu *m, const char *name, int (*activeFunc)(int), int param)
 {
 	struct buttonParam *b;
-	b = (struct buttonParam*)malloc(sizeof(struct buttonParam));
+	b = malloc(sizeof(struct buttonParam));
 	b->activeFunc = activeFunc;
 	b->param = param;
 	UpdateBox(m, m->menuX, m->menuY + FONT_HEIGHT * m->numItems, m->menuX + strlen(name) * FONT_WIDTH, m->menuY + FONT_HEIGHT * (m->numItems+1));
@@ -466,7 +466,7 @@ struct buttonParam *CreateButtonParam(struct screenMenu *m, const char *name, in
 struct text *CreateText(struct screenMenu *m, const char *name, float *c, int x, int y)
 {
 	struct text *t;
-	t = (struct text*)malloc(sizeof(struct text));
+	t = malloc(sizeof(struct text));
 	t->c[RED] = c[RED];
 	t->c[GREEN] = c[GREEN];
 	t->c[BLUE] = c[BLUE];

@@ -132,9 +132,9 @@ void internal_init(int len, int flags)
 
 	log_len = my_log(len);
 
-	data = (int*)malloc(sizeof(int) * len);
+	data = malloc(sizeof(int) * len);
 	my_fft.data = data;
-	fft_buf = (struct cmp*)malloc(sizeof(struct cmp) * len);
+	fft_buf = malloc(sizeof(struct cmp) * len);
 
 	for(x=0;x<len;x++) {
 		data[x] = 0;
@@ -145,7 +145,7 @@ void internal_init(int len, int flags)
 	/* Does mono/stereo affect my_fft.max? Probably, but...by how MUCH!? */
 
 	pi = 4.0 * atan(1.0);
-	weights = (struct cmp*)malloc(sizeof(struct cmp) * len * log_len);
+	weights = malloc(sizeof(struct cmp) * len * log_len);
 	x = 2;
 	for(j=0;j<log_len;j++)
 	{
@@ -157,13 +157,13 @@ void internal_init(int len, int flags)
 		x *= 2;
 	}
 
-	window = (double*)malloc(sizeof(double) * len);
+	window = malloc(sizeof(double) * len);
 	for(i=0;i<len;i++)
 	{
 		window[i] = 0.5 - 0.5*cos(2*pi*i / (len-1));
 	}
 
-	fft_bit_map = (unsigned int*)malloc(sizeof(unsigned int) * len);
+	fft_bit_map = malloc(sizeof(unsigned int) * len);
 	for(i=0;i<len;i++)
 	{
 		fft_bit_map[i] = bit_reverse(i) >> (32-log_len);

@@ -70,7 +70,7 @@ void InitJoystick(void)
 			Log(("s"));
 		}
 		Log(("\n"));
-		joys = (SDL_Joystick**)malloc(sizeof(SDL_Joystick*) * i);
+		joys = malloc(sizeof(SDL_Joystick*) * i);
 	}
 	else
 	{

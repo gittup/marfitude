@@ -121,7 +121,7 @@ char *BaseFileName(const char *file)
 		if(file[x] == '/') start = x + 1;
 		x++;
 	}
-	ret = (char*)malloc(sizeof(char) * (x - start + 1));
+	ret = malloc(sizeof(char) * (x - start + 1));
 	strcpy(ret, file+start);
 	return ret;
 }
@@ -358,7 +358,7 @@ void SetColumn(struct column *col, struct track *trk, struct wam *wam, int colnu
 	trk->isEmpty = 2;
 	trk->lastCol = colnum;
 	col->numchn = trk->numChannels;
-	col->chan = (int*)malloc(sizeof(int) * col->numchn);
+	col->chan = malloc(sizeof(int) * col->numchn);
 	memcpy(col->chan, trk->channels, sizeof(int) * col->numchn);
 	for(y=0;y<trklen;y++)
 	{
@@ -586,12 +586,12 @@ struct wam *LoadTrackData(void)
 	/* use calloc to zero everything in the struct */
 	wam = (struct wam*)calloc(1, sizeof(struct wam));
 
-	tracks = (struct track*)malloc(sizeof(struct track) * mod->numchn);
+	tracks = malloc(sizeof(struct track) * mod->numchn);
 	for(x=0;x<mod->numchn;x++)
 	{
-		tracks[x].samples = (struct sample*)malloc(sizeof(struct sample) * numSamples);
-		tracks[x].notes = (int*)malloc(sizeof(int) * numSamples);
-		tracks[x].channels = (int*)malloc(sizeof(int) * mod->numchn);
+		tracks[x].samples = malloc(sizeof(struct sample) * numSamples);
+		tracks[x].notes = malloc(sizeof(int) * numSamples);
+		tracks[x].channels = malloc(sizeof(int) * mod->numchn);
 		ClearTrack(&tracks[x], x);
 		tracks[x].lastCol = -1;
 	}
@@ -815,7 +815,7 @@ void ReadCol(int fno, struct column *col)
 	read(fno, &col->numchn, sizeof(int));
 	if(col->numchn)
 	{
-		col->chan = (int*)malloc(sizeof(int) * col->numchn);
+		col->chan = malloc(sizeof(int) * col->numchn);
 		read(fno, col->chan, sizeof(int) * col->numchn);
 	}
 	else
@@ -862,15 +862,15 @@ struct wam *ReadWam(const char *wamFile)
 	if(fno == -1)
 		return NULL;
 	Log(("Loading wam\n"));
-	wam = (struct wam*)malloc(sizeof(struct wam));
+	wam = malloc(sizeof(struct wam));
 	read(fno, &wam->numCols, sizeof(int));
 	read(fno, &wam->numTics, sizeof(int));
 	read(fno, &wam->numPats, sizeof(int));
 	read(fno, &wam->numRows, sizeof(int));
 	read(fno, &wam->songLength, sizeof(double));
 	Log(("Main info read: %i cols, %i tics, %i pats, %i rows\n", wam->numCols, wam->numTics, wam->numPats, wam->numRows));
-	wam->patterns = (struct pattern*)malloc(sizeof(struct pattern) * wam->numPats);
-	wam->rowData = (struct row*)malloc(sizeof(struct row) * wam->numRows);
+	wam->patterns = malloc(sizeof(struct pattern) * wam->numPats);
+	wam->rowData = malloc(sizeof(struct row) * wam->numRows);
 	for(x=0;x<wam->numPats;x++)
 	{
 		for(y=0;y<wam->numCols;y++)

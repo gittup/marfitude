@@ -241,7 +241,7 @@ int InitGL(void)
 	fontInited = 1;
 
 	pbufsize = 128;
-	pbuf = (char*)malloc(sizeof(char) * pbufsize);
+	pbuf = malloc(sizeof(char) * pbufsize);
 
 	if(InitTextures())
 	{
@@ -333,7 +333,7 @@ void PrintGL(int x, int y, const char *msg, ...)
 	if(!pbufsize)
 	{
 		pbufsize = 128;
-		pbuf = (char*)malloc(sizeof(char)*pbufsize);
+		pbuf = malloc(sizeof(char)*pbufsize);
 	}
 	va_start(ap, msg);
 	while((len = vsnprintf(pbuf, pbufsize, msg, ap)) >= pbufsize)

@@ -68,7 +68,7 @@ char *HeaderPart(const char *s)
 		if(!s[x]) return NULL;
 		x++;
 	}
-	h = (char*)malloc(sizeof(char) * (x+1));
+	h = malloc(sizeof(char) * (x+1));
 	strncpy(h, s, x);
 	h[x] = 0;
 	return h;
@@ -89,8 +89,8 @@ const char *OptionPart(const char *s)
 void AddOp(struct header *h, const char *key, const char *value)
 {
 	h->ops = (struct option*)realloc(h->ops, sizeof(struct option) * (h->numOps+1));
-	h->ops[h->numOps].key = (char*)malloc(sizeof(char) * (strlen(key)+1));
-	h->ops[h->numOps].value = (char*)malloc(sizeof(char) * (strlen(value)+1));
+	h->ops[h->numOps].key = malloc(sizeof(char) * (strlen(key)+1));
+	h->ops[h->numOps].value = malloc(sizeof(char) * (strlen(value)+1));
 	strcpy(h->ops[h->numOps].key, key);
 	strcpy(h->ops[h->numOps].value, value);
 	h->numOps++;
@@ -111,7 +111,7 @@ void CfgAdd(const char *header, const char *key, const char *value)
 				{
 					foundOp = 1;
 					free(cfg[x].ops[y].value);
-					cfg[x].ops[y].value = (char*)malloc(sizeof(char) * (strlen(value)+1));
+					cfg[x].ops[y].value = malloc(sizeof(char) * (strlen(value)+1));
 					strcpy(cfg[x].ops[y].value, value);
 				}
 			}
@@ -124,7 +124,7 @@ void CfgAdd(const char *header, const char *key, const char *value)
 		cfg = (struct header*)realloc(cfg, sizeof(struct header) * (numHeaders+1));
 		cfg[numHeaders].numOps = 0;
 		cfg[numHeaders].ops = 0;
-		cfg[numHeaders].header = (char*)malloc(sizeof(char) * (strlen(header)+1));
+		cfg[numHeaders].header = malloc(sizeof(char) * (strlen(header)+1));
 		strcpy(cfg[numHeaders].header, header);
 		AddOp(cfg+numHeaders, key, value);
 		numHeaders++;
@@ -144,7 +144,7 @@ void CfgSetS(const char *key, char *value)
 void CfgSetIp(const char *header, const char *option, int value)
 {
 	char *s;
-	s = (char*)malloc(IntLen(value) + 1);
+	s = malloc(IntLen(value) + 1);
 	sprintf(s, "%i", value);
 	CfgAdd(header, option, s);
 	free(s);
@@ -178,7 +178,7 @@ char *CfgSCpy(const char *header, const char *option)
 	char *s;
 	char *t;
 	t = CfgSp(header, option);
-	s = (char*)malloc(strlen(t) + 1);
+	s = malloc(strlen(t) + 1);
 	strcpy(s, t);
 	return s;
 }
@@ -266,7 +266,7 @@ int LoadConfig(const char *filename)
 		return 2;
 	}
 
-	header = (char*)malloc(5);
+	header = malloc(5);
 	strcpy(header, "null");
 
 	while(GetToken(cfgfile, '=', &t))

@@ -96,7 +96,7 @@ struct event *GetEvent(const char *s)
 	struct event *e;
 	e = FindEvent(s);
 	if(e == NULL) {
-		e = (struct event *)malloc(sizeof(struct event));
+		e = malloc(sizeof(struct event));
 		e->name = StringCopy(s);
 		e->handlers = NULL;
 		e->fired = 0;
@@ -137,7 +137,7 @@ int SetButton(int b, const struct joykey *jk)
 {
 	char *s;
 	if(b < 0 || b >= B_LAST) return 0;
-	s = (char*)malloc(IntLen(jk->type)+IntLen(jk->button)+IntLen(jk->axis)+3);
+	s = malloc(IntLen(jk->type)+IntLen(jk->button)+IntLen(jk->axis)+3);
 	sprintf(s, "%i.%i.%i", jk->type, jk->button, jk->axis);
 	CfgSetS(cfgMsg[b], s);
 	free(s);
@@ -154,7 +154,7 @@ int CfgButton(struct joykey *key, const char *cfgParam)
 	if(CfgS(cfgParam) == NULL) {
 		return 1;
 	}
-	s = (char*)malloc(sizeof(char) * (strlen(CfgS(cfgParam))+1));
+	s = malloc(sizeof(char) * (strlen(CfgS(cfgParam))+1));
 	strcpy(s, CfgS(cfgParam));
 	t = s;
 	key->type = atoi(s);
@@ -200,13 +200,13 @@ char *JoyKeyName(int button)
 	{
 		char *t;
 		t = SDL_GetKeyName(jk->button);
-		s = (char*)malloc(sizeof(char) * (strlen(t)+1));
+		s = malloc(sizeof(char) * (strlen(t)+1));
 		strcpy(s, t);
 	}
 	else if(jk->type == JK_MOUSE)
 	{
 		len = IntLen(jk->button) + 7;
-		s = (char*)malloc(sizeof(char) * len);
+		s = malloc(sizeof(char) * len);
 		sprintf(s, "Mouse %i", jk->button);
 	}
 	else /* joystick */
@@ -214,13 +214,13 @@ char *JoyKeyName(int button)
 		if(jk->axis == JK_BUTTON) /* button event */
 		{
 			len = IntLen(jk->type) + IntLen(jk->button) + 13;
-			s = (char*)malloc(sizeof(char) * len);
+			s = malloc(sizeof(char) * len);
 			sprintf(s, "Joy %i Button %i", jk->type, jk->button);
 		}
 		else /* axis event */
 		{
 			len = IntLen(jk->type) + IntLen(jk->button) + 15;
-			s = (char*)malloc(sizeof(char) * len);
+			s = malloc(sizeof(char) * len);
 			sprintf(s, "Joy %i Axis %i (%c)", jk->type, jk->axis, (jk->button > 0) ? '+' : '-');
 		}
 	}
@@ -303,7 +303,7 @@ void RegisterEvent(const char *event, EventHandler handler, int stopHere)
 	struct eventHandler *h;
 
 	e = GetEvent(event);
-	h = (struct eventHandler *)malloc(sizeof(struct eventHandler));
+	h = malloc(sizeof(struct eventHandler));
 	h->handler = handler;
 	h->stopHere = stopHere;
 	h->next = e->handlers;
