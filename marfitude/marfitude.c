@@ -275,9 +275,15 @@ int MainInit()
 	theta = 0.0;
 
 	for(x=0;x<wam->numCols;x++) {
+		int y;
 		ac[x].part = 0.0;
-		ac[x].minRow = 0;
 		ac[x].cleared = 0;
+		for(y=0; y<LINES_PER_AP*x; y++) {
+			ac[x].cleared++;
+			while(ac[x].cleared < wam->numRows && wam->rowData[ac[x].cleared].line == 0)
+				ac[x].cleared++;
+		}
+		ac[x].minRow = ac[x].cleared;
 		ac[x].hit = -1;
 		ac[x].miss = -2;
 	}
@@ -1091,13 +1097,13 @@ void DrawScoreboard(void)
 			PrintGL(DisplayWidth() / 2 - 85, 120, "New High Score!!!");
 		}
 	} else if(curRow < 0) {
-		int timeLeft = (int)(0.5 + -2500.0 * (double)wam->rowData[0].sngspd * ((double)curRow) / (1000.0 * (double)wam->rowData[0].bpm));
+		int timeLeft = (int)(0.5 - BpmToSec(wam->rowData[0].sngspd, wam->rowData[0].bpm) * (double)curRow);
 		if(timeLeft > 0) PrintGL(50, 15, "%i...", timeLeft);
 		else PrintGL(50, 15, "GO!!");
 	}
 /*	if(curRow >= 0 && curRow < wam->numRows) PrintGL(0, 62, "Tick: %i, %i.%f / %i\n", wam->rowData[curRow].ticpos, curTic, partialTic, wam->numTics); */
 	PrintGL(50, 30, "Speed: %2i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
-	PrintGL(0, 50, "%i - %i, note: %i, hit: %i/%i\n", ap.startTic, ap.stopTic, ap.lastTic, ap.notesHit, ap.notesTotal);
+	PrintGL(0, 50, "%i - %i, note: %i, hit: %i/%i  %.2f/%.2f\n", ap.startTic, ap.stopTic, ap.lastTic, ap.notesHit, ap.notesTotal, wam->rowData[Row(curRow)].time + (curTic - wam->rowData[Row(curRow)].ticpos) * BpmToSec(wam->rowData[Row(curRow)].sngspd, wam->rowData[Row(curRow)].bpm) / wam->rowData[Row(curRow)].sngspd, wam->songLength);
 	PrintGL(350, 20, "Score: %6i High: %i\nMultiplier: %i\n", score, highscore, multiplier);
 /*	PrintGL(400, 50, "DN: %i, %i, %i\n", slist_length(notesList), slist_length(hitList), slist_length(unusedList)); */
 
