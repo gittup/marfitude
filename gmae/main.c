@@ -68,16 +68,19 @@ int main(int argc, char **argv)
 	/* parse all the command line options
 	 * this is pretty much verbatim from the GNU help page
 	 */
-	while((c = getopt(argc, argv, "hm:")) != -1)
+	while((c = getopt(argc, argv, "hlm:")) != -1)
 	{
 		switch(c)
 		{
 			case 'h':
-				printf("%s options\n\t-h: This help message\n\t-m <file>: Generate the WAM note file for the mod 'file'\n\n", argv[0]);
+				printf("%s options\n\t-h: This help message\n\t-m <file>: Generate the WAM note file for the mod 'file'\n\t-l: Enable logging\n\n", argv[0]);
 				return 0;
 				break;
 			case 'm':
 				convertSong = optarg;
+				break;
+			case 'l':
+				logging = 1;
 				break;
 			case '?':
 				if(isprint(optopt))
