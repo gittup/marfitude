@@ -359,6 +359,8 @@ int InitConfig(void)
 	else
 		printf("%s loaded.\n", cfgFileName);
 
+	logging = CfgIp("main", "logging");
+
 	cfgInited = 1;
 	return 0;
 }

@@ -17,15 +17,10 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include "log.cfg"
+extern int logging;
 
-#if CONFIG_LOG == 1
-#define Log(s) do {LogFile(__FILE__, __LINE__); LogMsg s;} while(0)
-#define ELog(s) do {ELogFile(__FILE__, __LINE__); ELogMsg s; LogMsg s;} while(0)
-#else
-#define Log(s)
-#define ELog(s) ELogMsg s
-#endif
+#define Log(s) do {if(logging) {LogFile(__FILE__, __LINE__); LogMsg s;}} while(0)
+#define ELog(s) do {if(logging) {ELogFile(__FILE__, __LINE__); ELogMsg s; LogMsg s;}} while(0)
 
 void LogFile(const char *file, int line);
 void LogMsg(const char *s, ...);

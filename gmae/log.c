@@ -25,20 +25,18 @@
 #include "util/memtest.h"
 
 FILE *logFile = NULL;
+int logging = 0;
 
 void LogFile(const char *file, int line)
 {
 	if(logFile)
-	{
 		fprintf(logFile, "%s line %i ", file, line);
-	}
 }
 
 void LogMsg(const char *s, ...)
 {
 	va_list ap;
-	if(logFile)
-	{
+	if(logFile) {
 		va_start(ap, s);
 		vfprintf(logFile, s, ap);
 		fflush(logFile);
@@ -62,20 +60,20 @@ void ELogMsg(const char *s, ...)
 
 int InitLog(void)
 {
-#if CONFIG_LOG == 1
-	logFile = fopen("log.txt", "w");
-	if(!logFile) return 1;
-	printf("Logging initialized\n");
-#endif
+	if(logging) {
+		logFile = fopen("log.txt", "w");
+		if(!logFile) return 1;
+		printf("Logging initialized\n");
+	}
 	return 0;
 }
 
 void QuitLog(void)
 {
-#if CONFIG_LOG == 1
-	if(logFile) fclose(logFile);
-	printf("Log shutdown\n");
-#endif
+	if(logging) {
+		if(logFile) fclose(logFile);
+		printf("Log shutdown\n");
+	}
 #if CONFIG_MEMTEST == 1
 	CheckMemUsage();
 #endif
