@@ -1,46 +1,43 @@
-EXTRACFLAGS = $(SDLCFLAGS) $(BDECFLAGS)
+include mk/lib/opengl.mk
+include mk/lib/sdl_image.mk
+include mk/lib/sdl.mk
 
-ifeq ($(CONFIG_LOG),1)
-EXTRACFLAGS += -DLOG
-endif
-ifeq ($(CONFIG_DEBUG_MEM),1)
-EXTRACFLAGS += -DDEBUG_MEM
-endif
+EXTRACFLAGS = $(BDECFLAGS)
 
-INCDIRS = $(src_util) $(src_gmae)/$(ARCH) $(src_gmae)/sdl_mixer $(src_gmae)/sdl_mixer/mikmod
+INCDIRS = cfg util gmae/sdl_mixer gmae/sdl_mixer/mikmod
 
-EXTRALDFLAGS = $(SDLLIBS) -lm -lSDL_image $(GLLIBS) $(GLULIBS)
+EXTRALDFLAGS = -lm
 
-LIBS = $(src_util)/$(ARCH)/libmarf.a $(src_gmae)/sdl_mixer/$(ARCH)/libsdl_mixer.a $(src_gmae)/sdl_mixer/mikmod/$(ARCH)/libsdl_mikmod.a
+LIBS = util/libmarf.a gmae/sdl_mixer/libsdl_mixer.a gmae/sdl_mixer/mikmod/libsdl_mikmod.a
 
 TARGET = marfitude
 
-include $(MK)/lang/c.mk
+include mk/lang/c.mk
 
 INSTALL_DIR = $(BINDIR)
-INSTALL_LIST = $(d)/$(ARCH)/marfitude$(BINARYEXT)
-include $(MK)/tgt/program.mk
+INSTALL_LIST = $(o)/marfitude$(BINARYEXT)
+include mk/tgt/program.mk
 
 INSTALL_DIR = $(DATADIR)
 INSTALL_LIST = Font.png init.cfg
-include $(MK)/tgt/data.mk
+include mk/tgt/data.mk
 
 INSTALL_DIR = $(DATADIR)
 INSTALL_LIST = README PROPS UNTESTED TODO README-SDL
-include $(MK)/tgt/text.mk
+include mk/tgt/text.mk
 
 subdir := wam
-include $(MK)/Recurse.mk
+include mk/Recurse.mk
 subdir := sdl_mixer
-include $(MK)/Recurse.mk
+include mk/Recurse.mk
 subdir := music
-include $(MK)/Recurse.mk
+include mk/Recurse.mk
 subdir := sounds
-include $(MK)/Recurse.mk
+include mk/Recurse.mk
 subdir := images
-include $(MK)/Recurse.mk
+include mk/Recurse.mk
 
 ifeq ($(ARCH),mingw)
 subdir := dlls
-include $(MK)/Recurse.mk
+include mk/Recurse.mk
 endif
