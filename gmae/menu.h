@@ -20,6 +20,14 @@
 int SwitchMenu(int menu);
 void ShadedBox(int, int, int, int);
 
+/** Data for the "menu" event
+ */
+struct menu_e {
+	int active; /**< 1 if the menu has been activated, 0 if it has been
+		     * deactivated
+		     */
+};
+
 /* NULLMENU used to shutdown, NOMENU used when there is no active menu */
 /* (NOMENU still has the escape key event registered */
 #define NULLMENU 0
