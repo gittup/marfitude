@@ -16,7 +16,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-/** @file util/strfunc.h
+/** @file
   * @brief Some simple string functions.
   *
   * This file adds some string manipulation functions to the utility

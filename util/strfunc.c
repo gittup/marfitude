@@ -25,10 +25,11 @@
 
 #include "strfunc.h"
 
-/** Determine the length required to hold a string representing the integer x.
-  * @param x An integer
-  * @return The length of a buffer required to hold x.
-  */
+/** Determine the length required to hold a string representing the
+ * integer @a x.
+ * @param x An integer
+ * @return The length of a buffer required to hold @a x.
+ */
 int IntLen(int x)
 {
 	if(!x) return 1;
@@ -37,10 +38,10 @@ int IntLen(int x)
 }
 
 /** Determine if strings are equal.
-  * @param a A nul-terminated character string
-  * @param b A nul-terminated character string
-  * @return 1 if they are equal, 0 otherwise.
-  */
+ * @param a A nul-terminated character string
+ * @param b A nul-terminated character string
+ * @return 1 if they are equal, 0 otherwise.
+ */
 int StrEq(const char *a, const char *b)
 {
 	if(a == NULL && b == NULL) return 1;
@@ -57,7 +58,7 @@ int StrEq(const char *a, const char *b)
 	return 0;
 }
 
-/** Concatenate a and b in a malloc()ed buffer.
+/** Concatenate @a a and @a b in a malloc()ed buffer.
   * @param a A nul-terminated character string
   * @param b A nul-terminated character string
   * @return The new string, which must be freed.
@@ -71,7 +72,7 @@ char *CatStr(const char *a, const char *b)
 	return s;
 }
 
-/** Allocate a strlen(s)+1 buffer and copy s to it.
+/** Allocate a strlen(@a s)+1 buffer and copy @a s to it.
   * @param s A nul-terminated character string
   * @return A copy of the string, which must be freed.
   */
