@@ -157,7 +157,6 @@ int firstVb, curVb, lastVb;	// tick counters for the three rows
 int firstRow, curRow, lastRow;	// first row on screen, current row playing,
 				// and the last row on screen
 
-double partialRow;
 double partialTic;
 typedef struct {
 	int active; // need this? Player_Muted
@@ -187,6 +186,10 @@ int numLines;
 Obj obj;
 int objActive = 0;
 int *noteOffset;
+MikMod_player_t oldHand;
+int tickCounter;
+int songStarted;	// this is set once we get to the first row, and the
+			// song is unpaused
 
 void AddNotes(int row)
 {
@@ -275,7 +278,7 @@ void Press(int button)
 //				objActive = 1;
 				obj.pos.x = -channelFocus * 2.0;
 				obj.pos.y = 0.0;
-				obj.pos.z = TIC_HEIGHT * ((double)curRow + partialRow);
+				obj.pos.z = TIC_HEIGHT * ((double)curTic + partialTic);
 				obj.vel.x = 0.0;
 				obj.vel.y = 1.0;
 				obj.vel.z = 2.0;
@@ -316,8 +319,6 @@ void SetMainView()
 	float mainPos[3] = {0.0, 3.0, -8.0};
 	float mainView[3] = {0.0, 0.8, 0.0};
 
-//	mainView[2] = (double)curRow + partialRow;
-//	mainPos[2] = mainView[2] - 8.0;
 	mainView[2] = TIC_HEIGHT * ((double)curTic + partialTic);
 	mainPos[2] = mainView[2] - 8.0;
 
@@ -351,6 +352,17 @@ void FixVb(int *vb, int *row)
 	}
 }
 
+// keep track of the number of actual ticks played by the mod player,
+// so we know if we're off
+void TickHandler(void)
+{
+	if(songStarted)
+	{
+		if(!Player_Paused()) tickCounter++;
+	}
+	oldHand();
+}
+
 int MainInit()
 {
 	int x;
@@ -361,8 +373,11 @@ int MainInit()
 		return 0;
 	}
 	Log("Module ready\n");
+	tickCounter = 0;
+	songStarted = 0;
+	oldHand = MikMod_RegisterPlayer(TickHandler);
 	noteOffset = (int*)malloc(sizeof(int) * (MAX_NOTE+1));
-//			notesOnScreen[stopNote].pos.x = -x * BLOCK_WIDTH - NOTE_WIDTH * (double)(rowData[row].notes[x] - 2);
+
 	noteOffset[1] = -1;
 	noteOffset[2] = 0;
 	noteOffset[4] = 1;
@@ -387,11 +402,10 @@ int MainInit()
 	FixVb(&curVb, &curRow);
 	FixVb(&lastVb, &lastRow);
 
-//	partialRow = 0.0;
 	partialTic = 0.0;
 	activeChannels = (Channel*)malloc(sizeof(Channel) * numChannels);
 
-	// CHECK make sure mem is at correct amount of size! -eg its not, could have all rows with sngspd 1 and run outta mem
+	// MARF CHECK make sure mem is at correct amount of size! -eg its not, could have all rows with sngspd 1 and run outta mem
 	numNotes = numChannels * NUM_ROWS;
 	notesOnScreen = (ScreenNote*)malloc(sizeof(ScreenNote) * numNotes);
 	startNote = 0;
@@ -411,15 +425,9 @@ int MainInit()
 		activeChannels[x].active = 1;
 		activeChannels[x].numCorrect = 0;
 	}
-	RegisterEvent(EVENT_SHOWMENU, Player_TogglePause, EVENTTYPE_MULTI);
-	RegisterEvent(EVENT_HIDEMENU, Player_TogglePause, EVENTTYPE_MULTI);
 	RegisterEvent(EVENT_RIGHT, ChannelUp, EVENTTYPE_MULTI);
 	RegisterEvent(EVENT_LEFT, ChannelDown, EVENTTYPE_MULTI);
 	RegisterEvent(EVENT_UP, MoveFaster, EVENTTYPE_MULTI);
-	RegisterEvent(EVENT_BUTTON1, Press1, EVENTTYPE_MULTI);
-	RegisterEvent(EVENT_BUTTON2, Press2, EVENTTYPE_MULTI);
-	RegisterEvent(EVENT_BUTTON3, Press3, EVENTTYPE_MULTI);
-	RegisterEvent(EVENT_BUTTON4, Press4, EVENTTYPE_MULTI);
 	RegisterEvent(EVENT_DOWN, MoveSlower, EVENTTYPE_MULTI);
 	Log("Creating lists\n");
 	mainList = GLGenLists(numMainLists);
@@ -488,20 +496,25 @@ int MainInit()
 void MainQuit()
 {
 	Log("Main Scene quit\n");
+	oldHand = MikMod_RegisterPlayer(oldHand);
+	if(songStarted)
+	{
+		DeregisterEvent(EVENT_SHOWMENU, Player_TogglePause);
+		DeregisterEvent(EVENT_HIDEMENU, Player_TogglePause);
+		DeregisterEvent(EVENT_BUTTON1, Press1);
+		DeregisterEvent(EVENT_BUTTON2, Press2);
+		DeregisterEvent(EVENT_BUTTON3, Press3);
+		DeregisterEvent(EVENT_BUTTON4, Press4);
+	}
+	songStarted = 0;
+	DeregisterEvent(EVENT_RIGHT, ChannelUp);
+	DeregisterEvent(EVENT_LEFT, ChannelDown);
+	DeregisterEvent(EVENT_UP, MoveFaster);
+	DeregisterEvent(EVENT_DOWN, MoveSlower);
 	free(activeChannels);
 	free(notesOnScreen);
 	free(linesOnScreen);
 	free(noteOffset);
-	DeregisterEvent(EVENT_SHOWMENU, Player_TogglePause);
-	DeregisterEvent(EVENT_HIDEMENU, Player_TogglePause);
-	DeregisterEvent(EVENT_RIGHT, ChannelUp);
-	DeregisterEvent(EVENT_LEFT, ChannelDown);
-	DeregisterEvent(EVENT_UP, MoveFaster);
-	DeregisterEvent(EVENT_BUTTON1, Press1);
-	DeregisterEvent(EVENT_BUTTON2, Press2);
-	DeregisterEvent(EVENT_BUTTON3, Press3);
-	DeregisterEvent(EVENT_BUTTON4, Press4);
-	DeregisterEvent(EVENT_DOWN, MoveSlower);
 	StopModule();
 	GLDeleteLists(mainList, numMainLists);
 	Log("Main scene quit finished\n");
@@ -546,8 +559,21 @@ void DrawLines()
 
 void UpdatePosition()
 {
-//	if(!menuActive) rowTime += timeDiff * rowPtr->bpm;
+	int tmpAdj;
+	// calculate the amount of ticTime elapsed
+	// everyone 2500 ticTime is one tick
 	if(!menuActive) ticTime += timeDiff * rowData[Row(curRow)].bpm;
+
+	// adjust the ticTime if we're our time is different from the
+	// song time.  This is needed in case a little blip in the process
+	// causes the song to be ahead or behind the game, so we can
+	// right ourselves.
+	if(songStarted)
+	{
+		tmpAdj = (tickCounter - curTic) << 6;
+		if((signed)ticTime + tmpAdj < 0) ticTime = 0;
+		else ticTime += tmpAdj;
+	}
 
 	while(ticTime >= 2500)
 	{
@@ -563,6 +589,13 @@ void UpdatePosition()
 			if(curRow == 0) // start the song!
 			{
 				Player_TogglePause();
+				songStarted = 1;
+				RegisterEvent(EVENT_SHOWMENU, Player_TogglePause, EVENTTYPE_MULTI);
+				RegisterEvent(EVENT_HIDEMENU, Player_TogglePause, EVENTTYPE_MULTI);
+				RegisterEvent(EVENT_BUTTON1, Press1, EVENTTYPE_MULTI);
+				RegisterEvent(EVENT_BUTTON2, Press2, EVENTTYPE_MULTI);
+				RegisterEvent(EVENT_BUTTON3, Press3, EVENTTYPE_MULTI);
+				RegisterEvent(EVENT_BUTTON4, Press4, EVENTTYPE_MULTI);
 			}
 		}
 
@@ -699,17 +732,12 @@ void MainScene()
 	Log("MainScene\n");
 
 	glLoadIdentity();
-//	sintmp = sin(((curRow&7) + partialRow) * 3.1415 / 4.0);
-//	light[0] += cos(((curRow&7) + partialRow)  * 3.1415 / 4.0);
 	sintmp = sin(((double)(curTic) + partialTic) * 3.1415 / 24.0);
 	light[0] += cos(((double)(curTic) + partialTic)  * 3.1415 / 24.0);
 	light[1] += sintmp * sintmp;
 	glPushMatrix();
 	glLightfv(GL_LIGHT1, GL_POSITION, light);
 
-	// don't try to access beyond the end of the song, and
-	// use the 1st row's data (for speed) if the song hasn't started yet
-//	if(curRow != numRows) UpdatePosition(rowData+(curRow >= 0 ? curRow: 0));
 	Log("U");
 	if(curRow != numRows) UpdatePosition();
 	Log("u");
@@ -719,10 +747,22 @@ void MainScene()
 	CheckChannels();
 
 	Log("A");
-//	DrawRows(	curRow - NEGATIVE_ROWS >= 0 ? (double)curRow + partialRow - NEGATIVE_ROWS: 0.0,
-//			curRow < numRows - POSITIVE_ROWS ? (double)curRow+partialRow+POSITIVE_ROWS : (double)numRows);
-	DrawRows(	curTic - NEGATIVE_TICKS >= 0 ? TIC_HEIGHT * ((double)curTic + partialTic - NEGATIVE_TICKS): 0.0,
-			curTic < numTics - POSITIVE_TICKS ? TIC_HEIGHT * (double)curTic+partialTic+POSITIVE_TICKS : TIC_HEIGHT * (double)numTics);
+	// usually we draw from -NEGATIVE_TICKS to +POSITIVE_TICKS, with the
+	// notes currently being played at position 0.
+	// At the beginning of the song, we start drawing instead from 
+	// 0 to +POSITIVE_TICKS, and at the end of the song we draw from
+	// -NEGATIVE_TICKS to numTics.  Of course, if the song is less than
+	// NEGATIVE_TICKS + POSITIVE_TICKS long, some other combinations will
+	// arise :)
+	DrawRows(
+			// start
+			curTic - NEGATIVE_TICKS >= 0 ?
+			TIC_HEIGHT * ((double)curTic + partialTic - NEGATIVE_TICKS) :
+			0.0,
+			// end
+			curTic < numTics - POSITIVE_TICKS ?
+			TIC_HEIGHT * (double)curTic+partialTic+POSITIVE_TICKS :
+			TIC_HEIGHT * (double)numTics);
 
 	Log("B");
 	DrawNotes();
@@ -762,7 +802,7 @@ void MainScene()
 	else if(curRow >= 0) PrintGL(50, 15, "Song: %i (%i)/%i, Row: %i (%i)/%i Pattern: %i/%i", mod->sngpos, rowData[curRow].sngpos, mod->numpos, mod->patpos, rowData[curRow].patpos, NumPatternsAtSngPos(mod->sngpos),  mod->positions[mod->sngpos], mod->numpat);
 	else
 	{
-		int timeLeft = (int)(0.5 + -2500.0 * (double)rowData[0].sngspd * ((double)curRow + partialRow) / (1000.0 * (double)rowData[0].bpm));
+		int timeLeft = (int)(0.5 + -2500.0 * (double)rowData[0].sngspd * ((double)curRow) / (1000.0 * (double)rowData[0].bpm));
 		if(timeLeft > 0) PrintGL(50, 15, "%i...", timeLeft);
 		else PrintGL(50, 15, "GO!!");
 	}
