@@ -1,7 +1,4 @@
-include mk/lib/opengl.mk
-include mk/lib/sdl_image.mk
-include mk/lib/sdl.mk
-
+PACKAGES = opengl sdl_image sdl
 INCDIRS = util gmae/sdl_mixer gmae/sdl_mixer/mikmod
 EXTRALDFLAGS = -lm
 LIBS = util/libmarf.a gmae/sdl_mixer/libsdl_mixer.a
