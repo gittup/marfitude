@@ -353,10 +353,13 @@ int InitConfig(void)
 			ELog(("Error: Couldn't load '%s' or init.cfg config files.", cfgFileName));
 			return 1;
 		}
+		else
+			printf("init.cfg loaded.\n");
 	}
+	else
+		printf("%s loaded.\n", cfgFileName);
 
 	cfgInited = 1;
-	printf("Configuration loaded.\n");
 	return 0;
 }
 
