@@ -2,7 +2,7 @@ CC = gcc -c -Wall -O3
 CFLAGS = `sdl-config --cflags` -DLOG -DDEBUG_MEM
 LIBS = `sdl-config --libs` -lm -lSDL_image -lSDL_mixer -lGL -lGLU
 UTILS = ../util/fatalerror.o ../util/sdlfatalerror.o ../util/savetga.o ../util/token.o ../util/textprogress.o ../util/strfunc.o ../util/memtest.o
-OBJS = audio.o cfg.o event.o fps.o glfunc.o joy.o log.o main.o menu.o module.o munitrk.o phys.o scene.o sounds.o textures.o timer.o $(UTILS)
+OBJS = audio.o cfg.o event.o fps.o glfunc.o joy.o log.o main.o menu.o module.o munitrk.o phys.o scene.o sounds.o textures.o timer.o wam.o $(UTILS)
 TARGET = gmae
 gmae: $(OBJS)
 	gcc $(OBJS) -o $(TARGET) $(LIBS)
@@ -21,13 +21,13 @@ joy.o: joy.c cfg.h log.h ../util/memtest.h
 	$(CC) $(CFLAGS) joy.c
 log.o: log.c
 	$(CC) $(CFLAGS) log.c
-main.o: main.c main.h event.h joy.h audio.h glfunc.h menu.h cfg.h scene.h log.h textures.h timer.h ../util/memtest.h
+main.o: main.c main.h event.h joy.h audio.h glfunc.h menu.h cfg.h scene.h log.h textures.h timer.h wam.h ../util/memtest.h
 	$(CC) $(CFLAGS) main.c
 menu.o: menu.c menu.h main.h event.h glfunc.h sounds.h textures.h scene.h cfg.h log.h ../util/memtest.h ../util/fatalerror.h
 	$(CC) $(CFLAGS) menu.c
-module.o: module.c module.h cfg.h log.h ../util/memtest.h ../util/sdlfatalerror.h
+module.o: module.c module.h cfg.h log.h wam.h ../util/memtest.h ../util/sdlfatalerror.h
 	$(CC) $(CFLAGS) module.c
-scene.o: scene.c scene.h cfg.h event.h glfunc.h log.h main.h menu.h module.h phys.h textures.h ../util/memtest.h ../util/sdlfatalerror.h
+scene.o: scene.c scene.h cfg.h event.h glfunc.h log.h main.h menu.h module.h phys.h textures.h wam.h ../util/fatalerror.h ../util/memtest.h ../util/sdlfatalerror.h
 	$(CC) $(CFLAGS) scene.c
 sounds.h: sounds/
 	./gensounds.pl
@@ -41,6 +41,8 @@ textures.o: textures.c textures.h glfunc.h log.h ../util/memtest.h ../util/textp
 	$(CC) $(CFLAGS) textures.c
 timer.o: timer.c
 	$(CC) $(CFLAGS) timer.c
+wam.o: wam.c wam.h cfg.h log.h module.h ../util/fatalerror.h ../util/memtest.h
+	$(CC) $(CFLAGS) wam.c
 
 clean:
 	rm -f *.o

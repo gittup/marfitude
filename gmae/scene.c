@@ -17,6 +17,8 @@
 #include "sounds.h"
 #include "textures.h"
 #include "timer.h"
+#include "wam.h"
+#include "../util/fatalerror.h"
 #include "../util/memtest.h"
 #include "../util/sdlfatalerror.h"
 
@@ -110,13 +112,14 @@ Uint32 ticTime;
 GLuint mainList;
 GLuint mainTexes[4];
 int channelFocus = 0;
+Wam *wam;	// note file
 
 int oldpatpos = 0, oldvbtick = 0, oldsngspd = 1; // for UpdatePosition
 float theta = 0.0;
 
 void ChannelUp()
 {
-	if(channelFocus + 1 < numChannels)
+	if(channelFocus + 1 < wam->numCols)
 	{
 		channelFocus++;
 	}
@@ -175,9 +178,9 @@ typedef struct {
 
 Channel *activeChannels;
 ScreenNote *notesOnScreen; // little ring buffer of notes
-int startNote; // first note on screen
-int stopNote;  // last note +1 on screen
-int numNotes;  // max number of notes on screen (numChannels * NUM_ROWS)
+int startNote;	// first note on screen
+int stopNote;	// last note +1 on screen
+int numNotes;	// max number of notes on screen (wam->numCols * NUM_ROWS)
 
 Line *linesOnScreen;
 int startLine;
@@ -194,15 +197,14 @@ int songStarted;	// this is set once we get to the first row, and the
 void AddNotes(int row)
 {
 	int x;
-	if(row < 0 || row >= numRows) return;
-	for(x=0;x<numChannels;x++)
+	if(row < 0 || row >= wam->numRows) return;
+	for(x=0;x<wam->numCols;x++)
 	{
-		if(rowData[row].chans[x].note)
+		if(wam->rowData[row].notes[x])
 		{
-//			notesOnScreen[stopNote].pos.x = -x * BLOCK_WIDTH - NOTE_WIDTH * (double)(rowData[row].notes[x] - 2);
-			notesOnScreen[stopNote].pos.x = -x * BLOCK_WIDTH - NOTE_WIDTH * (double)noteOffset[rowData[row].chans[x].note];
+			notesOnScreen[stopNote].pos.x = -x * BLOCK_WIDTH - NOTE_WIDTH * (double)noteOffset[wam->rowData[row].notes[x]];
 			notesOnScreen[stopNote].pos.y = 0.0;
-			notesOnScreen[stopNote].pos.z = TIC_HEIGHT * (double)rowData[row].ticpos;
+			notesOnScreen[stopNote].pos.z = TIC_HEIGHT * (double)wam->rowData[row].ticpos;
 			notesOnScreen[stopNote].row = row;
 			stopNote++;
 			if(stopNote == numNotes) stopNote = 0;
@@ -212,7 +214,7 @@ void AddNotes(int row)
 
 void RemoveNotes(int row)
 {
-	if(row < 0 || row >= numRows) return;
+	if(row < 0 || row >= wam->numRows) return;
 	while(notesOnScreen[startNote].row == row)
 	{
 		notesOnScreen[startNote].row = -1; // just in case ;)
@@ -223,17 +225,17 @@ void RemoveNotes(int row)
 
 void AddLine(int row)
 {
-	if(row < 0 || row >= numRows) return;
-	if(rowData[row].line)
+	if(row < 0 || row >= wam->numRows) return;
+	if(wam->rowData[row].line)
 	{
 		linesOnScreen[stopLine].p1.x = 1.0;
 		linesOnScreen[stopLine].p1.y = 0.0;
-		linesOnScreen[stopLine].p1.z = TIC_HEIGHT * (double)rowData[row].ticpos;
-		linesOnScreen[stopLine].p2.x = 1.0 - 2.0 * numChannels;
+		linesOnScreen[stopLine].p1.z = TIC_HEIGHT * (double)wam->rowData[row].ticpos;
+		linesOnScreen[stopLine].p2.x = 1.0 - 2.0 * wam->numCols;
 		linesOnScreen[stopLine].p2.y = 0.0;
-		linesOnScreen[stopLine].p2.z = TIC_HEIGHT * (double)rowData[row].ticpos;
+		linesOnScreen[stopLine].p2.z = TIC_HEIGHT * (double)wam->rowData[row].ticpos;
 		linesOnScreen[stopLine].row = row;
-		linesOnScreen[stopLine].color = rowData[row].line;
+		linesOnScreen[stopLine].color = wam->rowData[row].line;
 		stopLine++;
 		if(stopLine == numLines) stopLine = 0;
 	}
@@ -241,7 +243,7 @@ void AddLine(int row)
 
 void RemoveLine(int row)
 {
-	if(row < 0 || row >= numRows) return;
+	if(row < 0 || row >= wam->numRows) return;
 	while(linesOnScreen[startLine].row == row)
 	{
 		linesOnScreen[startLine].row = -1;
@@ -250,25 +252,25 @@ void RemoveLine(int row)
 	}
 }
 
-void SetMute(ModChannel *c, int mute)
+void SetMute(/*ModChannel *c, */int mute)
 {
 	int j;
-	for(j=0;j<c->numModChannels;j++)
+/*	for(j=0;j<c->numModChannels;j++)
 	{
 		if(mute) Player_Mute(c->modChannels[j]);
 		else Player_Unmute(c->modChannels[j]);
-	}
+	}*/
 }
 
 void Press(int button)
 {
 	int i;
-	ModChannel *c;
+/*	ModChannel *c;
 	for(i=-1;i<=1;i++)
 	{
-		if(curRow + i >= 0 && curRow + i < numRows)
+		if(curRow + i >= 0 && curRow + i < wam->numRows)
 		{
-			c = &(rowData[curRow+i].chans[channelFocus]);
+			c = &(wam->rowData[curRow+i].chans[channelFocus]);
 			if(!c->struck && button == c->note)
 			{
 				c->struck = 1;
@@ -299,7 +301,7 @@ void Press(int button)
 	if(activeChannels[channelFocus].numCorrect >= MAXNUM) return;
 	activeChannels[channelFocus].active = 0;
 	PlaySound(SND_zoomout6);
-	SetMute(&(rowData[curRow].chans[channelFocus]), 1);
+	SetMute(&(rowData[curRow].chans[channelFocus]), 1);*/
 }
 
 // i really should fix the event system...i suck!
@@ -333,20 +335,20 @@ void FixVb(int *vb, int *row)
 	*row = 0;
 	while(1)
 	{
-		if(*row < 0 && *vb >= rowData[0].sngspd)
+		if(*row < 0 && *vb >= wam->rowData[0].sngspd)
 		{
 			(*row)++;
-			*vb -= rowData[0].sngspd;
+			*vb -= wam->rowData[0].sngspd;
 		}
-		else if(*row >= 0 && *vb >= rowData[*row].sngspd)
+		else if(*row >= 0 && *vb >= wam->rowData[*row].sngspd)
 		{
 			(*row)++;
-			*vb -= rowData[*row].sngspd;
+			*vb -= wam->rowData[*row].sngspd;
 		}
 		else if(*vb < 0)
 		{
 			(*row)--;
-			*vb += rowData[0].sngspd;
+			*vb += wam->rowData[0].sngspd;
 		}
 		else break;
 	}
@@ -366,10 +368,17 @@ void TickHandler(void)
 int MainInit()
 {
 	int x;
+	Log("Load Wam\n");
+	wam = LoadWam(CfgS("main.song"));
+	if(wam == NULL)
+	{
+		Log("Error: Couldn't load WAM file\n");
+		return 0;
+	}
 	Log("Start module\n");
 	if(!StartModule(CfgS("main.song")))
 	{
-		Log("Error loading module in scene!\n");
+		Log("Error: Couldn't start module\n");
 		return 0;
 	}
 	// module and module data (where to place the notes) are now loaded,
@@ -393,22 +402,22 @@ int MainInit()
 	// start back about 3.5 seconds worth of ticks
 	// doesn't need to be exact, we just need some time for
 	// the player to get ready
-	curTic = (int)(-3500.0 * (double)rowData[0].bpm / 2500.0);
+	curTic = (int)(-3500.0 * (double)wam->rowData[0].bpm / 2500.0);
 	// set the tic positions of where we can see and where we're looking
 	firstVb = curTic - NEGATIVE_TICKS;
 	curVb = curTic;
 	lastVb = curTic + POSITIVE_TICKS;
 	// convert tic values to rows, now the ticks are all within
-	// [0 .. rowData[xRow].sngspd - 1]
+	// [0 .. wam->rowData[xRow].sngspd - 1]
 	FixVb(&firstVb, &firstRow);
 	FixVb(&curVb, &curRow);
 	FixVb(&lastVb, &lastRow);
 
 	partialTic = 0.0;
-	activeChannels = (Channel*)malloc(sizeof(Channel) * numChannels);
+	activeChannels = (Channel*)malloc(sizeof(Channel) * wam->numCols);
 
 	// MARF CHECK make sure mem is at correct amount of size! -eg its not, could have all rows with sngspd 1 and run outta mem
-	numNotes = numChannels * NUM_ROWS;
+	numNotes = wam->numCols * NUM_ROWS;
 	notesOnScreen = (ScreenNote*)malloc(sizeof(ScreenNote) * numNotes);
 	startNote = 0;
 	stopNote = 0;
@@ -422,7 +431,7 @@ int MainInit()
 	for(x=0;x<=lastRow;x++) AddLine(x);
 //	for(x=0;x<=curRow + POSITIVE_ROWS;x++) AddLine(x);
 
-	for(x=0;x<numChannels;x++)
+	for(x=0;x<wam->numCols;x++)
 	{
 		activeChannels[x].active = 1;
 		activeChannels[x].numCorrect = 0;
@@ -517,6 +526,7 @@ void MainQuit()
 	free(notesOnScreen);
 	free(linesOnScreen);
 	free(noteOffset);
+	FreeWam(wam);
 	StopModule();
 	GLDeleteLists(mainList, numMainLists);
 	Log("Main scene quit finished\n");
@@ -555,16 +565,16 @@ void DrawLines()
 }
 
 // returns 1 if the row is valid, 0 otherwise
-#define IsValidRow(row) ((row >= 0 && row < numRows) ? 1 : 0)
+#define IsValidRow(row) ((row >= 0 && row < wam->numRows) ? 1 : 0)
 // return a clamped row number
-#define Row(row) (row < 0 ? 0 : (row >= numRows ? numRows : row))
+#define Row(row) (row < 0 ? 0 : (row >= wam->numRows ? wam->numRows : row))
 
 void UpdatePosition()
 {
 	int tmpAdj;
 	// calculate the amount of ticTime elapsed
 	// everyone 2500 ticTime is one tick
-	if(!menuActive) ticTime += timeDiff * rowData[Row(curRow)].bpm;
+	if(!menuActive) ticTime += timeDiff * wam->rowData[Row(curRow)].bpm;
 
 	// adjust the ticTime if we're our time is different from the
 	// song time.  This is needed in case a little blip in the process
@@ -584,9 +594,9 @@ void UpdatePosition()
 		curVb++;
 		firstVb++;
 		lastVb++;
-		if(curVb >= rowData[Row(curRow)].sngspd)
+		if(curVb >= wam->rowData[Row(curRow)].sngspd)
 		{
-			curVb -= rowData[Row(curRow)].sngspd;
+			curVb -= wam->rowData[Row(curRow)].sngspd;
 			curRow++;
 			if(curRow == 0) // start the song!
 			{
@@ -601,9 +611,9 @@ void UpdatePosition()
 			}
 		}
 
-		if(firstVb >= rowData[Row(firstRow)].sngspd)
+		if(firstVb >= wam->rowData[Row(firstRow)].sngspd)
 		{
-			firstVb -= rowData[Row(firstRow)].sngspd;
+			firstVb -= wam->rowData[Row(firstRow)].sngspd;
 			// the remove functions check to make sure
 			// the row is valid
 			RemoveNotes(firstRow);
@@ -611,9 +621,9 @@ void UpdatePosition()
 			firstRow++;
 		}
 
-		if(lastVb >= rowData[Row(lastRow)].sngspd)
+		if(lastVb >= wam->rowData[Row(lastRow)].sngspd)
 		{
-			lastVb -= rowData[Row(lastRow)].sngspd;
+			lastVb -= wam->rowData[Row(lastRow)].sngspd;
 			lastRow++;
 			// the add functions check to make sure the
 			// row is valid
@@ -629,7 +639,7 @@ void DrawRows(double startTic, double stopTic)
 	int chan;
 	if(startTic >= stopTic) return;
 	glPushMatrix();
-	for(chan=0;chan<numChannels;chan++)
+	for(chan=0;chan<wam->numCols;chan++)
 	{
 		glBindTexture(GL_TEXTURE_2D, mainTexes[chan&3]);
 		glDisable(GL_LIGHTING);
@@ -686,19 +696,19 @@ void DrawNotes()
 void CheckChannels()
 {
 	int x;
-	ModChannel *c;
-	for(x=0;x<numChannels;x++)
+/*	ModChannel *c;
+	for(x=0;x<wam->numCols;x++)
 	{
-		if(curRow - 2 >= 0 && curRow - 2 < numRows)
+		if(curRow - 2 >= 0 && curRow - 2 < wam->numRows)
 		{
-			c = &(rowData[curRow-2].chans[x]);
+			c = &(wam->rowData[curRow-2].chans[x]);
 			if(c->note && !c->struck && activeChannels[x].numCorrect < MAXNUM)
 			{
 				activeChannels[x].active = 0;
 				SetMute(c, 1);
 			}
 		}
-	}
+	}*/
 }
 
 void DrawTargets()
@@ -741,7 +751,7 @@ void MainScene()
 	glLightfv(GL_LIGHT1, GL_POSITION, light);
 
 	Log("U");
-	if(curRow != numRows) UpdatePosition();
+	if(curRow != wam->numRows) UpdatePosition();
 	Log("u");
 	SetMainView();
 
@@ -753,7 +763,7 @@ void MainScene()
 	// notes currently being played at position 0.
 	// At the beginning of the song, we start drawing instead from 
 	// 0 to +POSITIVE_TICKS, and at the end of the song we draw from
-	// -NEGATIVE_TICKS to numTics.  Of course, if the song is less than
+	// -NEGATIVE_TICKS to wam->numTics.  Of course, if the song is less than
 	// NEGATIVE_TICKS + POSITIVE_TICKS long, some other combinations will
 	// arise :)
 	DrawRows(
@@ -762,9 +772,9 @@ void MainScene()
 			TIC_HEIGHT * ((double)curTic + partialTic - NEGATIVE_TICKS) :
 			0.0,
 			// end
-			curTic < numTics - POSITIVE_TICKS ?
+			curTic < wam->numTics - POSITIVE_TICKS ?
 			TIC_HEIGHT * (double)curTic+partialTic+POSITIVE_TICKS :
-			TIC_HEIGHT * (double)numTics);
+			TIC_HEIGHT * (double)wam->numTics);
 
 	Log("B");
 	DrawNotes();
@@ -800,15 +810,15 @@ void MainScene()
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	if(activeChannels[channelFocus].numCorrect >= MAXNUM) PrintGL(50, 50, "Channel cleared - move on!\n");
 	PrintGL(50, 0, "Playing: %s", mod->songname);
-	if(curRow == numRows) PrintGL(50, 15, "Song complete!");
-	else if(curRow >= 0) PrintGL(50, 15, "Song: %i (%i)/%i, Row: %i (%i)/%i Pattern: %i/%i", mod->sngpos, rowData[curRow].sngpos, mod->numpos, mod->patpos, rowData[curRow].patpos, NumPatternsAtSngPos(mod->sngpos),  mod->positions[mod->sngpos], mod->numpat);
+	if(curRow == wam->numRows) PrintGL(50, 15, "Song complete!");
+	else if(curRow >= 0) PrintGL(50, 15, "Song: %i (%i)/%i, Row: %i (%i)/%i Pattern: %i/%i", mod->sngpos, wam->rowData[curRow].sngpos, mod->numpos, mod->patpos, wam->rowData[curRow].patpos, NumPatternsAtSngPos(mod->sngpos),  mod->positions[mod->sngpos], mod->numpat);
 	else
 	{
-		int timeLeft = (int)(0.5 + -2500.0 * (double)rowData[0].sngspd * ((double)curRow) / (1000.0 * (double)rowData[0].bpm));
+		int timeLeft = (int)(0.5 + -2500.0 * (double)wam->rowData[0].sngspd * ((double)curRow) / (1000.0 * (double)wam->rowData[0].bpm));
 		if(timeLeft > 0) PrintGL(50, 15, "%i...", timeLeft);
 		else PrintGL(50, 15, "GO!!");
 	}
-	if(curRow >= 0 && curRow < numRows) PrintGL(0, 62, "Tick: %i, %i.%f / %i\n", rowData[curRow].ticpos, curTic, partialTic, numTics);
+	if(curRow >= 0 && curRow < wam->numRows) PrintGL(0, 62, "Tick: %i, %i.%f / %i\n", wam->rowData[curRow].ticpos, curTic, partialTic, wam->numTics);
 	PrintGL(50, 30, "Speed: %i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
 
 	Log("E");

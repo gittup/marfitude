@@ -22,6 +22,7 @@
 #include "sounds.h"
 #include "textures.h"
 #include "timer.h"
+#include "wam.h"
 
 #include "../util/memtest.h"
 #include "../util/fatalerror.h"
@@ -72,11 +73,6 @@ int main(int argc, char **argv)
 				break;
 		}
 	}
-	if(convertSong != NULL)
-	{
-		printf("USING INITAL SONG: %s\n", convertSong);
-		return 1;
-	}
 
 	if(!InitLog())
 	{
@@ -97,6 +93,14 @@ int main(int argc, char **argv)
 		Log("ERROR: Couldn't start audio!\n");
 		Shutdown();
 		return 1;
+	}
+
+	if(convertSong != NULL)
+	{
+		printf("Generating WAM file for: %s\n", convertSong);
+		WriteWam(convertSong);
+		Shutdown();
+		return 0;
 	}
 
 	screen = InitGL();
