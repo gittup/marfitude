@@ -2,27 +2,11 @@ include mk/lib/opengl.mk
 include mk/lib/sdl_image.mk
 include mk/lib/sdl.mk
 
-EXTRACFLAGS = $(BDECFLAGS)
-
 INCDIRS = util gmae/sdl_mixer gmae/sdl_mixer/mikmod
-
 EXTRALDFLAGS = -lm
-
-LIBS = util/libmarf.a gmae/sdl_mixer/libsdl_mixer.a gmae/sdl_mixer/mikmod/libsdl_mikmod.a
-
+LIBS = util/libmarf.a gmae/sdl_mixer/libsdl_mixer.a
 TARGET = marfitude
-
-include mk/lang/c.mk
-
 include mk/tgt/program.mk
-
-INSTALL_DIR = $(DATADIR)
-INSTALL_LIST = Font.png init.cfg
-include mk/tgt/data.mk
-
-INSTALL_DIR = $(DATADIR)
-INSTALL_LIST = README PROPS UNTESTED TODO README-SDL
-include mk/tgt/text.mk
 
 subdir := wam
 include mk/Recurse.mk
@@ -33,6 +17,10 @@ include mk/Recurse.mk
 subdir := sounds
 include mk/Recurse.mk
 subdir := images
+include mk/Recurse.mk
+subdir := data
+include mk/Recurse.mk
+subdir := docs
 include mk/Recurse.mk
 
 ifeq ($(ARCH),mingw)
