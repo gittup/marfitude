@@ -34,9 +34,12 @@ typedef struct {
 	GLuint tex2;	// second texture (if necessary)
 	} ParticleType;
 
+typedef int (*PTestFunc)(Particle *);
+
 int InitParticles();
 void QuitParticles();
 void DrawParticles();
+void DrawParticlesTest(PTestFunc p);
 void StartParticles();	// set up OpenGL variables
 void StopParticles();	// reset OpenGL variables
 void CreateParticle(Obj *o, float col[4], int type, float size);

@@ -187,6 +187,17 @@ void DrawParticles()
 	Log("Draw Particles done\n");
 }
 
+void DrawParticlesTest(PTestFunc p)
+{
+	int x;
+	Log("DrawParticlesTest()\n");
+	for(x=0;x<numParticles;x++)
+	{
+		if(particles[x].active && p(&particles[x])) DrawParticle(&particles[x]);
+	}
+	Log("DrawParticlesTest() done\n");
+}
+
 void StartParticles()
 {
 	glDisable(GL_LIGHTING);
