@@ -89,17 +89,21 @@ int LoadFont(void)
 		{
 			glBegin(GL_QUADS);
 			{
-				glTexCoord2f(	((double)x*16.0)/256.0,
-						((double)y*16.0)/256.0);
+				// font character is 16x16 in file,
+				// 10x14 when we pull it out
+				// so offset by 3 in x and 1 in y since the
+				// character is centered in the 16x16 block
+				glTexCoord2f(	(3+(double)x*16.0)/256.0,
+						(1+(double)y*16.0)/256.0);
 						glVertex2i(0, 0);
-				glTexCoord2f(	((double)x*16.0 + 16.0)/256.0,
-						((double)y*16.0)/256.0);
+				glTexCoord2f(	(3+(double)x*16.0 + 16.0)/256.0,
+						(1+(double)y*16.0)/256.0);
 						glVertex2i(16, 0);
-				glTexCoord2f(	((double)x*16.0 + 16.0)/256.0,
-						((double)y*16.0 + 16.0)/256.0);
+				glTexCoord2f(	(3+(double)x*16.0 + 16.0)/256.0,
+						(1+(double)y*16.0 + 16.0)/256.0);
 						glVertex2i(16, 16);
-				glTexCoord2f(	((double)x*16.0)/256.0,
-						((double)y*16.0 + 16.0)/256.0);
+				glTexCoord2f(	(3+(double)x*16.0)/256.0,
+						(1+(double)y*16.0 + 16.0)/256.0);
 						glVertex2i(0, 16);
 			} glEnd();
 			glTranslated(FONT_WIDTH, 0, 0);
