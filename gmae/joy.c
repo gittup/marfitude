@@ -4,9 +4,11 @@
 
 #include "SDL.h"
 
+#include "joy.h"
 #include "cfg.h"
 #include "log.h"
-#include "../util/memtest.h"
+
+#include "memtest.h"
 
 SDL_Joystick **joys = NULL;
 char joyButtonCfg[23] = "joystick.ignorejs00b00";
@@ -21,33 +23,39 @@ int JoyIgnoreButton(int joy, int button)
 	return CfgI(joyButtonCfg);
 }
 
-void InitJoystick()
+void InitJoystick(void)
 {
 	int i;
 	const char *name;
 	if(CfgI("joystick.joystickenable") == 0) return;
-	Log("Starting joystick...\n");
+	Log(("Starting joystick...\n"));
 	i = SDL_NumJoysticks();
 	if(i)
 	{
-		Log("JoystickInit(): Found %i joystick", i);
-		if(i != 1) Log("s");
-		Log("\n");
+		Log(("JoystickInit(): Found %i joystick", i));
+		if(i != 1)
+		{
+			Log(("s"));
+		}
+		Log(("\n"));
 		joys = (SDL_Joystick**)malloc(sizeof(SDL_Joystick*) * i);
 	}
-	else Log("JoystickInit(): No joysticks found!\n");
+	else
+	{
+		Log(("JoystickInit(): No joysticks found!\n"));
+	}
 
 	for(i=0;i<SDL_NumJoysticks();i++)
 	{
 		name = SDL_JoystickName(i);
-		Log(" Joystick %d: %s\n",i,name ? name : "Unknown Joystick");
+		Log((" Joystick %d: %s\n",i,name ? name : "Unknown Joystick"));
 		joys[i] = SDL_JoystickOpen(i);
-		Log("%i button\n", SDL_JoystickNumButtons(joys[i]));
+		Log(("%i button\n", SDL_JoystickNumButtons(joys[i])));
 	}
 	joyInited = 1;
 }
 
-void QuitJoystick()
+void QuitJoystick(void)
 {
 	int i;
 	if(!joyInited) return;
@@ -57,7 +65,7 @@ void QuitJoystick()
 	}
 	if(joys) free(joys);
 	joys = NULL;
-	Log("Joystick shutdown\n");
+	Log(("Joystick shutdown\n"));
 }
 
 /*

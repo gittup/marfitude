@@ -6,10 +6,11 @@
 #include "sounds.h"
 #include "sndlist.h"
 #include "log.h"
-#include "../util/memtest.h"
-#include "../util/textprogress.h"
-#include "../util/fatalerror.h"
-#include "../util/sdlfatalerror.h"
+
+#include "memtest.h"
+#include "textprogress.h"
+#include "fatalerror.h"
+#include "sdlfatalerror.h"
 
 Mix_Chunk **Sounds;
 int sndInited = 0;
@@ -18,11 +19,11 @@ void SDLPlaySound(Mix_Chunk *snd)
 {
 	if(Mix_PlayChannel(-1, snd, 0) == -1)
 	{
-		Log("Warning: out of sound channels!\n");
+		Log(("Warning: out of sound channels!\n"));
 	}
 }
 
-int InitSounds()
+int InitSounds(void)
 {
 	int x;
 
@@ -35,7 +36,7 @@ int InitSounds()
 		Sounds[x] = Mix_LoadWAV(SND_LIST[x]);
 		if(!Sounds[x])
 		{
-			Log("Error loading sound '%s'\n", SND_LIST[x]);
+			Log(("Error loading sound '%s'\n", SND_LIST[x]));
 			SDLError("Loading sounds");
 			return 0;
 		}
@@ -45,7 +46,7 @@ int InitSounds()
 	return 1;
 }
 
-void QuitSounds()
+void QuitSounds(void)
 {
 	if(!sndInited) return;
 	free(Sounds);

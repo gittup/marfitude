@@ -1,17 +1,19 @@
 #include <stdio.h>
 #include "SDL.h"
 
-Uint32 curTime;  // current time since initialization
-Uint32 ticDiff;	 // number of ticks between frames
-double timeDiff; // time (seconds) between frames
+#include "timer.h"
 
-void InitTimer()
+Uint32 curTime;  /* current time since initialization */
+Uint32 ticDiff;	 /* number of ticks between frames */
+double timeDiff; /* time (seconds) between frames */
+
+void InitTimer(void)
 {
 	curTime = SDL_GetTicks();
 	timeDiff = 0;
 }
 
-void UpdateTimer()
+void UpdateTimer(void)
 {
 	Uint32 tmp;
 	tmp = SDL_GetTicks();

@@ -1,2 +1,2 @@
-int InitAudio();
-void QuitAudio();
+int InitAudio(void);
+void QuitAudio(void);

@@ -1,9 +1,9 @@
 #ifndef _MIKMOD_H_
-	#include "mikmod.h"
+#include "mikmod.h"
 #endif
 
 int StartModule(char *modFile);
-void StopModule();
+void StopModule(void);
 
 extern MODULE *mod;
 

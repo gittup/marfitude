@@ -1,39 +1,44 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <glib.h>
 
 #include "phys.h"
 #include "log.h"
 
-GSList *objs = NULL;
+#include "slist.h" 
 
-Obj *NewObj()
+static void FreeObj(void *data, void *not_used);
+static void UpdateObj(void *op, void *tp);
+
+slist *objs = NULL; 
+
+Obj *NewObj(void)
 {
 	Obj *o;
 	o = (Obj*)calloc(1, sizeof(Obj));
 	o->axis.z = 1.0;
 	o->mass = 1.0;
-	objs = g_slist_append(objs, (gpointer)o);
+	objs = slist_append(objs, (void *)o);
 	return o;
 }
 
 void DeleteObj(Obj *o)
 {
 	free(o);
-	objs = g_slist_remove(objs, (gpointer)o);
+	objs = slist_remove(objs, (void *)o);
 }
 
-void FreeObj(gpointer data, gpointer not_used)
+void FreeObj(void *data, void *not_used)
 {
+	if(not_used) {}
 	free(data);
 }
 
-void ClearObjs()
+void ClearObjs(void)
 {
-	g_slist_foreach(objs, FreeObj, NULL);
+	slist_foreach(objs, FreeObj, NULL);
 }
 
-void UpdateObj(gpointer op, gpointer tp)
+void UpdateObj(void *op, void *tp)
 {
 	double tmpx, tmpy, tmpz, tmpr;
 	double t;
@@ -59,11 +64,13 @@ void UpdateObj(gpointer op, gpointer tp)
 
 void UpdateObjs(double dt)
 {
-	g_slist_foreach(objs, UpdateObj, &dt);
+	slist_foreach(objs, UpdateObj, &dt);
 }
 
-void CheckObjs()
+void CheckObjs(void)
 {
-	if(g_slist_length(objs))
-		ELog("Error: %i objects remaining!\n", g_slist_length(objs));
+	if(slist_length(objs))
+	{
+		ELog(("Error: %i objects remaining!\n", slist_length(objs)));
+	}
 }

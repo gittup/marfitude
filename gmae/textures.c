@@ -8,15 +8,16 @@
 #include "texlist.h"
 #include "glfunc.h"
 #include "log.h"
-#include "../util/memtest.h"
-#include "../util/textprogress.h"
-#include "../util/fatalerror.h"
-#include "../util/sdlfatalerror.h"
+
+#include "memtest.h"
+#include "textprogress.h"
+#include "fatalerror.h"
+#include "sdlfatalerror.h"
 
 GLuint *GLTexture;
 int texInited = 0;
 
-GLuint LoadTexture(char *filename)
+GLuint LoadTexture(const char *filename)
 {
 	int format;
 	GLuint tex;
@@ -27,10 +28,10 @@ GLuint LoadTexture(char *filename)
 	{
 		SDLError("opening texture");
 	}
-	GLGenTextures(1, &tex);
-	GLBindTexture(GL_TEXTURE_2D, tex);
-	GLTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	GLTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	switch(s->format->BytesPerPixel)
 	{
 		case 3:
@@ -40,10 +41,10 @@ GLuint LoadTexture(char *filename)
 			format = GL_RGBA;
 			break;
 		default:
-			ELog("\nERROR: Incorrect image format in %s - image must be RGB or RGBA\n", filename);
+			ELog(("\nERROR: Incorrect image format in %s - image must be RGB or RGBA\n", filename));
 			return 0;
 	}
-	GLTexImage2D(GL_TEXTURE_2D, 0, s->format->BytesPerPixel, s->w, s->h, 0, format, GL_UNSIGNED_BYTE, s->pixels);
+	glTexImage2D(GL_TEXTURE_2D, 0, s->format->BytesPerPixel, s->w, s->h, 0, format, GL_UNSIGNED_BYTE, s->pixels);
 
 	SDL_FreeSurface(s);
 	return tex;
@@ -56,7 +57,7 @@ int InitTextures(void)
 	SDL_Surface *s;
 
 	GLTexture = (GLuint*)malloc(sizeof(GLuint)*NUM_TEXTURES);
-	GLGenTextures(NUM_TEXTURES, GLTexture);
+	glGenTextures(NUM_TEXTURES, GLTexture);
 	texInited = 1;
 
 	ProgressMeter("Loading textures");
@@ -65,14 +66,14 @@ int InitTextures(void)
 		s = IMG_Load(TEX_LIST[x]);
 		if(!s)
 		{
-			ELog("\nERROR: Couldn't load texture '%s': %s\n", TEX_LIST[x], IMG_GetError());
+			ELog(("\nERROR: Couldn't load texture '%s': %s\n", TEX_LIST[x], IMG_GetError()));
 			return 0;
 		}
-		GLBindTexture(GL_TEXTURE_2D, GLTexture[x]);
-		GLTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		GLTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		GLTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		GLTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glBindTexture(GL_TEXTURE_2D, GLTexture[x]);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		switch(s->format->BytesPerPixel)
 		{
 			case 3:
@@ -82,10 +83,10 @@ int InitTextures(void)
 				format = GL_RGBA;
 				break;
 			default:
-				ELog("\nERROR: Incorrect image format in tex.dat - image must be RGB or RGBA\n");
+				ELog(("\nERROR: Incorrect image format in tex.dat - image must be RGB or RGBA\n"));
 				return 0;
 		}
-		GLTexImage2D(GL_TEXTURE_2D, 0, s->format->BytesPerPixel, s->w, s->h, 0, format, GL_UNSIGNED_BYTE, s->pixels);
+		glTexImage2D(GL_TEXTURE_2D, 0, s->format->BytesPerPixel, s->w, s->h, 0, format, GL_UNSIGNED_BYTE, s->pixels);
 
 		SDL_FreeSurface(s);
 		UpdateProgress(x+1, NUM_TEXTURES);
@@ -97,7 +98,7 @@ int InitTextures(void)
 void QuitTextures(void)
 {
 	if(!texInited) return;
-	GLDeleteTextures(NUM_TEXTURES, GLTexture);
+	glDeleteTextures(NUM_TEXTURES, GLTexture);
 	free(GLTexture);
 	GLTexture = NULL;
 	printf("Textures shutdown\n");

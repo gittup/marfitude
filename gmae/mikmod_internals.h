@@ -69,6 +69,7 @@ extern "C" {
 /*========== More type definitions */
 
 /* SLONGLONG: 64bit, signed */
+/*
 #if defined(__alpha)
 typedef long		SLONGLONG;
 #define NATIVE_64BIT_INT
@@ -79,7 +80,8 @@ typedef LONGLONG	SLONGLONG;
 #else
 typedef long long	SLONGLONG;
 #endif
-
+Commented out by MARF
+*/
 /*========== Error handling */
 
 #define _mm_errno MikMod_errno
@@ -130,8 +132,8 @@ extern void* _mm_calloc(size_t,size_t);
 #define MUTEX_UNLOCK(name)
 #endif
 
-DECLARE_MUTEX(lists);
-DECLARE_MUTEX(vars);
+DECLARE_MUTEX(lists)
+DECLARE_MUTEX(vars)
 
 /*========== Portable file I/O */
 

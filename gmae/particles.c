@@ -8,7 +8,14 @@
 #include "log.h"
 #include "textures.h"
 #include "timer.h"
-#include "../util/memtest.h"
+
+#include "memtest.h"
+
+static void GenPoint(void);
+static void GenLine(void);
+static void GenTQuad(GLuint tex);
+static void Gen2TQuad(GLuint tex1, GLuint tex2);
+static void DrawParticle(Particle *p);
 
 int particlesInited = 0;
 int numParticles;
@@ -25,7 +32,7 @@ ParticleType particleTypes[] = {
 	{PT_2TQUAD, 1, T_SunBurst, T_SunCenter}
 	};
 
-void GenPoint()
+void GenPoint(void)
 {
 	glDisable(GL_TEXTURE_2D);
 	glBegin(GL_POINTS);
@@ -36,7 +43,7 @@ void GenPoint()
 	glPopMatrix();
 }
 
-void GenLine()
+void GenLine(void)
 {
 	glDisable(GL_TEXTURE_2D);
 	glBegin(GL_LINES);
@@ -86,7 +93,7 @@ void Gen2TQuad(GLuint tex1, GLuint tex2)
 	glPopMatrix();
 }
 
-int InitParticles()
+int InitParticles(void)
 {
 	int x;
 	int numpTypes;
@@ -103,8 +110,8 @@ int InitParticles()
 	{
 		pt = &particleTypes[x];
 
-		// these are defined at runtime, so we set the true texture
-		// values now
+		/* these are defined at runtime, so we set the true texture */
+		/* values now */
 		pt->tex1 = GLTexture[pt->tex1];
 		pt->tex2 = GLTexture[pt->tex2];
 
@@ -125,7 +132,7 @@ int InitParticles()
 				Gen2TQuad(pt->tex1, pt->tex2);
 				break;
 			default:
-				ELog("Error: Invalid particle type\n");
+				ELog(("Error: Invalid particle type\n"));
 				return 0;
 		}
 		glEndList();
@@ -133,7 +140,7 @@ int InitParticles()
 	return 1;
 }
 
-void QuitParticles()
+void QuitParticles(void)
 {
 	free(particles);
 	glDeleteLists(plist, sizeof(particleTypes) / sizeof(Particle));
@@ -176,36 +183,36 @@ void DrawParticle(Particle *p)
 	}
 }
 
-void DrawParticles()
+void DrawParticles(void)
 {
 	int x;
-	Log("Draw Particles()\n");
+	Log(("Draw Particles()\n"));
 	for(x=0;x<numParticles;x++)
 	{
 		if(particles[x].active) DrawParticle(&particles[x]);
 	}
-	Log("Draw Particles done\n");
+	Log(("Draw Particles done\n"));
 }
 
 void DrawParticlesTest(PTestFunc p)
 {
 	int x;
-	Log("DrawParticlesTest()\n");
+	Log(("DrawParticlesTest()\n"));
 	for(x=0;x<numParticles;x++)
 	{
 		if(particles[x].active && p(&particles[x])) DrawParticle(&particles[x]);
 	}
-	Log("DrawParticlesTest() done\n");
+	Log(("DrawParticlesTest() done\n"));
 }
 
-void StartParticles()
+void StartParticles(void)
 {
 	glDisable(GL_LIGHTING);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 	glDepthMask(GL_FALSE);
 }
 
-void StopParticles()
+void StopParticles(void)
 {
 	glDepthMask(GL_TRUE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -215,7 +222,7 @@ void StopParticles()
 void CreateParticle(Obj *o, float col[4], int type, float size)
 {
 	Particle *p;
-	Log("Create Particle()\n");
+	Log(("Create Particle()\n"));
 	if(numParticles <= 0) return;
 	p = &particles[curParticle];
 	if(p->active) DeleteObj(p->o);
@@ -230,13 +237,13 @@ void CreateParticle(Obj *o, float col[4], int type, float size)
 	p->life = 3.00;
 	curParticle++;
 	if(curParticle >= numParticles) curParticle = 0;
-	Log("Create Particle done\n");
+	Log(("Create Particle done\n"));
 }
 
-void ClearParticles()
+void ClearParticles(void)
 {
 	int x;
-	Log("ClearParticles()\n");
+	Log(("ClearParticles()\n"));
 	for(x=0;x<numParticles;x++)
 	{
 		if(particles[x].active)
@@ -245,5 +252,5 @@ void ClearParticles()
 			DeleteObj(particles[x].o);
 		}
 	}
-	Log("ClearParticles done\n");
+	Log(("ClearParticles done\n"));
 }

@@ -2,12 +2,13 @@
 
 #include "SDL_mixer.h"
 
+#include "audio.h"
 #include "cfg.h"
-#include "../util/sdlfatalerror.h"
+#include "sdlfatalerror.h"
 
 int audioInited = 0;
 
-int InitAudio()
+int InitAudio(void)
 {
 	printf("Starting audio...\n");
 	if(Mix_OpenAudio(CfgI("sound.hz"), MIX_DEFAULT_FORMAT, 2, CfgI("sound.buffersize")))
@@ -21,7 +22,7 @@ int InitAudio()
 	return 1;
 }
 
-void QuitAudio()
+void QuitAudio(void)
 {
 	if(!audioInited) return;
 	Mix_CloseAudio();

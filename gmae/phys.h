@@ -10,19 +10,19 @@ typedef struct {
 	} Point, Vector;
 
 typedef struct {
-	Point pos;	// position of object
-	Vector vel;	// velocity of object
-	Vector acc;	// acceleration of object
-	// need jerk for camera movement?
-	Vector axis;	// axis of rotation
-	double theta;	// amount of rotation
-	double rotvel;	// rotation velocity
-	double rotacc;	// rotation acceleration
-	float mass;	// object's mass
+	Point pos;	/* position of object */
+	Vector vel;	/* velocity of object */
+	Vector acc;	/* acceleration of object */
+	/* need jerk for camera movement? */
+	Vector axis;	/* axis of rotation */
+	double theta;	/* amount of rotation */
+	double rotvel;	/* rotation velocity */
+	double rotacc;	/* rotation acceleration */
+	float mass;	/* object's mass */
 	} Obj;
 
-Obj *NewObj();
+Obj *NewObj(void);
 void DeleteObj(Obj *o);
-void ClearObjs();
+void ClearObjs(void);
 void UpdateObjs(double dt);
-void CheckObjs();
+void CheckObjs(void);

@@ -2,11 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "cfg.h"
 #include "log.h"
-#include "../util/memtest.h"
-#include "../util/fatalerror.h"
-#include "../util/token.h"
-#include "../util/strfunc.h"
+
+#include "memtest.h"
+#include "fatalerror.h"
+#include "token.h"
+#include "strfunc.h"
 
 typedef struct {
 	char *key;
@@ -19,11 +21,18 @@ typedef struct {
 	int numOps;
 	} Header;
 
+/*static char *Cat(const char *header, const char *value);*/
+static const char *OptionPart(const char *s);
+static char *HeaderPart(const char *s);
+/*static int HeaderEq(const char *a, const char *b);*/
+static void AddOp(Header *h, const char *key, const char *value);
+static void CfgAdd(const char *header, const char *key, const char *value);
+
 Header *cfg = NULL;
 int numHeaders = 0;
 int cfgInited = 0;
 
-char *Cat(char *header, char *value)
+/*char *Cat(const char *header, const char *value)
 {
 	char *ret;
 	ret = (char*)malloc(strlen(header) + strlen(value) + 2);
@@ -31,10 +40,10 @@ char *Cat(char *header, char *value)
 	strcat(ret, ".");
 	strcat(ret, value);
 	return ret;
-}
+}*/
 
-// s is "a.b", returns "a" - must be freed
-char *HeaderPart(char *s)
+/* s is "a.b", returns "a" - must be freed */
+char *HeaderPart(const char *s)
 {
 	int x = 0;
 	char *h;
@@ -49,8 +58,8 @@ char *HeaderPart(char *s)
 	return h;
 }
 
-// s is "a.b", returns "b", no freeing
-char *OptionPart(char *s)
+/* s is "a.b", returns "b", no freeing */
+const char *OptionPart(const char *s)
 {
 	int x = 0;
 	while(s[x])
@@ -61,7 +70,7 @@ char *OptionPart(char *s)
 	return NULL;
 }
 
-int HeaderEq(char *a, char *b)
+/*int HeaderEq(const char *a, const char *b)
 {
 	int x = 0;
 	if(a == NULL || b == NULL) return 0;
@@ -72,9 +81,9 @@ int HeaderEq(char *a, char *b)
 		x++;
 	}
 	return 0;
-}
+}*/
 
-void AddOp(Header *h, char *key, char *value)
+void AddOp(Header *h, const char *key, const char *value)
 {
 	h->ops = (Option*)realloc(h->ops, sizeof(Option) * (h->numOps+1));
 	h->ops[h->numOps].key = (char*)malloc(sizeof(char) * (strlen(key)+1));
@@ -84,7 +93,7 @@ void AddOp(Header *h, char *key, char *value)
 	h->numOps++;
 }
 
-void CfgAdd(char *header, char *key, char *value)
+void CfgAdd(const char *header, const char *key, const char *value)
 {
 	int x, y;
 	int foundHeader = 0, foundOp = 0;
@@ -119,7 +128,7 @@ void CfgAdd(char *header, char *key, char *value)
 	}
 }
 
-void CfgSetS(char *key, char *value)
+void CfgSetS(const char *key, char *value)
 {
 	char *header;
 	header = HeaderPart(key);
@@ -127,18 +136,18 @@ void CfgSetS(char *key, char *value)
 	free(header);
 }
 
-void CfgSetI(char *key, int value)
+void CfgSetI(const char *key, int value)
 {
 	char *header;
 	char *s;
-	s = MallocString("%i", value);
+	s = (char*)malloc(IntLen(value)+1);
 	header = HeaderPart(key);
 	CfgAdd(header, OptionPart(key), s);
 	free(header);
 	free(s);
 }
 
-void CfgSetF(char *key, float value)
+/*void CfgSetF(const char *key, float value)
 {
 	char *header;
 	char *s;
@@ -147,9 +156,9 @@ void CfgSetF(char *key, float value)
 	CfgAdd(header, OptionPart(key), s);
 	free(header);
 	free(s);
-}
+}*/
 
-char *CfgS(char *key)
+char *CfgS(const char *key)
 {
 	char *header;
 	int x, y;
@@ -172,7 +181,7 @@ char *CfgS(char *key)
 	return NULL;
 }
 
-int CfgI(char *key)
+int CfgI(const char *key)
 {
 	char *s;
 	s = CfgS(key);
@@ -180,15 +189,15 @@ int CfgI(char *key)
 	return atoi(s);
 }
 
-float CfgF(char *key)
+/*float CfgF(const char *key)
 {
 	char *s;
 	s = CfgS(key);
 	if(s == NULL) return 0.0;
 	return atof(s);
-}
+}*/
 
-int CfgEq(char *key, char *string)
+int CfgEq(const char *key, const char *string)
 {
 	char *s;
 	s = CfgS(key);
@@ -200,21 +209,20 @@ int CfgEq(char *key, char *string)
 int InitConfig(void)
 {
 	char *header;
-	FILE *cfg;
+	FILE *cfgfile;
 	Token t, eq;
 
-	cfg = fopen("init.cfg", "r");
-	if(cfg == NULL)
+	cfgfile = fopen("init.cfg", "r");
+	if(cfgfile == NULL)
 	{
 		Error("opening config file");
 		return 0;
 	}
 
-	printf("InitConfig\n");
-	header = malloc(5);
+	header = (char*)malloc(5);
 	strcpy(header, "null");
 
-	while(GetToken(cfg, '=', &t))
+	while(GetToken(cfgfile, '=', &t))
 	{
 		switch(t.type)
 		{
@@ -223,9 +231,9 @@ int InitConfig(void)
 				header = t.token;
 				break;
 			case VALUE:
-				if(!GetToken(cfg, 0, &eq))
+				if(!GetToken(cfgfile, 0, &eq))
 				{
-					Log("Invalid format for config file. Paramaters must be <name>=<value>\n");
+					Log(("Invalid format for config file. Paramaters must be <name>=<value>\n"));
 				}
 				CfgAdd(header, t.token, eq.token);
 				free(eq.token);
@@ -253,7 +261,7 @@ void QuitConfig(void)
 	}
 	else
 	{
-		Log("Saving configuration...\n");
+		Log(("Saving configuration...\n"));
 		for(x=0;x<numHeaders;x++)
 		{
 			fprintf(f, "[%s]\n", cfg[x].header);
@@ -269,7 +277,7 @@ void QuitConfig(void)
 		free(cfg);
 		cfg = NULL;
 		fclose(f);
-		Log("Done\n");
+		Log(("Done\n"));
 	}
 	printf("Config shutdown\n");
 }

@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
-#include <glib.h>
 
 #include "GL/gl.h"
 
@@ -17,19 +16,20 @@
 #include "cfg.h"
 #include "log.h"
 
-#include "../util/memtest.h"
-#include "../util/fatalerror.h"
+#include "memtest.h"
+#include "fatalerror.h"
+#include "slist.h"
 
 #define SLIDER 0
 #define BOOLEAN 1
 #define BUTTON 2
 #define BUTTONPARAM 3
 #define TEXT 4
-#define SELECTABLE 4 // all items from 0 to SELECTABLE are selectable
+#define SELECTABLE 4 /* all items from 0 to SELECTABLE are selectable */
 #define MUSICDIR "music/"
 
-#define NOBOX -1 // for the bounding box
-#define BBO 5	// bounding box offset
+#define NOBOX -1 /* for the bounding box */
+#define BBO 5	/* bounding box offset */
 
 typedef struct {
 	int min;
@@ -45,7 +45,7 @@ typedef struct {
 	} Boolean;
 
 typedef struct {
-	void (*activeFunc)();
+	void (*activeFunc)(void);
 	} Button;
 
 typedef struct {
@@ -66,13 +66,69 @@ typedef struct {
 	void *item;
 	} MenuItem;
 
-// when the active menu item goes out of bounds
-// returns 1 if a sound is to be played, 0 otherwise
-int (*BoundsCheck)();
+static void DrawPartialMenu(int start, int stop);
+static void DrawMenu(void);
+static void AddMenuItem(const char *name, void *item, int type);
+static void ClearMenuItems(void);
+static void UpdateBox(int x1, int y1, int x2, int y2);
+/*static Slider *CreateSlider(const char *name, int min, int max, int delta, int initVal);
+static Boolean *CreateBoolean(const char *name, const char *trueString, const char *falseString, int initVal);*/
+static Button *CreateButton(const char *name, void (*activeFunc)(void));
+static ButtonParam *CreateButtonParam(const char *name, int (*activeFunc)(int), int param);
+static Text *CreateText(const char *name, float *c, int x, int y);
+static int MenuClamp(void);
+static int MenuWrap(void);
+static int DownOne(void);
+static void MenuDown(void);
+static int UpOne(void);
+static void MenuUp(void);
+static void MenuDec(void);
+static void MenuInc(void);
+static void MenuActivate(void);
+static int ValidMusicFile(char *s);
+static char *StringCopy(char *s);
+static int FightMenuInit(void);
+static void FightMenuQuit(void);
+static void EQTriangle(void);
+static void FightMenu(void);
+static void MenuBack(void);
+static void RegisterMenuEvents(void);
+static void ShowMenu(void);
+static void HideMenu(void);
+static int NullMenuInit(void);
+static void NullMenuQuit(void);
+static void NullMenu(void);
+static int NoMenuInit(void);
+static void NoMenuQuit(void);
+static void NoMenu(void);
+static void Retry(void);
+static int MainMenuInit(void);
+static void MainMenuQuit(void);
+static void MainMenu(void);
+static char *CatStr(const char *a, const char *b);
+static void FightActivate(void);
+static void FightPageUp(void);
+static void FightPageDown(void);
+static int FindActiveItem(MenuItem *activeItems, int numActiveItems);
+/*static void DrawButton(GLuint button, int x, int y, int on);*/
+static void ConfigCreateItems(void);
+static void ConfigKeyHandler(JoyKey *jk);
+static int ConfigButton(int b);
+static int ConfigMenuInit(void);
+static void ConfigMenuQuit(void);
+static void ConfigMenu(void);
+static void Quit(void);
+static int QuitMenuInit(void);
+static void QuitMenuQuit(void);
+static void QuitMenu(void);
+
+/* when the active menu item goes out of bounds */
+/* returns 1 if a sound is to be played, 0 otherwise */
+int (*BoundsCheck)(void);
 int activeMenuItem = 0;
 int numItems = 0;
-int menuX = 200, menuY = 200; // where to start placing menu items
-int minX = NOBOX, minY = 0, maxX = 0, maxY = 0; // bounding box of menu items
+int menuX = 200, menuY = 200; /* where to start placing menu items */
+int minX = NOBOX, minY = 0, maxX = 0, maxY = 0; /* bounding box of menu items */
 int menuActive = 0;
 MenuItem *items = NULL;
 
@@ -132,12 +188,12 @@ void DrawPartialMenu(int start, int stop)
 	}
 }
 
-void DrawMenu()
+void DrawMenu(void)
 {
 	DrawPartialMenu(0, numItems);
 }
 
-void AddMenuItem(char *name, void *item, int type)
+void AddMenuItem(const char *name, void *item, int type)
 {
 	items = (MenuItem*)realloc(items, sizeof(MenuItem) * (numItems+1));
 	items[numItems].name = (char*)malloc(sizeof(char) * (strlen(name)+1));
@@ -147,11 +203,11 @@ void AddMenuItem(char *name, void *item, int type)
 	numItems++;
 }
 
-void ClearMenuItems()
+void ClearMenuItems(void)
 {
 	int x;
 	Boolean *b;
-	Log("Clearing items...\n");
+	Log(("Clearing items...\n"));
 	minX = NOBOX;
 	minY = 0;
 	maxX = 0;
@@ -176,7 +232,7 @@ void ClearMenuItems()
 				free(items[x].item);
 				break;
 			default:
-				ELog("Error: Invalid menu item type!\n");
+				ELog(("Error: Invalid menu item type!\n"));
 				break;
 		}
 	}
@@ -184,7 +240,7 @@ void ClearMenuItems()
 	activeMenuItem = 0;
 	free(items);
 	items = NULL;
-	Log("All items freed.\n");
+	Log(("All items freed.\n"));
 }
 
 void UpdateBox(int x1, int y1, int x2, int y2)
@@ -205,7 +261,7 @@ void UpdateBox(int x1, int y1, int x2, int y2)
 	}
 }
 
-Slider *CreateSlider(char *name, int min, int max, int delta, int initVal)
+/*Slider *CreateSlider(const char *name, int min, int max, int delta, int initVal)
 {
 	Slider *s;
 	s = (Slider*)malloc(sizeof(Slider));
@@ -217,7 +273,7 @@ Slider *CreateSlider(char *name, int min, int max, int delta, int initVal)
 	return s;
 }
 
-Boolean *CreateBoolean(char *name, char *trueString, char *falseString, int initVal)
+Boolean *CreateBoolean(const char *name, const char *trueString, const char *falseString, int initVal)
 {
 	Boolean *b;
 	b = (Boolean*)malloc(sizeof(Boolean));
@@ -228,9 +284,9 @@ Boolean *CreateBoolean(char *name, char *trueString, char *falseString, int init
 	b->val = initVal;
 	AddMenuItem(name, (void*)b, BOOLEAN);
 	return b;
-}
+}*/
 
-Button *CreateButton(char *name, void (*activeFunc)())
+Button *CreateButton(const char *name, void (*activeFunc)(void))
 {
 	Button *b;
 	b = (Button*)malloc(sizeof(Button));
@@ -240,7 +296,7 @@ Button *CreateButton(char *name, void (*activeFunc)())
 	return b;
 }
 
-ButtonParam *CreateButtonParam(char *name, int (*activeFunc)(int), int param)
+ButtonParam *CreateButtonParam(const char *name, int (*activeFunc)(int), int param)
 {
 	ButtonParam *b;
 	b = (ButtonParam*)malloc(sizeof(ButtonParam));
@@ -251,8 +307,8 @@ ButtonParam *CreateButtonParam(char *name, int (*activeFunc)(int), int param)
 	return b;
 }
 
-// assumes text is on a single line for bounding box purposes
-Text *CreateText(char *name, float *c, int x, int y)
+/* assumes text is on a single line for bounding box purposes */
+Text *CreateText(const char *name, float *c, int x, int y)
 {
 	Text *t;
 	t = (Text*)malloc(sizeof(Text));
@@ -268,7 +324,7 @@ Text *CreateText(char *name, float *c, int x, int y)
 	return t;
 }
 
-int MenuClamp()
+int MenuClamp(void)
 {
 	if(activeMenuItem < 0)
 	{
@@ -283,14 +339,14 @@ int MenuClamp()
 	return 1;
 }
 
-int MenuWrap()
+int MenuWrap(void)
 {
 	if(activeMenuItem >= numItems) activeMenuItem = 0;
 	else if(activeMenuItem < 0) activeMenuItem = numItems >= 0 ? numItems -1 : 0;
 	return 1;
 }
 
-int DownOne()
+int DownOne(void)
 {
 	activeMenuItem++;
 	if(activeMenuItem >= numItems)
@@ -301,7 +357,7 @@ int DownOne()
 	else return 1;
 }
 
-void MenuDown()
+void MenuDown(void)
 {
 	int old = activeMenuItem;
 	int play = 0;
@@ -320,7 +376,7 @@ void MenuDown()
 	if(play) SDLPlaySound(SND_wepnsel1);
 }
 
-int UpOne()
+int UpOne(void)
 {
 	activeMenuItem--;
 	if(activeMenuItem < 0)
@@ -331,7 +387,7 @@ int UpOne()
 	else return 1;
 }
 
-void MenuUp()
+void MenuUp(void)
 {
 	int old = activeMenuItem;
 	int play = 0;
@@ -350,20 +406,21 @@ void MenuUp()
 	if(play) SDLPlaySound(SND_wepnsel1);
 }
 
-void MenuDec()
+void MenuDec(void)
 {
 	printf("Menu item decremented\n");
 }
 
-void MenuInc()
+void MenuInc(void)
 {
 	printf("Menu item incremented\n");
 }
 
-void MenuActivate()
+void MenuActivate(void)
 {
-	SDLPlaySound(SND_spnray03);
 	ButtonParam *bp;
+
+	SDLPlaySound(SND_spnray03);
 	switch(items[activeMenuItem].type)
 	{
 		case BUTTON:
@@ -377,7 +434,7 @@ void MenuActivate()
 	}
 }
 
-void MenuBack()
+void MenuBack(void)
 {
 	SDLPlaySound(SND_spnray02);
 	SwitchMenu(activeMenu->back);
@@ -416,21 +473,21 @@ void HideMenu(void)
 	FireEvent(EVENT_HIDEMENU);
 }
 
-int NullMenuInit()
+int NullMenuInit(void)
 {
-	HideMenu(); // deregister events for good measure
+	HideMenu(); /* deregister events for good measure */
 	return 1;
 }
 
-void NullMenuQuit()
+void NullMenuQuit(void)
 {
 }
 
-void NullMenu()
+void NullMenu(void)
 {
 }
 
-int NoMenuInit()
+int NoMenuInit(void)
 {
 	EventMode(GAME);
 	HideMenu();
@@ -438,24 +495,24 @@ int NoMenuInit()
 	return 1;
 }
 
-void NoMenuQuit()
+void NoMenuQuit(void)
 {
 	DeregisterEvent(EVENT_MENU, ShowMenu);
 }
 
-void NoMenu()
+void NoMenu(void)
 {
 }
 
-void Retry()
+void Retry(void)
 {
 	SwitchMenu(NOMENU);
-	Log("Retry SwitchScene\n");
+	Log(("Retry SwitchScene\n"));
 	SwitchScene(MAINSCENE);
-	Log("Retry Scene Switched\n");
+	Log(("Retry Scene Switched\n"));
 }
 
-int MainMenuInit()
+int MainMenuInit(void)
 {
 	if(!menuActive) RegisterMenuEvents();
 	EventMode(MENU);
@@ -468,18 +525,18 @@ int MainMenuInit()
 	return 1;
 }
 
-void MainMenuQuit()
+void MainMenuQuit(void)
 {
 	ClearMenuItems();
 }
 
-void MainMenu()
+void MainMenu(void)
 {
 	SetOrthoProjection();
-	GLLoadIdentity();
+	glLoadIdentity();
 
 	ShadedBox(minX-BBO, minY-BBO, maxX+BBO, maxY+BBO);
-	GLBindTexture(GL_TEXTURE_2D, TEX_Title);
+	glBindTexture(GL_TEXTURE_2D, TEX_Title);
 	glDisable(GL_LIGHTING);
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_QUADS);
@@ -497,9 +554,9 @@ void MainMenu()
 
 #define FILE_LIST_SIZE 10
 int fileStart;
-GSList *fileList;
+slist *fileList;
 
-char *CatStr(char *a, char *b)
+char *CatStr(const char *a, const char *b)
 {
 	char *s;
 	s = (char*)malloc(sizeof(char) * (strlen(a) + strlen(b) + 1));
@@ -508,18 +565,18 @@ char *CatStr(char *a, char *b)
 	return s;
 }
 
-void FightActivate()
+void FightActivate(void)
 {
-	char *s = CatStr(MUSICDIR, (char*)g_slist_nth(fileList, activeMenuItem)->data);
+	char *s = CatStr(MUSICDIR, (char*)slist_nth(fileList, activeMenuItem)->data);
 	CfgSetS("main.song", s);
 	free(s);
 	SwitchMenu(NOMENU);
-	Log("FightActivate SwitchScene\n");
+	Log(("FightActivate SwitchScene\n"));
 	SwitchScene(MAINSCENE);
-	Log("FightActivate SceneSwitched\n");
+	Log(("FightActivate SceneSwitched\n"));
 }
 
-void FightPageUp()
+void FightPageUp(void)
 {
 	if(fileStart)
 	{
@@ -529,9 +586,9 @@ void FightPageUp()
 	}
 }
 
-void FightPageDown()
+void FightPageDown(void)
 {
-	if(fileStart < g_slist_length(fileList) - FILE_LIST_SIZE)
+	if(fileStart < (signed)slist_length(fileList) - FILE_LIST_SIZE)
 	{
 		activeMenuItem += FILE_LIST_SIZE;
 		MenuClamp();
@@ -558,12 +615,13 @@ char *StringCopy(char *s)
 	return d;
 }
 
-int FightMenuInit()
+int FightMenuInit(void)
 {
 	char *s;
 	DIR *dir;
 	struct dirent *d;
 
+	if(!menuActive) RegisterMenuEvents();
 	menuX = 200;
 	menuY = 200;
 	fileStart = 0;
@@ -581,7 +639,7 @@ int FightMenuInit()
 		if(ValidMusicFile(d->d_name))
 		{
 			s = StringCopy(d->d_name);
-			fileList = g_slist_append(fileList, s);
+			fileList = slist_append(fileList, s);
 			CreateButton(s, FightActivate);
 		}
 	}
@@ -595,14 +653,14 @@ void FightMenuQuit(void)
 	while(fileList)
 	{
 		free(fileList->data);
-		fileList = g_slist_next(fileList);
+		fileList = slist_next(fileList);
 	}
 	ClearMenuItems();
 	DeregisterEvent(EVENT_PAGEUP, FightPageUp);
 	DeregisterEvent(EVENT_PAGEDOWN, FightPageDown);
 }
 
-void EQTriangle()
+void EQTriangle(void)
 {
 	glDisable(GL_TEXTURE_2D);
 	glBegin(GL_TRIANGLES);
@@ -614,7 +672,7 @@ void EQTriangle()
 	glEnable(GL_TEXTURE_2D);
 }
 
-void FightMenu()
+void FightMenu(void)
 {
 	while(activeMenuItem >= fileStart+FILE_LIST_SIZE)
 		fileStart++;
@@ -632,7 +690,7 @@ void FightMenu()
 			EQTriangle();
 		glPopMatrix();
 	}
-	if(fileStart < g_slist_length(fileList) - FILE_LIST_SIZE)
+	if(fileStart < (signed)slist_length(fileList) - FILE_LIST_SIZE)
 	{
 		glPushMatrix();
 			glTranslatef(180, 350, 0.0);
@@ -644,11 +702,10 @@ void FightMenu()
 }
 
 int configuring = 0;
-int ConfigButton();
-char *cfglabels[] = {"Up", "Down", "Left", "Right", "Button 1", "Button 2", "Button 3", "Button 4", "Menu"};
+const char *cfglabels[] = {"Up", "Down", "Left", "Right", "Button 1", "Button 2", "Button 3", "Button 4", "Menu"};
 Text *newKeyText;
 
-void ConfigCreateItems()
+void ConfigCreateItems(void)
 {
 	int x;
 	char *s;
@@ -662,7 +719,7 @@ void ConfigCreateItems()
 		CreateButtonParam(s, ConfigButton, x);
 		free(s);
 	}
-	for(x=0;x<sizeof(cfglabels)/sizeof(*cfglabels);x++)
+	for(x=0;x<(signed)(sizeof(cfglabels)/sizeof(*cfglabels));x++)
 	{
 		CreateText(cfglabels[x], c, 200, 200 + x * FONT_HEIGHT);
 	}
@@ -675,7 +732,7 @@ void ConfigKeyHandler(JoyKey *jk)
 	int tmp = activeMenuItem;
 	if(!SetButton(configuring, jk))
 	{
-		ELog("Error setting configure button %i!\n", configuring);
+		ELog(("Error setting configure button %i!\n", configuring));
 	}
 	SDLPlaySound(SND_spnray03);
 	DeregisterKeyEvent();
@@ -695,32 +752,34 @@ int ConfigButton(int b)
 	return 1;
 }
 
-int ConfigMenuInit()
+int ConfigMenuInit(void)
 {
+	if(!menuActive) RegisterMenuEvents();
 	EventMode(MENU);
 	ConfigCreateItems();
 	return 1;
 }
 
-void ConfigMenuQuit()
+void ConfigMenuQuit(void)
 {
 	ClearMenuItems();
 }
 
-void ConfigMenu()
+void ConfigMenu(void)
 {
 	ShadedBox(minX-BBO, minY-BBO, maxX+BBO, maxY+BBO);
 	DrawMenu();
 }
 
-void Quit()
+void Quit(void)
 {
-	quit = 1; // causes main loop to exit
+	quit = 1; /* causes main loop to exit */
 }
 
-int QuitMenuInit()
+int QuitMenuInit(void)
 {
 	float c[4] = {0.0, 1.0, 1.0, 1.0};
+	if(!menuActive) RegisterMenuEvents();
 	EventMode(MENU);
 	menuX = 350;
 	menuY = 200;
@@ -731,12 +790,12 @@ int QuitMenuInit()
 	return 1;
 }
 
-void QuitMenuQuit()
+void QuitMenuQuit(void)
 {
 	ClearMenuItems();
 }
 
-void QuitMenu()
+void QuitMenu(void)
 {
 	ShadedBox(minX-BBO, minY-BBO, maxX+BBO, maxY+BBO);
 	DrawMenu();
@@ -750,12 +809,12 @@ Menu menus[NUMMENUS] = {	{NullMenuInit, NullMenuQuit, NullMenu, NULLMENU},
 				{ConfigMenuInit, ConfigMenuQuit, ConfigMenu, MAINMENU},
 				{QuitMenuInit, QuitMenuQuit, QuitMenu, MAINMENU}};
 
-int FindActiveItem(MenuItem *items, int numItems)
+int FindActiveItem(MenuItem *activeItems, int numActiveItems)
 {
 	int x;
-	for(x=0;x<numItems;x++)
+	for(x=0;x<numActiveItems;x++)
 	{
-		if(items[x].type < SELECTABLE) return x;
+		if(activeItems[x].type < SELECTABLE) return x;
 	}
 	return 0;
 }
@@ -764,27 +823,27 @@ int SwitchMenu(int m)
 {
 	if(m < 0 || m >= NUMMENUS) return 0;
 	BoundsCheck = MenuWrap;
-	Log("Switching Menu: %i\n", m);
+	Log(("Switching Menu: %i\n", m));
 	if(activeMenu) activeMenu->QuitMenu();
-	else NullMenuQuit(); // called for the first menu switch
+	else NullMenuQuit(); /* called for the first menu switch */
 	if(!menus[m].InitMenu())
 	{
 		activeMenu = &(menus[NULLMENU]);
-		Log("Menu switch failed\n");
+		Log(("Menu switch failed\n"));
 		return 0;
 	}
 	activeMenu = &(menus[m]);
 	if(activeMenuItem < numItems && items[activeMenuItem].type >= SELECTABLE)
 		activeMenuItem = FindActiveItem(items, numItems);
-	Log("Menu switched\n");
+	Log(("Menu switched\n"));
 	return 1;
 }
 
-void DrawButton(GLuint button, int x, int y, int on)
+/*void DrawButton(GLuint button, int x, int y, int on)
 {
 	if(on) glColor3f(1.0, 1.0, 1.0);
 	else glColor3f(0.0, .7, .7);
-	GLBindTexture(GL_TEXTURE_2D, button);
+	glBindTexture(GL_TEXTURE_2D, button);
 
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.0, 0.0); glVertex2i(0+x, 0+y);
@@ -792,4 +851,4 @@ void DrawButton(GLuint button, int x, int y, int on)
 	glTexCoord2f(1.0, 1.0); glVertex2i(256+x, 64+y);
 	glTexCoord2f(0.0, 1.0); glVertex2i(0+x, 64+y);
 	glEnd();
-}
+}*/

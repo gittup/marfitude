@@ -1,13 +1,13 @@
 typedef struct {
-	int (*InitScene)();
-	void (*QuitScene)();
-	void (*Render)();
+	int (*InitScene)(void);
+	void (*QuitScene)(void);
+	void (*Render)(void);
 	} Scene;
 
 typedef struct {
-	int (*InitMenu)();
-	void (*QuitMenu)();
-	void (*Render)();
+	int (*InitMenu)(void);
+	void (*QuitMenu)(void);
+	void (*Render)(void);
 	int back;
 	} Menu;
 

@@ -10,8 +10,9 @@
 #include "joy.h"
 #include "cfg.h"
 #include "log.h"
-#include "../util/memtest.h"
-#include "../util/strfunc.h"
+
+#include "memtest.h"
+#include "strfunc.h"
 
 typedef struct Event {
 	EventHandler handler;
@@ -19,19 +20,27 @@ typedef struct Event {
 	struct Event *next;
 	} Event;
 
+static char *NextDot(char *s);
+static int CfgButton(JoyKey *key, const char *cfgParam);
+static int KeyEqual(JoyKey *key, SDL_KeyboardEvent *e);
+static int JoyButtonEqual(JoyKey *key, SDL_JoyButtonEvent *e);
+/*static int JoyAxisEqual(JoyKey *key, SDL_JoyAxisEvent *e);*/
+static void KeyDownEvent(SDL_KeyboardEvent *e);
+static void JoyButtonDownEvent(SDL_JoyButtonEvent *e);
+
 int eventMode = MENU;
-Event *events[EVENT_LAST] = {};
+Event *events[EVENT_LAST] = {0};
 KeyHandler keyHandler;
-JoyKey buttons[B_LAST] = {};
-char *cfgStrings[B_LAST] = {	"buttons.up",
-				"buttons.down",
-				"buttons.left",
-				"buttons.right",
-				"buttons.button1",
-				"buttons.button2",
-				"buttons.button3",
-				"buttons.button4",
-				"buttons.menu"};
+JoyKey buttons[B_LAST] = {{0,0,0}};
+const char *cfgStrings[B_LAST] = {	"buttons.up",
+					"buttons.down",
+					"buttons.left",
+					"buttons.right",
+					"buttons.button1",
+					"buttons.button2",
+					"buttons.button3",
+					"buttons.button4",
+					"buttons.menu"};
 
 void EventMode(int mode)
 {
@@ -40,21 +49,23 @@ void EventMode(int mode)
 	eventMode = mode;
 }
 
-// finds the beginning of the next . number
-// in config file, key is a.b.c
-// so after atoi() gets a, NextDot returns "b.c" then we get b, etc.
+/* finds the beginning of the next . number
+ * in config file, key is a.b.c
+ * so after atoi() gets a, NextDot returns "b.c" then we get b, etc. */
 char *NextDot(char *s)
 {
+	if(s == NULL) return NULL;
 	while(*s && *s != '.') s++;
 	if(*s) return s+1;
-	return s;
+	return NULL;
 }
 
 int SetButton(int b, JoyKey *jk)
 {
 	char *s;
 	if(b < 0 || b >= B_LAST) return 0;
-	s = MallocString("%i.%i.%i", jk->type, jk->button, jk->axis);
+	s = (char*)malloc(IntLen(jk->type)+IntLen(jk->button)+IntLen(jk->axis)+3);
+	sprintf(s, "%i.%i.%i", jk->type, jk->button, jk->axis);
 	CfgSetS(cfgStrings[b], s);
 	free(s);
 	buttons[b].type = jk->type;
@@ -63,7 +74,7 @@ int SetButton(int b, JoyKey *jk)
 	return 1;
 }
 
-void CfgButton(JoyKey *key, char *cfgParam)
+int CfgButton(JoyKey *key, const char *cfgParam)
 {
 	char *s;
 	char *t;
@@ -72,17 +83,32 @@ void CfgButton(JoyKey *key, char *cfgParam)
 	t = s;
 	key->type = atoi(s);
 	s = NextDot(s);
+	if(s == NULL)
+	{
+		ELog(("Invalid configuration string for '%s'.\n", cfgParam));
+		return 1;
+	}
 	key->button = atoi(s);
 	s = NextDot(s);
+	if(s == NULL)
+	{
+		ELog(("Invalid configuration string for '%s'.\n", cfgParam));
+		return 1;
+	}
 	key->axis = atoi(s);
 	free(t);
+	return 0;
 }
 
-void ConfigureJoyKey()
+int ConfigureJoyKey(void)
 {
 	int x;
+	int err = 0;
 	for(x=0;x<B_LAST;x++)
-		CfgButton(&(buttons[x]), cfgStrings[x]);
+	{
+		err += CfgButton(&(buttons[x]), cfgStrings[x]);
+	}
+	return err;
 }
 
 char *JoyKeyName(int button)
@@ -96,18 +122,20 @@ char *JoyKeyName(int button)
 		s = (char*)malloc(sizeof(char) * (strlen(t)+1));
 		strcpy(s, t);
 	}
-	else // joystick
+	else /* joystick */
 	{
 		int len;
-		if(jk->axis == JK_JOYBUTTON) // button event
+		if(jk->axis == JK_JOYBUTTON) /* button event */
 		{
-			len = snprintf(s, 0, "Joy %i Button %i", jk->type, jk->button);
+			len = IntLen(jk->type) + IntLen(jk->button) + 13;
+/*			len = snprintf(s, 0, "Joy %i Button %i", jk->type, jk->button); */
 			s = (char*)malloc(sizeof(char) * (len+1));
 			sprintf(s, "Joy %i Button %i", jk->type, jk->button);
 		}
-		else // axis event
+		else /* axis event */
 		{
-			len = snprintf(s, 0, "Joy %i Axis %i (%c)", jk->type, jk->axis, jk->button > 0 ? '+' : '-');
+			len = IntLen(jk->type) + IntLen(jk->button) + 15;
+/*			len = snprintf(s, 0, "Joy %i Axis %i (%c)", jk->type, jk->axis, jk->button > 0 ? '+' : '-'); */
 			s = (char*)malloc(sizeof(char) * (len+1));
 			sprintf(s, "Joy %i Axis %i (%c)", jk->type, jk->axis, jk->button > 0 ? '+' : '-');
 		}
@@ -133,14 +161,14 @@ int JoyButtonEqual(JoyKey *key, SDL_JoyButtonEvent *e)
 	return 0;
 }
 
-int JoyAxisEqual(JoyKey *key, SDL_JoyAxisEvent *e)
+/*int JoyAxisEqual(JoyKey *key, SDL_JoyAxisEvent *e)
 {
 	if(	key->type == e->which &&
 		key->button == (e->value > 0) ? 1 : -1 &&
 		key->axis == e->axis)
 		return 1;
 	return 0;
-}
+}*/
 
 void FireEvent(int event)
 {
@@ -163,15 +191,21 @@ int RegisterKeyEvent(KeyHandler handler)
 	}
 	else
 	{
-		ELog("Error: KeyHandler already set!\n");
+		ELog(("Error: KeyHandler already set!\n"));
 		return 0;
 	}
 }
 
-void DeregisterKeyEvent()
+void DeregisterKeyEvent(void)
 {
-	if(keyHandler) keyHandler = NULL;
-	else ELog("Error: KeyHandler not set!\n");
+	if(keyHandler)
+	{
+		keyHandler = NULL;
+	}
+	else
+	{
+		ELog(("Error: KeyHandler not set!\n"));
+	}
 }
 
 int RegisterEvent(int event, EventHandler handler, int stopHere)
@@ -207,11 +241,11 @@ void DeregisterEvent(int event, EventHandler handler)
 		prev = e;
 		e = e->next;
 	}
-	if(e == NULL) ELog("Error: Event %i not available for deregister.\n", event);
+	if(e == NULL) ELog(("Error: Event %i not available for deregister.\n", event));
 	else free(e);
 }
 
-void ClearEvents()
+void ClearEvents(void)
 {
 	SDL_Event event;
 	while(SDL_PollEvent(&event)) {}
@@ -260,14 +294,14 @@ void KeyDownEvent(SDL_KeyboardEvent *e)
 			FireEvent(EVENT_PAGEUP);
 		else if(e->keysym.sym == SDLK_PAGEDOWN)
 			FireEvent(EVENT_PAGEDOWN);
-		// no else cuz all other keys are ignored :)
+		/* no else cuz all other keys are ignored :) */
 	}
 	else if(eventMode == GAME)
 	{
 		for(x=0;x<B_LAST;x++)
 			if(KeyEqual(&buttons[x], e)) FireEvent(x);
 	}
-	// no else (ignore eventMode == KEY and no keyHandler)
+	/* no else (ignore eventMode == KEY and no keyHandler) */
 }
 
 void JoyButtonDownEvent(SDL_JoyButtonEvent *e)
@@ -283,7 +317,7 @@ void JoyButtonDownEvent(SDL_JoyButtonEvent *e)
 	}
 	else if(eventMode == MENU)
 	{
-		// all buttons activate in menu mode
+		/* all buttons activate in menu mode */
 		FireEvent(EVENT_ENTER);
 	}
 	else if(eventMode == GAME)
@@ -291,19 +325,19 @@ void JoyButtonDownEvent(SDL_JoyButtonEvent *e)
 		for(x=B_UP;x<B_LAST;x++)
 			if(JoyButtonEqual(&buttons[x], e)) FireEvent(x);
 	}
-	// no else (ignore eventMode == KEY and no keyHandler)
+	/* no else (ignore eventMode == KEY and no keyHandler) */
 }
 
-void EventLoop()
+void EventLoop(void)
 {
 	int moreEvents = 1;
 	SDL_Event event;
 
 	while(moreEvents && SDL_PollEvent(&event))
 	{
-		// this checks if there's another event waiting
-		// so if the event takes too long to process we won't
-		// stay in the event loop forever :)
+		/* this checks if there's another event waiting
+		 * so if the event takes too long to process we won't
+		 * stay in the event loop forever :) */
 		moreEvents = SDL_PollEvent(NULL);
 		switch(event.type)
 		{
@@ -311,7 +345,7 @@ void EventLoop()
 				KeyDownEvent(&event.key);
 				break;
 			case SDL_KEYUP:
-//				printf("Key up\n");
+/*				printf("Key up\n"); */
 				break;
 			case SDL_JOYAXISMOTION:
 				if(event.jaxis.axis == 1)
@@ -324,7 +358,7 @@ void EventLoop()
 					{
 						FireEvent(EVENT_UP);
 					}
-					// wait for event.jaxis.value to be less than JOY_THRESHOLD before executing menu again
+					/* wait for event.jaxis.value to be less than JOY_THRESHOLD before executing menu again */
 				}
 				break;
 			case SDL_JOYBUTTONDOWN:

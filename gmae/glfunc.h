@@ -3,23 +3,23 @@
 #define FONT_HEIGHT 14
 #define FONT_WIDTH 10
 
-SDL_Surface *InitGL();
+SDL_Surface *InitGL(void);
 void QuitGL(void);
-void SetOrthoProjection();
-void ResetProjection();
+void SetOrthoProjection(void);
+void ResetProjection(void);
 void GLError(char *file, int line, char *func);
 GLuint LoadTex(char *file);
-void PrintGL(int x, int y, char *msg, ...);
+void PrintGL(int x, int y, const char *msg, ...);
 void SetFontSize(float size);
-void UpdateScreen(); // swap buffers and update fps
+void UpdateScreen(void); /* swap buffers and update fps */
 
-int DisplayWidth();
-int DisplayHeight();
+int DisplayWidth(void);
+int DisplayHeight(void);
 
-// functions between glBegin and glEnd can't call the error function
+/* functions between glBegin and glEnd can't call the error function */
 
-//#define GLAdoo(...) glAdoo(__VA_ARGS__); GLError(__FILE__, __LINE__, "Adoo");
-#define GLClear(...) glClear(__VA_ARGS__); GLError(__FILE__, __LINE__, "Clear");
+/*#define GLAdoo(...) glAdoo(__VA_ARGS__); GLError(__FILE__, __LINE__, "Adoo"); */
+/*#define GLClear(...) glClear(__VA_ARGS__); GLError(__FILE__, __LINE__, "Clear");
 #define GLEnd(...) glEnd(__VA_ARGS__); GLError(__FILE__, __LINE__, "End");
 #define GLGenTextures(...) glGenTextures(__VA_ARGS__); GLError(__FILE__, __LINE__, "GenTextures");
 #define GLDeleteTextures(...) glDeleteTextures(__VA_ARGS__); GLError(__FILE__, __LINE__, "DeleteTextures");
@@ -58,4 +58,4 @@ int DisplayHeight();
 #define GLCallList(...) glCallList(__VA_ARGS__); GLError(__FILE__, __LINE__, "CallList");
 #define GLDeleteLists(...) glDeleteLists(__VA_ARGS__); GLError(__FILE__, __LINE__, "DeleteLists");
 #define GLListBase(...) glListBase(__VA_ARGS__); GLError(__FILE__, __LINE__, "ListBase");
-#define GLLightfv(...) glLightfv(__VA_ARGS__); GLError(__FILE__, __LINE__, "Lightfv");
+#define GLLightfv(...) glLightfv(__VA_ARGS__); GLError(__FILE__, __LINE__, "Lightfv");*/

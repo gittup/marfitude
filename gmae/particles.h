@@ -19,30 +19,30 @@ typedef enum {	PT_POINT = 0,
 		} ParticleListTypes;
 
 typedef struct {
-	Obj *o;		// used for physics stuff
-	float col[4];	// RGBA colors
-	int type;	// one of ParticleTypes above
-	float size;	// dimension of particle
-	int active;	// 1 = drawn, 0 not drawn
-	float life;	// TTL in seconds
+	Obj *o;		/* used for physics stuff */
+	float col[4];	/* RGBA colors */
+	int type;	/* one of ParticleTypes above */
+	float size;	/* dimension of particle */
+	int active;	/* 1 = drawn, 0 not drawn */
+	float life;	/* TTL in seconds */
 	} Particle;
 
 typedef struct {
-	int type;	// one of ParticleListTypes above
-	int billboard;	// 1 = billboarded, 0 = not billboarded
-	GLuint tex1;	// first texture (if necessary)
-	GLuint tex2;	// second texture (if necessary)
+	int type;	/* one of ParticleListTypes above */
+	int billboard;	/* 1 = billboarded, 0 = not billboarded */
+	GLuint tex1;	/* first texture (if necessary) */
+	GLuint tex2;	/* second texture (if necessary) */
 	} ParticleType;
 
 typedef int (*PTestFunc)(Particle *);
 
-int InitParticles();
-void QuitParticles();
-void DrawParticles();
+int InitParticles(void);
+void QuitParticles(void);
+void DrawParticles(void);
 void DrawParticlesTest(PTestFunc p);
-void StartParticles();	// set up OpenGL variables
-void StopParticles();	// reset OpenGL variables
+void StartParticles(void);	/* set up OpenGL variables */
+void StopParticles(void);	/* reset OpenGL variables */
 void CreateParticle(Obj *o, float col[4], int type, float size);
-void ClearParticles();
+void ClearParticles(void);
 
 extern GLuint plist;

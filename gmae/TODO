@@ -35,8 +35,6 @@ add in thing to not play the first note of a track if we're not on that track
 takes long to quit - log?
 menu sometimes doesn't update when scrolling? - fixed with event?
 
-fix newline for windows - eg snprintf(&char, 1, "\n"); to find out if it's 10 or 13, then use that number for font generation
-
 need CALLBACK thing for function pointers? - windows compatibility
 
 fix event system - use user events? do anything that doesn't suck?
