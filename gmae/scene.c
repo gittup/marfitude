@@ -347,8 +347,8 @@ slist *RemoveList(slist *list, int tic)
 		sn = (ScreenNote*)list->data;
 		if(sn->tic != tic) break;
 		unusedList = slist_append(unusedList, list->data);
+		list = slist_remove(list, list->data);
 		sn->ins = __LINE__;
-		list = slist_next(list);
 	}
 	return list;
 }
@@ -764,6 +764,9 @@ void MainQuit(void)
 	FreeWam(wam);
 	Log(("A\n"));
 	StopModule();
+	slist_free(hitList);
+	slist_free(notesList);
+	slist_free(unusedList);
 	Log(("Main scene quit finished\n"));
 }
 

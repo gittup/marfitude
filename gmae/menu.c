@@ -690,11 +690,15 @@ int FightMenuInit(void)
 
 void FightMenuQuit(void)
 {
-	while(fileList)
+	slist *tmp;
+
+	tmp = fileList;
+	while(tmp)
 	{
-		free(fileList->data);
-		fileList = slist_next(fileList);
+		free(tmp->data);
+		tmp = slist_next(tmp);
 	}
+	slist_free(fileList);
 	ClearMenuItems();
 	DeregisterEvent(EVENT_PAGEUP, FightPageUp);
 	DeregisterEvent(EVENT_PAGEDOWN, FightPageDown);
