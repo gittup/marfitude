@@ -178,13 +178,13 @@ typedef struct {
 	float time;
 	} Laser;
 typedef struct {
-	int startTic;	/* first tic that we need to play */
-	int stopTic;	/* last tic that we need to play */
-	int stopRow;	/* corresponding row to stopTic */
-	int nextStartRow;/*which row the game is cleared to. */
-	int lastTic;	/* last note played is in lastTic */
-	int notesHit;	/* number of notes we hit so far */
-	int notesTotal;	/* total number of notes we need to play */
+	int startTic;     /* first tic that we need to play */
+	int stopTic;      /* last tic that we need to play */
+	int stopRow;      /* corresponding row to stopTic */
+	int nextStartRow; /*which row the game is cleared to. */
+	int lastTic;      /* last note played is in lastTic */
+	int notesHit;     /* number of notes we hit so far */
+	int notesTotal;   /* total number of notes we need to play */
 	} AttackPattern;
 typedef struct {
 	double part;	/* cumulative row adder, when >= 1.0 inc minRow */
@@ -467,6 +467,9 @@ void Press(int button)
 				if(ap.notesHit == ap.notesTotal) {
 					ap.nextStartRow = ap.stopRow;
 					ac[channelFocus].cleared = ap.stopRow + LINES_PER_AP * ROWS_PER_LINE * wam->numCols;
+					/* clear to a line break */
+					while(ac[channelFocus].cleared < wam->numRows && wam->rowData[ac[channelFocus].cleared].line == 0)
+						ac[channelFocus].cleared++;
 					ac[channelFocus].minRow = curRow;
 					ac[channelFocus].part = 0.0;
 					score += ap.notesHit * multiplier;
