@@ -106,7 +106,6 @@ static void MenuDec(void);
 static void MenuInc(void);
 static void MenuActivate(void);
 static int ValidMusicFile(char *s);
-static char *StringCopy(char *s);
 static int alphabetical(const void *a, const void *b);
 static int FightMenuInit(void);
 static void FightMenuQuit(void);
@@ -639,14 +638,6 @@ int ValidMusicFile(char *s)
 		s++;
 	}
 	return 0;
-}
-
-char *StringCopy(char *s)
-{
-	char *d;
-	d = (char*)malloc(sizeof(char) * (strlen(s) + 1));
-	strcpy(d, s);
-	return d;
 }
 
 int alphabetical(const void *a, const void *b)
