@@ -1,0 +1,46 @@
+multiple buttons for single action
+mk GRAPH=1 install fails to generate graph and leaves dep.dot around
+fix cfg.c - don't use header.option thing
+allow user to enter initials
+keep track of multiple high scores (eg. top 5)
+
+change list foreach?
+remove blank end patterns
+recursive search for best track representation?
+
+only allow adjacent channels to to mixed
+	startchan, endchan - instead of *channels
+
+check and fix physics stuff
+	multiply timer stuff in timer.c - eg 1/2*t*t for acceleration
+	rather than multiply it over and over for each object in a frame
+
+cannona.it stops playing after row 24
+
+use joykey.up or something, set it to 1 when SDLKEYUP/JOYBUTTONUP and 0 on SDLKEYDOWN/JOYBUTTONDOWN - refire event after a delay (rather than use the KeyRepeating thing, since this will work for joysticks too)
+
+play music while switching song?
+
+add in thing to not play the first note of a track if we're not on that track
+	(it starts not muted and so plays a little, but if we're not on the
+	track there is no chance we will hit it - make sense?)
+
+fix event system - use user events? do anything that doesn't suck?
+draw transparent objects after opaque ones - use readonly depth buf
+	- disable blending during opaque objects for speed??
+
+clean up glinit
+difficulty - spacing of dots, timing of when you press button
+	- also include presets "easy" "medium" "hard" ?
+
+add in cfg for mods - allow naming of tracks?
+
+speed limit signs when the speed changes ?
+
+more video options - eg texture enable/disable, lightning, etc etc
+sort transparent objects to render them properly (or cheat) (or leave as is)
+Add 3d font?
+compress sounds with zlib?
+check mem usage?
+midi support?
+writing a gmae :)
