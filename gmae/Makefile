@@ -1,5 +1,7 @@
-CC = gcc -c -Wall -O3
-CFLAGS = `sdl-config --cflags` -DLOG -DDEBUG_MEM
+CC = gcc
+#CFLAGS = `sdl-config --cflags` -DLOG -DDEBUG_MEM -fomit-frame-pointer -c -Wall -O3
+CFLAGS = `sdl-config --cflags` -DLOG -fomit-frame-pointer -c -Wall -O3
+#CFLAGS = `sdl-config --cflags` -fomit-frame-pointer -c -Wall -O3
 LIBS = `sdl-config --libs` -lm -lSDL_image -lSDL_mixer -lGL -lGLU
 UTILS = ../util/fatalerror.o ../util/sdlfatalerror.o ../util/savetga.o ../util/token.o ../util/textprogress.o ../util/strfunc.o ../util/memtest.o
 OBJS = audio.o cfg.o event.o fps.o glfunc.o joy.o log.o main.o menu.o module.o munitrk.o phys.o scene.o sounds.o textures.o timer.o wam.o $(UTILS)
@@ -41,7 +43,9 @@ textures.o: textures.c textures.h glfunc.h log.h ../util/memtest.h ../util/textp
 	$(CC) $(CFLAGS) textures.c
 timer.o: timer.c
 	$(CC) $(CFLAGS) timer.c
-wam.o: wam.c wam.h cfg.h log.h module.h ../util/fatalerror.h ../util/memtest.h
+wam.o: wam.c wam.h cfg.h log.h module.h ../util/fatalerror.h ../util/memtest.h ../util/textprogress.h
+	@echo "Removing old WAM files";
+	rm -f wam/*.wam
 	$(CC) $(CFLAGS) wam.c
 
 clean:
