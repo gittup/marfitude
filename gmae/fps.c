@@ -5,8 +5,8 @@
 #include "glfunc.h"
 #include "timer.h"
 
-Uint32 fpsticks, frames;
-float fps;
+static Uint32 fpsticks, frames;
+static float fps;
 
 void InitFPS(void)
 {
