@@ -1,7 +1,7 @@
 include mk/lib/sdl.mk
 
 EXTRACFLAGS = $(BDECFLAGS)
-TARGET = libmarf
+TARGET = marf
 
 include mk/lang/c.mk
 
