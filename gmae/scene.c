@@ -55,8 +55,7 @@ int SwitchScene(int scene)
 	if(scene < 0 || scene >= NUMSCENES) return 0;
 	Log(("Switching scene: %i\n", scene));
 	if(activeScene) activeScene->QuitScene();
-	if(!scenes[scene].InitScene())
-	{
+	if(!scenes[scene].InitScene()) {
 		activeScene = &(scenes[NULLSCENE]);
 		ELog(("Scene switch failed\n"));
 		return 0;
@@ -268,8 +267,7 @@ static int songStarted;	/* this is set once we get to the first row, and the */
 
 void ChannelUp(void)
 {
-	if(channelFocus + 1 < wam->numCols)
-	{
+	if(channelFocus + 1 < wam->numCols) {
 		channelFocus++;
 		if(ap.notesHit > 0) multiplier = 1;
 		ResetAp();
@@ -279,8 +277,7 @@ void ChannelUp(void)
 
 void ChannelDown(void)
 {
-	if(channelFocus != 0)
-	{
+	if(channelFocus != 0) {
 		channelFocus--;
 		if(ap.notesHit > 0) multiplier = 1;
 		ResetAp();
@@ -296,8 +293,7 @@ Column *ColumnFromNum(int col)
 void Setmute(Column *c, int mute)
 {
 	int x;
-	for(x=0;x<c->numchn;x++)
-	{
+	for(x=0;x<c->numchn;x++) {
 		if(mute) Player_Mute(c->chan[x]);
 		else Player_Unmute(c->chan[x]);
 	}
@@ -307,8 +303,7 @@ void Setmute(Column *c, int mute)
 void UpdateModule(void)
 {
 	int x;
-	for(x=0;x<wam->numCols;x++)
-	{
+	for(x=0;x<wam->numCols;x++) {
 		if(ac[x].cleared || ac[x].hit > ac[x].miss) Setmute(ColumnFromNum(x), UNMUTE);
 		else Setmute(ColumnFromNum(x), MUTE);
 	}
@@ -322,18 +317,13 @@ void AddNotes(int row)
 	ScreenNote *sn;
 	if(row < 0 || row >= wam->numRows) return;
 	tic = wam->rowData[row].ticpos;
-	for(x=0;x<wam->numCols;x++)
-	{
-		if(wam->rowData[row].notes[x])
-		{
+	for(x=0;x<wam->numCols;x++) {
+		if(wam->rowData[row].notes[x]) {
 			sn = unusedList->data;
-			if(row < ac[x].minRow)
-			{
+			if(row < ac[x].minRow) {
 				hitList = slist_append(hitList, sn);
 				sn->ins = __LINE__;
-			}
-			else
-			{
+			} else {
 				notesList = slist_append(notesList, sn);
 				sn->ins = __LINE__;
 			}
@@ -350,8 +340,7 @@ void AddNotes(int row)
 slist *RemoveList(slist *list, int tic)
 {
 	ScreenNote *sn;
-	while(list)
-	{
+	while(list) {
 		sn = (ScreenNote*)list->data;
 		if(sn->tic != tic) break;
 		unusedList = slist_append(unusedList, list->data);
@@ -376,8 +365,7 @@ void RemoveNotes(int row)
 void AddLine(int row)
 {
 	if(row < 0 || row >= wam->numRows) return;
-	if(wam->rowData[row].line)
-	{
+	if(wam->rowData[row].line) {
 		linesOnScreen[stopLine].p1.x = 1.0;
 		linesOnScreen[stopLine].p1.y = 0.0;
 		linesOnScreen[stopLine].p1.z = TIC_HEIGHT * (double)wam->rowData[row].ticpos;
@@ -394,8 +382,7 @@ void AddLine(int row)
 void RemoveLine(int row)
 {
 	if(row < 0 || row >= wam->numRows) return;
-	while(linesOnScreen[startLine].row == row)
-	{
+	while(linesOnScreen[startLine].row == row) {
 		linesOnScreen[startLine].row = -1;
 		startLine++;
 		if(startLine == numLines) startLine = 0;
@@ -417,8 +404,7 @@ void RandomColor(float col[4])
 ScreenNote *FindNote(slist *list, int tic, int col)
 {
 	ScreenNote *sn;
-	while(list)
-	{
+	while(list) {
 		sn = (ScreenNote*)list->data;
 		if(sn->tic == tic && sn->col == col) return sn;
 		list = slist_next(list);
@@ -446,10 +432,8 @@ void Press(int button)
 	numLasers++;
 	if(numLasers >= NUM_LASERS) numLasers = 0;
 
-	for(i=-1;i<=1;i++)
-	{
-		if(curRow + i >= 0 && curRow + i < wam->numRows)
-		{
+	for(i=-1;i<=1;i++) {
+		if(curRow + i >= 0 && curRow + i < wam->numRows) {
 			r = &wam->rowData[curRow+i];
 			/* if we're in the attackpattern limits, and */
 			/* if we didn't already play this row, and this row */
@@ -460,20 +444,17 @@ void Press(int button)
 				r->ticpos < ap.stopTic &&
 				r->ticpos > ap.lastTic &&
 				abs(r->ticpos - curTic) <= TIC_ERROR &&
-				button == r->notes[channelFocus])
-			{
+				button == r->notes[channelFocus]) {
+
 				sn = FindNote(notesList, r->ticpos, channelFocus);
-				if(!sn)
-				{
+				if(!sn) {
 					ELog(("Error: Struck note not found!\n"));
 					sn = FindNote(hitList, r->ticpos, channelFocus);
-					if(sn)
-					{
+					if(sn) {
 						ELog(("note found in hitList: %i\n", sn->ins));
 					}
 					sn = FindNote(unusedList, r->ticpos, channelFocus);
-					if(sn)
-					{
+					if(sn) {
 						ELog(("note found in unusedList: %i\n", sn->ins));
 					}
 					break;
@@ -483,8 +464,7 @@ void Press(int button)
 				sn->ins = __LINE__;
 				ap.lastTic = r->ticpos;
 				ap.notesHit++;
-				if(ap.notesHit == ap.notesTotal)
-				{
+				if(ap.notesHit == ap.notesTotal) {
 					ap.nextStartRow = ap.stopRow;
 					ac[channelFocus].cleared = ap.stopRow + LINES_PER_AP * ROWS_PER_LINE * wam->numCols;
 					ac[channelFocus].minRow = curRow;
@@ -495,31 +475,48 @@ void Press(int button)
 				}
 				ac[channelFocus].hit = r->ticpos;
 				noteHit = 1;
+				r->notes[channelFocus] = 0;
 				break;
 			}
 		}
 	}
 
 	r = &wam->rowData[Row(curRow)];
-	if(!noteHit && r->ticpos >= ap.startTic && r->ticpos < ap.stopTic) /* oops, we missed! */
-	{
+	if(!noteHit && r->ticpos >= ap.startTic && r->ticpos < ap.stopTic) {
+		/* oops, we missed! */
 		if(ap.notesHit > 0) multiplier = 1;
-		ResetAp();
 		if(IsValidRow(curRow) && r->ticpos >= ap.startTic && r->ticpos < ap.stopTic)
 			ac[channelFocus].miss = r->ticpos;
+		ResetAp();
 	}
 	UpdateModule();
 }
 
 static int lastkeypressed = 1;
 /* i really should fix the event system...i suck! */
-void Press1(void) {lastkeypressed = 1; Press(1);}
+void Press1(void)
+{
+	lastkeypressed = 1;
+	Press(1);
+}
 
-void Press2(void) {lastkeypressed = 2; Press(2);}
+void Press2(void)
+{
+	lastkeypressed = 2;
+	Press(2);
+}
 
-void Press3(void) {lastkeypressed = 4; Press(4);} /* yes, this is really 4 (3rd bit) */
+void Press3(void)
+{
+	/* yes, this is really 4 (3rd bit) */
+	lastkeypressed = 4;
+	Press(4);
+}
 
-void Press4(void) {Press(lastkeypressed);}
+void Press4(void)
+{
+	Press(lastkeypressed);
+}
 
 void SetMainView(void)
 {
@@ -538,20 +535,14 @@ void SetMainView(void)
 void FixVb(int *vb, int *row)
 {
 	*row = 0;
-	while(1)
-	{
-		if(*row < 0 && *vb >= wam->rowData[0].sngspd)
-		{
+	while(1) {
+		if(*row < 0 && *vb >= wam->rowData[0].sngspd) {
 			(*row)++;
 			*vb -= wam->rowData[0].sngspd;
-		}
-		else if(*row >= 0 && *vb >= wam->rowData[*row].sngspd)
-		{
+		} else if(*row >= 0 && *vb >= wam->rowData[*row].sngspd) {
 			(*row)++;
 			*vb -= wam->rowData[*row].sngspd;
-		}
-		else if(*vb < 0)
-		{
+		} else if(*vb < 0) {
 			(*row)--;
 			*vb += wam->rowData[0].sngspd;
 		}
@@ -563,8 +554,7 @@ void FixVb(int *vb, int *row)
 /* so we know if we're off */
 void TickHandler(void)
 {
-	if(songStarted)
-	{
+	if(songStarted) {
 		if(!Player_Paused()) tickCounter++;
 	}
 	oldHand();
@@ -575,14 +565,12 @@ int MainInit()
 	int x;
 	Log(("Load Wam\n"));
 	wam = LoadWam(CfgS("main.song"));
-	if(wam == NULL)
-	{
+	if(wam == NULL) {
 		ELog(("Error: Couldn't load WAM file\n"));
 		return 0;
 	}
 	Log(("Start module\n"));
-	if(!StartModule(CfgS("main.song")))
-	{
+	if(!StartModule(CfgS("main.song"))) {
 		ELog(("Error: Couldn't start module\n"));
 		return 0;
 	}
@@ -606,8 +594,7 @@ int MainInit()
 	channelFocus = 0;
 	theta = 0.0;
 
-	for(x=0;x<wam->numCols;x++)
-	{
+	for(x=0;x<wam->numCols;x++) {
 		ac[x].part = 0.0;
 		ac[x].minRow = 0;
 		ac[x].cleared = 0;
@@ -636,8 +623,7 @@ int MainInit()
 	unusedList = NULL;
 	notesList = NULL;
 	hitList = NULL;
-	for(x=0;x<numNotes;x++)
-	{
+	for(x=0;x<numNotes;x++) {
 		unusedList = slist_append(unusedList, (void *)&notesOnScreen[x]);
 		notesOnScreen[x].ins = __LINE__;
 	}
@@ -672,15 +658,12 @@ int MainInit()
 	mainTexes[6] = TEX_Walnut;
 	mainTexes[7] = TEX_Parque;
 
-	for(x=0;x<wam->numCols;x++)
-	{
-		glNewList(rowList+x, GL_COMPILE);
-		{
+	for(x=0;x<wam->numCols;x++) {
+		glNewList(rowList+x, GL_COMPILE); {
 			glColor4f(1.0, 1.0, 1.0, 1.0);
 			glNormal3f(0.0, 1.0, 0.0);
 			glMaterialfv(GL_FRONT, GL_DIFFUSE, lightNormal);
-			glBegin(GL_QUADS);
-			{
+			glBegin(GL_QUADS); {
 				glTexCoord2f(0.0, (double)x/4.0);
 				glVertex3f(-1.0, 0.0, 0.0);
 				glTexCoord2f(1.0, (double)x/4.0);
@@ -693,10 +676,8 @@ int MainInit()
 		} glEndList();
 	}
 
-	glNewList(noteList, GL_COMPILE);
-	{
-		glBegin(GL_TRIANGLE_FAN);
-		{
+	glNewList(noteList, GL_COMPILE); {
+		glBegin(GL_TRIANGLE_FAN); {
 			glNormal3f( 0.0, 1.0, 0.0);
 			glVertex3f( 0.0, 0.15, 0.0);
 
@@ -729,8 +710,7 @@ void MainQuit(void)
 	Log(("Main Scene quit\n"));
 	oldHand = MikMod_RegisterPlayer(oldHand);
 	Log(("A\n"));
-	if(songStarted)
-	{
+	if(songStarted) {
 		DeregisterEvent(EVENT_SHOWMENU, Player_TogglePause);
 		DeregisterEvent(EVENT_HIDEMENU, Player_TogglePause);
 	}
@@ -784,13 +764,11 @@ void DrawLines(void)
 	glDisable(GL_LIGHTING);
 	glNormal3f(0.0, 1.0, 0.0);
 	glBegin(GL_LINES);
-	if(startLine <= stopLine)
-	{
+	if(startLine <= stopLine) {
 		for(x=startLine;x<stopLine;x++)
 			DrawLine(x);
 	}
-	else
-	{
+	else {
 		for(x=startLine;x<numLines;x++)
 			DrawLine(x);
 		for(x=0;x<stopLine;x++)
@@ -814,21 +792,20 @@ void ResetAp(void)
 	int start;
 	int end;
 	int apLines = 0;
+
 	ap.notesHit = 0;
 	ap.notesTotal = 0;
 	start = Row(Max(Max(RowByTic(curTic), ap.nextStartRow), ac[channelFocus].cleared));
 	while(start < wam->numRows && (wam->rowData[start].line == 0 || wam->rowData[start].ticpos <= ac[channelFocus].miss)) start++;
 	end = start;
-	while(apLines < LINES_PER_AP && end < wam->numRows)
-	{
+	while(apLines < LINES_PER_AP && end < wam->numRows) {
 		/* don't count the note on the last row, since that will */
 		/* be the beginning of the next "AttackPattern" */
 		if(wam->rowData[end].notes[channelFocus]) ap.notesTotal++;
 		end++;
 		if(wam->rowData[end].line != 0) apLines++;
 	}
-	if(apLines < LINES_PER_AP)
-	{
+	if(apLines < LINES_PER_AP) {
 		/* at the end of the song we can't find a valid pattern to do */
 		ap.startTic = -1;
 		ap.stopTic = -1;
@@ -848,15 +825,11 @@ void CheckMissedNotes(void)
 	ScreenNote *sn;
 	slist *list;
 	list = notesList;
-	while(list)
-	{
+	while(list) {
 		sn = (ScreenNote*)list->data;
-		if(	curTic - sn->tic > TIC_ERROR &&
-			sn->tic > ac[sn->col].miss)
-		{
+		if(curTic - sn->tic > TIC_ERROR && sn->tic > ac[sn->col].miss) {
 			ac[sn->col].miss = sn->tic;
-			if(sn->col == channelFocus && sn->tic >= ap.startTic && sn->tic < ap.stopTic)
-			{
+			if(sn->col == channelFocus && sn->tic >= ap.startTic && sn->tic < ap.stopTic) {
 				if(ap.notesHit > 0) multiplier = 1;
 				ResetAp();
 			}
@@ -868,8 +841,7 @@ void CheckMissedNotes(void)
 void CheckColumn(int row)
 {
 	int x;
-	for(x=0;x<wam->numCols;x++)
-	{
+	for(x=0;x<wam->numCols;x++) {
 		if(ac[x].cleared == row) ac[x].cleared = 0;
 	}
 }
@@ -895,12 +867,10 @@ void MoveHitNotes(int tic, int col)
 	slist *holder = NULL;
 	Log(("moveHIt\n"));
 	tmp = slist_find_custom(notesList, (void *)tic, NoteListTic);
-	while(tmp)
-	{
+	while(tmp) {
 		sn = (ScreenNote*)tmp->data;
 
-		if(sn->tic == tic && sn->col == col)
-		{
+		if(sn->tic == tic && sn->col == col) {
 			hitList = slist_insert_sorted(hitList, sn, SortByTic);
 			holder = slist_append(holder, sn);
 			sn->ins = __LINE__;
@@ -908,8 +878,7 @@ void MoveHitNotes(int tic, int col)
 		tmp = slist_next(tmp);
 	}
 	tmp = holder;
-	while(tmp)
-	{
+	while(tmp) {
 		notesList = slist_remove(notesList, tmp->data);
 		tmp = slist_next(tmp);
 	}
@@ -923,11 +892,9 @@ void UpdateClearedCols(void)
 	int tic;
 	float col[4];
 	Obj *o;
-	for(x=0;x<wam->numCols;x++)
-	{
+	for(x=0;x<wam->numCols;x++) {
 		ac[x].part += (double)ticDiff / 40.0;
-		while(ac[x].part >= 1.0 && ac[x].minRow < ac[x].cleared)
-		{
+		while(ac[x].part >= 1.0 && ac[x].minRow < ac[x].cleared) {
 			tic = wam->rowData[Row(ac[x].minRow)].ticpos;
 			MoveHitNotes(tic, x);
 			ac[x].part -= 1.0;
@@ -960,8 +927,7 @@ void UpdatePosition(void)
 	/* song time.  This is needed in case a little blip in the process */
 	/* causes the song to be ahead or behind the game, so we can */
 	/* right ourselves. */
-	if(songStarted)
-	{
+	if(songStarted) {
 		tmpAdj = (tickCounter - curTic) << 5;
 		if(!TIMEADJ) tmpAdj = 0;
 		Log(("Adj: %i\n", (tickCounter-curTic) << 5));
@@ -969,22 +935,19 @@ void UpdatePosition(void)
 		else ticTime += tmpAdj;
 	}
 
-	while(ticTime >= 2500)
-	{
+	while(ticTime >= 2500) {
 		ticTime -= 2500;
 		curTic++;
 		curVb++;
 		firstVb++;
 		lastVb++;
 		CheckMissedNotes();
-		if(curVb >= wam->rowData[Row(curRow)].sngspd)
-		{
+		if(curVb >= wam->rowData[Row(curRow)].sngspd) {
 			curVb -= wam->rowData[Row(curRow)].sngspd;
 			curRow++;
 			if(curRow > ap.stopRow) ResetAp();
 			CheckColumn(Row(curRow));
-			if(curRow == 0) /* start the song! */
-			{
+			if(curRow == 0) { /* start the song! */
 				Player_TogglePause();
 				songStarted = 1;
 				RegisterEvent(EVENT_SHOWMENU, Player_TogglePause, EVENTTYPE_MULTI);
@@ -993,8 +956,7 @@ void UpdatePosition(void)
 		}
 		UpdateModule();
 
-		if(firstVb >= wam->rowData[Row(firstRow)].sngspd)
-		{
+		if(firstVb >= wam->rowData[Row(firstRow)].sngspd) {
 			firstVb -= wam->rowData[Row(firstRow)].sngspd;
 			/* the remove functions check to make sure */
 			/* the row is valid, so it's ok to pass firstRow */
@@ -1003,8 +965,7 @@ void UpdatePosition(void)
 			firstRow++;
 		}
 
-		if(lastVb >= wam->rowData[Row(lastRow)].sngspd)
-		{
+		if(lastVb >= wam->rowData[Row(lastRow)].sngspd) {
 			lastVb -= wam->rowData[Row(lastRow)].sngspd;
 			lastRow++;
 			/* the add functions check to make sure the */
@@ -1024,27 +985,23 @@ void DrawRows(double startTic, double stopTic)
 	if(startTic >= stopTic) return;
 	glPushMatrix();
 	glDisable(GL_LIGHTING);
-	for(col=0;col<wam->numCols;col++)
-	{
+	for(col=0;col<wam->numCols;col++) {
 		start = startTic;
 		stop = stopTic;
 		glBindTexture(GL_TEXTURE_2D, mainTexes[col]);
 		if(wam->rowData[Row(ac[col].minRow)].ticpos > start)
 			start = wam->rowData[Row(ac[col].minRow)].ticpos;
-		if(col == channelFocus && ap.startTic != -1)
-		{
+		if(col == channelFocus && ap.startTic != -1) {
 			if(ap.startTic > start) start = ap.startTic;
 			if(ap.stopTic < stop) stop = ap.stopTic;
 		}
-		if(start >= stop)
-		{
+		if(start >= stop) {
 			glTranslated(-BLOCK_WIDTH, 0, 0);
 			continue;
 		}
 		start *= TIC_HEIGHT;
 		stop *= TIC_HEIGHT;
-		glBegin(GL_QUADS);
-		{
+		glBegin(GL_QUADS); {
 			glTexCoord2f(0.0, start/ 4.0);
 			glVertex3f(-1.0, 0.0, start);
 			glTexCoord2f(1.0, start / 4.0);
@@ -1104,8 +1061,7 @@ void DrawNotes(void)
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, lightNormal);
 
 	rotnoteList = glGenLists(1);
-	glNewList(rotnoteList, GL_COMPILE);
-	{
+	glNewList(rotnoteList, GL_COMPILE); {
 		glRotatef(theta, 0.0, 1.0, 0.0);
 		glCallList(noteList);
 	} glEndList();
@@ -1129,10 +1085,8 @@ void DrawTargets(void)
 	glBindTexture(GL_TEXTURE_2D, TEX_Target);
 	glTranslated(-NOTE_WIDTH, 0.0, 0.0);
 	glNormal3f(0.0, 1.0, 0.0);
-	for(x=-1;x<=1;x++)
-	{
-		glBegin(GL_QUADS);
-		{
+	for(x=-1;x<=1;x++) {
+		glBegin(GL_QUADS); {
 			glTexCoord2f(0.0, 0.0);
 			glVertex3f(-0.25, 0.01, -0.25);
 			glTexCoord2f(1.0, 0.0);
@@ -1157,20 +1111,17 @@ void DrawScoreboard(void)
 /*	} */
 	PrintGL(50, 0, "Playing: %s", mod->songname);
 	if(curRow == wam->numRows) PrintGL(50, 15, "Song complete!");
-	else if(curRow >= 0)
-	{
+	else if(curRow >= 0) {
 /*		if(!TIMEADJ) glColor4f(1.0, 0.0, 0.0, 1.0);
 		PrintGL(50, 15, "Song: %i (%i)/%i, Row: %i (%i)/%i Pattern: %i/%i", mod->sngpos, wam->rowData[curRow].sngpos, mod->numpos, mod->patpos, wam->rowData[curRow].patpos, NumPatternsAtSngPos(mod->sngpos),  mod->positions[mod->sngpos], mod->numpat);
 		if(!TIMEADJ) glColor4f(1.0, 1.0, 1.0, 1.0); */
-	}
-	else
-	{
+	} else {
 		int timeLeft = (int)(0.5 + -2500.0 * (double)wam->rowData[0].sngspd * ((double)curRow) / (1000.0 * (double)wam->rowData[0].bpm));
 		if(timeLeft > 0) PrintGL(50, 15, "%i...", timeLeft);
 		else PrintGL(50, 15, "GO!!");
 	}
 /*	if(curRow >= 0 && curRow < wam->numRows) PrintGL(0, 62, "Tick: %i, %i.%f / %i\n", wam->rowData[curRow].ticpos, curTic, partialTic, wam->numTics); */
-	PrintGL(50, 30, "Speed: %i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
+	PrintGL(50, 30, "Speed: %2i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
 	PrintGL(0, 50, "%i - %i, note: %i, hit: %i/%i\n", ap.startTic, ap.stopTic, ap.lastTic, ap.notesHit, ap.notesTotal);
 	PrintGL(400, 20, "Score: %i\nMultiplier: %i\n", score, multiplier);
 /*	PrintGL(400, 50, "DN: %i, %i, %i\n", slist_length(notesList), slist_length(hitList), slist_length(unusedList)); */
@@ -1179,15 +1130,13 @@ void DrawScoreboard(void)
 	glColor4f(0.0, 0.8, 0.5, 1.0);
 	SetOrthoProjection();
 	glDisable(GL_TEXTURE_2D);
-	glBegin(GL_LINE_LOOP);
-	{
+	glBegin(GL_LINE_LOOP); {
 		glVertex2i(5, 80);
 		glVertex2i(15, 80);
 		glVertex2i(15, 450);
 		glVertex2i(5, 450);
 	} glEnd();
-	glBegin(GL_QUADS);
-	{
+	glBegin(GL_QUADS); {
 		float mult = (double)curRow / (double)wam->numRows;
 		glColor4f(0.0, 0.8, 0.5, 1.0);
 		glVertex2i(6, 79*mult+449*(1.0-mult));
@@ -1211,8 +1160,7 @@ double LaserAdj(double a, double b, double dt)
 void DrawLaser(Laser *l)
 {
 	glColor4f(1.0, 0.0, 1.0, l->time);
-	glBegin(GL_QUADS);
-	{
+	glBegin(GL_QUADS); {
 		glTexCoord2f(0.0, 0.0);
 		glVertex3f(l->p1.x-0.1, l->p1.y, l->p1.z);
 		glTexCoord2f(1.0, 0.0);
@@ -1233,8 +1181,7 @@ void DrawLasers(void)
 {
 	int x;
 	glBindTexture(GL_TEXTURE_2D, TEX_Laser);
-	for(x=0;x<NUM_LASERS;x++)
-	{
+	for(x=0;x<NUM_LASERS;x++) {
 		DrawLaser(&laser[x]);
 	}
 }
@@ -1329,8 +1276,7 @@ void MainScene(void)
 	temp[0] *= 3.0;
 	glMaterialfv(GL_FRONT, GL_EMISSION, temp);
 	glNormal3f(0.0, 1.0, 0.0);
-	glBegin(GL_QUADS);
-	{
+	glBegin(GL_QUADS); {
 		glTexCoord2f(0.0, 0.0);
 		glVertex3f(light[0]-.5, light[1]-.5, light[2]);
 		glTexCoord2f(1.0, 0.0);
