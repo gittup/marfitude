@@ -1096,13 +1096,26 @@ void DrawNote(void *snp, void *not_used)
 
 void DrawHitNote(void *snp, void *not_used)
 {
+	int i;
+	int j;
+	float mat[16];
 	struct screenNote *sn = (struct screenNote*)snp;
+
 	if(not_used) {}
 
 	glPushMatrix();
 	glTranslated(	sn->pos.x,
 			sn->pos.y,
 			sn->pos.z+0.3);
+	glGetFloatv(GL_MODELVIEW_MATRIX, mat);
+	for(i=0;i<3;i++)
+		for(j=0;j<3;j++)
+		{
+			if(i == j) mat[i+j*4] = 1.0;
+			else mat[i+j*4] = 0.0;
+		}
+	glLoadMatrixf(mat);
+
 	if(sn->tic - curTic <= 0)
 		glColor4f(1.0, 1.0, 1.0, 1.0);
 	else
