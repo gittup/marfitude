@@ -22,9 +22,6 @@
 #include "util/plugin.h"
 #include "util/slist.h"
 
-static float lightNone[4] = {0.0, 0.0, 0.0, 1.0};
-static float lightNormal[4] = {0.8, 0.8, 0.8, 1.0};
-
 static Uint32 ticTime;
 static GLuint rowList;
 static GLuint noteList;
@@ -33,17 +30,6 @@ int channelFocus = 0;
 struct wam *wam;	/* note file */
 
 static float theta = 0.0;
-
-static void MoveFaster(void);
-static void MoveSlower(void);
-
-void MoveFaster(void)
-{
-}
-void MoveSlower(void)
-{
-}
-
 
 /* returns 1 if the row is valid, 0 otherwise */
 #define IsValidRow(row) ((row >= 0 && row < wam->numRows) ? 1 : 0)
@@ -175,12 +161,6 @@ void button_handler(const void *data)
 		case B_LEFT:
 			ChannelDown();
 			break;
-		case B_UP:
-			MoveFaster();
-			break;
-		case B_DOWN:
-			MoveSlower();
-			break;
 		case B_BUTTON1:
 			lastkeypressed = 1;
 			Press(1);
@@ -197,6 +177,8 @@ void button_handler(const void *data)
 		case B_BUTTON4:
 			Press(lastkeypressed);
 			break;
+		case B_UP:
+		case B_DOWN:
 		default:
 			break;
 	}
@@ -998,7 +980,6 @@ void DrawNotes(void)
 	} glEndList();
 
 	slist_foreach(t, notesList) {
-		float temp[4] = {.7, 0.0, 0.0, 1.0};
 		struct screenNote *sn = t->data;
 		int mat = abs(sn->tic - curTic) <= TIC_ERROR;
 
@@ -1051,13 +1032,10 @@ void DrawHitNotes(void)
 
 void DrawScoreboard(void)
 {
-/*	int x; */
-	glColor4f(1.0, 1.0, 1.0, 1.0);
 	double modTime = curRow->time + (curTic - curRow->ticpos) * BpmToSec(curRow->sngspd, curRow->bpm) / curRow->sngspd;
-/*	for(x=0;x<wam->numCols;x++) */
-/*	{ */
-/*		PrintGL(0, 75+x*14, "Col %i  Hit %i, %i Clear %4i", x, ac[x].hit, ac[x].miss, ac[x].cleared); */
-/*	} */
+
+	glColor4f(1.0, 1.0, 1.0, 1.0);
+
 	PrintGL(50, 0, "Playing: %s", mod->songname);
 	if(rowIndex == wam->numRows) {
 		PrintGL(50, 15, "Song complete!");
@@ -1069,12 +1047,9 @@ void DrawScoreboard(void)
 		if(timeLeft > 0) PrintGL(50, 15, "%i...", timeLeft);
 		else PrintGL(50, 15, "GO!!");
 	}
-/*	if(rowIndex >= 0 && rowIndex < wam->numRows) PrintGL(0, 62, "Tick: %i, %i.%f / %i\n", wam->rowData[rowIndex].ticpos, curTic, partialTic, wam->numTics); */
 	PrintGL(50, 30, "Speed: %2i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
 	PrintGL(0, 50, "%i - %i, note: %i, hit: %i/%i  %.2f/%.2f\n", ap.startTic, ap.stopTic, ap.lastTic, ap.notesHit, ap.notesTotal, modTime, wam->songLength);
 	PrintGL(350, 20, "Score: %6i High: %i\nMultiplier: %i\n", score, highscore, multiplier);
-/*	PrintGL(400, 50, "DN: %i, %i, %i\n", slist_length(notesList), slist_length(hitList), slist_length(unusedList)); */
-
 
 	SetOrthoProjection();
 	glDisable(GL_TEXTURE_2D);
