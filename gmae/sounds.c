@@ -14,7 +14,7 @@
 Mix_Chunk **Sounds;
 int sndInited = 0;
 
-void PlaySound(Mix_Chunk *snd)
+void SDLPlaySound(Mix_Chunk *snd)
 {
 	if(Mix_PlayChannel(-1, snd, 0) == -1)
 	{

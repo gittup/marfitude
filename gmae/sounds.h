@@ -3,7 +3,7 @@
 	#include "SDL_mixer.h"
 #endif
 
-void PlaySound(Mix_Chunk *snd);
+void SDLPlaySound(Mix_Chunk *snd);
 int InitSounds(void);
 void QuitSounds(void);
 
