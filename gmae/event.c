@@ -37,12 +37,6 @@
 #define JK_MOUSE -2
 #define JK_BUTTON -1
 
-struct event {
-	EventHandler handler;
-	int stopHere;
-	struct event *next;
-};
-
 static char *NextDot(char *s);
 static int CfgButton(struct joykey *key, const char *cfgParam);
 static int KeyEqual(struct joykey *key, SDL_KeyboardEvent *e);
@@ -53,10 +47,19 @@ static void KeyDownEvent(SDL_KeyboardEvent *e);
 static void MouseButtonEvent(SDL_MouseButtonEvent *e);
 static void JoyButtonDownEvent(SDL_JoyButtonEvent *e);
 static void JoyAxisEvent(SDL_JoyAxisEvent *e);
+static struct event *FindEvent(const char *);
+static void button_event(int button);
+static void ChkEvent(struct event *e);
+
+void button_event(int button)
+{
+	struct button_e b;
+	b.button = button;
+	FireEvent("button", &b);
+}
 
 int eventMode = MENU;
-struct event *events[EVENT_LAST] = {0};
-KeyHandler keyHandler;
+struct event *events = NULL;
 struct joykey buttons[B_LAST] = {{0,0,0}};
 const char *cfgStrings[B_LAST] = {	"buttons.up",
 					"buttons.down",
@@ -66,13 +69,49 @@ const char *cfgStrings[B_LAST] = {	"buttons.up",
 					"buttons.button2",
 					"buttons.button3",
 					"buttons.button4",
+					"buttons.select",
 					"buttons.menu"};
 
+/** Set the EventMode to one of KEY, MENU, or GAME */
 void EventMode(int mode)
 {
 	if(mode == MENU) SDL_EnableKeyRepeat(500, 20);
 	else SDL_EnableKeyRepeat(0, 0);
 	eventMode = mode;
+}
+
+/** Returns the struct event if one exists for @a s, or creates a new
+ * struct event and returns that. Can be used with HandleEvent() as a
+ * replacement for FireEvent if speed is an issue.
+ */
+struct event *GetEvent(const char *s)
+{
+	struct event *e;
+	e = FindEvent(s);
+	if(e == NULL) {
+		e = (struct event *)malloc(sizeof(struct event));
+		e->name = StringCopy(s);
+		e->handlers = NULL;
+		e->fired = 0;
+		e->next = events;
+		events = e;
+		printf("Create: %s\n", e->name);
+	}
+	return e;
+}
+
+/* Returns the struct event if one exists for s, or NULL if none do. */
+struct event *FindEvent(const char *s)
+{
+	struct event *e;
+	e = events;
+	while(e != NULL) {
+		if(strcmp(s, e->name) == 0) {
+			return e;
+		}
+		e = e->next;
+	}
+	return e;
 }
 
 /* finds the beginning of the next . number
@@ -86,7 +125,8 @@ char *NextDot(char *s)
 	return NULL;
 }
 
-int SetButton(int b, struct joykey *jk)
+/** Set the game button @a b to be set to the joykey structure @a jk */
+int SetButton(int b, const struct joykey *jk)
 {
 	char *s;
 	if(b < 0 || b >= B_LAST) return 0;
@@ -104,6 +144,9 @@ int CfgButton(struct joykey *key, const char *cfgParam)
 {
 	char *s;
 	char *t;
+	if(CfgS(cfgParam) == NULL) {
+		return 1;
+	}
 	s = (char*)malloc(sizeof(char) * (strlen(CfgS(cfgParam))+1));
 	strcpy(s, CfgS(cfgParam));
 	t = s;
@@ -126,17 +169,20 @@ int CfgButton(struct joykey *key, const char *cfgParam)
 	return 0;
 }
 
+/** Initializes joykeys from the configuration file */
 int ConfigureJoyKey(void)
 {
 	int x;
 	int err = 0;
-	for(x=0;x<B_LAST;x++)
-	{
+	for(x=0;x<B_LAST;x++) {
 		err += CfgButton(&(buttons[x]), cfgStrings[x]);
 	}
 	return err;
 }
 
+/** Returns a string that represents the requested button from the buttonType
+ * enum.
+ */
 char *JoyKeyName(int button)
 {
 	int len;
@@ -210,81 +256,107 @@ int JoyAxisEqual(struct joykey *key, SDL_JoyAxisEvent *e)
 	return 0;
 }
 
-void FireEvent(int event)
+/** Fires the event named @a event, passing the event-specific @a data */
+void FireEvent(const char *event, const void *data)
 {
 	struct event *e;
-	e = events[event];
-	while(e != NULL)
-	{
-		e->handler();
-		if(e->stopHere) break;
-		e = e->next;
+
+	e = FindEvent(event);
+
+	if(e != NULL) {
+		HandleEvent(e, data);
 	}
 }
 
-int RegisterKeyEvent(KeyHandler handler)
+/** Fires the event structure represented by @a e, passing the event-specific
+ * @a data. Can be used with GetEvent() as a replacement for FireEvent()
+ * if speed is a concern.
+ */
+void HandleEvent(struct event *e, const void *data)
 {
-	if(!keyHandler)
-	{
-		keyHandler = handler;
-		return 1;
-	}
-	else
-	{
-		ELog(("Error: KeyHandler already set!\n"));
-		return 0;
+	struct eventHandler *h;
+
+	e->fired++;
+	h = e->handlers;
+	while(h != NULL) {
+		h->handler(data);
+		if(h->stopHere) break;
+		h = h->next;
 	}
 }
 
-void DeregisterKeyEvent(void)
-{
-	if(keyHandler)
-	{
-		keyHandler = NULL;
-	}
-	else
-	{
-		ELog(("Error: KeyHandler not set!\n"));
-	}
-}
-
-int RegisterEvent(int event, EventHandler handler, int stopHere)
+/** Register's the @a handler with event named @a event. Normally, all
+ * registered events are called when the event is fired. However, if @a stopHere
+ * is specified, then this becomes the last event to fire until it is
+ * unregistered.
+ */
+void RegisterEvent(const char *event, EventHandler handler, int stopHere)
 {
 	struct event *e;
-	e = (struct event *)malloc(sizeof(struct event));
-	e->handler = handler;
-	e->stopHere = stopHere;
-	e->next = events[event];
-	events[event] = e;
-	return 1;
+	struct eventHandler *h;
+
+	e = GetEvent(event);
+	h = (struct eventHandler *)malloc(sizeof(struct eventHandler));
+	h->handler = handler;
+	h->stopHere = stopHere;
+	h->next = e->handlers;
+	e->handlers = h;
 }
 
-void DeregisterEvent(int event, EventHandler handler)
+/** Deregisters the @a handler from the event named @a event. */
+void DeregisterEvent(const char *event, EventHandler handler)
 {
 	struct event *e;
-	struct event *prev = NULL;
-	e = events[event];
-	while(e != NULL)
-	{
-		if(e->handler == handler)
-		{
+	struct eventHandler *h;
+	struct eventHandler *prev = NULL;
+
+	e = FindEvent(event);
+	if(e == NULL) {
+		ELog(("Error: Event %s not available for deregister.\n", event));
+		return;
+	}
+	h = e->handlers;
+	while(h != NULL) {
+		if(h->handler == handler) {
 			if(prev)
-			{
-				prev->next = e->next;
-			}
+				prev->next = h->next;
 			else
-			{
-				events[event] = e->next;
-			}
+				e->handlers = h->next;
 			break;
 		}
-		prev = e;
-		e = e->next;
+		prev = h;
+		h = h->next;
 	}
-	if(e == NULL) ELog(("Error: Event %i not available for deregister.\n", event));
-	else free(e);
+	if(h == NULL) ELog(("Error: Event %s not available for deregister.\n", event));
+	else free(h);
 }
 
+void ChkEvent(struct event *e)
+{
+	if(e->handlers != NULL) {
+		printf("Warning: Event \"%s\" is still registered.\n", e->name);
+	}
+	printf("Free Event: \"%s\" fired %i times.\n", e->name, e->fired);
+}
+
+/** All the struct events are kept around for the life of the program. This
+ * ends that life.
+ */
+void QuitEvents(void)
+{
+	struct event *e = events;
+
+	/* Free the first event in the list */
+	while(e != NULL) {
+		ChkEvent(e);
+		free(e->name);
+		free(e);
+		e = events->next;
+		events = e;
+	}
+}
+
+/** Clear out the SDL_Event queue */
 void ClearEvents(void)
 {
 	SDL_Event event;
@@ -296,57 +368,61 @@ void KeyDownEvent(SDL_KeyboardEvent *e)
 	int x;
 	struct joykey jk;
 
-	if(eventMode == KEY && keyHandler)
+	if(eventMode == KEY)
 	{
 		jk.type = JK_KEYBOARD;
 		jk.button = e->keysym.sym;
 		jk.axis = JK_KEYBOARD;
-		keyHandler(&jk);
+		FireEvent("key", &jk);
 	}
 	else if(eventMode == MENU)
 	{
 		if(	e->keysym.sym == SDLK_ESCAPE ||
 				KeyEqual(&buttons[B_MENU], e))
-			FireEvent(EVENT_MENU);
+			button_event(B_MENU);
 
 		else if(	e->keysym.sym == SDLK_UP ||
 				KeyEqual(&buttons[B_UP], e))
-			FireEvent(EVENT_UP);
+			button_event(B_UP);
 
 		else if(	e->keysym.sym == SDLK_DOWN ||
 				KeyEqual(&buttons[B_DOWN], e))
-			FireEvent(EVENT_DOWN);
+			button_event(B_DOWN);
 
 		else if(	e->keysym.sym == SDLK_RIGHT ||
 				KeyEqual(&buttons[B_RIGHT], e))
-			FireEvent(EVENT_RIGHT);
+			button_event(B_RIGHT);
 
 		else if(	e->keysym.sym == SDLK_LEFT ||
 				KeyEqual(&buttons[B_LEFT], e))
-			FireEvent(EVENT_LEFT);
+			button_event(B_LEFT);
 
 		else if(	e->keysym.sym == SDLK_RETURN ||
 				KeyEqual(&buttons[B_BUTTON1], e) ||
 				KeyEqual(&buttons[B_BUTTON2], e) ||
 				KeyEqual(&buttons[B_BUTTON3], e) ||
 				KeyEqual(&buttons[B_BUTTON4], e))
-			FireEvent(EVENT_ENTER);
+			FireEvent("enter", NULL);
+		else if (	e->keysym.sym == SDLK_TAB ||
+				KeyEqual(&buttons[B_SELECT], e)
+			)
+			button_event(B_SELECT);
 		else if(e->keysym.sym == SDLK_PAGEUP)
-			FireEvent(EVENT_PAGEUP);
+			FireEvent("pageup", NULL);
 		else if(e->keysym.sym == SDLK_PAGEDOWN)
-			FireEvent(EVENT_PAGEDOWN);
+			FireEvent("pagedown", NULL);
 		else if(e->keysym.sym == SDLK_HOME)
-			FireEvent(EVENT_HOME);
+			FireEvent("home", NULL);
 		else if(e->keysym.sym == SDLK_END)
-			FireEvent(EVENT_END);
+			FireEvent("end", NULL);
 		/* no else cuz all other keys are ignored :) */
 	}
 	else if(eventMode == GAME)
 	{
 		for(x=0;x<B_LAST;x++)
-			if(KeyEqual(&buttons[x], e)) FireEvent(x);
+			if(KeyEqual(&buttons[x], e))
+				button_event(x);
 	}
-	/* no else (ignore eventMode == KEY and no keyHandler) */
 }
 
 void MouseButtonEvent(SDL_MouseButtonEvent *e)
@@ -354,26 +430,26 @@ void MouseButtonEvent(SDL_MouseButtonEvent *e)
 	int x;
 	struct joykey jk;
 
-	if(eventMode == KEY && keyHandler)
+	if(eventMode == KEY)
 	{
 		jk.type = JK_MOUSE;
 		jk.button = e->button;
 		jk.axis = JK_BUTTON;
-		keyHandler(&jk);
+		FireEvent("key", &jk);
 	}
 	else if(eventMode == MENU)
 	{
 		if(MouseButtonEqual(&buttons[B_MENU], e))
-			FireEvent(EVENT_MENU);
+			button_event(B_MENU);
 		else
-			FireEvent(EVENT_ENTER);
+			FireEvent("enter", NULL);
 	}
 	else if(eventMode == GAME)
 	{
 		for(x=0;x<B_LAST;x++)
-			if(MouseButtonEqual(&buttons[x], e)) FireEvent(x);
+			if(MouseButtonEqual(&buttons[x], e))
+				button_event(x);
 	}
-	/* no else (ignore eventMode == KEY and no keyHandler) */
 }
 
 void JoyButtonDownEvent(SDL_JoyButtonEvent *e)
@@ -381,27 +457,29 @@ void JoyButtonDownEvent(SDL_JoyButtonEvent *e)
 	int x;
 	struct joykey jk;
 
-	if(eventMode == KEY && keyHandler)
+	if(eventMode == KEY)
 	{
 		jk.type = e->which;
 		jk.button = e->button;
 		jk.axis = JK_BUTTON;
-		keyHandler(&jk);
+		FireEvent("key", &jk);
 	}
 	else if(eventMode == MENU)
 	{
-		/* all buttons activate in menu mode except the MENU button */
+		/* all buttons activate in menu mode except MENU/SELECT */
 		if(JoyButtonEqual(&buttons[B_MENU], e))
-			FireEvent(EVENT_MENU);
+			button_event(B_MENU);
+		if(JoyButtonEqual(&buttons[B_SELECT], e))
+			button_event(B_SELECT);
 		else
-			FireEvent(EVENT_ENTER);
+			FireEvent("enter", NULL);
 	}
 	else if(eventMode == GAME)
 	{
 		for(x=B_UP;x<B_LAST;x++)
-			if(JoyButtonEqual(&buttons[x], e)) FireEvent(x);
+			if(JoyButtonEqual(&buttons[x], e))
+				button_event(x);
 	}
-	/* no else (ignore eventMode == KEY and no keyHandler) */
 }
 
 void JoyAxisEvent(SDL_JoyAxisEvent *e)
@@ -410,12 +488,12 @@ void JoyAxisEvent(SDL_JoyAxisEvent *e)
 	struct joykey jk;
 
 	if(e->value == 0) return;
-	if(eventMode == KEY && keyHandler)
+	if(eventMode == KEY)
 	{
 		jk.type = e->which;
 		jk.button = (e->value>0)?1:-1;
 		jk.axis = e->axis;
-		keyHandler(&jk);
+		FireEvent("key", &jk);
 	}
 	else if(eventMode == MENU)
 	{
@@ -426,11 +504,11 @@ void JoyAxisEvent(SDL_JoyAxisEvent *e)
 		{
 			if(e->value > JOY_THRESHOLD)
 			{
-				FireEvent(EVENT_DOWN);
+				button_event(B_DOWN);
 			}
 			if(e->value < -JOY_THRESHOLD)
 			{
-				FireEvent(EVENT_UP);
+				button_event(B_UP);
 			}
 			/* wait for event.jaxis.value to be less than
 			 * JOY_THRESHOLD before executing menu again?
@@ -440,11 +518,12 @@ void JoyAxisEvent(SDL_JoyAxisEvent *e)
 	else if(eventMode == GAME)
 	{
 		for(x=B_UP;x<B_LAST;x++)
-			if(JoyAxisEqual(&buttons[x], e)) FireEvent(x);
+			if(JoyAxisEqual(&buttons[x], e))
+				button_event(x);
 	}
-	/* no else (ignore eventMode == KEY and no keyHandler) */
 }
 
+/** Handle all SDL input, and fire appropriate events. */
 void EventLoop(void)
 {
 	int moreEvents = 1;
