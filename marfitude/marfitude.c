@@ -613,6 +613,10 @@ void Press(int button)
 	int rowStop;
 	struct screenNote *sn;
 	struct row *r;
+	struct shoot_e shoot;
+
+	shoot.pos = button;
+	FireEvent("shoot", &shoot);
 
 	rowStart = rowIndex;
 	while(rowStart > 0 && curRow->time - wam->rowData[rowStart].time < TIME_ERROR)

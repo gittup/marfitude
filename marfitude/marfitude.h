@@ -13,3 +13,7 @@
 #define UNMUTE 0
 #define MUTE 1
 
+/** Data for the "shoot" event */
+struct shoot_e {
+	int pos; /**< The position of the shot. Currently 1, 2, or 4 */
+};

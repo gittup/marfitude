@@ -48,7 +48,7 @@ int laser_init(void)
 {
 	laser_tex = TextureNum("Laser.png");
 	numLasers = 0;
-	RegisterEvent("button", make_laser, EVENTTYPE_MULTI);
+	RegisterEvent("shoot", make_laser, EVENTTYPE_MULTI);
 	RegisterEvent("draw transparent", draw_lasers, EVENTTYPE_MULTI);
 	fireball_handle = dlopen("./libfireball.so", RTLD_NOW);
 	if(fireball_handle)
@@ -63,34 +63,12 @@ void laser_exit(void)
 {
 	dlclose(fireball_handle);
 	DeregisterEvent("draw transparent", draw_lasers);
-	DeregisterEvent("button", make_laser);
+	DeregisterEvent("shoot", make_laser);
 }
 
 void make_laser(const void *data)
 {
-	static int lastbutton = 1;
-	const struct button_e *b = data;
-	int button = 1;
-
-	switch(b->button) {
-		case B_BUTTON1:
-			lastbutton = 1;
-			button = 1;
-			break;
-		case B_BUTTON2:
-			lastbutton = 2;
-			button = 2;
-			break;
-		case B_BUTTON3:
-			lastbutton = 4;
-			button = 4;
-			break;
-		case B_BUTTON4:
-			button = lastbutton;
-			break;
-		default:
-			return;
-	}
+	const struct shoot_e *s = data;
 
 	/* p1 is set to the light position */
 	laser[numLasers].p1.x = fireball[0];
@@ -98,7 +76,7 @@ void make_laser(const void *data)
 	laser[numLasers].p1.z = fireball[2];
 
 	/* p2 is set to where the note is */
-	laser[numLasers].p2.x = -channelFocus * BLOCK_WIDTH - NOTE_WIDTH * noteOffset[button];
+	laser[numLasers].p2.x = -channelFocus * BLOCK_WIDTH - NOTE_WIDTH * noteOffset[s->pos];
 	laser[numLasers].p2.y = 0.0;
 	laser[numLasers].p2.z = TIC_HEIGHT * ((double)curTic + partialTic);
 	laser[numLasers].time = 1.0;
