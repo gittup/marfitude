@@ -68,7 +68,7 @@ void laser_exit(void)
 
 void make_laser(const void *data)
 {
-	const struct shoot_e *s = data;
+	const int *s = data;
 
 	/* p1 is set to the light position */
 	laser[numLasers].p1.x = fireball[0];
@@ -76,7 +76,7 @@ void make_laser(const void *data)
 	laser[numLasers].p1.z = fireball[2];
 
 	/* p2 is set to where the note is */
-	laser[numLasers].p2.x = -channelFocus * BLOCK_WIDTH - NOTE_WIDTH * noteOffset[s->pos];
+	laser[numLasers].p2.x = -channelFocus * BLOCK_WIDTH - NOTE_WIDTH * noteOffset[*s];
 	laser[numLasers].p2.y = 0.0;
 	laser[numLasers].p2.z = TIC_HEIGHT * ((double)curTic + partialTic);
 	laser[numLasers].time = 1.0;
