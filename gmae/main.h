@@ -17,17 +17,21 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** Contains functions to display a scene
+ */
 struct scene {
-	int (*InitScene)(void);
-	void (*QuitScene)(void);
-	void (*Render)(void);
+	int (*InitScene)(void);  /**< Pointer to the init function */
+	void (*QuitScene)(void); /**< Pointer to the quit function */
+	void (*Render)(void);    /**< Pointer to the runtime function */
 };
 
+/** Contains data to display a menu
+ */
 struct menu {
-	int (*InitMenu)(void);
-	void (*QuitMenu)(void);
-	void (*Render)(void);
-	int back;
+	int (*InitMenu)(void);  /**< Pointer to the init function */
+	void (*QuitMenu)(void); /**< pointer to the quit function */
+	void (*Render)(void);   /**< Pointer to the runtime function */
+	int back;               /**< Refers to the 'previous' menu */
 };
 
 extern int quit;
