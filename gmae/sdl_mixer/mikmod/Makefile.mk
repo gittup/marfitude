@@ -1,4 +1,4 @@
-TARGET = libsdl_mikmod
+TARGET = sdl_mikmod
 
 EXTRACFLAGS := $(BDECFLAGS)
 
