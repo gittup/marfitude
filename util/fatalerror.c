@@ -2,7 +2,9 @@
 #include <string.h>
 #include <errno.h>
 
-void FatalError(char *file, int line, char *msg)
+#include "fatalerror.h"
+
+void FatalError(const char *file, int line, const char *msg)
 {
-	printf("Error %s in %s, line %i: %s\n", msg, file, line, strerror(errno));
+	fprintf(stderr, "Error %s in %s, line %i: %s\n", msg, file, line, strerror(errno));
 }

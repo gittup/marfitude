@@ -13,6 +13,8 @@
 
 #include <SDL.h>
 
+#include "savetga.h"
+
 struct TGAheader {
     Uint8 infolen;		/* length of info field */
     Uint8 has_cmap;		/* 1 if image has colormap, 0 otherwise */

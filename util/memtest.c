@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "memtest.h"
+
 typedef struct {
 	size_t size;
 	int line;
@@ -9,11 +11,11 @@ typedef struct {
 	int active;
 	} MemBlock;
 
-// note that the memory used to keep track of memory is never freed
-// ahh sweet irony
-MemBlock *mb = NULL;
-int numBlocks = 0;
-int startBlock = 0;
+/* note that the memory used to keep track of memory is never freed
+ * ... ahh sweet irony */
+static MemBlock *mb = NULL;
+static int numBlocks = 0;
+static int startBlock = 0;
 
 void *MyMalloc(size_t x, int line, char *file)
 {
@@ -87,8 +89,8 @@ void *MyCalloc(size_t nm, size_t x, int line, char *file)
 	return p;
 }
 
-// checks to see if any memories have not been deallocated
-// usually called at the end of the program, after all cleanup code
+/* checks to see if any memories have not been deallocated */
+/* usually called at the end of the program, after all cleanup code */
 void CheckMemUsage()
 {
 	int x;
@@ -101,7 +103,7 @@ void CheckMemUsage()
 	}
 }
 
-// returns the amount of bytes currently in use
+/* returns the amount of bytes currently in use */
 int QueryMemUsage()
 {
 	int x;

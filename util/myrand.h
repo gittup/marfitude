@@ -1,2 +1,2 @@
 int IntRand(int x);
-float FloatRand();
+float FloatRand(void);

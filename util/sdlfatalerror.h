@@ -1,2 +1,2 @@
 #define SDLError(err) SDLFatalError(__FILE__, __LINE__, err);
-void SDLFatalError(char *, int, char *);
+void SDLFatalError(const char *, int, const char *);

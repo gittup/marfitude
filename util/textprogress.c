@@ -1,10 +1,12 @@
 #include <stdio.h>
 
+#include "textprogress.h"
+
 #define HASHES 40
 
-int marks;
+static int marks;
 
-void ProgressMeter(char *text)
+void ProgressMeter(const char *text)
 {
 	int i;
         printf("%s: [", text);
@@ -24,7 +26,7 @@ void UpdateProgress(int part, int whole)
 	fflush(stdout);
 }
 
-void EndProgressMeter()
+void EndProgressMeter(void)
 {
 	printf("]\n");
 }
