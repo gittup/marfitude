@@ -372,6 +372,8 @@ int MainInit()
 		Log("Error loading module in scene!\n");
 		return 0;
 	}
+	// module and module data (where to place the notes) are now loaded,
+	// and the module is paused
 	Log("Module ready\n");
 	tickCounter = 0;
 	songStarted = 0;
