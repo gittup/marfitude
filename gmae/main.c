@@ -130,17 +130,16 @@ int main(int argc, char **argv)
 	ConfigureJoyKey();
 
 	SwitchScene(INTROSCENE);
-	if(!SwitchScene(MAINSCENE))
-	{
-		ELog("Error switching to main scene.\n");
-		Shutdown();
-		return 1;
-	}
 	if(!SwitchMenu(NOMENU))
 	{
 		ELog("Error enabling the menu.\n");
 		Shutdown();
 		return 1;
+	}
+	if(!SwitchScene(MAINSCENE))
+	{
+		ELog("Error switching to main scene.\n");
+		SwitchMenu(MAINMENU);
 	}
 
 	ClearEvents(); // clears event cue, has nothing to do with registering
