@@ -29,6 +29,8 @@ static GLuint mainTexes[MAX_COLS];
 int channelFocus = 0;
 struct wam *wam;	/* note file */
 
+#define TIME_ERROR 0.128
+
 static float theta = 0.0;
 
 /* returns 1 if the row is valid, 0 otherwise */
@@ -43,6 +45,7 @@ static int firstRow, rowIndex, lastRow;  /* first row on screen, current row
                                           * playing and the last row on screen
                                           */
 struct row *curRow;
+double modTime;
 
 double partialTic;
 
@@ -50,6 +53,7 @@ double partialTic;
 struct screenNote {
 	struct vector pos; /**< The coordinates of where to draw the note */
 	int tic;           /**< The mod tic this note is on */
+	double time;       /**< The time this note is on */
 	int col;           /**< The column the note is in */
 	int ins;           /**< DEBUG - the line in the src where this note was
 			    * added
@@ -109,7 +113,7 @@ static void UpdateClearedCols(void);
 static void UpdatePosition(void);
 static void DrawRows(double startTic, double stopTic);
 static void RandomColor(float col[4]);
-static int RowByTic(int tic);
+static int NearRow(void);
 static struct screenNote *FindNote(struct slist *list, int tic, int col);
 static void FixVb(int *vb, int *row);
 static void TickHandler(void);
@@ -244,6 +248,7 @@ int MainInit()
 	multiplier = 1;
 	tickCounter = 0;
 	songStarted = 0;
+	modTime = 0.0;
 	oldHand = MikMod_RegisterPlayer(TickHandler);
 	noteOffset = (int*)malloc(sizeof(int) * (MAX_NOTE+1));
 
@@ -545,6 +550,7 @@ void AddNotes(int row)
 			sn->pos.y = 0.0;
 			sn->pos.z = TIC_HEIGHT * (double)wam->rowData[row].ticpos;
 			sn->tic = tic;
+			sn->time = wam->rowData[row].time;
 			sn->col = x;
 		}
 	}
@@ -603,12 +609,21 @@ void Press(int button)
 {
 	int i;
 	int noteHit = 0;
+	int rowStart;
+	int rowStop;
 	struct screenNote *sn;
 	struct row *r;
 
-	for(i=-1;i<=1;i++) {
-		if(rowIndex + i >= 0 && rowIndex + i < wam->numRows) {
-			r = &wam->rowData[rowIndex+i];
+	rowStart = rowIndex;
+	while(rowStart > 0 && curRow->time - wam->rowData[rowStart].time < TIME_ERROR)
+		rowStart--;
+	rowStop = rowIndex;
+	while(rowStop < wam->numRows && wam->rowData[rowStop].time - curRow->time < TIME_ERROR)
+		rowStop++;
+
+	for(i=rowStart;i<=rowStop;i++) {
+		if(i >= 0 && i < wam->numRows) {
+			r = &wam->rowData[i];
 			/* if we're in the attackpattern limits, and */
 			/* if we didn't already play this row, and this row */
 			/* is within our acceptable error, and we hit the */
@@ -617,7 +632,7 @@ void Press(int button)
 				r->ticpos >= ap.startTic &&
 				r->ticpos < ap.stopTic &&
 				r->ticpos > ap.lastTic &&
-				abs(r->ticpos - curTic) <= TIC_ERROR &&
+				fabs(r->time - modTime) <= TIME_ERROR &&
 				button == r->notes[channelFocus]) {
 
 				sn = FindNote(notesList, r->ticpos, channelFocus);
@@ -704,8 +719,9 @@ void FixVb(int *vb, int *row)
 	}
 }
 
-/* keep track of the number of actual ticks played by the mod player, */
-/* so we know if we're off */
+/* keep track of the number of actual ticks played by the mod player,
+ * so we know if we're off
+ */
 void TickHandler(void)
 {
 	if(songStarted) {
@@ -714,12 +730,13 @@ void TickHandler(void)
 	oldHand();
 }
 
-/* gets either rowIndex or rowIndex+1, depending on which one tic is closest to
- * (eg within acceptable error)
+/* gets either rowIndex or rowIndex+1, depending on which one row is closest
+ * based on the time (eg within acceptable error)
  */
-int RowByTic(int tic)
+int NearRow(void)
 {
-	if(tic - curRow->ticpos < TIC_ERROR) return rowIndex;
+	if(modTime - curRow->time < TIME_ERROR)
+		return rowIndex;
 	return rowIndex+1;
 }
 
@@ -731,14 +748,15 @@ void ResetAp(void)
 
 	ap.notesHit = 0;
 	ap.notesTotal = 0;
-	start = Row(Max(Max(RowByTic(curTic), ap.nextStartRow), ac[channelFocus].cleared));
+	start = Row(Max(Max(NearRow(), ap.nextStartRow), ac[channelFocus].cleared));
 	while(start < wam->numRows && (wam->rowData[start].line == 0 || wam->rowData[start].ticpos <= ac[channelFocus].miss)) start++;
 	if(start == wam->numRows)
 		start = wam->numRows - 1;
 	end = start;
 	while(apLines < LINES_PER_AP && end < wam->numRows) {
-		/* don't count the note on the last row, since that will */
-		/* be the beginning of the next "AttackPattern" */
+		/* don't count the note on the last row, since that will
+		 * be the beginning of the next "AttackPattern"
+		 */
 		if(wam->rowData[end].notes[channelFocus]) ap.notesTotal++;
 		end++;
 		if(wam->rowData[end].line != 0) apLines++;
@@ -767,7 +785,7 @@ void CheckMissedNotes(void)
 	list = notesList;
 	while(list) {
 		sn = (struct screenNote*)list->data;
-		if(curTic - sn->tic > TIC_ERROR && sn->tic > ac[sn->col].miss) {
+		if(modTime - sn->time > TIME_ERROR && sn->tic > ac[sn->col].miss) {
 			ac[sn->col].miss = sn->tic;
 			if(sn->col == channelFocus && sn->tic >= ap.startTic && sn->tic < ap.stopTic) {
 				if(ap.notesHit > 0) multiplier = 1;
@@ -897,6 +915,7 @@ void UpdatePosition(void)
 				RegisterEvent("menu", menu_handler, EVENTTYPE_MULTI);
 			}
 		}
+		modTime = curRow->time + (curTic - curRow->ticpos) * BpmToSec(curRow->sngspd, curRow->bpm) / curRow->sngspd;
 		UpdateModule();
 
 		if(firstVb >= wam->rowData[Row(firstRow)].sngspd) {
@@ -981,7 +1000,7 @@ void DrawNotes(void)
 
 	slist_foreach(t, notesList) {
 		struct screenNote *sn = t->data;
-		int mat = abs(sn->tic - curTic) <= TIC_ERROR;
+		int mat = fabs(sn->time - modTime) <= TIME_ERROR;
 
 		glPushMatrix();
 		glTranslated(	sn->pos.x,
@@ -1032,8 +1051,6 @@ void DrawHitNotes(void)
 
 void DrawScoreboard(void)
 {
-	double modTime = curRow->time + (curTic - curRow->ticpos) * BpmToSec(curRow->sngspd, curRow->bpm) / curRow->sngspd;
-
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 
 	PrintGL(50, 0, "Playing: %s", mod->songname);
