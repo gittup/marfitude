@@ -46,10 +46,13 @@ static char *HeaderPart(const char *s);
 /*static int HeaderEq(const char *a, const char *b);*/
 static void AddOp(struct header *h, const char *key, const char *value);
 static void CfgAdd(const char *header, const char *key, const char *value);
+static int LoadConfig(const char *filename);
+static int SaveConfig(const char *filename);
 
-struct header *cfg = NULL;
-int numHeaders = 0;
-int cfgInited = 0;
+static struct header *cfg = NULL;
+static int numHeaders = 0;
+static int cfgInited = 0;
+static char *cfgFileName = NULL;
 
 /*char *Cat(const char *header, const char *value)
 {
@@ -254,15 +257,18 @@ int CfgEq(const char *key, const char *string)
 	return 0;
 }
 
-int InitConfig(void)
+int LoadConfig(const char *filename)
 {
 	char *header;
 	FILE *cfgfile;
 	struct token t, eq;
 
-	cfgfile = fopen("init.cfg", "r");
+	if(filename == NULL) return 0;
+
+	cfgfile = fopen(filename, "r");
 	if(cfgfile == NULL)
 	{
+		ELog(("Couldn't open config file '%s'\n", filename));
 		Error("opening config file");
 		return 0;
 	}
@@ -292,6 +298,63 @@ int InitConfig(void)
 		}
 	}
 	free(header);
+	return 1;
+}
+
+int SaveConfig(const char *filename)
+{
+	int x, y;
+	FILE *f;
+
+	if(filename == NULL) return 0;
+
+	f = fopen(filename, "w");
+	if(f == NULL)
+	{
+		ELog(("Error opening config file for write: %s\n", filename));
+		Error("saving config file");
+		return 0;
+	}
+
+	Log(("Saving configuration...\n"));
+	for(x=0;x<numHeaders;x++)
+	{
+		fprintf(f, "[%s]\n", cfg[x].header);
+		free(cfg[x].header);
+		for(y=0;y<cfg[x].numOps;y++)
+		{
+			fprintf(f, "%s=%s\n", cfg[x].ops[y].key, cfg[x].ops[y].value);
+			free(cfg[x].ops[y].key);
+			free(cfg[x].ops[y].value);
+		}
+		free(cfg[x].ops);
+	}
+	free(cfg);
+	cfg = NULL;
+	fclose(f);
+	Log(("Done\n"));
+	return 1;
+}
+
+int InitConfig(void)
+{
+	char *homedir;
+
+	homedir = getenv("HOME");
+	if(homedir != NULL) {
+		/* this is freed in QuitConfig() */
+		cfgFileName = malloc(sizeof(char) * (strlen(homedir) + 16));
+		strcpy(cfgFileName, homedir);
+		strcat(cfgFileName, "/.marfitude.cfg");
+	}
+
+	if(!LoadConfig(cfgFileName)) {
+		if(!LoadConfig("init.cfg")) {
+			ELog(("Error: Couldn't load '%s' or init.cfg config files.", cfgFileName));
+			return 0;
+		}
+	}
+
 	cfgInited = 1;
 	printf("Configuration loaded.\n");
 	return 1;
@@ -299,33 +362,13 @@ int InitConfig(void)
 
 void QuitConfig(void)
 {
-	int x, y;
-	FILE *f;
 	if(!cfgInited) return;
-	f = fopen("init.cfg", "w");
-	if(f == NULL)
-	{
-		Error("opening 'init.cfg'");
-	}
-	else
-	{
-		Log(("Saving configuration...\n"));
-		for(x=0;x<numHeaders;x++)
-		{
-			fprintf(f, "[%s]\n", cfg[x].header);
-			free(cfg[x].header);
-			for(y=0;y<cfg[x].numOps;y++)
-			{
-				fprintf(f, "%s=%s\n", cfg[x].ops[y].key, cfg[x].ops[y].value);
-				free(cfg[x].ops[y].key);
-				free(cfg[x].ops[y].value);
-			}
-			free(cfg[x].ops);
-		}
-		free(cfg);
-		cfg = NULL;
-		fclose(f);
-		Log(("Done\n"));
+
+	if(cfgFileName == NULL) {
+		ELog(("Warning: Configuration not saved since there is no HOME environment variable set.\n"));
+	} else {
+		SaveConfig(cfgFileName);
+		free(cfgFileName);
 	}
 	printf("Config shutdown\n");
 }
