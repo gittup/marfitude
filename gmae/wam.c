@@ -542,7 +542,6 @@ Wam *LoadTrackData()
 	{
 		if(!mod->vbtick)
 		{
-			Log("Sng: %i row: %i, alloc: %i\n", mod->sngpos, wam->numRows, rowsAlloced);
 			if(wam->numRows >= rowsAlloced)
 			{
 				if(rowsAlloced == 0)
@@ -554,28 +553,6 @@ Wam *LoadTrackData()
 					rowsAlloced <<= 2;
 				}
 				wam->rowData = (Row*)realloc(wam->rowData, sizeof(Row) * rowsAlloced);
-			}
-			wam->rowData[wam->numRows].bpm = mod->bpm;
-			wam->rowData[wam->numRows].sngspd = mod->sngspd;
-			wam->rowData[wam->numRows].ticpos = tickCount;
-			wam->rowData[wam->numRows].ticprt = grpCount;
-			wam->rowData[wam->numRows].patpos = mod->patpos;
-			wam->rowData[wam->numRows].sngpos = mod->sngpos;
-			tickCount += mod->sngspd;
-			grpCount += mod->sngspd;
-			numgrps++;
-			// only break on a group mod 8 when we have enough
-			// ticks in the group
-			// or break if we've already got GRP_SIZE rows
-			if((grpCount >= GRP_SIZE && !(numgrps&7)) ||
-					numgrps == GRP_SIZE)
-			{
-				for(x=0;x<numgrps;x++)
-				{
-					wam->rowData[wam->numRows-x].ticgrp = grpCount;
-				}
-				numgrps = 0;
-				grpCount = 0;
 			}
 
 			// only designate one place the start of a
@@ -592,6 +569,7 @@ Wam *LoadTrackData()
 				// then :)
 				if(mod->sngpos != 0)
 				{
+				Log("b: %i\n", grpCount);
 					// reset groups on a line break
 					for(x=0;x<numgrps;x++)
 					{
@@ -614,6 +592,31 @@ Wam *LoadTrackData()
 			}
 			else if(!(lineCount&3)) wam->rowData[wam->numRows].line = 1;
 			else wam->rowData[wam->numRows].line = 0;
+
+			Log("Sng: %i Pat: %i row: %i, alloc: %i\n", mod->sngpos, mod->patpos, wam->numRows, rowsAlloced);
+			wam->rowData[wam->numRows].bpm = mod->bpm;
+			wam->rowData[wam->numRows].sngspd = mod->sngspd;
+			wam->rowData[wam->numRows].ticpos = tickCount;
+			wam->rowData[wam->numRows].ticprt = grpCount;
+			wam->rowData[wam->numRows].patpos = mod->patpos;
+			wam->rowData[wam->numRows].sngpos = mod->sngpos;
+			tickCount += mod->sngspd;
+			grpCount += mod->sngspd;
+			numgrps++;
+			// only break on a group mod 8 when we have enough
+			// ticks in the group
+			// or break if we've already got GRP_SIZE rows
+			if((grpCount >= GRP_SIZE && !(numgrps&7)) ||
+					numgrps == GRP_SIZE)
+			{
+				Log("A: %i\n", grpCount);
+				for(x=0;x<numgrps;x++)
+				{
+					wam->rowData[wam->numRows-x].ticgrp = grpCount;
+				}
+				numgrps = 0;
+				grpCount = 0;
+			}
 			lineCount++;
 
 			for(x=0;x<mod->numchn;x++)
