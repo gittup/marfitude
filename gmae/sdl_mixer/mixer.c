@@ -1,6 +1,6 @@
 /*
     SDL_mixer:  An audio mixer library based on the SDL library
-    Copyright (C) 1997, 1998, 1999, 2000, 2001  Sam Lantinga
+    Copyright (C) 1997-2004 Sam Lantinga
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,8 +31,6 @@
 #include "SDL_timer.h"
 
 #include "SDL_mixer.h"
-#include "load_aiff.h"
-#include "load_voc.h"
 
 /* Magic numbers for various audio file formats */
 #define RIFF		0x46464952		/* "RIFF" */
@@ -83,7 +81,7 @@ static void *mix_postmix_data = NULL;
 static void (*channel_done_callback)(int channel) = NULL;
 
 /* Music function declarations */
-extern int open_music(SDL_AudioSpec *mymixer);
+extern int open_music(SDL_AudioSpec *mmixer);
 extern void close_music(void);
 
 /* Support for user defined music functions, plus the default one */
@@ -97,7 +95,7 @@ static void *music_data = NULL;
 const SDL_version *Mix_Linked_Version(void)
 {
 	static SDL_version linked_version;
-	MIX_VERSION(&linked_version);
+	SDL_MIXER_VERSION(&linked_version);
 	return(&linked_version);
 }
 
@@ -154,7 +152,7 @@ static void *Mix_DoEffects(int chan, void *snd, int len)
 static void mix_channels(void *udata, Uint8 *stream, int len)
 {
 	Uint8 *mix_input;
-	int i, mixable, volume=0;
+	int i, mixable, volume = 0;
 	Uint32 sdl_ticks;
 
 	if(udata) {}
@@ -193,10 +191,10 @@ static void mix_channels(void *udata, Uint8 *stream, int len)
 				}
 			}
 			if ( mix_channel[i].playing > 0 ) {
-				int myindex = 0;
+				int index = 0;
 				int remaining = len;
-				while (mix_channel[i].playing > 0 && myindex < len) {
-					remaining = len - myindex;
+				while (mix_channel[i].playing > 0 && index < len) {
+					remaining = len - index;
 					volume = (mix_channel[i].volume*mix_channel[i].chunk->volume) / MIX_MAX_VOLUME;
 					mixable = mix_channel[i].playing;
 					if ( mixable > remaining ) {
@@ -204,13 +202,13 @@ static void mix_channels(void *udata, Uint8 *stream, int len)
 					}
 
 					mix_input = Mix_DoEffects(i, mix_channel[i].samples, mixable);
-					SDL_MixAudio(stream+myindex,mix_input,mixable,volume);
+					SDL_MixAudio(stream+index,mix_input,mixable,volume);
 					if (mix_input != mix_channel[i].samples)
 						free(mix_input);
 
 					mix_channel[i].samples += mixable;
 					mix_channel[i].playing -= mixable;
-					myindex += mixable;
+					index += mixable;
 
 					/* rcg06072001 Alert app if channel is done playing. */
 					if (!mix_channel[i].playing && !mix_channel[i].looping) {
@@ -220,22 +218,22 @@ static void mix_channels(void *udata, Uint8 *stream, int len)
 
 				/* If looping the sample and we are at its end, make sure
 				   we will still return a full buffer */
-				while ( mix_channel[i].looping && myindex < len ) {
+				while ( mix_channel[i].looping && index < len ) {
 					int alen = mix_channel[i].chunk->alen;
-					remaining = len - myindex;
+					remaining = len - index;
 				    	if (remaining > alen) {
 						remaining = alen;
 				    	}
 
 					mix_input = Mix_DoEffects(i, mix_channel[i].chunk->abuf, remaining);
-					SDL_MixAudio(stream+myindex, mix_input, remaining, volume);
+					SDL_MixAudio(stream+index, mix_input, remaining, volume);
 					if (mix_input != mix_channel[i].chunk->abuf)
 						free(mix_input);
 
 					--mix_channel[i].looping;
 					mix_channel[i].samples = mix_channel[i].chunk->abuf + remaining;
 					mix_channel[i].playing = mix_channel[i].chunk->alen - remaining;
-					myindex += remaining;
+					index += remaining;
 				}
 				if ( ! mix_channel[i].playing && mix_channel[i].looping ) {
 					if ( --mix_channel[i].looping ) {
@@ -261,6 +259,7 @@ static void PrintFormat(char *title, SDL_AudioSpec *fmt)
 {
 	printf("%s: %d bit %s audio (%s) at %u Hz\n", title, (fmt->format&0xFF),
 			(fmt->format&0x8000) ? "signed" : "unsigned",
+			(fmt->channels > 2) ? "surround" :
 			(fmt->channels > 1) ? "stereo" : "mono", fmt->freq);
 }
 #endif
@@ -432,20 +431,6 @@ Mix_Chunk *Mix_LoadWAV_RW(SDL_RWops *src, int freesrc)
 		case WAVE:
 		case RIFF:
 			loaded = SDL_LoadWAV_RW(src, freesrc, &wavespec,
-					(Uint8 **)&chunk->abuf, &chunk->alen);
-			break;
-		case FORM:
-			loaded = Mix_LoadAIFF_RW(src, freesrc, &wavespec,
-					(Uint8 **)&chunk->abuf, &chunk->alen);
-			break;
-#ifdef OGG_MUSIC
-		case OGGS:
-			loaded = Mix_LoadOGG_RW(src, freesrc, &wavespec,
-					(Uint8 **)&chunk->abuf, &chunk->alen);
-			break;
-#endif
-		case CREA:
-			loaded = Mix_LoadVOC_RW(src, freesrc, &wavespec,
 					(Uint8 **)&chunk->abuf, &chunk->alen);
 			break;
 		default:
@@ -637,6 +622,16 @@ int Mix_ReserveChannels(int num)
 	return num;
 }
 
+static int checkchunkintegral(Mix_Chunk *chunk)
+{
+	int frame_width = 1;
+
+	if ((mixer.format & 0xFF) == 16) frame_width = 2;
+	frame_width *= mixer.channels;
+	while (chunk->alen % frame_width) chunk->alen--;
+	return chunk->alen;
+}
+
 /* Play an audio chunk on a specific channel.
    If the specified channel is -1, play on the first free channel.
    'ticks' is the number of milliseconds at most to play the sample, or -1
@@ -650,6 +645,10 @@ int Mix_PlayChannelTimed(int which, Mix_Chunk *chunk, int loops, int ticks)
 	/* Don't play null pointers :-) */
 	if ( chunk == NULL ) {
 		Mix_SetError("Tried to play a NULL chunk");
+		return(-1);
+	}
+	if ( !checkchunkintegral(chunk)) {
+		Mix_SetError("Tried to play a chunk with a bad frame");
 		return(-1);
 	}
 
@@ -717,6 +716,10 @@ int Mix_FadeInChannelTimed(int which, Mix_Chunk *chunk, int loops, int ms, int t
 
 	/* Don't play null pointers :-) */
 	if ( chunk == NULL ) {
+		return(-1);
+	}
+	if ( !checkchunkintegral(chunk)) {
+		Mix_SetError("Tried to play a chunk with a bad frame");
 		return(-1);
 	}
 

@@ -1,6 +1,6 @@
 /*
     SDL_mixer:  An audio mixer library based on the SDL library
-    Copyright (C) 1997, 1998, 1999, 2000, 2001  Sam Lantinga
+    Copyright (C) 1997-2004 Sam Lantinga
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -32,11 +32,14 @@
 #include <stdlib.h>
 #include "SDL_mixer.h"
 
+void _Mix_InitEffects(void);
+void *_Eff_build_volume_table_u8(void);
+void *_Eff_build_volume_table_s8(void);
+
 /* Should we favor speed over memory usage and/or quality of output? */
 int _Mix_effects_max_speed = 0;
 
 
-void _Mix_InitEffects(void);
 void _Mix_InitEffects(void)
 {
     _Mix_effects_max_speed = (getenv(MIX_EFFECTSMAXSPEED) != NULL);
@@ -53,7 +56,6 @@ void *_Eff_volume_table = NULL;
  *  volume. So _Eff_volume_table[128][mysample] would be the value of
  *  mysample, at half volume.
  */
-void *_Eff_build_volume_table_u8(void);
 void *_Eff_build_volume_table_u8(void)
 {
     int volume;
@@ -89,7 +91,6 @@ void *_Eff_build_volume_table_u8(void)
  *  volume. So _Eff_volume_table[128][mysample+128] would be the value of
  *  mysample, at half volume.
  */
-void *_Eff_build_volume_table_s8(void);
 void *_Eff_build_volume_table_s8(void)
 {
     int volume;

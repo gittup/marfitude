@@ -1,6 +1,6 @@
 /*
     SDL_mixer:  An audio mixer library based on the SDL library
-    Copyright (C) 1997, 1998, 1999, 2000, 2001  Sam Lantinga
+    Copyright (C) 1997-2004 Sam Lantinga
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -59,8 +59,7 @@ static void _Eff_reversestereo16(int chan, void *stream, int len, void *udata)
     Uint32 *ptr = (Uint32 *) stream;
     int i;
 
-    if(chan) {}
-    if(udata) {}
+    if(chan || udata) {}
     for (i = 0; i < len; i += sizeof (Uint32), ptr++) {
         *ptr = (((*ptr) & 0xFFFF0000) >> 16) | (((*ptr) & 0x0000FFFF) << 16);
     }
@@ -73,8 +72,7 @@ static void _Eff_reversestereo8(int chan, void *stream, int len, void *udata)
     Uint32 *ptr = (Uint32 *) stream;
     int i;
 
-    if(chan) {}
-    if(udata) {}
+    if(chan || udata) {}
     /* get the last two bytes if len is not divisible by four... */
     if (len % sizeof (Uint32) != 0) {
         Uint16 *p = (Uint16 *) (((Uint8 *) stream) + (len - 2));

@@ -1,6 +1,6 @@
 /*
     SDL_mixer:  An audio mixer library based on the SDL library
-    Copyright (C) 1997, 1998, 1999, 2000, 2001  Sam Lantinga
+    Copyright (C) 1997-2004 Sam Lantinga
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -31,6 +31,14 @@
 
 #include "SDL_mixer.h"
 
+#define SDL_SURROUND
+
+#ifdef SDL_SURROUND
+#define MAX_OUTPUT_CHANNELS 6
+#else
+#define MAX_OUTPUT_CHANNELS 2
+#endif
+
 /* The music command hack is UNIX specific */
 #ifndef unix
 #undef CMD_MUSIC
@@ -42,14 +50,18 @@
 #ifdef WAV_MUSIC
 #include "wavestream.h"
 #endif
-#ifdef MOD_MUSIC
+#if defined(MOD_MUSIC) || defined(LIBMIKMOD_MUSIC)
 #  include "mikmod.h"
 #  if defined(LIBMIKMOD_VERSION)                /* libmikmod 3.1.8 */
 #    define UNIMOD			MODULE
 #    define MikMod_Init()		MikMod_Init(NULL)
-#    define MikMod_LoadSong(a,b)	Player_Load(a,b,1)
+#    define MikMod_LoadSong(a,b)	Player_Load(a,b,0)
+#    ifdef USE_RWOPS
+#      ifndef LIBMIKMOD_MUSIC
+#      define MikMod_LoadSongRW(a,b)	Player_LoadRW(a,b,0)
+#    endif
+#    endif
 #    define MikMod_FreeSong		Player_Free
-/*     extern int MikMod_errno;*/
 #  else                                        /* old MikMod 3.0.3 */
 #    define MikMod_strerror(x)		_mm_errmsg[x])
 #    define MikMod_errno		_mm_errno
@@ -67,6 +79,9 @@
 #  else
 #    define MIDI_ELSE
 #  endif
+#endif
+#ifdef OGG_MUSIC
+#include "music_ogg.h"
 #endif
 #ifdef MP3_MUSIC
 #include "smpeg.h"
@@ -92,7 +107,7 @@ struct _Mix_Music {
 #ifdef WAV_MUSIC
 		WAVStream *wave;
 #endif
-#ifdef MOD_MUSIC
+#if defined(MOD_MUSIC) || defined(LIBMIKMOD_MUSIC)
 		UNIMOD *module;
 #endif
 #ifdef MID_MUSIC
@@ -102,6 +117,9 @@ struct _Mix_Music {
 #ifdef USE_NATIVE_MIDI
 		NativeMidiSong *nativemidi;
 #endif
+#endif
+#ifdef OGG_MUSIC
+		OGG_music *ogg;
 #endif
 #ifdef MP3_MUSIC
 		SMPEG *mp3;
@@ -122,10 +140,20 @@ static int native_midi_ok;
 #endif
 #endif
 
+void music_mixer(void *udata, Uint8 *stream, int len);
+int open_music(SDL_AudioSpec *mmixer);
+int MIX_string_equals(const char *str1, const char *str2);
+void close_music(void);
+
+/* Reference for converting mikmod output to 4/6 channels */
+static int current_output_channels;
+static Uint16 current_output_format;
+
 /* Used to calculate fading steps */
 static int ms_per_step;
 
 /* Local low-level functions prototypes */
+static void music_internal_initialize_volume(void);
 static void music_internal_volume(int volume);
 static int  music_internal_play(Mix_Music *music, double position);
 static int  music_internal_position(double position);
@@ -145,7 +173,6 @@ void Mix_HookMusicFinished(void (*music_finished)(void))
 
 
 /* Mixing function */
-void music_mixer(void *udata, Uint8 *stream, int len);
 void music_mixer(void *udata, Uint8 *stream, int len)
 {
 	if(udata) {}
@@ -200,9 +227,59 @@ void music_mixer(void *udata, Uint8 *stream, int len)
 				WAVStream_PlaySome(stream, len);
 				break;
 #endif
-#ifdef MOD_MUSIC
+#if defined(MOD_MUSIC) || defined(LIBMIKMOD_MUSIC)
 			case MUS_MOD:
-				VC_WriteBytes((SBYTE *)stream, len);
+				if (current_output_channels > 2) {
+					int small_len = 2 * len / current_output_channels;
+					int i;
+					Uint8 *src, *dst;
+
+					VC_WriteBytes((SBYTE *)stream, small_len);
+					/* and extend to len by copying channels */
+					src = stream + small_len;
+					dst = stream + len;
+
+					switch (current_output_format & 0xFF) {
+						case 8:
+							for ( i=small_len/2; i; --i ) {
+								src -= 2;
+								dst -= current_output_channels;
+								dst[0] = src[0];
+								dst[1] = src[1];
+								dst[2] = src[0];
+								dst[3] = src[1];
+								if (current_output_channels == 6) {
+									dst[4] = src[0];
+									dst[5] = src[1];
+								}
+							}
+							break;
+						case 16:
+							for ( i=small_len/4; i; --i ) {
+								src -= 4;
+								dst -= 2 * current_output_channels;
+								dst[0] = src[0];
+								dst[1] = src[1];
+								dst[2] = src[2];
+								dst[3] = src[3];
+								dst[4] = src[0];
+								dst[5] = src[1];
+								dst[6] = src[2];
+								dst[7] = src[3];
+								if (current_output_channels == 6) {
+									dst[8] = src[0];
+									dst[9] = src[1];
+									dst[10] = src[2];
+									dst[11] = src[3];
+								}
+							}
+							break;
+					}
+
+
+
+				}
+				else VC_WriteBytes((SBYTE *)stream, len);
 				if ( music_swap8 ) {
 					Uint8 *dst;
 					int i;
@@ -236,6 +313,11 @@ void music_mixer(void *udata, Uint8 *stream, int len)
 				break;
 #endif
 #endif
+#ifdef OGG_MUSIC
+			case MUS_OGG:
+				OGG_playAudio(music_playing->data.ogg, stream, len);
+				break;
+#endif
 #ifdef MP3_MUSIC
 			case MUS_MP3:
 				SMPEG_playAudio(music_playing->data.mp3, stream, len);
@@ -249,26 +331,25 @@ void music_mixer(void *udata, Uint8 *stream, int len)
 }
 
 /* Initialize the music players with a certain desired audio format */
-int open_music(SDL_AudioSpec *mymixer);
-int open_music(SDL_AudioSpec *mymixer)
+int open_music(SDL_AudioSpec *mmixer)
 {
 	int music_error;
 
 	music_error = 0;
 #ifdef WAV_MUSIC
-	if ( WAVStream_Init(mymixer) < 0 ) {
+	if ( WAVStream_Init(mmixer) < 0 ) {
 		++music_error;
 	}
 #endif
-#ifdef MOD_MUSIC
+#if defined(MOD_MUSIC) || defined(LIBMIKMOD_MUSIC)
 	/* Set the MikMod music format */
 	music_swap8 = 0;
 	music_swap16 = 0;
-	switch (mymixer->format) {
+	switch (mmixer->format) {
 
 		case AUDIO_U8:
 		case AUDIO_S8: {
-			if ( mymixer->format == AUDIO_S8 ) {
+			if ( mmixer->format == AUDIO_S8 ) {
 				music_swap8 = 1;
 			}
 			md_mode = 0;
@@ -279,9 +360,9 @@ int open_music(SDL_AudioSpec *mymixer)
 		case AUDIO_S16MSB: {
 			/* See if we need to correct MikMod mixing */
 #if SDL_BYTEORDER == SDL_LIL_ENDIAN
-			if ( mymixer->format == AUDIO_S16MSB ) {
+			if ( mmixer->format == AUDIO_S16MSB ) {
 #else
-			if ( mymixer->format == AUDIO_S16LSB ) {
+			if ( mmixer->format == AUDIO_S16LSB ) {
 #endif
 				music_swap16 = 1;
 			}
@@ -294,22 +375,33 @@ int open_music(SDL_AudioSpec *mymixer)
 			++music_error;
 		}
 	}
-	if ( mymixer->channels > 1 ) {
-		if ( mymixer->channels > 2 ) {
+	current_output_channels = mmixer->channels;
+	current_output_format = mmixer->format;
+	if ( mmixer->channels > 1 ) {
+		if ( mmixer->channels > MAX_OUTPUT_CHANNELS ) {
 			Mix_SetError("Hardware uses more channels than mixer");
 			++music_error;
 		}
 		md_mode |= DMODE_STEREO;
 	}
-	md_mixfreq	 = mymixer->freq;
+	md_mixfreq	 = mmixer->freq;
 	md_device	  = 0;
 	md_volume	  = 96;
 	md_musicvolume = 128;
 	md_sndfxvolume = 128;
 	md_pansep	  = 128;
 	md_reverb	  = 0;
-	MikMod_RegisterAllLoaders();
+#ifdef LIBMIKMOD_MUSIC
+	md_mode |= DMODE_HQMIXER|DMODE_SOFT_MUSIC|DMODE_SURROUND;
+#endif
+#ifdef LIBMIKMOD_MUSIC
+	if(!MikMod_InfoDriver())
+#endif
 	MikMod_RegisterAllDrivers();
+#ifdef LIBMIKMOD_MUSIC
+	if(!MikMod_InfoLoader())
+#endif
+	MikMod_RegisterAllLoaders();
 	if ( MikMod_Init() ) {
 		Mix_SetError("%s", MikMod_strerror(MikMod_errno));
 		++music_error;
@@ -317,9 +409,9 @@ int open_music(SDL_AudioSpec *mymixer)
 #endif
 #ifdef MID_MUSIC
 #ifdef USE_TIMIDITY_MIDI
-	samplesize = mymixer->size / mymixer->samples;
-	if ( Timidity_Init(mymixer->freq, mymixer->format,
-	                    mymixer->channels, mymixer->samples) == 0 ) {
+	samplesize = mmixer->size / mmixer->samples;
+	if ( Timidity_Init(mmixer->freq, mmixer->format,
+	                    mmixer->channels, mmixer->samples) == 0 ) {
 		timidity_ok = 1;
 	} else {
 		timidity_ok = 0;
@@ -333,9 +425,14 @@ int open_music(SDL_AudioSpec *mymixer)
 		native_midi_ok = native_midi_detect();
 #endif
 #endif
+#ifdef OGG_MUSIC
+	if ( OGG_init(mmixer) < 0 ) {
+		++music_error;
+	}
+#endif
 #ifdef MP3_MUSIC
 	/* Keep a copy of the mixer */
-	used_mixer = *mymixer;
+	used_mixer = *mmixer;
 #endif
 	music_playing = NULL;
 	music_stopped = 0;
@@ -345,13 +442,12 @@ int open_music(SDL_AudioSpec *mymixer)
 	Mix_VolumeMusic(SDL_MIX_MAXVOLUME);
 
 	/* Calculate the number of ms for each callback */
-	ms_per_step = (int) (((float)mymixer->samples * 1000.0) / mymixer->freq);
+	ms_per_step = (int) (((float)mmixer->samples * 1000.0) / mmixer->freq);
 
 	return(0);
 }
 
 /* Portable case-insensitive string compare function */
-int MIX_string_equals(const char *str1, const char *str2);
 int MIX_string_equals(const char *str1, const char *str2)
 {
 	while ( *str1 && *str2 ) {
@@ -369,7 +465,7 @@ Mix_Music *Mix_LoadMUS(const char *file)
 {
 	FILE *fp;
 	char *ext;
-	Uint8 magic[5];
+	Uint8 magic[5], moremagic[9];
 	Mix_Music *music;
 
 	/* Figure out what kind of file this is */
@@ -381,7 +477,12 @@ Mix_Music *Mix_LoadMUS(const char *file)
 		Mix_SetError("Couldn't read from '%s'", file);
 		return(NULL);
 	}
+	if (!fread(moremagic, 8, 1, fp)) {
+		Mix_SetError("Couldn't read from '%s'", file);
+		return(NULL);
+	}
 	magic[4] = '\0';
+	moremagic[8] = '\0';
 	fclose(fp);
 
 	/* Figure out the file extension, so we can determine the type */
@@ -410,7 +511,7 @@ Mix_Music *Mix_LoadMUS(const char *file)
 	   AIFF files have the magic 12 bytes "FORM" XXXX "AIFF"
 	 */
 	if ( (ext && MIX_string_equals(ext, "WAV")) ||
-	     (strcmp((char *)magic, "RIFF") == 0) ||
+	     ((strcmp((char *)magic, "RIFF") == 0) && (strcmp((char *)(moremagic+4), "WAVE") == 0)) ||
 	     (strcmp((char *)magic, "FORM") == 0) ) {
 		music->type = MUS_WAV;
 		music->data.wave = WAVStream_LoadSong(file, (char *)magic);
@@ -424,7 +525,9 @@ Mix_Music *Mix_LoadMUS(const char *file)
 	/* MIDI files have the magic four bytes "MThd" */
 	if ( (ext && MIX_string_equals(ext, "MID")) ||
 	     (ext && MIX_string_equals(ext, "MIDI")) ||
-	     strcmp((char *)magic, "MThd") == 0 ) {
+	     strcmp((char *)magic, "MThd") == 0  ||
+	     ( strcmp((char *)magic, "RIFF") == 0  &&
+	  	strcmp((char *)(moremagic+4), "RMID") == 0 ) ) {
 		music->type = MUS_MID;
 #ifdef USE_NATIVE_MIDI
   		if ( native_midi_ok ) {
@@ -449,6 +552,17 @@ Mix_Music *Mix_LoadMUS(const char *file)
 #endif
 	} else
 #endif
+#ifdef OGG_MUSIC
+	/* Ogg Vorbis files have the magic four bytes "OggS" */
+	if ( (ext && MIX_string_equals(ext, "OGG")) ||
+	     strcmp((char *)magic, "OggS") == 0 ) {
+		music->type = MUS_OGG;
+		music->data.ogg = OGG_new(file);
+		if ( music->data.ogg == NULL ) {
+			music->error = 1;
+		}
+	} else
+#endif
 #ifdef MP3_MUSIC
 	if ( (ext && MIX_string_equals(ext, "MPG")) ||
 	     (ext && MIX_string_equals(ext, "MP3")) ||
@@ -465,7 +579,7 @@ Mix_Music *Mix_LoadMUS(const char *file)
 		}
 	} else
 #endif
-#ifdef MOD_MUSIC
+#if defined(MOD_MUSIC) || defined(LIBMIKMOD_MUSIC)
 	if ( 1 ) {
 		music->type = MUS_MOD;
 		music->data.module = MikMod_LoadSong(file, 64);
@@ -525,7 +639,7 @@ void Mix_FreeMusic(Mix_Music *music)
 				WAVStream_FreeSong(music->data.wave);
 				break;
 #endif
-#ifdef MOD_MUSIC
+#if defined(MOD_MUSIC) || defined(LIBMIKMOD_MUSIC)
 			case MUS_MOD:
 				MikMod_FreeSong(music->data.module);
 				break;
@@ -542,6 +656,11 @@ void Mix_FreeMusic(Mix_Music *music)
 					Timidity_FreeSong(music->data.midi);
 				}
 #endif
+				break;
+#endif
+#ifdef OGG_MUSIC
+			case MUS_OGG:
+				OGG_delete(music->data.ogg);
 				break;
 #endif
 #ifdef MP3_MUSIC
@@ -589,10 +708,8 @@ static int music_internal_play(Mix_Music *music, double position)
 	music_playing = music;
 
 	/* Set the initial volume */
-	if ( music->fading == MIX_FADING_IN ) {
-		music_internal_volume(0);
-	} else {
-		music_internal_volume(music_volume);
+	if ( music->type != MUS_MOD ) {
+		music_internal_initialize_volume();
 	}
 
 	/* Set up for playback */
@@ -607,9 +724,11 @@ static int music_internal_play(Mix_Music *music, double position)
 		WAVStream_Start(music->data.wave);
 		break;
 #endif
-#ifdef MOD_MUSIC
+#if defined(MOD_MUSIC) || defined(LIBMIKMOD_MUSIC)
 	    case MUS_MOD:
 		Player_Start(music->data.module);
+		/* Player_SetVolume() does nothing before Player_Start() */
+		music_internal_initialize_volume();
 		break;
 #endif
 #ifdef MID_MUSIC
@@ -624,6 +743,11 @@ static int music_internal_play(Mix_Music *music, double position)
 			Timidity_Start(music->data.midi);
 		}
 #endif
+		break;
+#endif
+#ifdef OGG_MUSIC
+	    case MUS_OGG:
+		OGG_play(music->data.ogg);
 		break;
 #endif
 #ifdef MP3_MUSIC
@@ -706,9 +830,14 @@ int music_internal_position(double position)
 	int retval = 0;
 
 	switch (music_playing->type) {
-#ifdef MOD_MUSIC
+#if defined(MOD_MUSIC) || defined(LIBMIKMOD_MUSIC)
 	    case MUS_MOD:
 		Player_SetPosition((UWORD)position);
+		break;
+#endif
+#ifdef OGG_MUSIC
+	    case MUS_OGG:
+		OGG_jump_to_time(music_playing->data.ogg, position);
 		break;
 #endif
 #ifdef MP3_MUSIC
@@ -747,6 +876,16 @@ int Mix_SetMusicPosition(double position)
 	return(retval);
 }
 
+/* Set the music's initial volume */
+static void music_internal_initialize_volume(void)
+{
+	if ( music_playing->fading == MIX_FADING_IN ) {
+		music_internal_volume(0);
+	} else {
+		music_internal_volume(music_volume);
+	}
+}
+
 /* Set the music volume */
 static void music_internal_volume(int volume)
 {
@@ -761,7 +900,7 @@ static void music_internal_volume(int volume)
 		WAVStream_SetVolume(volume);
 		break;
 #endif
-#ifdef MOD_MUSIC
+#if defined(MOD_MUSIC) || defined(LIBMIKMOD_MUSIC)
 	    case MUS_MOD:
 		Player_SetVolume((SWORD)volume);
 		break;
@@ -778,6 +917,11 @@ static void music_internal_volume(int volume)
 			Timidity_SetVolume(volume);
 		}
 #endif
+		break;
+#endif
+#ifdef OGG_MUSIC
+	    case MUS_OGG:
+		OGG_setvolume(music_playing->data.ogg, volume);
 		break;
 #endif
 #ifdef MP3_MUSIC
@@ -824,7 +968,7 @@ static void music_internal_halt(void)
 		WAVStream_Stop();
 		break;
 #endif
-#ifdef MOD_MUSIC
+#if defined(MOD_MUSIC) || defined(LIBMIKMOD_MUSIC)
 	    case MUS_MOD:
 		Player_Stop();
 		break;
@@ -841,6 +985,11 @@ static void music_internal_halt(void)
 			Timidity_Stop();
 		}
 #endif
+		break;
+#endif
+#ifdef OGG_MUSIC
+	    case MUS_OGG:
+		OGG_stop(music_playing->data.ogg);
 		break;
 #endif
 #ifdef MP3_MUSIC
@@ -918,7 +1067,7 @@ int Mix_PausedMusic(void)
 }
 
 /* Check the status of the music */
-static int music_internal_playing()
+static int music_internal_playing(void)
 {
 	int playing = 1;
 	switch (music_playing->type) {
@@ -936,7 +1085,7 @@ static int music_internal_playing()
 		}
 		break;
 #endif
-#ifdef MOD_MUSIC
+#if defined(MOD_MUSIC) || defined(LIBMIKMOD_MUSIC)
 	    case MUS_MOD:
 		if ( ! Player_Active() ) {
 			playing = 0;
@@ -957,6 +1106,13 @@ static int music_internal_playing()
 				playing = 0;
 		}
 #endif
+		break;
+#endif
+#ifdef OGG_MUSIC
+	    case MUS_OGG:
+		if ( ! OGG_playing(music_playing->data.ogg) ) {
+			playing = 0;
+		}
 		break;
 #endif
 #ifdef MP3_MUSIC
@@ -1002,12 +1158,26 @@ int Mix_SetMusicCMD(const char *command)
 	return(0);
 }
 
-#if 0
+#ifdef LIBMIKMOD_MUSIC
+static int _pl_synchro_value;
+void Player_SetSynchroValue(int i)
+{
+	fprintf(stderr,"SDL_mixer: Player_SetSynchroValue is not supported.\n");
+	_pl_synchro_value = i;
+}
+
+int Player_GetSynchroValue(void)
+{
+	fprintf(stderr,"SDL_mixer: Player_GetSynchroValue is not supported.\n");
+	return _pl_synchro_value;
+}
+#endif
+
 int Mix_SetSynchroValue(int i)
 {
 	if ( music_playing && ! music_stopped ) {
 		switch (music_playing->type) {
-#ifdef MOD_MUSIC
+#if defined(MOD_MUSIC) || defined(LIBMIKMOD_MUSIC)
 		    case MUS_MOD:
 			if ( ! Player_Active() ) {
 				return(-1);
@@ -1029,7 +1199,7 @@ int Mix_GetSynchroValue(void)
 {
 	if ( music_playing && ! music_stopped ) {
 		switch (music_playing->type) {
-#ifdef MOD_MUSIC
+#if defined(MOD_MUSIC) || defined(LIBMIKMOD_MUSIC)
 		    case MUS_MOD:
 			if ( ! Player_Active() ) {
 				return(-1);
@@ -1045,249 +1215,149 @@ int Mix_GetSynchroValue(void)
 	}
 	return(-1);
 }
-#endif
 
 
 /* Uninitialize the music players */
-void close_music(void);
 void close_music(void)
 {
 	Mix_HaltMusic();
 #ifdef CMD_MUSIC
 	Mix_SetMusicCMD(NULL);
 #endif
-#ifdef MOD_MUSIC
+#if defined(MOD_MUSIC) || defined(LIBMIKMOD_MUSIC)
 	MikMod_Exit();
+# ifndef LIBMIKMOD_MUSIC
 	MikMod_UnregisterAllLoaders();
 	MikMod_UnregisterAllDrivers();
+# endif
 #endif
 }
 
-/*
-    SDL_mixer:  An audio mixer library based on the SDL library
-    Copyright (C) 1997, 1998, 1999, 2000, 2001  Sam Lantinga
+#ifdef USE_RWOPS
 
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Library General Public
-    License as published by the Free Software Foundation; either
-    version 2 of the License, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Library General Public License for more details.
-
-    You should have received a copy of the GNU Library General Public
-    License along with this library; if not, write to the Free
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
-    Sam Lantinga
-    slouken@libsdl.org
-*/
-
-/* $Id$ */
-
-/* This file supports an external command for playing music */
-
-#ifdef unix		/* This is a UNIX-specific hack */
-
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <string.h>
-#include <signal.h>
-
-#include "music_cmd.h"
-
-/* Unimplemented */
-void MusicCMD_SetVolume(int volume)
+# ifdef LIBMIKMOD_MUSIC
+typedef struct
 {
-	Mix_SetError("No way to modify external player volume");
+	MREADER mr;
+	int offset;
+	int eof;
+	SDL_RWops *rw;
+} LMM_MREADER;
+BOOL LMM_Seek(struct MREADER *mr,long to,int dir)
+{
+	int at;
+	LMM_MREADER* lmmmr=(LMM_MREADER*)mr;
+	if(dir==SEEK_SET)
+		to+=lmmmr->offset;
+	at=SDL_RWseek(lmmmr->rw, to, dir);
+	return at<lmmmr->offset;
 }
-
-/* Load a music stream from the given file */
-MusicCMD *MusicCMD_LoadSong(const char *cmd, const char *file)
+long LMM_Tell(struct MREADER *mr)
 {
-	MusicCMD *music;
+	int at;
+	LMM_MREADER* lmmmr=(LMM_MREADER*)mr;
+	at=SDL_RWtell(lmmmr->rw)-lmmmr->offset;
+	return at;
+}
+BOOL LMM_Read(struct MREADER *mr,void *buf,size_t sz)
+{
+	int got;
+	LMM_MREADER* lmmmr=(LMM_MREADER*)mr;
+	got=SDL_RWread(lmmmr->rw, buf, sz, 1);
+	return got;
+}
+int LMM_Get(struct MREADER *mr)
+{
+	unsigned char c;
+	int i=EOF;
+	LMM_MREADER* lmmmr=(LMM_MREADER*)mr;
+	if(SDL_RWread(lmmmr->rw,&c,1,1))
+		i=c;
+	return i;
+}
+BOOL LMM_Eof(struct MREADER *mr)
+{
+	int offset;
+	LMM_MREADER* lmmmr=(LMM_MREADER*)mr;
+	offset=LMM_Tell(mr);
+	return offset>=lmmmr->eof;
+}
+MODULE *MikMod_LoadSongRW(SDL_RWops *rw, int maxchan)
+{
+	LMM_MREADER lmmmr={
+		LMM_Seek,
+		LMM_Tell,
+		LMM_Read,
+		LMM_Get,
+		LMM_Eof,
+		0,
+		0,
+		rw
+	};
+	MODULE *m;
+	lmmmr.offset=SDL_RWtell(rw);
+	SDL_RWseek(rw,0,SEEK_END);
+	lmmmr.eof=SDL_RWtell(rw);
+	SDL_RWseek(rw,lmmmr.offset,SEEK_SET);
+	m=Player_LoadGeneric((MREADER*)&lmmmr,maxchan,0);
+	return m;
+}
+# endif
 
-	/* Allocate and fill the music structure */
-	music = (MusicCMD *)malloc(sizeof *music);
-	if ( music == NULL ) {
+Mix_Music *Mix_LoadMUS_RW(SDL_RWops *rw) {
+	Uint8 magic[5];	  /*Apparently there is no way to check if the file is really a MOD,*/
+	/*		    or there are too many formats supported by MikMod or MikMod does */
+	/*		    this check by itself. If someone implements other formats (e.g. MP3) */
+	/*		    the check can be uncommented */
+	Mix_Music *music;
+	int start;
+
+	/* Figure out what kind of file this is */
+	start = SDL_RWtell(rw);
+	if (SDL_RWread(rw,magic,1,4)!=4) {
+		Mix_SetError("Couldn't read from RWops");
+		return NULL;
+	}
+	SDL_RWseek(rw, start, SEEK_SET);
+	magic[4]='\0';
+
+	/* Allocate memory for the music structure */
+	music=(Mix_Music *)malloc(sizeof(Mix_Music));
+	if (music==NULL ) {
 		Mix_SetError("Out of memory");
 		return(NULL);
 	}
-	strncpy(music->file, file, (sizeof music->file)-1);
-	music->file[(sizeof music->file)-1] = '\0';
-	strncpy(music->cmd, cmd, (sizeof music->cmd)-1);
-	music->cmd[(sizeof music->cmd)-1] = '\0';
-	music->pid = 0;
+	music->error = 0;
 
-	/* We're done */
+#ifdef OGG_MUSIC
+	/* Ogg Vorbis files have the magic four bytes "OggS" */
+	if ( strcmp((char *)magic, "OggS") == 0 ) {
+		music->type = MUS_OGG;
+		music->data.ogg = OGG_new_RW(rw);
+		if ( music->data.ogg == NULL ) {
+			music->error = 1;
+		}
+	} else
+#endif
+#if defined(MOD_MUSIC) || defined(LIBMIKMOD_MUSIC)
+	if (1) {
+		music->type=MUS_MOD;
+		music->data.module=MikMod_LoadSongRW(rw,64);
+		if (music->data.module==NULL) {
+			Mix_SetError("%s",MikMod_strerror(MikMod_errno));
+			music->error=1;
+		}
+	} else
+#endif
+	{
+		Mix_SetError("Unrecognized music format");
+		music->error=1;
+	}
+	if (music->error) {
+		free(music);
+		music=NULL;
+	}
 	return(music);
 }
 
-/* Parse a command line buffer into arguments */
-static int ParseCommandLine(char *cmdline, char **argv)
-{
-	char *bufp;
-	int argc;
-
-	argc = 0;
-	for ( bufp = cmdline; *bufp; ) {
-		/* Skip leading whitespace */
-		while ( isspace(*bufp) ) {
-			++bufp;
-		}
-		/* Skip over argument */
-		if ( *bufp == '"' ) {
-			++bufp;
-			if ( *bufp ) {
-				if ( argv ) {
-					argv[argc] = bufp;
-				}
-				++argc;
-			}
-			/* Skip over word */
-			while ( *bufp && (*bufp != '"') ) {
-				++bufp;
-			}
-		} else {
-			if ( *bufp ) {
-				if ( argv ) {
-					argv[argc] = bufp;
-				}
-				++argc;
-			}
-			/* Skip over word */
-			while ( *bufp && ! isspace(*bufp) ) {
-				++bufp;
-			}
-		}
-		if ( *bufp ) {
-			if ( argv ) {
-				*bufp = '\0';
-			}
-			++bufp;
-		}
-	}
-	if ( argv ) {
-		argv[argc] = NULL;
-	}
-	return(argc);
-}
-
-static char **parse_args(char *command, char *last_arg)
-{
-	int argc;
-	char **argv;
-
-	/* Parse the command line */
-	argc = ParseCommandLine(command, NULL);
-	if ( last_arg ) {
-		++argc;
-	}
-	argv = (char **)malloc((argc+1)*(sizeof *argv));
-	if ( argv == NULL ) {
-		return(NULL);
-	}
-	argc = ParseCommandLine(command, argv);
-
-	/* Add last command line argument */
-	if ( last_arg ) {
-		argv[argc++] = last_arg;
-	}
-	argv[argc] = NULL;
-
-	/* We're ready! */
-	return(argv);
-}
-
-/* Start playback of a given music stream */
-void MusicCMD_Start(MusicCMD *music)
-{
-	music->pid = fork();
-	switch(music->pid) {
-	    /* Failed fork() system call */
-	    case -1:
-		Mix_SetError("fork() failed");
-		return;
-
-	    /* Child process - executes here */
-	    case 0: {
-		    char command[PATH_MAX];
-		    char **argv;
-
-		    /* Execute the command */
-		    strcpy(command, music->cmd);
-		    argv = parse_args(command, music->file);
-		    if ( argv != NULL ) {
-			execvp(argv[0], argv);
-		    }
-
-		    /* exec() failed */
-		    perror(argv[0]);
-		    _exit(-1);
-		}
-		break;
-
-	    /* Parent process - executes here */
-	    default:
-		break;
-	}
-	return;
-}
-
-/* Stop playback of a stream previously started with MusicCMD_Start() */
-void MusicCMD_Stop(MusicCMD *music)
-{
-	int status;
-
-	if ( music->pid > 0 ) {
-		while ( kill(music->pid, 0) == 0 ) {
-			kill(music->pid, SIGTERM);
-			sleep(1);
-			waitpid(music->pid, &status, WNOHANG);
-		}
-		music->pid = 0;
-	}
-}
-
-/* Pause playback of a given music stream */
-void MusicCMD_Pause(MusicCMD *music)
-{
-	if ( music->pid > 0 ) {
-		kill(music->pid, SIGSTOP);
-	}
-}
-
-/* Resume playback of a given music stream */
-void MusicCMD_Resume(MusicCMD *music)
-{
-	if ( music->pid > 0 ) {
-		kill(music->pid, SIGCONT);
-	}
-}
-
-/* Close the given music stream */
-void MusicCMD_FreeSong(MusicCMD *music)
-{
-	free(music);
-}
-
-/* Return non-zero if a stream is currently playing */
-int MusicCMD_Active(MusicCMD *music)
-{
-	int status;
-	int active;
-
-	active = 0;
-	if ( music->pid > 0 ) {
-		waitpid(music->pid, &status, WNOHANG);
-		if ( kill(music->pid, 0) == 0 ) {
-			active = 1;
-		}
-	}
-	return(active);
-}
-
-#endif /* unix */
+#endif /* USE_RWOPS */

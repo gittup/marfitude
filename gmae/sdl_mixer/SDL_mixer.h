@@ -1,6 +1,6 @@
 /*
     SDL_mixer:  An audio mixer library based on the SDL library
-    Copyright (C) 1997, 1998, 1999, 2000, 2001  Sam Lantinga
+    Copyright (C) 1997-2004 Sam Lantinga
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -22,8 +22,8 @@
 
 /* $Id$ */
 
-#ifndef _MIXER_H_
-#define _MIXER_H_
+#ifndef _SDL_MIXER_H
+#define _SDL_MIXER_H
 
 #include "SDL_types.h"
 #include "SDL_rwops.h"
@@ -39,24 +39,29 @@ extern "C" {
 
 /* Printable format: "%d.%d.%d", MAJOR, MINOR, PATCHLEVEL
 */
-#define MIX_MAJOR_VERSION	1
-#define MIX_MINOR_VERSION	2
-#define MIX_PATCHLEVEL		5
+#define SDL_MIXER_MAJOR_VERSION	1
+#define SDL_MIXER_MINOR_VERSION	2
+#define SDL_MIXER_PATCHLEVEL	6
 
 /* This macro can be used to fill a version structure with the compile-time
  * version of the SDL_mixer library.
  */
-#define MIX_VERSION(X)							\
+#define SDL_MIXER_VERSION(X)						\
 {									\
-	(X)->major = MIX_MAJOR_VERSION;					\
-	(X)->minor = MIX_MINOR_VERSION;					\
-	(X)->patch = MIX_PATCHLEVEL;					\
+	(X)->major = SDL_MIXER_MAJOR_VERSION;				\
+	(X)->minor = SDL_MIXER_MINOR_VERSION;				\
+	(X)->patch = SDL_MIXER_PATCHLEVEL;				\
 }
 
+/* Backwards compatibility */
+#define MIX_MAJOR_VERSION	SDL_MIXER_MAJOR_VERSION
+#define MIX_MINOR_VERSION	SDL_MIXER_MINOR_VERSION
+#define MIX_PATCHLEVEL		SDL_MIXER_PATCHLEVEL
+#define MIX_VERSION(X)		SDL_MIXER_VERSION(X)
 
 /* This function gets the version of the dynamically linked SDL_mixer library.
    it should NOT be used to fill a version structure, instead you should
-   use the MIX_VERSION() macro.
+   use the SDL_MIXER_VERSION() macro.
  */
 extern DECLSPEC const SDL_version * SDLCALL Mix_Linked_Version(void);
 
@@ -125,10 +130,10 @@ extern DECLSPEC Mix_Chunk * SDLCALL Mix_LoadWAV_RW(SDL_RWops *src, int freesrc);
 #define Mix_LoadWAV(file)	Mix_LoadWAV_RW(SDL_RWFromFile(file, "rb"), 1)
 extern DECLSPEC Mix_Music * SDLCALL Mix_LoadMUS(const char *file);
 
-#if 0 /* This hasn't been hooked into music.c yet */
+#ifdef USE_RWOPS /* This hasn't been hooked into music.c yet */
 /* Load a music file from an SDL_RWop object (MikMod-specific currently)
    Matt Campbell (matt@campbellhome.dhs.org) April 2000 */
-extern no_parse_DECLSPEC Mix_Music * SDLCALL Mix_LoadMUS_RW(SDL_RWops *rw);
+extern DECLSPEC Mix_Music * SDLCALL Mix_LoadMUS_RW(SDL_RWops *rw);
 #endif
 
 /* Load a wave file of the mixer format from a memory buffer */
@@ -576,7 +581,4 @@ extern DECLSPEC void SDLCALL Mix_CloseAudio(void);
 #endif
 #include "close_code.h"
 
-#endif /* _MIXER_H_ */
-
-/* end of SDL_mixer.h ... */
-
+#endif /* _SDL_MIXER_H */
