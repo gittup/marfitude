@@ -332,7 +332,6 @@ void JoyAxisEvent(SDL_JoyAxisEvent *e)
 	int x;
 	JoyKey jk;
 	if(e->value == 0) return;
-	printf("Axis: %i, %i, %i\n", e->which, e->value, e->axis);
 	if(eventMode == KEY && keyHandler)
 	{
 		jk.type = e->which;
