@@ -151,7 +151,7 @@ int main(int argc, char **argv)
 
 	SDL_EnableKeyRepeat(0, 0); /* disable key repeating */
 	SDL_ShowCursor(SDL_DISABLE);
-	if(ConfigureJoyKey())
+	if(configure_joykeys())
 	{
 		SwitchScene(NULLSCENE);
 		if(SwitchMenu(CONFIGMENU))
@@ -177,12 +177,12 @@ int main(int argc, char **argv)
 		}
 	}
 
-	ClearEvents(); /* clears event cue - nothing to do with registering */
+	clear_input();
 
 	while(!quit)
 	{
-		Log(("EventLoop\n"));
-		EventLoop();
+		Log(("input loop\n"));
+		input_loop();
 		Log(("UpdateTimer\n"));
 		UpdateTimer();
 		Log(("Scene Render\n"));

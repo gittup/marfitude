@@ -27,6 +27,7 @@
 #include "main.h"
 #include "event.h"
 #include "glfunc.h"
+#include "input.h"
 #include "phys.h"
 #include "textures.h"
 #include "scene.h"
@@ -655,7 +656,7 @@ void NullMenu(void)
 
 int NoMenuInit(void)
 {
-	EventMode(GAME);
+	input_mode(GAME);
 	HideMenu();
 	RegisterEvent("button", ShowMenu, EVENTTYPE_MULTI);
 	return 0;
@@ -681,7 +682,7 @@ void Retry(void)
 int MainMenuInit(void)
 {
 	if(!menuActive) RegisterMenuEvents();
-	EventMode(MENU);
+	input_mode(MENU);
 	mainMenu->menuX = 200;
 	mainMenu->menuY = 200;
 	CreateButtonParam(mainMenu, "Fight", SwitchMenu, FIGHTMENU);
@@ -951,7 +952,7 @@ void ConfigCreateItems(void)
 	mainMenu->menuX = 290;
 	mainMenu->menuY = 200;
 	for(x=0;x<B_LAST;x++) {
-		s = JoyKeyName(x);
+		s = joykey_name(x);
 		CreateButtonParam(mainMenu, s, ConfigButton, x);
 		free(s);
 	}
@@ -967,12 +968,12 @@ void ConfigKeyHandler(const void *data)
 	int tmp = mainMenu->activeMenuItem;
 	const struct joykey *jk = data;
 
-	if(!SetButton(configuring, jk)) {
+	if(!set_button(configuring, jk)) {
 		ELog(("Error setting configure button %i!\n", configuring));
 	}
 	MPlaySound(snd_push);
 	newKeyText->active = 0;
-	EventMode(MENU);
+	input_mode(MENU);
 	ClearMenuItems(mainMenu);
 	ConfigCreateItems();
 	mainMenu->activeMenuItem = tmp;
@@ -983,14 +984,14 @@ int ConfigButton(int b)
 	configuring = b;
 	RegisterEvent("key", ConfigKeyHandler, EVENTTYPE_STOP);
 	newKeyText->active = 1;
-	EventMode(KEY);
+	input_mode(KEY);
 	return 1;
 }
 
 int ConfigMenuInit(void)
 {
 	if(!menuActive) RegisterMenuEvents();
-	EventMode(MENU);
+	input_mode(MENU);
 	ConfigCreateItems();
 	return 0;
 }
@@ -1018,7 +1019,7 @@ int QuitMenuInit(void)
 {
 	float c[4] = {0.0, 1.0, 1.0, 1.0};
 	if(!menuActive) RegisterMenuEvents();
-	EventMode(MENU);
+	input_mode(MENU);
 	mainMenu->menuX = 350;
 	mainMenu->menuY = 200;
 	CreateButton(mainMenu, "Yes", Quit);
