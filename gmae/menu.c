@@ -3,7 +3,7 @@
 #include <string.h>
 #include <dirent.h>
 
-#include "GL/gl.h"
+#include "SDL_opengl.h"
 
 #include "menu.h"
 #include "main.h"
@@ -702,7 +702,7 @@ void FightMenu(void)
 }
 
 int configuring = 0;
-const char *cfglabels[] = {"Up", "Down", "Left", "Right", "Button 1", "Button 2", "Button 3", "Button 4", "Menu"};
+const char *cfglabels[] = {"Up", "Down", "Left", "Right", "Laser 1", "Laser 2", "Laser 3", "Repeat", "Menu"};
 Text *newKeyText;
 
 void ConfigCreateItems(void)
