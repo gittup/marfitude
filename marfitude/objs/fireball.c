@@ -16,7 +16,6 @@ extern int curTic;
 extern double partialTic;
 extern int channelFocus;
 extern struct row *curRow;
-static float lightNone[4] = {0.0, 0.0, 0.0, 1.0};
 /* end tmp */
 
 
