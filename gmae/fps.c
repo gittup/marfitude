@@ -27,7 +27,7 @@ void PrintFPS()
 void UpdateFPS()
 {
 	frames++;
-	fpsticks += timeDiff;
+	fpsticks += ticDiff;
 	if(fpsticks >= 1000) // one second
 	{
 		fps = (float)frames*1000.0/(float)(fpsticks);
