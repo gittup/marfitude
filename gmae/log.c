@@ -62,7 +62,7 @@ void ELogMsg(const char *s, ...)
 
 int InitLog(void)
 {
-#ifdef LOG
+#if CONFIG_LOG == 1
 	logFile = fopen("log.txt", "w");
 	if(!logFile) return 1;
 	printf("Logging initialized\n");
@@ -72,11 +72,11 @@ int InitLog(void)
 
 void QuitLog(void)
 {
-#ifdef LOG
+#if CONFIG_LOG == 1
 	if(logFile) fclose(logFile);
 	printf("Log shutdown\n");
 #endif
-#ifdef DEBUG_MEM
+#if CONFIG_MEMTEST == 1
 	CheckMemUsage();
 #endif
 }

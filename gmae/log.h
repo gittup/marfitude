@@ -17,7 +17,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#ifdef LOG
+#include "log.cfg"
+
+#if CONFIG_LOG == 1
 #define Log(s) do {LogFile(__FILE__, __LINE__); LogMsg s;} while(0)
 #define ELog(s) do {ELogFile(__FILE__, __LINE__); ELogMsg s; LogMsg s;} while(0)
 #else
