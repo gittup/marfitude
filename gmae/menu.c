@@ -671,10 +671,10 @@ int FightMenuInit(void)
 		char *t = CatStr(MUSICDIR, (char*)tmp->data);
 		if(strcmp(t, lastFile) == 0) {
 			fileStart = cnt - FILE_LIST_SIZE/2;
-			while(fileStart < 0)
-				fileStart++;
 			while(fileStart > len - FILE_LIST_SIZE)
 				fileStart--;
+			while(fileStart < 0)
+				fileStart++;
 			activeMenuItem = cnt;
 		}
 		free(t);
