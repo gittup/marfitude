@@ -24,9 +24,10 @@ static char *NextDot(char *s);
 static int CfgButton(JoyKey *key, const char *cfgParam);
 static int KeyEqual(JoyKey *key, SDL_KeyboardEvent *e);
 static int JoyButtonEqual(JoyKey *key, SDL_JoyButtonEvent *e);
-/*static int JoyAxisEqual(JoyKey *key, SDL_JoyAxisEvent *e);*/
+static int JoyAxisEqual(JoyKey *key, SDL_JoyAxisEvent *e);
 static void KeyDownEvent(SDL_KeyboardEvent *e);
 static void JoyButtonDownEvent(SDL_JoyButtonEvent *e);
+static void JoyAxisEvent(SDL_JoyAxisEvent *e);
 
 int eventMode = MENU;
 Event *events[EVENT_LAST] = {0};
@@ -128,16 +129,14 @@ char *JoyKeyName(int button)
 		if(jk->axis == JK_JOYBUTTON) /* button event */
 		{
 			len = IntLen(jk->type) + IntLen(jk->button) + 13;
-/*			len = snprintf(s, 0, "Joy %i Button %i", jk->type, jk->button); */
 			s = (char*)malloc(sizeof(char) * (len+1));
 			sprintf(s, "Joy %i Button %i", jk->type, jk->button);
 		}
 		else /* axis event */
 		{
 			len = IntLen(jk->type) + IntLen(jk->button) + 15;
-/*			len = snprintf(s, 0, "Joy %i Axis %i (%c)", jk->type, jk->axis, jk->button > 0 ? '+' : '-'); */
 			s = (char*)malloc(sizeof(char) * (len+1));
-			sprintf(s, "Joy %i Axis %i (%c)", jk->type, jk->axis, jk->button > 0 ? '+' : '-');
+			sprintf(s, "Joy %i Axis %i (%c)", jk->type, jk->axis, (jk->button > 0) ? '+' : '-');
 		}
 	}
 	return s;
@@ -146,7 +145,7 @@ char *JoyKeyName(int button)
 int KeyEqual(JoyKey *key, SDL_KeyboardEvent *e)
 {
 	if(	key->type == -1 &&
-		key->button == e->keysym.sym &&
+		key->button == (signed)e->keysym.sym &&
 		key->axis == -1)
 		return 1;
 	return 0;
@@ -161,14 +160,14 @@ int JoyButtonEqual(JoyKey *key, SDL_JoyButtonEvent *e)
 	return 0;
 }
 
-/*int JoyAxisEqual(JoyKey *key, SDL_JoyAxisEvent *e)
+int JoyAxisEqual(JoyKey *key, SDL_JoyAxisEvent *e)
 {
 	if(	key->type == e->which &&
-		key->button == (e->value > 0) ? 1 : -1 &&
+		key->button == (e->value > 0 ? 1 : -1) &&
 		key->axis == e->axis)
 		return 1;
 	return 0;
-}*/
+}
 
 void FireEvent(int event)
 {
@@ -257,9 +256,9 @@ void KeyDownEvent(SDL_KeyboardEvent *e)
 	JoyKey jk;
 	if(eventMode == KEY && keyHandler)
 	{
-		jk.type = -1;
+		jk.type = JK_KEYBOARD;
 		jk.button = e->keysym.sym;
-		jk.axis = -1;
+		jk.axis = JK_KEYBOARD;
 		keyHandler(&jk);
 	}
 	else if(eventMode == MENU)
@@ -328,6 +327,42 @@ void JoyButtonDownEvent(SDL_JoyButtonEvent *e)
 	/* no else (ignore eventMode == KEY and no keyHandler) */
 }
 
+void JoyAxisEvent(SDL_JoyAxisEvent *e)
+{
+	int x;
+	JoyKey jk;
+	if(e->value == 0) return;
+	if(eventMode == KEY && keyHandler)
+	{
+		jk.type = e->which;
+		jk.button = (e->value>0)?1:-1;
+		jk.axis = e->axis;
+		keyHandler(&jk);
+	}
+	else if(eventMode == MENU)
+	{
+		/* Only handle up and down in menu mode */
+		if(e->axis == 1)
+		{
+			if(e->value > JOY_THRESHOLD)
+			{
+				FireEvent(EVENT_DOWN);
+			}
+			if(e->value < -JOY_THRESHOLD)
+			{
+				FireEvent(EVENT_UP);
+			}
+			/* wait for event.jaxis.value to be less than JOY_THRESHOLD before executing menu again? */
+		}
+	}
+	else if(eventMode == GAME)
+	{
+		for(x=B_UP;x<B_LAST;x++)
+			if(JoyAxisEqual(&buttons[x], e)) FireEvent(x);
+	}
+	/* no else (ignore eventMode == KEY and no keyHandler) */
+}
+
 void EventLoop(void)
 {
 	int moreEvents = 1;
@@ -348,6 +383,8 @@ void EventLoop(void)
 /*				printf("Key up\n"); */
 				break;
 			case SDL_JOYAXISMOTION:
+				JoyAxisEvent(&event.jaxis);
+#if 0
 				if(event.jaxis.axis == 1)
 				{
 					if(event.jaxis.value > JOY_THRESHOLD)
@@ -360,6 +397,7 @@ void EventLoop(void)
 					}
 					/* wait for event.jaxis.value to be less than JOY_THRESHOLD before executing menu again */
 				}
+#endif
 				break;
 			case SDL_JOYBUTTONDOWN:
 				if(JoyIgnoreButton(event.jbutton.which, event.jbutton.button)) break;

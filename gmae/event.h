@@ -1,6 +1,6 @@
 typedef struct {
 	int type; /* -1 for keybd, 0-n for joysticks */
-	unsigned int button;	/* keysym.sym for keybd, button # for joystick button
+	int button;	/* keysym.sym for keybd, button # for joystick button
 			 * 1 if axis>0, -1 if axis<0 */
 	int axis; /* -1 if no axis, >=0 if this was an axis */
 	} JoyKey;
