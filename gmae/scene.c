@@ -657,8 +657,8 @@ int MainInit()
 	mainTexes[2] = TEX_ElectricBlue;
 	mainTexes[3] = TEX_Clovers;
 	mainTexes[4] = TEX_Lava;
-	mainTexes[5] = TEX_Slate;
-	mainTexes[6] = TEX_Walnut;
+	mainTexes[5] = TEX_Parque3;
+	mainTexes[6] = TEX_Slate;
 	mainTexes[7] = TEX_ElectricBlue;
 
 	for(x=0;x<wam->numCols;x++) {
