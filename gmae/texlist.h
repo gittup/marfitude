@@ -16,6 +16,7 @@ char *TEX_LIST[] = {	"./images/BlackyOily.png",\
 			"./images/EdgeSmoke.png",\
 			"./images/Fireball.png",\
 			"./images/FlatlandFiery.png",\
+			"./images/Laser.png",\
 			"./images/Lava.png",\
 			"./images/Marble2.png",\
 			"./images/Marble.png",\

@@ -7,7 +7,7 @@ GLuint LoadTexture(char *filename);
 int InitTextures(void);
 void QuitTextures(void);
 
-#define NUM_TEXTURES 41
+#define NUM_TEXTURES 42
 extern GLuint *GLTexture;
 
 #define TEX_BlackyOily GLTexture[0]
@@ -27,30 +27,31 @@ extern GLuint *GLTexture;
 #define TEX_EdgeSmoke GLTexture[14]
 #define TEX_Fireball GLTexture[15]
 #define TEX_FlatlandFiery GLTexture[16]
-#define TEX_Lava GLTexture[17]
-#define TEX_Marble2 GLTexture[18]
-#define TEX_Marble GLTexture[19]
-#define TEX_MeltedColors GLTexture[20]
-#define TEX_Neurons GLTexture[21]
-#define TEX_Noise GLTexture[22]
-#define TEX_Parque2 GLTexture[23]
-#define TEX_Parque GLTexture[24]
-#define TEX_Psycho GLTexture[25]
-#define TEX_RainbowReed GLTexture[26]
-#define TEX_Rain GLTexture[27]
-#define TEX_RedMess GLTexture[28]
-#define TEX_SandySlate GLTexture[29]
-#define TEX_Silver GLTexture[30]
-#define TEX_Slate GLTexture[31]
-#define TEX_StarBurst GLTexture[32]
-#define TEX_StarCenter GLTexture[33]
-#define TEX_SunBurst GLTexture[34]
-#define TEX_SunCenter GLTexture[35]
-#define TEX_Target GLTexture[36]
-#define TEX_Test GLTexture[37]
-#define TEX_Title GLTexture[38]
-#define TEX_Tubes GLTexture[39]
-#define TEX_Walnut GLTexture[40]
+#define TEX_Laser GLTexture[17]
+#define TEX_Lava GLTexture[18]
+#define TEX_Marble2 GLTexture[19]
+#define TEX_Marble GLTexture[20]
+#define TEX_MeltedColors GLTexture[21]
+#define TEX_Neurons GLTexture[22]
+#define TEX_Noise GLTexture[23]
+#define TEX_Parque2 GLTexture[24]
+#define TEX_Parque GLTexture[25]
+#define TEX_Psycho GLTexture[26]
+#define TEX_RainbowReed GLTexture[27]
+#define TEX_Rain GLTexture[28]
+#define TEX_RedMess GLTexture[29]
+#define TEX_SandySlate GLTexture[30]
+#define TEX_Silver GLTexture[31]
+#define TEX_Slate GLTexture[32]
+#define TEX_StarBurst GLTexture[33]
+#define TEX_StarCenter GLTexture[34]
+#define TEX_SunBurst GLTexture[35]
+#define TEX_SunCenter GLTexture[36]
+#define TEX_Target GLTexture[37]
+#define TEX_Test GLTexture[38]
+#define TEX_Title GLTexture[39]
+#define TEX_Tubes GLTexture[40]
+#define TEX_Walnut GLTexture[41]
 
 typedef enum {
 	T_BlackyOily,
@@ -70,6 +71,7 @@ typedef enum {
 	T_EdgeSmoke,
 	T_Fireball,
 	T_FlatlandFiery,
+	T_Laser,
 	T_Lava,
 	T_Marble2,
 	T_Marble,
