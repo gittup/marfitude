@@ -1,11 +1,9 @@
-EXTRACFLAGS = $(SDLCFLAGS) $(BDECFLAGS)
+include mk/lib/sdl.mk
 
+INCDIRS = cfg
+EXTRACFLAGS = $(BDECFLAGS)
 TARGET = libmarf
 
-ifeq ($(CONFIG_DEBUG_MEM),1)
-EXTRACFLAGS += -DDEBUG_MEM
-endif
+include mk/lang/c.mk
 
-include $(MK)/lang/c.mk
-
-include $(MK)/tgt/staticlib.mk
+include mk/tgt/staticlib.mk
