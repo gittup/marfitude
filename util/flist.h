@@ -17,12 +17,13 @@
 */
 
 /** @file
-  * @brief Some simple file functions.
+  * Some simple file functions.
   *
   * This file adds the abililty to iterate through a list of files to the
   * utility library.
   */
 
+#include <stdio.h>
 #include <dirent.h>
 
 /** Used to iterate through a list of files
@@ -42,7 +43,7 @@ struct flist {
   * #include "flist.h"
   *
   * struct flist f;
-  * flist_foreach(f, "dir") {
+  * flist_foreach(&f, "dir") {
   * 	printf("File %s is in dir\n", f.filename);
   * }
   * @endcode
