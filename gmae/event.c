@@ -415,8 +415,10 @@ void JoyAxisEvent(SDL_JoyAxisEvent *e)
 	}
 	else if(eventMode == MENU)
 	{
-		/* Only handle up and down in menu mode */
-		if(e->axis == 1)
+		/* Only handle up and down in menu mode
+		 * (I think all verticle axi / axes / axisi are odd, maybe)
+		 */
+		if(e->axis & 1)
 		{
 			if(e->value > JOY_THRESHOLD)
 			{
@@ -426,7 +428,9 @@ void JoyAxisEvent(SDL_JoyAxisEvent *e)
 			{
 				FireEvent(EVENT_UP);
 			}
-			/* wait for event.jaxis.value to be less than JOY_THRESHOLD before executing menu again? */
+			/* wait for event.jaxis.value to be less than
+			 * JOY_THRESHOLD before executing menu again?
+			 */
 		}
 	}
 	else if(eventMode == GAME)
