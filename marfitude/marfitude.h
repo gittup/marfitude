@@ -7,7 +7,6 @@
 #define NEGATIVE_TICKS 7*6
 #define POSITIVE_TICKS 57*6
 #define NUM_TICKS 64*6
-#define TIC_ERROR 5 /* number of tics we can be off when hitting a button */
 #define LINES_PER_AP 8
 #define ROWS_PER_LINE 4
 
