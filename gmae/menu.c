@@ -20,12 +20,12 @@
 #include "fatalerror.h"
 #include "slist.h"
 
-#define SLIDER 0
-#define BOOLEAN 1
-#define BUTTON 2
-#define BUTTONPARAM 3
-#define TEXT 4
-#define SELECTABLE 4 /* all items from 0 to SELECTABLE are selectable */
+#define MENU_SLIDER 0
+#define MENU_BOOLEAN 1
+#define MENU_BUTTON 2
+#define MENU_BUTTONPARAM 3
+#define MENU_TEXT 4
+#define MENU_SELECTABLE 4 /* items from 0 to MENU_SELECTABLE are selectable */
 #define MUSICDIR "music/"
 
 #define NOBOX -1 /* for the bounding box */
@@ -168,17 +168,17 @@ void DrawPartialMenu(int start, int stop)
 	{
 		switch(items[x].type)
 		{
-			case SLIDER:
+			case MENU_SLIDER:
 				break;
-			case BOOLEAN:
+			case MENU_BOOLEAN:
 				break;
-			case BUTTON:
-			case BUTTONPARAM:
+			case MENU_BUTTON:
+			case MENU_BUTTONPARAM:
 				if(x == activeMenuItem) glColor3f(1.0, 0.0, 0.0);
 				else glColor3f(1.0, 1.0, 1.0);
 				PrintGL(menuX, menuY+(x-start)*FONT_HEIGHT, items[x].name);
 				break;
-			case TEXT:
+			case MENU_TEXT:
 				t = (Text*)items[x].item;
 				if(t->active)
 				{
@@ -218,18 +218,18 @@ void ClearMenuItems(void)
 		free(items[x].name);
 		switch(items[x].type)
 		{
-			case SLIDER:
+			case MENU_SLIDER:
 				free(items[x].item);
 				break;
-			case BOOLEAN:
+			case MENU_BOOLEAN:
 				b = (Boolean*)items[x].item;
 				free(b->trueString);
 				free(b->falseString);
 				free(b);
 				break;
-			case BUTTON:
-			case BUTTONPARAM:
-			case TEXT:
+			case MENU_BUTTON:
+			case MENU_BUTTONPARAM:
+			case MENU_TEXT:
 				free(items[x].item);
 				break;
 			default:
@@ -293,7 +293,7 @@ Button *CreateButton(const char *name, void (*activeFunc)(void))
 	b = (Button*)malloc(sizeof(Button));
 	b->activeFunc = activeFunc;
 	UpdateBox(menuX, menuY + FONT_HEIGHT * numItems, menuX + strlen(name) * FONT_WIDTH, menuY + FONT_HEIGHT * (numItems+1));
-	AddMenuItem(name, (void*)b, BUTTON);
+	AddMenuItem(name, (void*)b, MENU_BUTTON);
 	return b;
 }
 
@@ -304,7 +304,7 @@ ButtonParam *CreateButtonParam(const char *name, int (*activeFunc)(int), int par
 	b->activeFunc = activeFunc;
 	b->param = param;
 	UpdateBox(menuX, menuY + FONT_HEIGHT * numItems, menuX + strlen(name) * FONT_WIDTH, menuY + FONT_HEIGHT * (numItems+1));
-	AddMenuItem(name, (void*)b, BUTTONPARAM);
+	AddMenuItem(name, (void*)b, MENU_BUTTONPARAM);
 	return b;
 }
 
@@ -321,7 +321,7 @@ Text *CreateText(const char *name, float *c, int x, int y)
 	t->y = y;
 	t->active = 1;
 	UpdateBox(x, y, x + strlen(name) * FONT_WIDTH, y + FONT_HEIGHT);
-	AddMenuItem(name, (void*)t, TEXT);
+	AddMenuItem(name, (void*)t, MENU_TEXT);
 	return t;
 }
 
@@ -366,7 +366,7 @@ void MenuDown(void)
 	{
 		if(DownOne())
 		{
-			if(items[activeMenuItem].type < SELECTABLE)
+			if(items[activeMenuItem].type < MENU_SELECTABLE)
 			{
 				play = 1;
 				break;
@@ -396,7 +396,7 @@ void MenuUp(void)
 	{
 		if(UpOne())
 		{
-			if(items[activeMenuItem].type < SELECTABLE)
+			if(items[activeMenuItem].type < MENU_SELECTABLE)
 			{
 				play = 1;
 				break;
@@ -424,10 +424,10 @@ void MenuActivate(void)
 	SDLPlaySound(SND_spnray03);
 	switch(items[activeMenuItem].type)
 	{
-		case BUTTON:
+		case MENU_BUTTON:
 			((Button*)items[activeMenuItem].item)->activeFunc();
 			break;
-		case BUTTONPARAM:
+		case MENU_BUTTONPARAM:
 			bp = (ButtonParam*)items[activeMenuItem].item;
 			bp->activeFunc(bp->param);
 		default:
@@ -854,7 +854,7 @@ int FindActiveItem(MenuItem *activeItems, int numActiveItems)
 	int x;
 	for(x=0;x<numActiveItems;x++)
 	{
-		if(activeItems[x].type < SELECTABLE) return x;
+		if(activeItems[x].type < MENU_SELECTABLE) return x;
 	}
 	return 0;
 }
@@ -873,7 +873,7 @@ int SwitchMenu(int m)
 		return 0;
 	}
 	activeMenu = &(menus[m]);
-	if(activeMenuItem < numItems && items[activeMenuItem].type >= SELECTABLE)
+	if(activeMenuItem < numItems && items[activeMenuItem].type >= MENU_SELECTABLE)
 		activeMenuItem = FindActiveItem(items, numItems);
 	Log(("Menu switched\n"));
 	return 1;
