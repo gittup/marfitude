@@ -17,7 +17,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include "phys.h"
+struct obj;
 
 enum particleTypes {
 	P_Point = 0,
