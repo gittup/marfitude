@@ -51,7 +51,7 @@ include $(MK)/Recurse.mk
 subdir := images
 include $(MK)/Recurse.mk
 
-ifeq ($(ARCH),windows)
+ifeq ($(ARCH),mingw)
 subdir := dlls
 include $(MK)/Recurse.mk
 endif
