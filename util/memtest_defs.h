@@ -22,9 +22,9 @@
  * called directly.
  */
 
-void *MyMalloc(size_t x, int line, const char *file);
-void MyFree(void *p, int line, const char *file);
-void *MyRealloc(void *p, int x, int line, const char *file);
-void *MyCalloc(size_t nm, size_t x, int line, const char *file);
-void CheckMemUsage(void);
-int QueryMemUsage(void);
+void *my_malloc(size_t x, int line, const char *file);
+void my_free(void *p, int line, const char *file);
+void *my_realloc(void *p, int x, int line, const char *file);
+void *my_calloc(size_t nm, size_t x, int line, const char *file);
+void check_mem_usage(void);
+int query_mem_usage(void);

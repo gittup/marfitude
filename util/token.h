@@ -27,7 +27,7 @@ struct token {
 	int type;    /**< Either HEADER or VALUE  */
 };
 
-int GetToken(FILE *f, char stopper, struct token *t);
+int get_token(FILE *f, char stopper, struct token *t);
 
 /** Defines a token as a header type. It has no value, only text */
 #define HEADER 0

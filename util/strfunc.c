@@ -34,10 +34,10 @@
  * @param x An integer
  * @return The length of a buffer required to hold @a x.
  */
-int IntLen(int x)
+int int_len(int x)
 {
 	if(!x) return 1;
-	if(x < 0) return IntLen(-x)+1;
+	if(x < 0) return int_len(-x)+1;
 	return floor(log10((double)x))+1;
 }
 
@@ -46,7 +46,7 @@ int IntLen(int x)
   * @param b A nul-terminated character string
   * @return The new string, which must be freed.
   */
-char *CatStr(const char *a, const char *b)
+char *cat_str(const char *a, const char *b)
 {
 	char *s;
 	s = malloc(sizeof(char) * (strlen(a) + strlen(b) + 1));
@@ -59,7 +59,7 @@ char *CatStr(const char *a, const char *b)
   * @param s A nul-terminated character string
   * @return A copy of the string, which must be freed.
   */
-char *StringCopy(const char *s)
+char *string_copy(const char *s)
 {
 	char *d;
 	d = malloc(sizeof(char) * (strlen(s) + 1));

@@ -20,6 +20,6 @@
  * Allows display of a simple text based progress bar
  */
 
-void ProgressMeter(const char *text);
-void UpdateProgress(int part, int whole); /* part/whole the way there */
-void EndProgressMeter(void);
+void progress_meter(const char *text);
+void update_progress(int part, int whole); /* part/whole the way there */
+void end_progress_meter(void);

@@ -27,7 +27,7 @@
  */
 
 /** The underlying error function. Actually called using the Error macro. */
-void FatalError(const char *file, int line, const char *msg)
+void fatal_error(const char *file, int line, const char *msg)
 {
 	fprintf(stderr, "Error %s in %s, line %i: %s\n", msg, file, line, strerror(errno));
 }

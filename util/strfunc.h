@@ -23,6 +23,6 @@
  * library.
  */
 
-int IntLen(int x);
-char *CatStr(const char *a, const char *b);
-char *StringCopy(const char *s);
+int int_len(int x);
+char *cat_str(const char *a, const char *b);
+char *string_copy(const char *s);

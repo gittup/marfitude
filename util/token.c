@@ -34,7 +34,7 @@
  * @param t pointer to a struct token to fill with the next token.
  * @return 1 if a token was received, 0 if there are no more tokens
  */
-int GetToken(FILE *f, char stopper, struct token *t)
+int get_token(FILE *f, char stopper, struct token *t)
 {
 	/* endofline gets increased at each newline
 	 * and cleared at each non-newline
@@ -78,7 +78,7 @@ int GetToken(FILE *f, char stopper, struct token *t)
 		x++;
 		if(x == 500)
 		{
-			fprintf(stderr, "GetToken Error: line too long!\n");
+			fprintf(stderr, "get_token Error: line too long!\n");
 			return 0;
 		}
 	}
@@ -87,7 +87,7 @@ int GetToken(FILE *f, char stopper, struct token *t)
 		if(c == EOF) return 0;
 		if(endofline > 1)
 		{
-			return GetToken(f, stopper, t); /* skip empty lines */
+			return get_token(f, stopper, t); /* skip empty lines */
 		}
 	}
 	input[x] = 0;

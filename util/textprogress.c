@@ -32,7 +32,7 @@ static int marks;
 /** Starts the progress meter with label @a text
  * @param text The label for the text bar
  */
-void ProgressMeter(const char *text)
+void progress_meter(const char *text)
 {
 	int i;
         printf("%s: [", text);
@@ -46,7 +46,7 @@ void ProgressMeter(const char *text)
  * @param part How far along the bar is
  * @param whole How long the bar is
  */
-void UpdateProgress(int part, int whole)
+void update_progress(int part, int whole)
 {
 	while(part * HASHES >= (marks+1) * whole)
 	{
@@ -57,7 +57,7 @@ void UpdateProgress(int part, int whole)
 }
 
 /** Finishes the progress meter and prints a new line */
-void EndProgressMeter(void)
+void end_progress_meter(void)
 {
 	printf("]\n");
 }

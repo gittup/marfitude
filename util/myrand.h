@@ -20,5 +20,5 @@
  * Adds some easy functions to access rand()
  */
 
-int IntRand(int x);
-float FloatRand(void);
+int rand_int(int x);
+float rand_float(void);

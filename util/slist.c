@@ -31,16 +31,16 @@ struct listmem {
 	int active;         /**< 1 if this element is in use, 0 otherwise */
 };
 
-static void AddSlists(struct listmem *m, int x);
-static void ClearMem(struct slist *l);
-static struct slist *NextList(void);
+static void add_slists(struct listmem *m, int x);
+static void clear_mem(struct slist *l);
+static struct slist *next_list(void);
 
 static struct listmem *mem = NULL;
 static int memsize = 0;
 static int memused = 0;
 static int current = 0;
 
-void AddSlists(struct listmem *m, int x)
+void add_slists(struct listmem *m, int x)
 {
 	int i;
 	struct slist *s = malloc(sizeof(struct slist) * x);
@@ -52,7 +52,7 @@ void AddSlists(struct listmem *m, int x)
 	}
 }
 
-void ClearMem(struct slist *l)
+void clear_mem(struct slist *l)
 {
 	int x;
 	for(x=0;x<memsize;x++) {
@@ -65,14 +65,14 @@ void ClearMem(struct slist *l)
 	fprintf(stderr, "SLIST ERROR: Couldn't find mem to clear!\n");
 }
 
-struct slist *NextList(void)
+struct slist *next_list(void)
 {
 	int x;
 	if(memused >= memsize) {
 		if(!memsize) memsize = 128;
 		else memsize <<= 1;
 		mem = (struct listmem*)realloc(mem, sizeof(struct listmem) * memsize);
-		AddSlists(mem+memused, memsize-memused);
+		add_slists(mem+memused, memsize-memused);
 	}
 
 	x = current + 1;
@@ -114,7 +114,7 @@ struct slist *slist_append(struct slist *l, void *d)
 	struct slist *last;
 	struct slist *head = l;
 
-	last = NextList();
+	last = next_list();
 	last->next = NULL;
 	last->data = d;
 	if(head == NULL) return last;
@@ -136,7 +136,7 @@ struct slist *slist_remove(struct slist *l, void *d)
 	struct slist *head = l;
 	struct slist *prev;
 	if(head->data == d) {
-		ClearMem(head);
+		clear_mem(head);
 		return head->next;
 	}
 	prev = l;
@@ -144,7 +144,7 @@ struct slist *slist_remove(struct slist *l, void *d)
 	while(l != NULL) {
 		if(l->data == d) {
 			prev->next = l->next;
-			ClearMem(l);
+			clear_mem(l);
 		}
 		prev = l;
 		l = l->next;
@@ -177,7 +177,7 @@ struct slist *slist_insert(struct slist *l, void *d)
 {
 	struct slist *head;
 
-	head = NextList();
+	head = next_list();
 	head->next = l;
 	head->data = d;
 	return head;
@@ -193,7 +193,7 @@ struct slist *slist_insert(struct slist *l, void *d)
  */
 struct slist *slist_insert_sorted(struct slist *l, void *d, CompareFunc c)
 {
-	struct slist *ins = NextList();
+	struct slist *ins = next_list();
 	struct slist *head = l;
 	struct slist *prev;
 
@@ -250,7 +250,7 @@ struct slist *slist_next(struct slist *l)
 void slist_free(struct slist *l)
 {
 	while(l != NULL) {
-		ClearMem(l);
+		clear_mem(l);
 		l = l->next;
 	}
 }

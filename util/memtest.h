@@ -21,10 +21,10 @@
  */
 
 #if CONFIG_MEMTEST == 1
-#define malloc(x) MyMalloc(x, __LINE__, __FILE__)
-#define realloc(p, x) MyRealloc(p, x, __LINE__, __FILE__)
-#define free(p) MyFree(p, __LINE__, __FILE__)
-#define calloc(x, y) MyCalloc(x, y, __LINE__, __FILE__)
+#define malloc(x) my_malloc(x, __LINE__, __FILE__)
+#define realloc(p, x) my_realloc(p, x, __LINE__, __FILE__)
+#define free(p) my_free(p, __LINE__, __FILE__)
+#define calloc(x, y) my_calloc(x, y, __LINE__, __FILE__)
 #endif
 
 #include "memtest_defs.h"

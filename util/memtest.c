@@ -26,28 +26,28 @@
  */
 
 /** A structure to keep track of what was allocated when and by who */
-struct memBlock {
+struct mem_block {
 	size_t size;      /**< The size of the allocated memory block */
 	int line;         /**< The line number it was allocated on */
 	const char *file; /**< The file that made the allocation */
 	void *ptr;        /**< Where the block points to */
-	int active;       /**< 1 if this memBlock structure is in use */
+	int active;       /**< 1 if this mem_block structure is in use */
 };
 
 /* note that the memory used to keep track of memory is never freed
  * ... ahh sweet irony
  */
-static struct memBlock *mb = NULL;
+static struct mem_block *mb = NULL;
 static int numBlocks = 0;
 static int startBlock = 0;
 
 /** Overrides malloc if CONFIG_MEMTEST == 1 */
-void *MyMalloc(size_t x, int line, const char *file)
+void *my_malloc(size_t x, int line, const char *file)
 {
 	void *p;
 	p = malloc(x);
 
-	mb = (struct memBlock*)realloc(mb, sizeof(struct memBlock) * (numBlocks+1));
+	mb = (struct mem_block*)realloc(mb, sizeof(struct mem_block) * (numBlocks+1));
 	mb[numBlocks].size = x;
 	mb[numBlocks].line = line;
 	mb[numBlocks].file = file;
@@ -58,7 +58,7 @@ void *MyMalloc(size_t x, int line, const char *file)
 }
 
 /** Overrides free if CONFIG_MEMTEST == 1 */
-void MyFree(void *p, int line, const char *file)
+void my_free(void *p, int line, const char *file)
 {
 	int i;
 	for(i=startBlock;i<numBlocks;i++)
@@ -78,13 +78,13 @@ void MyFree(void *p, int line, const char *file)
 }
 
 /** Overrides realloc if CONFIG_MEMTEST == 1 */
-void *MyRealloc(void *p, int x, int line, const char *file)
+void *my_realloc(void *p, int x, int line, const char *file)
 {
 	int i;
-	if(p == NULL) return MyMalloc(x, line, file);
+	if(p == NULL) return my_malloc(x, line, file);
 	if(x == 0)
 	{
-		MyFree(p, line, file);
+		my_free(p, line, file);
 		return NULL;
 	}
 	for(i=startBlock;i<numBlocks;i++)
@@ -103,11 +103,11 @@ void *MyRealloc(void *p, int x, int line, const char *file)
 }
 
 /** Overrides calloc if CONFIG_MEMTEST == 1 */
-void *MyCalloc(size_t nm, size_t x, int line, const char *file)
+void *my_calloc(size_t nm, size_t x, int line, const char *file)
 {
 	void *p;
 	p = calloc(nm, x);
-	mb = (struct memBlock*)realloc(mb, sizeof(struct memBlock) * (numBlocks+1));
+	mb = (struct mem_block*)realloc(mb, sizeof(struct mem_block) * (numBlocks+1));
 	mb[numBlocks].size = x*nm;
 	mb[numBlocks].line = line;
 	mb[numBlocks].file = file;
@@ -121,7 +121,7 @@ void *MyCalloc(size_t nm, size_t x, int line, const char *file)
  * deallocated, a message is displayed on stdout. This is usually called at
  * the end of a program, after all cleanup code.
  */
-void CheckMemUsage(void)
+void check_mem_usage(void)
 {
 	int x;
 	for(x=0;x<numBlocks;x++)
@@ -134,7 +134,7 @@ void CheckMemUsage(void)
 }
 
 /** Returns the amount of bytes currently in use */
-int QueryMemUsage(void)
+int query_mem_usage(void)
 {
 	int x;
 	int total = 0;

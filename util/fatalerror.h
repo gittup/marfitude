@@ -24,5 +24,5 @@
 /** Called to display one of the standard errno errors along with the file and
  * line number.
  */
-#define Error(err) FatalError(__FILE__, __LINE__, err);
-void FatalError(const char *, int, const char *);
+#define Error(err) fatal_error(__FILE__, __LINE__, err);
+void fatal_error(const char *, int, const char *);

@@ -27,7 +27,7 @@
 /** Gets a random integer from [0, x)
  * @return The random integer
  */
-int IntRand(int x)
+int rand_int(int x)
 {
 	return (int)((double)x * rand()/(RAND_MAX+1.0));
 }
@@ -35,7 +35,7 @@ int IntRand(int x)
 /** Gets a random float from [0.0, 1.0)
  * @return The random float
  */
-float FloatRand(void)
+float rand_float(void)
 {
 	float x = rand();
 	return x / (float)(RAND_MAX+1.0);
