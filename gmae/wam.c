@@ -44,29 +44,38 @@
 #define O_BINARY 0
 #endif
 
+/** Describes a sample. This information is taken from MikMod */
 struct sample {
-	int note;
-	int ins;
-	int vol;
+	int note; /**< The note that is played */
+	int ins;  /**< The instrument playing */
+	int vol;  /**< The volume of the sample */
 };
 
+/** Describes a track, which is one or more channels of a mod in a single
+ * pattern.
+ */
 struct track {
-	struct sample *samples;	/* list of samples. length is the same */
-				/* for all tracks, so it is kept in the function */
-				/* and not in the struct */
-	int *notes;		/* some temporary space to find the best */
-				/* tracks in a pattern */
-	int interest;		/* how "interesting" this track is :) */
-	int singleIns;		/* if there is only one instrument, this is */
-				/* set to correspond to that instrument. */
-				/* if there are multiple instruments or the  */
-				/* track is blank, this is -1 */
-	int isEmpty;		/* if this track has no notes, isEmpty is set */
-	int *channels;		/* length mod->numchn, reflects which channels */
-				/* have been merged */
-	int numChannels;	/* valid channels in list above.  Starts out as */
-				/* 1 then grows as tracks are merged */
-	int lastCol;		/* last column this track was placed in */
+	struct sample *samples;	/**< list of samples. length is the same
+				 * for all tracks, so it is kept in the
+				 * function and not in the struct
+				 */
+	int *notes;		/**< some temporary space to find the best
+				 * tracks in a pattern
+				 */
+	int interest;		/**< how "interesting" this track is :) */
+	int singleIns;		/**< if there is only one instrument, this is
+				 * set to correspond to that instrument.
+				 * if there are multiple instruments or the 
+				 * track is blank, this is -1
+				 */
+	int isEmpty;		/**< set if this track has no notes */
+	int *channels;		/**< length mod->numchn, reflects which channels
+				 * have been merged
+				 */
+	int numChannels;	/**< valid channels in list above.  Starts out
+				 * as 1 then grows as tracks are merged
+				 */
+	int lastCol;		/**< last column this track was placed in */
 };
 
 static struct wam *LoadTrackData(void);
@@ -509,19 +518,21 @@ void ClearTrack(struct track *t, int chan)
 	t->interest = 0;
 }
 
-/* sets the sample information in s from channel chan = [0..mod->numchn-1] */
-/* ignores notes that are too quiet (cutoff set by config file) */
-/* returns the instrument used, -1 if there is no note */
+/* sets the sample information in s from channel chan = [0..mod->numchn-1]
+ * ignores notes that are too quiet (cutoff set by config file)
+ * returns the instrument used, -1 if there is no note
+ */
 int SetSample(struct sample *s, int chan)
 {
 	int volThreshold;
 	volThreshold = CfgI("main.volumethreshold");
-	/* can't use the 'sample' and 'note' values */
-	/* from the MP_CONTROL struct in */
-	/* mikmod_internals.h since they aren't  */
-	/* necessarily set to 0 after the note is */
-	/* first "struck."  Instead we get the info */
-	/* from MikMod's internal format */
+	/* can't use the 'sample' and 'note' values
+	 * from the MP_CONTROL struct in
+	 * mikmod_internals.h since they aren't
+	 * necessarily set to 0 after the note is
+	 * first "struck."  Instead we get the info
+	 * from MikMod's internal format
+	 */
 	s->vol = mod->control[chan].outvolume;
 	if(s->vol < volThreshold)
 	{

@@ -29,21 +29,21 @@
 #include "util/token.h"
 #include "util/strfunc.h"
 
+/** Maps a configuration key to a value */
 struct option {
-	char *key;
-	char *value;
+	char *key;   /**< The key to the option */
+	char *value; /**< The value of the option */
 };
 
+/** Contains a header and a list of options */
 struct header {
-	char *header;
-	struct option *ops;
-	int numOps;
+	char *header;       /**< The name of the [header] in the .cfg file */
+	struct option *ops; /**< The list of options in this section */
+	int numOps;         /**< The number of the struct options */
 };
 
-/*static char *Cat(const char *header, const char *value);*/
 static const char *OptionPart(const char *s);
 static char *HeaderPart(const char *s);
-/*static int HeaderEq(const char *a, const char *b);*/
 static void AddOp(struct header *h, const char *key, const char *value);
 static void CfgAdd(const char *header, const char *key, const char *value);
 static int LoadConfig(const char *filename);
@@ -53,16 +53,6 @@ static struct header *cfg = NULL;
 static int numHeaders = 0;
 static int cfgInited = 0;
 static char *cfgFileName = NULL;
-
-/*char *Cat(const char *header, const char *value)
-{
-	char *ret;
-	ret = (char*)malloc(strlen(header) + strlen(value) + 2);
-	strcpy(ret, header);
-	strcat(ret, ".");
-	strcat(ret, value);
-	return ret;
-}*/
 
 /* s is "a.b", returns "a" - must be freed */
 char *HeaderPart(const char *s)
@@ -91,19 +81,6 @@ const char *OptionPart(const char *s)
 	}
 	return NULL;
 }
-
-/*int HeaderEq(const char *a, const char *b)
-{
-	int x = 0;
-	if(a == NULL || b == NULL) return 0;
-	while(a[x] && b[x])
-	{
-		if(a[x] != b[x]) return 0;
-		if(a[x] == b[x] && a[x] == '.') return 1;
-		x++;
-	}
-	return 0;
-}*/
 
 void AddOp(struct header *h, const char *key, const char *value)
 {
@@ -150,6 +127,7 @@ void CfgAdd(const char *header, const char *key, const char *value)
 	}
 }
 
+/** Sets the configuration @a key to the new string @a value */
 void CfgSetS(const char *key, char *value)
 {
 	char *header;
@@ -158,6 +136,7 @@ void CfgSetS(const char *key, char *value)
 	free(header);
 }
 
+/** Sets the configuration header.option to the new integer @a value */
 void CfgSetIp(const char *header, const char *option, int value)
 {
 	char *s;
@@ -167,6 +146,7 @@ void CfgSetIp(const char *header, const char *option, int value)
 	free(s);
 }
 
+/** Sets the configuration @a key to the new integer @a value */
 void CfgSetI(const char *key, int value)
 {
 	char *header;
@@ -186,8 +166,8 @@ void CfgSetI(const char *key, int value)
 	free(s);
 }*/
 
-/* Copy the CfgS of header, option into a new string
- * return value must be freed
+/** Copy the CfgS of header.option into a new string.
+ * @return The value of the configuration option, which must be freed.
  */
 char *CfgSCpy(const char *header, const char *option)
 {
@@ -199,6 +179,7 @@ char *CfgSCpy(const char *header, const char *option)
 	return s;
 }
 
+/** Returns a pointer to the configuration value for the header.option key */
 char *CfgSp(const char *header, const char *option)
 {
 	int x, y;
@@ -214,6 +195,7 @@ char *CfgSp(const char *header, const char *option)
 	return NULL;
 }
 
+/** Returns a pointer to the configuration value for the @a key */
 char *CfgS(const char *key)
 {
 	char *header;
@@ -224,6 +206,7 @@ char *CfgS(const char *key)
 	return s;
 }
 
+/** Returns the integer value of the header.option key */
 int CfgIp(const char *header, const char *option)
 {
 	char *s;
@@ -232,6 +215,7 @@ int CfgIp(const char *header, const char *option)
 	return atoi(s);
 }
 
+/** Returns the integer value for the @a key */
 int CfgI(const char *key)
 {
 	char *s;
@@ -248,6 +232,7 @@ int CfgI(const char *key)
 	return atof(s);
 }*/
 
+/** Returns 1 if the value of the configuration @a key is equal to @a string */
 int CfgEq(const char *key, const char *string)
 {
 	char *s;
@@ -257,20 +242,24 @@ int CfgEq(const char *key, const char *string)
 	return 0;
 }
 
+/** Loads a the configuration from @a filename
+ * @param filename The configuration file to load
+ * @return 0 on success, error otherwise
+ */
 int LoadConfig(const char *filename)
 {
 	char *header;
 	FILE *cfgfile;
 	struct token t, eq;
 
-	if(filename == NULL) return 0;
+	if(filename == NULL) return 1;
 
 	cfgfile = fopen(filename, "r");
 	if(cfgfile == NULL)
 	{
 		ELog(("Couldn't open config file '%s'\n", filename));
 		Error("opening config file");
-		return 0;
+		return 2;
 	}
 
 	header = (char*)malloc(5);
@@ -298,7 +287,7 @@ int LoadConfig(const char *filename)
 		}
 	}
 	free(header);
-	return 1;
+	return 0;
 }
 
 int SaveConfig(const char *filename)
@@ -336,6 +325,7 @@ int SaveConfig(const char *filename)
 	return 1;
 }
 
+/** Initializes the configuration from a file */
 int InitConfig(void)
 {
 	char *homedir;
@@ -348,8 +338,8 @@ int InitConfig(void)
 		strcat(cfgFileName, "/.marfitude.cfg");
 	}
 
-	if(!LoadConfig(cfgFileName)) {
-		if(!LoadConfig("init.cfg")) {
+	if(LoadConfig(cfgFileName)) {
+		if(LoadConfig("init.cfg")) {
 			ELog(("Error: Couldn't load '%s' or init.cfg config files.", cfgFileName));
 			return 1;
 		}
@@ -363,6 +353,9 @@ int InitConfig(void)
 	return 0;
 }
 
+/** Saves the new configuration (if it was changed by the program) and frees
+ * all memory used to hold the data.
+ */
 void QuitConfig(void)
 {
 	if(!cfgInited) return;

@@ -35,14 +35,15 @@
 
 #define SOUNDDIR "sounds/"
 
+/** Maps a filename to a Mix_Chunk */
 struct snd_entry {
-	Mix_Chunk *chunk;
-	char *name;
+	Mix_Chunk *chunk; /**< The Mix_Chunk for this file */
+	char *name;       /**< The filename used to load this sound */
 };
 
-struct snd_entry *sounds = NULL;
-int num_sounds = 0;
-int sndInited = 0;
+static struct snd_entry *sounds = NULL;
+static int num_sounds = 0;
+static int sndInited = 0;
 
 static int ValidWavFile(const char *s);
 
@@ -58,6 +59,9 @@ int ValidWavFile(const char *s)
 	return 1;
 }
 
+/** Calls Mix_PlayChannel on the appropriate sound chunk for @a snd.
+ * @param snd The sound number retrieved from SoundNum()
+ */
 void MPlaySound(int snd)
 {
 	if(snd < 0 || snd >= num_sounds) return;
@@ -66,6 +70,10 @@ void MPlaySound(int snd)
 	}
 }
 
+/** Retrieves the sound index from the file @a name.
+ * @param name The filename that the sound was loaded from
+ * @return The sound index
+ */
 int SoundNum(const char *name)
 {
 	int x;
@@ -77,6 +85,9 @@ int SoundNum(const char *name)
 	return -1;
 }
 
+/** Loads all sounds in the "sounds" directory, and assigns them numbers. The
+ * sounds can then be retrieved by calling SoundNum() with the file name.
+ */
 int InitSounds(void)
 {
 	int x;
@@ -113,6 +124,7 @@ int InitSounds(void)
 	return 0;
 }
 
+/** Frees all the information used to manage the sounds */
 void QuitSounds(void)
 {
 	int x;

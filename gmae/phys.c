@@ -27,6 +27,11 @@
 
 struct slist *objs = NULL; 
 
+/** Creates a new object structure and returns it. All parameters are zero
+ * except the rotation axis, which is (0.0, 0.0, 1.0) and the mass, which is
+ * 1.0
+ * @return A pointer to an object structure
+ */
 struct obj *NewObj(void)
 {
 	struct obj *o;
@@ -37,21 +42,19 @@ struct obj *NewObj(void)
 	return o;
 }
 
+/** Deletes the object structure @a o
+ * @param o The object to delete
+ */
 void DeleteObj(struct obj *o)
 {
 	free(o);
 	objs = slist_remove(objs, (void *)o);
 }
 
-void ClearObjs(void)
-{
-	struct slist *t;
-
-	slist_foreach(t, objs) {
-		free(t->data);
-	}
-}
-
+/** Update the positions of objects based on velocity/acceleration/rotation
+ * parameters.
+ * @param dt The time that has elapsed, in seconds
+ */
 void UpdateObjs(double dt)
 {
 	struct slist *t;
@@ -77,6 +80,9 @@ void UpdateObjs(double dt)
 	}
 }
 
+/** Check to see how many objects exist. Call at the end to see if some objects
+ * have not been accounted for.
+ */
 void CheckObjs(void)
 {
 	if(slist_length(objs))

@@ -17,6 +17,10 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-void InitFPS(void);	/* sets vars to initial values */
-void PrintFPS(void);	/* prints the FPS in the topright corner of screen */
-void UpdateFPS(void);	/* adds one to frame, after 1 second recalculates FPS */
+/** @file
+ * Figures out the frames per second
+ */
+
+void InitFPS(void);
+void PrintFPS(void);
+void UpdateFPS(void);

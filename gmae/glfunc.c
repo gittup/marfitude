@@ -65,16 +65,19 @@ static GLuint fontList;      /* display lists to show individual characters in
 			      */
 static float fontSize = 1.0; /* scaling factor for the font */
 
+/** Returns the current screen width */
 int DisplayWidth(void)
 {
 	return screenWidth;
 }
 
+/** Returns the current screen height */
 int DisplayHeight(void)
 {
 	return screenHeight;
 }
 
+/** Prints the gluErrorString error along with the file and line number */
 void GLError(char *file, int line, char *func)
 {
 	int i = glGetError();
@@ -143,6 +146,7 @@ int LoadFont(void)
 	return 1;
 }
 
+/** Loads the font, and sets up the OpenGL parameters to some nice defaults */
 int InitGL(void)
 {
 	Uint32 flags = SDL_OPENGL;
@@ -250,6 +254,7 @@ int InitGL(void)
 	return 0;
 }
 
+/** Shuts down OpenGL */
 void QuitGL(void)
 {
 	if(!sdlInited || !fontInited) return;
@@ -268,6 +273,9 @@ void QuitGL(void)
 	}
 }
 
+/** Sets an orthographic projection matrix. Be sure to call ResetProjection()
+ * afterward.
+ */
 void SetOrthoProjection(void)
 {
 	glMatrixMode(GL_PROJECTION);
@@ -280,6 +288,9 @@ void SetOrthoProjection(void)
 	glDisable(GL_LIGHTING);
 }
 
+/** Resets the projection and modelview matrix. This balances out the
+ * SetOrthoProjection() function.
+ */
 void ResetProjection(void)
 {
 	glMatrixMode(GL_PROJECTION);
@@ -289,6 +300,7 @@ void ResetProjection(void)
 	glEnable(GL_LIGHTING);
 }
 
+/** Swap buffers and update FPS */
 void UpdateScreen(void)
 {
 	PrintFPS();
@@ -297,11 +309,18 @@ void UpdateScreen(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+/** Sets the scaling factor for the font display */
 void SetFontSize(float size)
 {
 	fontSize = size;
 }
 
+/** Prints a message to the screen and position x, y.
+ * @param x The x location
+ * @param y The y location
+ * @param msg The message to print, as in printf. The remaining arguments are
+ * the parameters for the message.
+ */
 void PrintGL(int x, int y, const char *msg, ...)
 {
 	va_list ap;

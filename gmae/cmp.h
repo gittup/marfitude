@@ -17,10 +17,15 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** @file
+ * Possibly the greatest complex number math library of all time.
+ */
+
+/** A complex number */
 struct cmp {
-	double real;
-	double imag;
+	double real; /**< The real part */
+	double imag; /**< The imaginary part */
 };
 
-void mul(struct cmp *dest, struct cmp *a, struct cmp *b);
+void mul(struct cmp *dest, const struct cmp *a, const struct cmp *b);
 double mag(const struct cmp *a);

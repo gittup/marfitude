@@ -37,11 +37,12 @@ static void GenTQuad(GLuint tex);
 static void Gen2TQuad(GLuint tex1, GLuint tex2);
 static void DrawParticle(struct particle *p);
 
-int particlesInited = 0;
-int numParticles;
-int curParticle;
-GLuint plist;
-struct particle *particles;
+GLuint plist; /**< Allows access to the particle OpenGL lists */
+
+static int particlesInited = 0;
+static int numParticles;
+static int curParticle;
+static struct particle *particles;
 struct particleType particleTypes[] = {
 	{PT_POINT, 0, 0, 0},
 	{PT_LINE, 0, 0, 0},
@@ -113,6 +114,7 @@ void Gen2TQuad(GLuint tex1, GLuint tex2)
 	glPopMatrix();
 }
 
+/** Allocates all memory for the particle engine */
 int InitParticles(void)
 {
 	int x;
@@ -162,6 +164,7 @@ int InitParticles(void)
 	return 1;
 }
 
+/** Frees the particle engine */
 void QuitParticles(void)
 {
 	free(particles);
@@ -205,6 +208,7 @@ void DrawParticle(struct particle *p)
 	}
 }
 
+/** Draws all of the active particles */
 void DrawParticles(void)
 {
 	int x;
@@ -216,6 +220,7 @@ void DrawParticles(void)
 	Log(("Draw Particles done\n"));
 }
 
+/** Draws all particles that pass the testing function @a p */
 void DrawParticlesTest(PTestFunc p)
 {
 	int x;
@@ -227,6 +232,7 @@ void DrawParticlesTest(PTestFunc p)
 	Log(("DrawParticlesTest() done\n"));
 }
 
+/** Sets up the OpenGL variables to start drawing particles */
 void StartParticles(void)
 {
 	glDisable(GL_LIGHTING);
@@ -234,6 +240,7 @@ void StartParticles(void)
 	glDepthMask(GL_FALSE);
 }
 
+/** Un-sets the OpenGL variables that were used to draw particles */
 void StopParticles(void)
 {
 	glDepthMask(GL_TRUE);
@@ -241,6 +248,12 @@ void StopParticles(void)
 	glEnable(GL_LIGHTING);
 }
 
+/** Create a particle using the object definition @a o.
+ * @param o The physics object that allows this particle to move
+ * @param col The color of the particle
+ * @param type Which particle to draw
+ * @param size How big the particle is (somewhat dependent on the type)
+ */
 void CreateParticle(struct obj *o, float col[4], int type, float size)
 {
 	struct particle *p;
@@ -262,6 +275,7 @@ void CreateParticle(struct obj *o, float col[4], int type, float size)
 	Log(("Create Particle done\n"));
 }
 
+/** Deletes all of the objects associated with the particles */
 void ClearParticles(void)
 {
 	int x;

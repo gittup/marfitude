@@ -17,52 +17,61 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** @file
+ * A particle manager
+ */
+
 struct obj;
 
+/** Describes the different particles that can be drawn */
 enum particleTypes {
-	P_Point = 0,
-	P_Line,
-	P_BlueNova,
-	P_BlueStar,
-	P_Fireball,
-	P_StarBurst,
-	P_SunBurst,
+	P_Point = 0, /**< A simple point particle */
+	P_Line,      /**< A simple line particle */
+	P_BlueNova,  /**< A textured blue nova particle */
+	P_BlueStar,  /**< A textured blue start particle */
+	P_Fireball,  /**< A textured fireball particle */
+	P_StarBurst, /**< A 2x-textured starburst particle */
+	P_SunBurst,  /**< A 2x-textured sunburst particle */
 	P_LAST
 };
 
+/** Describes how particles are drawn */
 enum particleListTypes {
-	PT_POINT = 0,
-	PT_LINE,
-	PT_TLINE,
-	PT_TQUAD,
-	PT_2TQUAD,
+	PT_POINT = 0, /**< Draw as GL_POINTS */
+	PT_LINE,      /**< Draw as GL_LINES */
+	PT_TLINE,     /**< Draw as a textured line */
+	PT_TQUAD,     /**< Draw as a textured quad */
+	PT_2TQUAD,    /**< Draw two textured quads */
 	PT_LAST
 };
 
+/** Describes a single particle */
 struct particle {
-	struct obj *o;	/* used for physics stuff */
-	float col[4];	/* RGBA colors */
-	int type;	/* one of ParticleTypes above */
-	float size;	/* dimension of particle */
-	int active;	/* 1 = drawn, 0 not drawn */
-	float life;	/* TTL in seconds */
+	struct obj *o; /**< used for physics stuff */
+	float col[4];  /**< RGBA colors */
+	int type;      /**< one of ParticleTypes enum */
+	float size;    /**< dimension of particle */
+	int active;    /**< 1 = drawn, 0 not drawn */
+	float life;    /**< TTL in seconds */
 };
 
+/** Links a particle list type with textures and billboarding, if used */
 struct particleType {
-	int type;		/* one of ParticleListTypes above */
-	int billboard;		/* 1 = billboarded, 0 = not billboarded */
-	const char *tex1;	/* first texture (if necessary) */
-	const char *tex2;	/* second texture (if necessary) */
+	int type;         /**< one of ParticleListTypes above */
+	int billboard;    /**< 1 = billboarded, 0 = not billboarded */
+	const char *tex1; /**< first texture (if necessary) */
+	const char *tex2; /**< second texture (if necessary) */
 };
 
+/** A function pointer to test a particle for drawing */
 typedef int (*PTestFunc)(struct particle *);
 
 int InitParticles(void);
 void QuitParticles(void);
 void DrawParticles(void);
 void DrawParticlesTest(PTestFunc p);
-void StartParticles(void);	/* set up OpenGL variables */
-void StopParticles(void);	/* reset OpenGL variables */
+void StartParticles(void);
+void StopParticles(void);
 void CreateParticle(struct obj *o, float col[4], int type, float size);
 void ClearParticles(void);
 

@@ -17,11 +17,15 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** @file
+ * Provides some timer information
+ */
+
 #include "SDL.h"
 
 void InitTimer(void);
 void UpdateTimer(void);
 
-extern Uint32 curTime;  /* current time */
-extern Uint32 ticDiff;	/* ticks between frames */
-extern double timeDiff; /* elapsed time (seconds) between frames */
+extern Uint32 curTime;
+extern Uint32 ticDiff;
+extern double timeDiff;

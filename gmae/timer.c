@@ -21,16 +21,18 @@
 
 #include "timer.h"
 
-Uint32 curTime;  /* current time since initialization */
-Uint32 ticDiff;	 /* number of ticks between frames */
-double timeDiff; /* time (seconds) between frames */
+Uint32 curTime;  /**< current time since initialization */
+Uint32 ticDiff;	 /**< number of ticks between frames */
+double timeDiff; /**< time (seconds) between frames */
 
+/** Starts the timer */
 void InitTimer(void)
 {
 	curTime = SDL_GetTicks();
 	timeDiff = 0;
 }
 
+/** Update the timer. This should be called each frame */
 void UpdateTimer(void)
 {
 	Uint32 tmp;

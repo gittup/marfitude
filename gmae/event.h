@@ -18,7 +18,7 @@
 */
 
 /** @file
-  * @brief Handles all input from SDL and some event registration/firing.
+  * Handles all input from SDL and some event registration/firing.
   *
   * This file handles input from SDL (eg: keyboard, mouse, joystick) and
   * attempts to make it all somewhat generic. This file also provides a

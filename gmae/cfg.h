@@ -17,6 +17,10 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** @file
+ * Has some functions to query and set configuration options
+ */
+
 void CfgSetS(const char *key, char *value);
 void CfgSetIp(const char *header, const char *option, int value);
 void CfgSetI(const char *key, int value);

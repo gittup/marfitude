@@ -27,6 +27,7 @@
 static Uint32 fpsticks, frames;
 static float fps;
 
+/** Initializes some FPS variables needed to calculate the frames per second */
 void InitFPS(void)
 {
 	frames = 0;
@@ -34,6 +35,7 @@ void InitFPS(void)
 	fps = 0.0;
 }
 
+/** Displays the FPS in the top corner of the screen */
 void PrintFPS(void)
 {
 	SetFontSize(.75);
@@ -43,6 +45,7 @@ void PrintFPS(void)
 	SetFontSize(1.0);
 }
 
+/** Increments the frame count by one, and recalculates the FPS every second */
 void UpdateFPS(void)
 {
 	frames++;

@@ -17,6 +17,10 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** @file
+ * Because all awesome programs need an FFT library
+ */
+
 /** This structure contains FFT data for the song that is played. It can be
  * used after a call to init_fft()
  */

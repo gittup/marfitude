@@ -20,12 +20,21 @@
 #include <math.h>
 #include "cmp.h"
 
+/** Finds the linear magnitude of a complex number
+ * @param a Pointer to a complex number
+ * @return The magnitude of the complex number
+ */
 double mag(const struct cmp *a)
 {
 	return sqrt(a->real*a->real + a->imag*a->imag);
 }
 
-void mul(struct cmp *dest, struct cmp *a, struct cmp *b)
+/** Multiplies two complex numbers
+ * @param dest Where to write the result of the multiplication
+ * @param a The first complex number
+ * @param b The second complex number
+ */
+void mul(struct cmp *dest, const struct cmp *a, const struct cmp *b)
 {
 	dest->real = a->real*b->real - a->imag*b->imag;
 	dest->imag = a->real*b->imag + a->imag*b->real;

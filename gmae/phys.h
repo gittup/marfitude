@@ -17,31 +17,40 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** @file
+ * Adds some mechanics (velocity/acceleration, etc) to objects
+ */
+
+/** The red byte in a color vector */
 #define RED 0
+/** The green byte in a color vector */
 #define GREEN 1
+/** The blue byte in a color vector */
 #define BLUE 2
+/** The alpha byte in a color vector */
 #define ALPHA 3
 
+/** A vector structure */
 struct vector {
-	double x;
-	double y;
-	double z;
+	double x; /**< The x parameter */
+	double y; /**< The y parameter */
+	double z; /**< The z parameter */
 };
 
+/** An object structre */
 struct obj {
-	struct vector pos;	/* position of object */
-	struct vector vel;	/* velocity of object */
-	struct vector acc;	/* acceleration of object */
+	struct vector pos;  /**< position of object */
+	struct vector vel;  /**< velocity of object */
+	struct vector acc;  /**< acceleration of object */
 	/* need jerk for camera movement? */
-	struct vector axis;	/* axis of rotation */
-	double theta;	/* amount of rotation */
-	double rotvel;	/* rotation velocity */
-	double rotacc;	/* rotation acceleration */
-	float mass;	/* object's mass */
+	struct vector axis; /**< axis of rotation */
+	double theta;       /**< amount of rotation */
+	double rotvel;      /**< rotation velocity */
+	double rotacc;      /**< rotation acceleration */
+	float mass;         /**< object's mass */
 };
 
 struct obj *NewObj(void);
 void DeleteObj(struct obj *o);
-void ClearObjs(void);
 void UpdateObjs(double dt);
 void CheckObjs(void);

@@ -18,7 +18,7 @@
 */
 
 /** @file
-  * @brief Contains the description of a WAM file.
+  * Contains the description of a WAM file.
   *
   * This file describes a WAM - the structure used to play notes in a song.
   */
@@ -54,7 +54,7 @@ struct pattern {
 					  */
 };
 
-/**< A row is the the smallest unit for a note. Ie, only one note can be on
+/** A row is the the smallest unit for a note. Ie, only one note can be on
  * a given column/row. Rows are subdivided into ticks for speed purposes.
  */
 struct row {

@@ -37,9 +37,15 @@
 
 #define TEXDIR "images/"
 
-struct tex_entry *textures;
-int texInited = 0;
-int num_textures = 0;
+/** Maps a filename to an OpenGL texture */
+struct tex_entry {
+	GLuint texture; /**< The texture number assigned by glGenTextures */
+	char *name;     /**< The name of the texture (set to the filename) */
+};
+
+static struct tex_entry *textures;
+static int texInited = 0;
+static int num_textures = 0;
 
 static int ValidPngFile(const char *s);
 
@@ -55,6 +61,11 @@ int ValidPngFile(const char *s)
 	return 1;
 }
 
+/** Loads the texture @a filename and returns the OpenGL texture number
+ * @param filename The name of the file
+ * @return The OpenGL texture number from glGenTextures. You should call
+ * glDeleteTextures on it when you're done.
+ */
 GLuint LoadTexture(const char *filename)
 {
 	int format;
@@ -89,6 +100,11 @@ GLuint LoadTexture(const char *filename)
 	return tex;
 }
 
+/** Get the OpenGL texture number from one of the automatically loaded
+ * textures found in the images directory.
+ * @param name The filename of the texture
+ * @return The OpenGL texture number from glGenTextures
+ */
 GLuint TextureNum(const char *name)
 {
 	int x;
@@ -103,6 +119,7 @@ GLuint TextureNum(const char *name)
 	return -1;
 }
 
+/** Loads all the textures in the images directory. */
 int InitTextures(void)
 {
 	int x;
@@ -160,6 +177,7 @@ int InitTextures(void)
 	return 0;
 }
 
+/** Frees all of the automatically loaded textures */
 void QuitTextures(void)
 {
 	int x;

@@ -17,7 +17,13 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** @file
+ * Manages the OpenGL initialization, and provides some utility functions
+ */
+
+/** The height of a font character */
 #define FONT_HEIGHT 14
+/** The width of a font character */
 #define FONT_WIDTH 10
 
 int InitGL(void);
@@ -27,7 +33,7 @@ void ResetProjection(void);
 void GLError(char *file, int line, char *func);
 void PrintGL(int x, int y, const char *msg, ...);
 void SetFontSize(float size);
-void UpdateScreen(void); /* swap buffers and update fps */
+void UpdateScreen(void);
 
 int DisplayWidth(void);
 int DisplayHeight(void);

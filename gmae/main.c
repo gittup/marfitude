@@ -41,7 +41,6 @@
 #include "util/memtest.h"
 #include "util/fatalerror.h"
 #include "util/sdlfatalerror.h"
-#include "util/savetga.h"
 
 static void Shutdown(void);
 

@@ -32,6 +32,7 @@ static int num_registers = 0;
 static int *data = NULL;
 static unsigned long samples = 0;
 
+/** The fft_data that a client can access. */
 const struct fft_data *fft = &my_fft;
 
 static struct cmp *weights = NULL;
@@ -44,6 +45,9 @@ static void internal_init(int len, int flags);
 static struct cmp *fft_buf = NULL;
 static int my_log(int x);
 
+/** Initialize the FFT engine. This function registers with MikMod to receive
+ * samples and process them.
+ */
 void init_fft(void)
 {
 	if(!num_registers)
@@ -51,6 +55,7 @@ void init_fft(void)
 	num_registers++;
 }
 
+/** Stops the FFT engine. Deregisters with MikMod and frees all memory used */
 void free_fft(void)
 {
 	num_registers--;
@@ -77,6 +82,10 @@ void free_fft(void)
 	}
 }
 
+/** Displays number of FFT samples processed. The only real reason this exists
+ * is to make sure the FFT engine gets pulled into the executable so plugins
+ * can use it. This was done instead of doing a whole-archive.
+ */
 void QuitFFT(void)
 {
 	if(samples) {
