@@ -17,11 +17,11 @@
 */
 
 /** @file
-  * @brief Some simple string functions.
-  *
-  * This file adds some string manipulation functions to the utility
-  * library.
-  */
+ * @brief Some simple string functions.
+ *
+ * This file adds some string manipulation functions to the utility
+ * library.
+ */
 
 int IntLen(int x);
 int StrEq(const char *a, const char *b);
