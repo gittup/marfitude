@@ -8,5 +8,5 @@ include $(MK)/lang/c.mk
 
 include $(MK)/tgt/staticlib.mk
 
-dirs := mikmod
+subdir := mikmod
 include $(MK)/Recurse.mk

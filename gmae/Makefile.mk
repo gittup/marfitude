@@ -33,17 +33,25 @@ $(o)/autotextures.d: $(d)/gentextures.pl
 	$< $(dir $<) $(ARCH);\
 
 INSTALL_DIR =
-INSTALL_LIST = Font.png init.cfg $(src_gmae)/$(ARCH)/marfitude$(BINARYEXT)
+INSTALL_LIST = Font.png init.cfg $(d)/$(ARCH)/marfitude$(BINARYEXT)
 include $(MK)/tgt/program.mk
 
 INSTALL_DIR =
 INSTALL_LIST = README PROPS UNTESTED TODO README-SDL
 include $(MK)/tgt/text.mk
 
-dirs := wam sdl_mixer music sounds images
+subdir := wam
+include $(MK)/Recurse.mk
+subdir := sdl_mixer
+include $(MK)/Recurse.mk
+subdir := music
+include $(MK)/Recurse.mk
+subdir := sounds
+include $(MK)/Recurse.mk
+subdir := images
 include $(MK)/Recurse.mk
 
 ifeq ($(ARCH),windows)
-dirs := dlls
+subdir := dlls
 include $(MK)/Recurse.mk
 endif
