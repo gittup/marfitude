@@ -1131,23 +1131,33 @@ void DrawScoreboard(void)
 /*	PrintGL(400, 50, "DN: %i, %i, %i\n", slist_length(notesList), slist_length(hitList), slist_length(unusedList)); */
 
 
-	glColor4f(0.0, 0.8, 0.5, 1.0);
 	SetOrthoProjection();
 	glDisable(GL_TEXTURE_2D);
-	glBegin(GL_LINE_LOOP); {
+
+	glColor4f(0.0, 0.8, 0.5, 1.0);
+	glBegin(GL_QUADS); {
 		glVertex2i(5, 80);
 		glVertex2i(15, 80);
 		glVertex2i(15, 450);
 		glVertex2i(5, 450);
 	} glEnd();
+
+	glColor4f(0.0, 0.0, 0.0, 1.0);
+	glBegin(GL_QUADS); {
+		glVertex2i(6, 81);
+		glVertex2i(14, 81);
+		glVertex2i(14, 449);
+		glVertex2i(6, 449);
+	} glEnd();
+
 	glBegin(GL_QUADS); {
 		float mult = (double)curRow / (double)wam->numRows;
 		glColor4f(0.0, 0.8, 0.5, 1.0);
 		glVertex2i(6, 81*mult+449*(1.0-mult));
 		glColor4f(0.5, 0.8, 0.5, 1.0);
-		glVertex2i(15, 81*mult+449*(1.0-mult));
+		glVertex2i(14, 81*mult+449*(1.0-mult));
 		glColor4f(0.0, 0.5, 0.0, 1.0);
-		glVertex2i(15, 449);
+		glVertex2i(14, 449);
 		glColor4f(0.0, 0.0, 0.0, 1.0);
 		glVertex2i(6, 449);
 	} glEnd();
