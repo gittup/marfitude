@@ -27,6 +27,7 @@ GLuint LoadTexture(const char *filename)
 	if(!s)
 	{
 		SDLError("opening texture");
+		return 0;
 	}
 	glGenTextures(1, &tex);
 	glBindTexture(GL_TEXTURE_2D, tex);
