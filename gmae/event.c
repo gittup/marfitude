@@ -335,6 +335,10 @@ void KeyDownEvent(SDL_KeyboardEvent *e)
 			FireEvent(EVENT_PAGEUP);
 		else if(e->keysym.sym == SDLK_PAGEDOWN)
 			FireEvent(EVENT_PAGEDOWN);
+		else if(e->keysym.sym == SDLK_HOME)
+			FireEvent(EVENT_HOME);
+		else if(e->keysym.sym == SDLK_END)
+			FireEvent(EVENT_END);
 		/* no else cuz all other keys are ignored :) */
 	}
 	else if(eventMode == GAME)
