@@ -163,7 +163,7 @@ int JoyButtonEqual(JoyKey *key, SDL_JoyButtonEvent *e)
 int JoyAxisEqual(JoyKey *key, SDL_JoyAxisEvent *e)
 {
 	if(	key->type == e->which &&
-		key->button == (e->value > 0 ? 1 : -1) &&
+		key->button == (e->value > JOY_THRESHOLD ? 1 : e->value < -JOY_THRESHOLD ? -1 : 0) &&
 		key->axis == e->axis)
 		return 1;
 	return 0;
@@ -332,6 +332,7 @@ void JoyAxisEvent(SDL_JoyAxisEvent *e)
 	int x;
 	JoyKey jk;
 	if(e->value == 0) return;
+	printf("Axis: %i, %i, %i\n", e->which, e->value, e->axis);
 	if(eventMode == KEY && keyHandler)
 	{
 		jk.type = e->which;
