@@ -1,6 +1,6 @@
 INSTALL_DIR = $(DATADIR)/wam
 INSTALL_LIST = README
-include mk/tgt/text.mk
+EXEC = text
 
 UNINSTALL_FILES += $(wildcard $(subst //,/,$(DESTDIR)/$(INSTALL_DIR)/*.wam))
 
