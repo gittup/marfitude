@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "SDL_mixer.h"
 #include "mikmod.h"
@@ -686,16 +689,16 @@ void WriteCol(int fno, Column *col)
 
 int SaveWam(Wam *wam, char *wamFile)
 {
-	int x, y, fno;
-	FILE *f;
-	f = fopen(wamFile, "w");
-	if(f == NULL)
+	int x;
+	int y;
+	int fno;
+	fno = open(wamFile, O_CREAT | O_WRONLY, 0644);
+	if(fno == -1)
 	{
 		ELog(("Error opening '%s'\n", wamFile));
 		Error("Opening Wam for write.");
 		return 0;
 	}
-	fno = f->_fileno;
 	write(fno, &wam->numCols, sizeof(int));
 	write(fno, &wam->numTics, sizeof(int));
 	write(fno, &wam->numPats, sizeof(int));
@@ -709,7 +712,7 @@ int SaveWam(Wam *wam, char *wamFile)
 		WriteCol(fno, &wam->patterns[x].unplayed);
 	}
 	write(fno, wam->rowData, sizeof(Row) * wam->numRows);
-	fclose(f);
+	close(fno);
 	return 1;
 }
 
@@ -754,22 +757,23 @@ void ReadCol(int fno, Column *col)
 
 Wam *LoadWamWrite(char *modFile, int wamwrite)
 {
-	int x, y, fno;
+	int x;
+	int y;
+	int fno;
 	char *wamFile;
-	FILE *f;
 	Wam *wam;
 
 	wamFile = Mod2Wam(modFile);
-	f = fopen(wamFile, "r");
+	fno = open(wamFile, O_RDONLY);
 	free(wamFile);
-	if(f == NULL)
+	if(fno == -1)
 	{
 		if(wamwrite)
 		{
 			/* if the file doesn't exist, create one */
 			Log(("WAM not found, creating...\n"));
 			WriteWam(modFile);
-			/* next time we try to load, don't try to create again */
+			/* next time we try to load, don't create again */
 			return LoadWamWrite(modFile, 0);
 		}
 		else
@@ -779,7 +783,6 @@ Wam *LoadWamWrite(char *modFile, int wamwrite)
 		}
 	}
 	Log(("Loading wam\n"));
-	fno = f->_fileno;
 	wam = (Wam*)malloc(sizeof(Wam));
 	read(fno, &wam->numCols, sizeof(int));
 	read(fno, &wam->numTics, sizeof(int));
@@ -799,6 +802,7 @@ Wam *LoadWamWrite(char *modFile, int wamwrite)
 	Log(("Patterns read\n"));
 	read(fno, wam->rowData, sizeof(Row) * wam->numRows);
 	Log(("Rows read\n"));
+	close(fno);
 
 	return wam;
 }
