@@ -859,10 +859,10 @@ void UpdateClearedCols(void)
 			o = NewObj();
 			o->pos.x = -x * 2.0;
 			o->pos.z = TIC_HEIGHT * (double)tic;
-			o->vel.x = FloatRand() - 0.5;
-			o->vel.y = 2.0 + FloatRand();
-			o->vel.z = 13.0 + FloatRand();
-			o->rotvel = FloatRand() * 720.0 - 360.0;
+			o->vel.x = rand_float() - 0.5;
+			o->vel.y = 2.0 + rand_float();
+			o->vel.z = 13.0 + rand_float();
+			o->rotvel = rand_float() * 720.0 - 360.0;
 			o->acc.y = -3.98;
 			RandomColor(col);
 			CreateParticle(o, col, P_StarBurst, 1.0);
