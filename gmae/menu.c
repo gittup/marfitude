@@ -478,6 +478,7 @@ void ConfigKeyHandler(JoyKey *jk)
 	{
 		Log("Error setting configure button %i!\n", configuring);
 	}
+	PlaySound(SND_spnray03);
 	DeregisterKeyEvent();
 	EventMode(MENU);
 	ClearMenuItems();
