@@ -19,47 +19,102 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <dirent.h>
 
 #include "SDL_mixer.h"
 
 #include "sounds.h"
-#include "sndlist.h"
 #include "log.h"
 
 #include "memtest.h"
 #include "textprogress.h"
 #include "fatalerror.h"
 #include "sdlfatalerror.h"
+#include "strfunc.h"
 
-Mix_Chunk **Sounds;
+#define SOUNDDIR "sounds/"
+
+struct snd_entry {
+	Mix_Chunk *chunk;
+	char *name;
+};
+
+struct snd_entry *sounds = NULL;
+int num_sounds = 0;
 int sndInited = 0;
 
-void SDLPlaySound(Mix_Chunk *snd)
+static int ValidWavFile(const char *s);
+
+int ValidWavFile(const char *s)
 {
-	if(Mix_PlayChannel(-1, snd, 0) == -1)
-	{
+	int x = 0;
+	while(s[x]) x++;
+	if(x < 4) return 0;
+	if(s[x-1] != 'v') return 0;
+	if(s[x-2] != 'a') return 0;
+	if(s[x-3] != 'w') return 0;
+	if(s[x-4] != '.') return 0;
+	return 1;
+}
+
+void MPlaySound(int snd)
+{
+	if(snd < 0 || snd >= num_sounds) return;
+	if(Mix_PlayChannel(-1, sounds[snd].chunk, 0) == -1) {
 		Log(("Warning: out of sound channels!\n"));
 	}
+}
+
+int SoundNum(const char *name)
+{
+	int x;
+	for(x=0;x<num_sounds;x++) {
+		if(StrEq(name, sounds[x].name))
+			return x;
+	}
+	fprintf(stderr, "Warning: Sound '%s' not found.\n", name);
+	return -1;
 }
 
 int InitSounds(void)
 {
 	int x;
+	DIR *dir;
+	struct dirent *d;
+	char *t;
 
-	Sounds = (Mix_Chunk**)malloc(sizeof(Mix_Chunk*)*NUM_SOUNDS);
+	dir = opendir(SOUNDDIR);
+	if(dir == NULL) {
+		Error("Loading sounds");
+		return 1;
+	}
+
+	while((d = readdir(dir)) != NULL) {
+		if(ValidWavFile(d->d_name)) {
+			sounds = (struct snd_entry*)realloc(sounds, sizeof(struct snd_entry) * (num_sounds+1));
+			sounds[num_sounds].name = malloc(strlen(d->d_name)+1);
+			strcpy(sounds[num_sounds].name, d->d_name);
+			sounds[num_sounds].chunk = NULL;
+			num_sounds++;
+		}
+	}
+
+	/* This just means the memory has been allocated */
 	sndInited = 1;
 
 	ProgressMeter("Loading sounds");
-	for(x=0;x<NUM_SOUNDS;x++)
-	{
-		Sounds[x] = Mix_LoadWAV(SND_LIST[x]);
-		if(!Sounds[x])
-		{
-			Log(("Error loading sound '%s'\n", SND_LIST[x]));
+	for(x=0;x<num_sounds;x++) {
+		t = CatStr(SOUNDDIR, sounds[x].name);
+		sounds[x].chunk = Mix_LoadWAV(t);
+		if(!sounds[x].chunk) {
+			Log(("Error loading sound '%s'\n", t));
 			SDLError("Loading sounds");
-			return 1;
+			free(t);
+			return 2;
 		}
-		UpdateProgress(x+1, NUM_SOUNDS);
+		free(t);
+		UpdateProgress(x+1, num_sounds);
 	}
 	EndProgressMeter();
 	return 0;
@@ -67,7 +122,11 @@ int InitSounds(void)
 
 void QuitSounds(void)
 {
+	int x;
 	if(!sndInited) return;
-	free(Sounds);
+	for(x=0;x<num_sounds;x++) {
+		free(sounds[x].name);
+	}
+	free(sounds);
 	printf("Sounds shutdown\n");
 }
