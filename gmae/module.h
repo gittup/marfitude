@@ -23,9 +23,6 @@ typedef struct {
 	int sngpos;	// position in song
 	int line;	// 0 = no line, 1 = regular line, 2 = start of new patt
 	ModChannel *chans;	// len numChannels;
-//	int *notes;	// len numChannels
-			// 0 = no note, 1, 2, 3 = position of note
-//	int *struck;	// note was struck by user
 	} ModRow;
 
 int StartModule(char *modFile);
