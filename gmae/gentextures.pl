@@ -30,3 +30,10 @@ for($x=0;$x<=$#img;$x++)
 	$img[$x] =~ s/\.\/images\/(.*)\.png/$1/;
 	print HEADER "#define TEX_$img[$x] GLTexture[$x]\n";
 }
+
+print HEADER "\ntypedef enum {\n";
+for($x=0;$x<$#img;$x++)
+{
+	print HEADER "\tT_$img[$x],\n";
+}
+print HEADER "\tT_$img[$#img]} TexOffset;\n";
