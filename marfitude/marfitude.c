@@ -196,12 +196,12 @@ void AddPlugin(const char *s)
 
 void Load(void)
 {
-	AddPlugin("./laser.so");
-	AddPlugin("./targets.so");
-	AddPlugin("./lines.so");
-	AddPlugin("./fft-curtain.so");
-	AddPlugin("./fireball.so");
-	AddPlugin("./scoreboard.so");
+	AddPlugin("laser");
+	AddPlugin("targets");
+	AddPlugin("lines");
+	AddPlugin("fft-curtain");
+	AddPlugin("fireball");
+	AddPlugin("scoreboard");
 }
 
 void Unload(void)
