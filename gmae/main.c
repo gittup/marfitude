@@ -20,7 +20,6 @@
 #include "menu.h"
 #include "scene.h"
 #include "sounds.h"
-#include "textures.h"
 #include "timer.h"
 #include "wam.h"
 
@@ -38,7 +37,6 @@ void Shutdown()
 	SwitchScene(NULLSCENE);
 	SwitchMenu(NULLMENU);
 	QuitSounds();
-	QuitTextures();
 	QuitJoystick();
 	QuitGL();
 	QuitAudio();
@@ -86,14 +84,14 @@ int main(int argc, char **argv)
 
 	if(!InitConfig())
 	{
-		Log("ERROR: Couldn't set configuration options!\n");
+		ELog("ERROR: Couldn't set configuration options!\n");
 		Shutdown();
 		return 1;
 	}
 
 	if(!InitAudio())
 	{
-		Log("ERROR: Couldn't start audio!\n");
+		ELog("ERROR: Couldn't start audio!\n");
 		Shutdown();
 		return 1;
 	}
@@ -113,21 +111,14 @@ int main(int argc, char **argv)
 	screen = InitGL();
 	if(screen == NULL)
 	{
-		Log("Error setting up the screen!\n");
-		Shutdown();
-		return 1;
-	}
-
-	if(!InitTextures())
-	{
-		Log("ERROR: Couldn't load textures!\n");
+		ELog("Error setting up the screen!\n");
 		Shutdown();
 		return 1;
 	}
 
 	if(!InitSounds())
 	{
-		Log("ERROR: Couldn't load sounds!\n");
+		ELog("ERROR: Couldn't load sounds!\n");
 		Shutdown();
 		return 1;
 	}
@@ -141,13 +132,13 @@ int main(int argc, char **argv)
 	SwitchScene(INTROSCENE);
 	if(!SwitchScene(MAINSCENE))
 	{
-		Log("Error switching to main scene.\n");
+		ELog("Error switching to main scene.\n");
 		Shutdown();
 		return 1;
 	}
 	if(!SwitchMenu(NOMENU))
 	{
-		Log("Error enabling the menu.\n");
+		ELog("Error enabling the menu.\n");
 		Shutdown();
 		return 1;
 	}
