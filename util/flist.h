@@ -16,11 +16,11 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-/** @file util/file.h
+/** @file
   * @brief Some simple file functions.
   *
-  * This file adds some file manipulation functions to the utility
-  * library.
+  * This file adds the abililty to iterate through a list of files to the
+  * utility library.
   */
 
 #include <dirent.h>
@@ -29,15 +29,25 @@
   */
 struct flist {
 	const char *filename; /**< The file name, does not include directory */
-	struct dirent *_ent; /**< Internal - struct dirent * */
-	DIR *_d; /**< Internal - DIR * */
+	struct dirent *_ent;  /**< Internal - struct dirent * */
+	DIR *_d;              /**< Internal - DIR * */
 };
 
-/** Used to iterate through a list of files
+/** Iterates through all the files in path @a p.
   * @param f struct flist *: The struct flist to put names into
   * @param p const char *: The path to grab a list of files from
+  *
+  * @par Example:
+  * @code
+  * #include "flist.h"
+  *
+  * struct flist f;
+  * flist_foreach(f, "dir") {
+  * 	printf("File %s is in dir\n", f.filename);
+  * }
+  * @endcode
   */
-#define foreach_file(f, p) \
+#define flist_foreach(f, p) \
 	for((f)->_d=opendir(p);\
 		((f)->_d!=NULL &&\
 		 ((f)->_ent=readdir((f)->_d))!=NULL &&\
