@@ -1,9 +1,6 @@
-EXTRACFLAGS = $(SDLCFLAGS) -DMOD_MUSIC $(BDECFLAGS)
-
-INCDIRS := $(d)/mikmod
-
-include mk/lang/c.mk
-
+EXTRACFLAGS += $(SDLCFLAGS) -DMOD_MUSIC
+INCDIRS = $(d)/mikmod
+LIBS = $(d)/mikmod/libsdl_mikmod.a
 include mk/tgt/staticlib.mk
 
 subdir := mikmod
