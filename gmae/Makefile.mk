@@ -37,8 +37,13 @@ INSTALL_LIST = Font.png init.cfg $(src_gmae)/$(ARCH)/marfitude$(BINARYEXT)
 include $(MK)/tgt/program.mk
 
 INSTALL_DIR =
-INSTALL_LIST = README PROPS UNTESTED TODO
+INSTALL_LIST = README PROPS UNTESTED TODO README-SDL
 include $(MK)/tgt/text.mk
 
 dirs := wam sdl_mixer music sounds images
 include $(MK)/Recurse.mk
+
+ifeq ($(ARCH),windows)
+dirs := dlls
+include $(MK)/Recurse.mk
+endif
