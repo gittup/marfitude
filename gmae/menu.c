@@ -25,6 +25,7 @@
 #define BUTTON 2
 #define BUTTONPARAM 3
 #define TEXT 4
+#define SELECTABLE 4 // all items from 0 to SELECTABLE are selectable
 #define MUSICDIR "music/"
 
 #define NOBOX -1 // for the bounding box
@@ -289,24 +290,64 @@ int MenuWrap()
 	return 1;
 }
 
-void MenuDown()
+int DownOne()
 {
 	activeMenuItem++;
 	if(activeMenuItem >= numItems)
 	{
-		if(BoundsCheck()) SDLPlaySound(SND_wepnsel1);
+		if(BoundsCheck()) return 1;
+		else return 0;
 	}
-	else SDLPlaySound(SND_wepnsel1);
+	else return 1;
 }
 
-void MenuUp()
+void MenuDown()
+{
+	int old = activeMenuItem;
+	int play = 0;
+	do
+	{
+		if(DownOne())
+		{
+			if(items[activeMenuItem].type < SELECTABLE)
+			{
+				play = 1;
+				break;
+			}
+		}
+		else break;
+	} while(activeMenuItem != old);
+	if(play) SDLPlaySound(SND_wepnsel1);
+}
+
+int UpOne()
 {
 	activeMenuItem--;
 	if(activeMenuItem < 0)
 	{
-		if(BoundsCheck()) SDLPlaySound(SND_wepnsel1);
+		if(BoundsCheck()) return 1;
+		else return 0;
 	}
-	else SDLPlaySound(SND_wepnsel1);
+	else return 1;
+}
+
+void MenuUp()
+{
+	int old = activeMenuItem;
+	int play = 0;
+	do
+	{
+		if(UpOne())
+		{
+			if(items[activeMenuItem].type < SELECTABLE)
+			{
+				play = 1;
+				break;
+			}
+		}
+		else break;
+	} while(activeMenuItem != old);
+	if(play) SDLPlaySound(SND_wepnsel1);
 }
 
 void MenuDec()
@@ -709,6 +750,16 @@ Menu menus[NUMMENUS] = {	{NullMenuInit, NullMenuQuit, NullMenu, NULLMENU},
 				{ConfigMenuInit, ConfigMenuQuit, ConfigMenu, MAINMENU},
 				{QuitMenuInit, QuitMenuQuit, QuitMenu, MAINMENU}};
 
+int FindActiveItem(MenuItem *items, int numItems)
+{
+	int x;
+	for(x=0;x<numItems;x++)
+	{
+		if(items[x].type < SELECTABLE) return x;
+	}
+	return 0;
+}
+
 int SwitchMenu(int m)
 {
 	if(m < 0 || m >= NUMMENUS) return 0;
@@ -723,6 +774,7 @@ int SwitchMenu(int m)
 		return 0;
 	}
 	activeMenu = &(menus[m]);
+	activeMenuItem = FindActiveItem(items, numItems);
 	Log("Menu switched\n");
 	return 1;
 }
