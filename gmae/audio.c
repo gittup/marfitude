@@ -29,8 +29,21 @@ int audioInited = 0;
 
 int InitAudio(void)
 {
+	int stereo;
+	Uint16 flags;
+
 	printf("Starting audio...\n");
-	if(Mix_OpenAudio(CfgI("sound.hz"), MIX_DEFAULT_FORMAT, 2, CfgI("sound.buffersize")))
+	if(CfgI("sound.bits") == 16)
+		flags = AUDIO_S16SYS;
+	else
+		flags = AUDIO_U8;
+
+	if(CfgEq("sound.stereo", "yes"))
+		stereo = 2;
+	else
+		stereo = 1;
+
+	if(Mix_OpenAudio(CfgI("sound.hz"), flags, stereo, CfgI("sound.buffersize")))
 	{
 		SDLError("initializing audio");
 		return 1;
