@@ -219,14 +219,13 @@ SDL_Surface *InitGL()
 
 void QuitGL()
 {
-	if(!sdlInited) return;
-	SDL_Quit();
-	if(!fontInited) return;
+	if(!sdlInited || !fontInited) return;
 	QuitParticles();
 	QuitTextures();
 	free(pbuf);
 	GLDeleteLists(fontList, numChars);
 	GLDeleteTextures(1, &fontTex);
+	SDL_Quit();
 	printf("OpenGL shutdown\n");
 }
 
