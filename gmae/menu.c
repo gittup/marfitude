@@ -36,7 +36,7 @@
 
 #include "util/memtest.h"
 #include "util/fatalerror.h"
-#include "util/file.h"
+#include "util/flist.h"
 #include "util/slist.h"
 #include "util/strfunc.h"
 
@@ -672,7 +672,7 @@ int FightMenuInit(void)
 	BoundsCheck = MenuClamp;
 	fileList = NULL;
 
-	foreach_file(&f, MUSICDIR) {
+	flist_foreach(&f, MUSICDIR) {
 		if(valid_music_file(f.filename)) {
 			char *s;
 			s = StringCopy(f.filename);
