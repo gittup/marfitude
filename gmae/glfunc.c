@@ -174,7 +174,7 @@ SDL_Surface *InitGL(void)
 	Log(("Video mode set: (%i, %i)\n", CfgI("video.width"), CfgI("video.height")));
 	SDL_WM_SetCaption("Gmae", NULL); /* second arg is icon */
 	InitFPS();
-	glViewport(0, 0, screenWidth-1, screenHeight-1);
+	glViewport(0, 0, screenWidth, screenHeight);
 	glEnable(GL_TEXTURE_2D);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClearDepth(1.0);
@@ -248,9 +248,10 @@ void SetOrthoProjection(void)
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix(); /* popped in ResetProjection() */
 	glLoadIdentity();
-	gluOrtho2D(0, screenWidth-1, 0, screenHeight-1);
-	glScalef(1.0, -1.0, 1.0);
-	glTranslatef(0.0, (float)-screenHeight, 0.0);
+/*	gluOrtho2D(0, screenWidth-1, 0, screenHeight-1);*/
+	glOrtho(0, screenWidth, screenHeight, 0, 0, 1);
+/*	glScalef(1.0, -1.0, 1.0);*/
+/*	glTranslatef(0.0, (float)-screenHeight+1, 0.0);*/
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix(); /* popped in ResetProjection() */
 	glLoadIdentity();
