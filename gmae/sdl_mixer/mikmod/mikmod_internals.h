@@ -39,7 +39,7 @@ char *Mstrdup(const char *s);
 #define strcasecmp(s,t) stricmp(s,t)
 #endif
 
-#include "gmae/sdl_mixer/mikmod/mikmod_build.h"
+#include "mikmod_build.h"
 
 #ifdef macintosh
 #ifndef __MWERKS__
