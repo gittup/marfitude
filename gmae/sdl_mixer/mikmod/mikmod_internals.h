@@ -169,7 +169,7 @@ extern BOOL _mm_FileExists(CHAR *fname);
 
 extern void _mm_iobase_setcur(MREADER*);
 extern void _mm_iobase_revert(void);
-extern FILE *_mm_fopen(CHAR*,CHAR*);
+extern FILE *_mm_fopen(const CHAR*,const CHAR*);
 extern void _mm_write_string(CHAR*,MWRITER*);
 extern int  _mm_read_string (CHAR*,int,MREADER*);
 
@@ -574,8 +574,8 @@ typedef struct MP_VOICE {
 
 typedef struct MLOADER {
 struct MLOADER* next;
-	CHAR*       type;
-	CHAR*       version;
+	const CHAR*       type;
+	const CHAR*       version;
 	BOOL        (*Init)(void);
 	BOOL        (*Test)(void);
 	BOOL        (*Load)(BOOL);

@@ -26,6 +26,10 @@
 
 ==============================================================================*/
 
+#ifdef __STRICT_ANSI__
+extern char *strdup(const char *s);
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -154,7 +158,7 @@ static ITNOTE *last=NULL;	/* uncompressing IT's pattern information */
 static int numtrk=0;
 static int old_effect;		/* if set, use S3M old-effects stuffs */
 
-static CHAR* IT_Version[]={
+static const CHAR* IT_Version[]={
 	"ImpulseTracker  .  ",
 	"Compressed ImpulseTracker  .  ",
 	"ImpulseTracker 2.14p3",
@@ -168,6 +172,7 @@ static UBYTE portatable[10]= {0,1,4,8,16,32,64,96,128,255};
 
 /*========== Loader code */
 
+BOOL IT_Test(void);
 BOOL IT_Test(void)
 {
 	UBYTE id[4];
@@ -177,6 +182,7 @@ BOOL IT_Test(void)
 	return 0;
 }
 
+BOOL IT_Init(void);
 BOOL IT_Init(void)
 {
 	if(!(mh=(ITHEADER*)_mm_malloc(sizeof(ITHEADER)))) return 0;
@@ -188,6 +194,7 @@ BOOL IT_Init(void)
 	return 1;
 }
 
+void IT_Cleanup(void);
 void IT_Cleanup(void)
 {
 	FreeLinear();
@@ -361,38 +368,38 @@ static BOOL IT_ReadPattern(UWORD patrows)
 	return 1;
 }
 
-static void LoadMidiString(MREADER* modreader,CHAR* dest)
+static void LoadMidiString(MREADER* myreader,CHAR* dest)
 {
-	CHAR *cur,*last;
+	CHAR *cur,*mylast;
 
-	_mm_read_UBYTES(dest,32,modreader);
-	cur=last=dest;
+	_mm_read_UBYTES(dest,32,myreader);
+	cur=mylast=dest;
 	/* remove blanks and uppercase all */
-	while(*last) {
-		if(isalnum((int)*last)) *(cur++)=toupper((int)*last);
-		last++;
+	while(*mylast) {
+		if(isalnum((int)*mylast)) *(cur++)=toupper((int)*mylast);
+		mylast++;
 	}
 	*cur=0;
 }
 
 /* Load embedded midi information for resonant filters */
-static void IT_LoadMidiConfiguration(MREADER* modreader)
+static void IT_LoadMidiConfiguration(MREADER* myreader)
 {
 	int i;
 
 	memset(filtermacros,0,sizeof(filtermacros));
 	memset(filtersettings,0,sizeof(filtersettings));
 
-	if (modreader) { /* information is embedded in file */
+	if (myreader) { /* information is embedded in file */
 		UWORD dat;
 		CHAR midiline[33];
 
-		dat=_mm_read_I_UWORD(modreader);
-		_mm_fseek(modreader,8*dat+0x120,SEEK_CUR);
+		dat=_mm_read_I_UWORD(myreader);
+		_mm_fseek(myreader,8*dat+0x120,SEEK_CUR);
 
 		/* read midi macros */
 		for(i=0;i<16;i++) {
-			LoadMidiString(modreader,midiline);
+			LoadMidiString(myreader,midiline);
 			if((!strncmp(midiline,"F0F00",5))&&
 			   ((midiline[5]=='0')||(midiline[5]=='1')))
 					filtermacros[i]=(midiline[5]-'0')|0x80;
@@ -400,7 +407,7 @@ static void IT_LoadMidiConfiguration(MREADER* modreader)
 
 		/* read standalone filters */
 		for(i=0x80;i<0x100;i++) {
-			LoadMidiString(modreader,midiline);
+			LoadMidiString(myreader,midiline);
 			if((!strncmp(midiline,"F0F00",5))&&
 			   ((midiline[5]=='0')||(midiline[5]=='1'))) {
 				filtersettings[i].filter=(midiline[5]-'0')|0x80;
@@ -423,6 +430,7 @@ static void IT_LoadMidiConfiguration(MREADER* modreader)
 	}
 }
 
+BOOL IT_Load(BOOL curious);
 BOOL IT_Load(BOOL curious)
 {
 	int t,u,lp;
@@ -951,6 +959,7 @@ d->pitflg&=~EF_ON;
 	return 1;
 }
 
+CHAR *IT_LoadTitle(void);
 CHAR *IT_LoadTitle(void)
 {
 	CHAR s[26];

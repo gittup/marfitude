@@ -244,7 +244,7 @@ static int getrandom(int ceil)
 4)	an active envelope with keyoff is a handicap -x2                          */
 static int MP_FindEmptyChannel(void)
 {
-	MP_VOICE *a;
+	MP_VOICE *avoice;
 	ULONG t,k,tvol,pp;
 
 	for (t=0;t<md_sngchn;t++)
@@ -252,11 +252,11 @@ static int MP_FindEmptyChannel(void)
 		   Voice_Stopped_internal(t))
 			return t;
 
-	tvol=0xffffffUL;t=0;a=pf->voice;
-	for (k=0;k<md_sngchn;k++,a++)
-		if ((a->kick==KICK_ABSENT)||(a->kick==KICK_ENV)) {
-			pp=a->totalvol<<((a->s->flags&SF_LOOP)?1:0);
-			if ((a->master)&&(a==a->master->slave))
+	tvol=0xffffffUL;t=0;avoice=pf->voice;
+	for (k=0;k<md_sngchn;k++,avoice++)
+		if ((avoice->kick==KICK_ABSENT)||(avoice->kick==KICK_ENV)) {
+			pp=avoice->totalvol<<((avoice->s->flags&SF_LOOP)?1:0);
+			if ((avoice->master)&&(avoice==avoice->master->slave))
 				pp<<=2;
 
 			if (pp<tvol) {
@@ -323,9 +323,9 @@ static UWORD GetPeriod(UWORD note,ULONG speed)
 	return getoldperiod(note,speed);
 }
 
-static SWORD InterpolateEnv(SWORD p,ENVPT *a,ENVPT *b)
+static SWORD InterpolateEnv(SWORD p,ENVPT *apt,ENVPT *b)
 {
-	return (Interpolate(p,a->pos,b->pos,a->val,b->val));
+	return (Interpolate(p,apt->pos,b->pos,apt->val,b->val));
 }
 
 static SWORD DoPan(SWORD envpan,SWORD pan)
@@ -379,10 +379,10 @@ static void StartEnvelope(ENVPR *t,UBYTE flg,UBYTE pts,UBYTE susbeg,UBYTE susend
 static SWORD ProcessEnvelope(ENVPR *t,SWORD v,UBYTE keyoff)
 {
 	if (t->flg & EF_ON) {
-		UBYTE a,b; /* actual points in the envelope */
+		UBYTE abyte,b; /* actual points in the envelope */
 		UWORD p; /* the 'tick counter' - real point being played */
 
-		a=t->a;
+		abyte=t->a;
 		b=t->b;
 		p=t->p;
 
@@ -393,26 +393,26 @@ static SWORD ProcessEnvelope(ENVPR *t,SWORD v,UBYTE keyoff)
 			v=t->env[t->susbeg].val;
 		else {
 			/* compute the current envelope value between points a and b */
-			if (a==b)
-				v=t->env[a].val;
+			if (abyte==b)
+				v=t->env[abyte].val;
 			else
-				v=InterpolateEnv(p,&t->env[a],&t->env[b]);
+				v=InterpolateEnv(p,&t->env[abyte],&t->env[b]);
 
 			p++;
 			/* pointer reached point b? */
 			if (p>=t->env[b].pos) {
-				a=b++; /* shift points a and b */
+				abyte=b++; /* shift points abyte and b */
 
 				/* Check for loops, sustain loops, or end of envelope. */
 				if ((t->flg&EF_SUSTAIN)&&(!(keyoff&KEY_OFF))&&(b>t->susend)) {
-					a=t->susbeg;
-					b=(t->susbeg==t->susend)?a:a+1;
-					p=t->env[a].pos;
+					abyte=t->susbeg;
+					b=(t->susbeg==t->susend)?abyte:abyte+1;
+					p=t->env[abyte].pos;
 				} else
 				  if ((t->flg & EF_LOOP)&&(b>t->end)) {
-					a=t->beg;
-					b=(t->beg==t->end)?a:a+1;
-					p=t->env[a].pos;
+					abyte=t->beg;
+					b=(t->beg==t->end)?abyte:abyte+1;
+					p=t->env[abyte].pos;
 				} else {
 					if (b>=t->pts) {
 						if ((t->flg & EF_VOLENV)&&(mp_channel!=-1)) {
@@ -424,7 +424,7 @@ static SWORD ProcessEnvelope(ENVPR *t,SWORD v,UBYTE keyoff)
 					}
 				}
 			}
-			t->a=a;
+			t->a=abyte;
 			t->b=b;
 			t->p=p;
 		}
@@ -1297,7 +1297,7 @@ static void DoSSEffects(UBYTE dat)
 				a->hioffset=inf<<16;
 				a->start=a->hioffset|a->soffset;
 
-				if ((a->s)&&(a->start>a->s->length))
+				if ((a->s)&&(a->start>(signed)a->s->length))
 					a->start=a->s->flags&(SF_LOOP|SF_BIDI)?a->s->loopstart:a->s->length;
 			}
 			break;
@@ -1387,7 +1387,7 @@ static void DoULTSampleOffset(void)
 		a->ultoffset=offset;
 
 	a->start=a->ultoffset<<2;
-	if ((a->s)&&(a->start>a->s->length))
+	if ((a->s)&&(a->start>(signed)a->s->length))
 		a->start=a->s->flags&(SF_LOOP|SF_BIDI)?a->s->loopstart:a->s->length;
 }
 
@@ -1503,7 +1503,7 @@ static void pt_playeffects(void)
 					if (dat) a->soffset=(UWORD)dat<<8;
 					a->start=a->hioffset|a->soffset;
 
-					if ((a->s)&&(a->start>a->s->length))
+					if ((a->s)&&(a->start>(signed)a->s->length))
 						a->start=a->s->flags&(SF_LOOP|SF_BIDI)?a->s->loopstart:a->s->length;
 				}
 				break;
@@ -1884,6 +1884,7 @@ static void DoNNAEffects(UBYTE dat)
 	}
 }
 
+void pt_UpdateVoices(int max_volume);
 void pt_UpdateVoices(int max_volume)
 {
 	SWORD envpan,envvol,envpit;
@@ -1907,7 +1908,7 @@ void pt_UpdateVoices(int max_volume)
 		else if (aout->period>50000) aout->period=50000;
 
 		if ((aout->kick==KICK_NOTE)||(aout->kick==KICK_KEYOFF)) {
-			Voice_Play_internal(mp_channel,s,(aout->start==-1)?((s->flags&SF_UST_LOOP)?s->loopstart:0):aout->start);
+			Voice_Play_internal(mp_channel,s,(aout->start==-1)?((s->flags&SF_UST_LOOP)?s->loopstart:0):(unsigned)aout->start);
 			aout->fadevol=32768;
 			aout->aswppos=0;
 		}
@@ -2067,6 +2068,7 @@ void pt_UpdateVoices(int max_volume)
 }
 
 /* Handles new notes or instruments */
+void pt_Notes(void);
 void pt_Notes(void)
 {
 	UBYTE c,inst;
@@ -2198,6 +2200,7 @@ void pt_Notes(void)
 }
 
 /* Handles effects */
+void pt_EffectsPass1(void);
 void pt_EffectsPass1(void)
 {
 	MP_VOICE *aout;
@@ -2247,6 +2250,7 @@ void pt_EffectsPass1(void)
 }
 
 /* NNA management */
+void pt_NNA(void);
 void pt_NNA(void)
 {
 	for (mp_channel=0;mp_channel<pf->numchn;mp_channel++) {
@@ -2324,6 +2328,7 @@ void pt_NNA(void)
 }
 
 /* Setup module and NNA voices */
+void pt_SetupVoices(void);
 void pt_SetupVoices(void)
 {
 	MP_VOICE *aout;
@@ -2380,6 +2385,7 @@ void pt_SetupVoices(void)
 }
 
 /* second effect pass */
+void pt_EffectsPass2(void);
 void pt_EffectsPass2(void)
 {
 	UBYTE c;
@@ -2799,7 +2805,7 @@ static void Player_ToggleMute_internal(SLONG arg1,va_list ap)
 				    (arg2>arg3)||(arg3>=pf->numchn))
 					return;
 				for (t=0;t<pf->numchn;t++) {
-					if ((t>=arg2) && (t<=arg3)) continue;
+					if (((signed)t>=arg2) && ((signed)t<=arg3)) continue;
 					pf->control[t].muted=1-pf->control[t].muted;
 				}
 				break;

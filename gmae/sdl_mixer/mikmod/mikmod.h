@@ -206,7 +206,7 @@ typedef MikMod_handler *MikMod_handler_t;
 
 MIKMODAPI extern int  MikMod_errno;
 MIKMODAPI extern BOOL MikMod_critical;
-MIKMODAPI extern char *MikMod_strerror(int);
+MIKMODAPI extern const char *MikMod_strerror(int);
 
 MIKMODAPI extern MikMod_handler_t MikMod_RegisterErrorHandler(MikMod_handler_t);
 
@@ -591,13 +591,13 @@ enum {
 struct SAMPLOAD;
 typedef struct MDRIVER {
 struct MDRIVER* next;
-	CHAR*       Name;
-	CHAR*       Version;
+	const CHAR*       Name;
+	const CHAR*       Version;
 
 	UBYTE       HardVoiceLimit; /* Limit of hardware mixer voices */
 	UBYTE       SoftVoiceLimit; /* Limit of software mixer voices */
 
-	CHAR*       Alias;
+	const CHAR*       Alias;
 
 	void        (*CommandLine)      (CHAR*);
 	BOOL        (*IsPresent)        (void);

@@ -26,6 +26,10 @@
 
 ==============================================================================*/
 
+#ifdef __STRICT_ANSI__
+extern char *strdup(const char *s);
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -124,6 +128,7 @@ static	XMWAVHEADER *wh=NULL,*s=NULL;
 
 /*========== Loader code */
 
+BOOL XM_Test(void);
 BOOL XM_Test(void)
 {
 	UBYTE id[38];
@@ -134,12 +139,14 @@ BOOL XM_Test(void)
 	return 0;
 }
 
+BOOL XM_Init(void);
 BOOL XM_Init(void)
 {
 	if(!(mh=(XMHEADER *)_mm_malloc(sizeof(XMHEADER)))) return 0;
 	return 1;
 }
 
+void XM_Cleanup(void);
 void XM_Cleanup(void)
 {
 	_mm_free(mh);
@@ -567,6 +574,7 @@ if ((d->panflg&EF_ON)&&(d->panpts<2))
 	return 1;
 }
 
+BOOL XM_Load(BOOL curious);
 BOOL XM_Load(BOOL curious)
 {
 	INSTRUMENT *d;
@@ -575,6 +583,7 @@ BOOL XM_Load(BOOL curious)
 	BOOL dummypat=0;
 	char tracker[21],modtype[60];
 
+	if(curious) {}
 	/* try to read module header */
 	_mm_read_string(mh->id,17,modreader);
 	_mm_read_string(mh->songname,21,modreader);
@@ -712,14 +721,15 @@ BOOL XM_Load(BOOL curious)
 	return 1;
 }
 
+CHAR *XM_LoadTitle(void);
 CHAR *XM_LoadTitle(void)
 {
-	CHAR s[21];
+	CHAR mys[21];
 
 	_mm_fseek(modreader,17,SEEK_SET);
-	if(!_mm_read_UBYTES(s,21,modreader)) return NULL;
+	if(!_mm_read_UBYTES(mys,21,modreader)) return NULL;
 
-	return(DupStr(s,21,1));
+	return(DupStr(mys,21,1));
 }
 
 /*========== Loader information */

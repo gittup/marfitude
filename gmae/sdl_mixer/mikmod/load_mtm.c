@@ -26,6 +26,10 @@
 
 ==============================================================================*/
 
+#ifdef __STRICT_ANSI__
+extern char *strdup(const char *s);
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -75,6 +79,7 @@ static CHAR MTM_Version[] = "MTM";
 
 /*========== Loader code */
 
+BOOL MTM_Test(void);
 BOOL MTM_Test(void)
 {
 	UBYTE id[3];
@@ -84,6 +89,7 @@ BOOL MTM_Test(void)
 	return 0;
 }
 
+BOOL MTM_Init(void);
 BOOL MTM_Init(void)
 {
 	if(!(mtmtrk=(MTMNOTE*)_mm_calloc(64,sizeof(MTMNOTE)))) return 0;
@@ -92,6 +98,7 @@ BOOL MTM_Init(void)
 	return 1;
 }
 
+void MTM_Cleanup(void);
 void MTM_Cleanup(void)
 {
 	_mm_free(mtmtrk);
@@ -128,12 +135,14 @@ static UBYTE* MTM_Convert(void)
 	return UniDup();
 }
 
+BOOL MTM_Load(BOOL curious);
 BOOL MTM_Load(BOOL curious)
 {
 	int t,u;
 	MTMSAMPLE s;
 	SAMPLE *q;
 
+	if(curious) {}
 	/* try to read module header  */
 	_mm_read_UBYTES(mh->id,3,modreader);
 	mh->version     =_mm_read_UBYTE(modreader);
@@ -218,12 +227,12 @@ BOOL MTM_Load(BOOL curious)
 
 	of.tracks[0]=MTM_Convert();		/* track 0 is empty */
 	for(t=1;t<of.numtrk;t++) {
-		int s;
+		int mys;
 
-		for(s=0;s<64;s++) {
-			mtmtrk[s].a=_mm_read_UBYTE(modreader);
-			mtmtrk[s].b=_mm_read_UBYTE(modreader);
-			mtmtrk[s].c=_mm_read_UBYTE(modreader);
+		for(mys=0;mys<64;mys++) {
+			mtmtrk[mys].a=_mm_read_UBYTE(modreader);
+			mtmtrk[mys].b=_mm_read_UBYTE(modreader);
+			mtmtrk[mys].c=_mm_read_UBYTE(modreader);
 		}
 
 		if(_mm_eof(modreader)) {
@@ -247,6 +256,7 @@ BOOL MTM_Load(BOOL curious)
 	return 1;
 }
 
+CHAR *MTM_LoadTitle(void);
 CHAR *MTM_LoadTitle(void)
 {
 	CHAR s[20];

@@ -146,7 +146,7 @@ void _mm_delete_rwops_reader (MREADER* reader)
 
 */
 
-FILE* _mm_fopen(CHAR* fname,CHAR* attrib)
+FILE* _mm_fopen(const CHAR* fname,const CHAR* attrib)
 {
 	FILE *fp;
 

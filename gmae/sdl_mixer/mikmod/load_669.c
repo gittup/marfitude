@@ -26,6 +26,10 @@
 
 ==============================================================================*/
 
+#ifdef __STRICT_ANSI__
+extern char *strdup(const char *s);
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -69,13 +73,14 @@ static	S69NOTE* s69pat=NULL;
 static	S69HEADER* mh=NULL;
 
 /* file type identification */
-static	CHAR* S69_Version[]={
+static	const CHAR* S69_Version[]={
 	"Composer 669",
 	"Extended 669"
 };
 
 /*========== Loader code */
 
+BOOL S69_Test(void);
 BOOL S69_Test(void)
 {
 	UBYTE buf[0x80];
@@ -110,6 +115,7 @@ BOOL S69_Test(void)
 	return 1;
 }
 
+BOOL S69_Init(void);
 BOOL S69_Init(void)
 {
 	if(!(s69pat=(S69NOTE *)_mm_malloc(64*8*sizeof(S69NOTE)))) return 0;
@@ -118,6 +124,7 @@ BOOL S69_Init(void)
 	return 1;
 }
 
+void S69_Cleanup(void);
 void S69_Cleanup(void)
 {
 	_mm_free(s69pat);
@@ -233,12 +240,14 @@ static BOOL S69_LoadPatterns(void)
 	return 1;
 }
 
+BOOL S69_Load(BOOL curious);
 BOOL S69_Load(BOOL curious)
 {
 	int i;
 	SAMPLE *current;
 	S69SAMPLE sample;
 
+	if(curious) {}
 	/* module header */
 	_mm_read_UBYTES(mh->marker,2,modreader);
 	_mm_read_UBYTES(mh->message,108,modreader);
@@ -330,6 +339,7 @@ BOOL S69_Load(BOOL curious)
 	return 1;
 }
 
+CHAR *S69_LoadTitle(void);
 CHAR *S69_LoadTitle(void)
 {
 	CHAR s[36];

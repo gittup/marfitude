@@ -34,6 +34,10 @@
 
 */
 
+#ifdef __STRICT_ANSI__
+extern char *strdup(const char *s);
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -105,6 +109,7 @@ static GDMNOTE *gdmbuf=NULL;	/* pointer to a complete GDM pattern */
 
 CHAR GDM_Version[]="General DigiMusic 1.xx";
 
+BOOL GDM_Test(void);
 BOOL GDM_Test(void)
 {
 	/* test for gdm magic numbers */
@@ -123,6 +128,7 @@ BOOL GDM_Test(void)
 	return 0;
 }
 
+BOOL GDM_Init(void);
 BOOL GDM_Init(void)
 {
 	if (!(gdmbuf=(GDMNOTE*)_mm_malloc(32*64*sizeof(GDMNOTE)))) return 0;
@@ -131,12 +137,14 @@ BOOL GDM_Init(void)
 	return 1;
 }
 
+void GDM_Cleanup(void);
 void GDM_Cleanup(void)
 {
 	_mm_free(mh);
 	_mm_free(gdmbuf);
 }
 
+BOOL GDM_ReadPattern(void);
 BOOL GDM_ReadPattern(void)
 {
 	int pos,flag,ch,i,maxch;
@@ -189,6 +197,7 @@ BOOL GDM_ReadPattern(void)
 	return 1;
 }
 
+UBYTE *GDM_ConvertTrack(GDMNOTE*tr);
 UBYTE *GDM_ConvertTrack(GDMNOTE*tr)
 {
 	int t,i=0;
@@ -336,6 +345,7 @@ UBYTE *GDM_ConvertTrack(GDMNOTE*tr)
 	return UniDup();
 }
 
+BOOL GDM_Load(BOOL curious);
 BOOL GDM_Load(BOOL curious)
 {
 	int i,x,u,track;
@@ -343,6 +353,7 @@ BOOL GDM_Load(BOOL curious)
 	GDMSAMPLE s;
 	ULONG position;
 
+	if(curious) {}
 	/* read header */
 	_mm_read_string(mh->id1,4,modreader);
 	_mm_read_string(mh->songname,32,modreader);
@@ -527,6 +538,7 @@ BOOL GDM_Load(BOOL curious)
 	return 1;
 }
 
+CHAR *GDM_LoadTitle(void);
 CHAR *GDM_LoadTitle(void)
 {
 	CHAR s[32];

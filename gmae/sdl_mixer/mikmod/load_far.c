@@ -26,6 +26,10 @@
 
 ==============================================================================*/
 
+#ifdef __STRICT_ANSI__
+extern char *strdup(const char *s);
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -84,6 +88,7 @@ static	unsigned char FARSIG[4+3]={'F','A','R',0xfe,13,10,26};
 
 /*========== Loader code */
 
+BOOL FAR_Test(void);
 BOOL FAR_Test(void)
 {
 	UBYTE id[47];
@@ -93,6 +98,7 @@ BOOL FAR_Test(void)
 	return 1;
 }
 
+BOOL FAR_Init(void);
 BOOL FAR_Init(void)
 {
 	if(!(mh1 = (FARHEADER1*)_mm_malloc(sizeof(FARHEADER1)))) return 0;
@@ -102,6 +108,7 @@ BOOL FAR_Init(void)
 	return 1;
 }
 
+void FAR_Cleanup(void);
 void FAR_Cleanup(void)
 {
 	_mm_free(mh1);
@@ -155,6 +162,7 @@ static UBYTE *FAR_ConvertTrack(FARNOTE* n,int rows)
 	return UniDup();
 }
 
+BOOL FAR_Load(BOOL curious);
 BOOL FAR_Load(BOOL curious)
 {
 	int t,u,tracks=0;
@@ -163,6 +171,7 @@ BOOL FAR_Load(BOOL curious)
 	FARNOTE *crow;
 	UBYTE smap[8];
 
+	if(curious) {}
 	/* try to read module header (first part) */
 	_mm_read_UBYTES(mh1->id,4,modreader);
 	_mm_read_SBYTES(mh1->songname,40,modreader);
@@ -301,6 +310,7 @@ BOOL FAR_Load(BOOL curious)
 	return 1;
 }
 
+CHAR *FAR_LoadTitle(void);
 CHAR *FAR_LoadTitle(void)
 {
 	CHAR s[40];

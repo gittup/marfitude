@@ -52,6 +52,7 @@ typedef struct WAV {
 	UWORD nFormatSpecific;
 } WAV;
 
+static SAMPLE* Sample_LoadGeneric_internal(MREADER* reader);
 SAMPLE* Sample_LoadGeneric_internal(MREADER* reader)
 {
 	SAMPLE *si=NULL;

@@ -26,6 +26,10 @@
 
 ==============================================================================*/
 
+#ifdef __STRICT_ANSI__
+extern char *strdup(const char *s);
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -306,7 +310,7 @@ static BOOL ML_LoadPatterns(void)
 
 	for (t = 0; t < of.numpat; t++) {
 		/* Load the pattern into the temp buffer and convert it */
-		for (s = 0; s < (64U * of.numchn); s++) {
+		for (s = 0; (unsigned)s < (64U * of.numchn); s++) {
 			patbuf[s].a = _mm_read_UBYTE(modreader);
 			patbuf[s].b = _mm_read_UBYTE(modreader);
 			patbuf[s].c = _mm_read_UBYTE(modreader);

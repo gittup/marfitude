@@ -74,6 +74,7 @@ static	ULTEVENT ev;
 
 /*========== Loader code */
 
+BOOL ULT_Test(void);
 BOOL ULT_Test(void)
 {
 	CHAR id[16];
@@ -84,11 +85,13 @@ BOOL ULT_Test(void)
 	return 1;
 }
 
+BOOL ULT_Init(void);
 BOOL ULT_Init(void)
 {
 	return 1;
 }
 
+void ULT_Cleanup(void);
 void ULT_Cleanup(void)
 {
 }
@@ -112,6 +115,7 @@ static UBYTE ReadUltEvent(ULTEVENT* event)
 	return rep;
 }
 
+BOOL ULT_Load(BOOL curious);
 BOOL ULT_Load(BOOL curious)
 {
 	int t,u,tracks=0;
@@ -120,6 +124,7 @@ BOOL ULT_Load(BOOL curious)
 	ULTHEADER mh;
 	UBYTE nos,noc,nop;
 
+	if(curious) {}
 	/* try to read module header */
 	_mm_read_string(mh.id,15,modreader);
 	_mm_read_string(mh.songtitle,32,modreader);
@@ -289,6 +294,7 @@ BOOL ULT_Load(BOOL curious)
 	return 1;
 }
 
+CHAR *ULT_LoadTitle(void);
 CHAR *ULT_LoadTitle(void)
 {
 	CHAR s[32];

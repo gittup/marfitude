@@ -26,6 +26,10 @@
 
 ==============================================================================*/
 
+#ifdef __STRICT_ANSI__
+extern char *strdup(const char *s);
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -76,6 +80,7 @@ static AMFNOTE *track = NULL;
 
 /*========== Loader code */
 
+BOOL AMF_Test(void);
 BOOL AMF_Test(void)
 {
 	UBYTE id[3],ver;
@@ -88,6 +93,7 @@ BOOL AMF_Test(void)
 	return 0;
 }
 
+BOOL AMF_Init(void);
 BOOL AMF_Init(void)
 {
 	if(!(mh=(AMFHEADER*)_mm_malloc(sizeof(AMFHEADER)))) return 0;
@@ -96,13 +102,14 @@ BOOL AMF_Init(void)
 	return 1;
 }
 
+void AMF_Cleanup(void);
 void AMF_Cleanup(void)
 {
 	_mm_free(mh);
 	_mm_free(track);
 }
 
-static BOOL AMF_UnpackTrack(MREADER* modreader)
+static BOOL AMF_UnpackTrack(MREADER* myreader)
 {
 	ULONG tracksize;
 	UBYTE row,cmd;
@@ -112,14 +119,14 @@ static BOOL AMF_UnpackTrack(MREADER* modreader)
 	memset(track,0,64*sizeof(AMFNOTE));
 
 	/* read packed track */
-	if (modreader) {
-		tracksize=_mm_read_I_UWORD(modreader);
-		tracksize+=((ULONG)_mm_read_UBYTE(modreader))<<16;
+	if (myreader) {
+		tracksize=_mm_read_I_UWORD(myreader);
+		tracksize+=((ULONG)_mm_read_UBYTE(myreader))<<16;
 		if (tracksize)
 			while(tracksize--) {
-				row=_mm_read_UBYTE(modreader);
-				cmd=_mm_read_UBYTE(modreader);
-				arg=_mm_read_SBYTE(modreader);
+				row=_mm_read_UBYTE(myreader);
+				cmd=_mm_read_UBYTE(myreader);
+				arg=_mm_read_SBYTE(myreader);
 				/* unexpected end of track */
 				if(!tracksize) {
 					if((row==0xff)&&(cmd==0xff)&&(arg==-1))
@@ -311,6 +318,7 @@ static UBYTE* AMF_ConvertTrack(void)
 	return UniDup();
 }
 
+BOOL AMF_Load(BOOL curious);
 BOOL AMF_Load(BOOL curious)
 {
 	int t,u,realtrackcnt,realsmpcnt;
@@ -320,6 +328,7 @@ BOOL AMF_Load(BOOL curious)
 	ULONG samplepos;
 	int channel_remap[16];
 
+	if(curious) {}
 	/* try to read module header  */
 	_mm_read_UBYTES(mh->id,3,modreader);
 	mh->version     =_mm_read_UBYTE(modreader);
@@ -484,11 +493,11 @@ BOOL AMF_Load(BOOL curious)
 	/* compute sample offsets */
 	samplepos=_mm_ftell(modreader);
 	for(realsmpcnt=t=0;t<of.numsmp;t++)
-		if(realsmpcnt<of.samples[t].seekpos)
+		if(realsmpcnt<(signed)of.samples[t].seekpos)
 			realsmpcnt=of.samples[t].seekpos;
 	for(t=1;t<=realsmpcnt;t++) {
 		q=of.samples;
-		while(q->seekpos!=t) q++;
+		while((signed)q->seekpos!=t) q++;
 		q->seekpos=samplepos;
 		samplepos+=q->length;
 	}
@@ -496,6 +505,7 @@ BOOL AMF_Load(BOOL curious)
 	return 1;
 }
 
+CHAR *AMF_LoadTitle(void);
 CHAR *AMF_LoadTitle(void)
 {
 	CHAR s[32];

@@ -26,6 +26,10 @@
 
 ==============================================================================*/
 
+#ifdef __STRICT_ANSI__
+extern char *strdup(const char *s);
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -77,9 +81,9 @@ typedef struct DSMNOTE {
 
 /*========== Loader variables */
 
-static	CHAR* SONGID="SONG";
-static	CHAR* INSTID="INST";
-static	CHAR* PATTID="PATT";
+static	const CHAR* SONGID="SONG";
+static	const CHAR* INSTID="INST";
+static	const CHAR* PATTID="PATT";
 
 static	UBYTE blockid[4];
 static	ULONG blockln;
@@ -93,6 +97,7 @@ static	unsigned char DSMSIG[4+4]={'R','I','F','F','D','S','M','F'};
 
 /*========== Loader code */
 
+BOOL DSM_Test(void);
 BOOL DSM_Test(void)
 {
 	UBYTE id[12];
@@ -103,6 +108,7 @@ BOOL DSM_Test(void)
 	return 0;
 }
 
+BOOL DSM_Init(void);
 BOOL DSM_Init(void)
 {
 	if(!(dsmbuf=(DSMNOTE *)_mm_malloc(DSM_MAXCHAN*64*sizeof(DSMNOTE)))) return 0;
@@ -110,6 +116,7 @@ BOOL DSM_Init(void)
 	return 1;
 }
 
+void DSM_Cleanup(void);
 void DSM_Cleanup(void)
 {
 	_mm_free(dsmbuf);
@@ -219,6 +226,7 @@ static UBYTE *DSM_ConvertTrack(DSMNOTE *tr)
 	return UniDup();
 }
 
+BOOL DSM_Load(BOOL curious);
 BOOL DSM_Load(BOOL curious)
 {
 	int t;
@@ -226,6 +234,7 @@ BOOL DSM_Load(BOOL curious)
 	SAMPLE *q;
 	int cursmp=0,curpat=0,track=0;
 
+	if(curious) {}
 	blocklp=0;
 	blockln=12;
 
@@ -319,6 +328,7 @@ BOOL DSM_Load(BOOL curious)
 	return 1;
 }
 
+CHAR *DSM_LoadTitle(void);
 CHAR *DSM_LoadTitle(void)
 {
 	CHAR s[28];

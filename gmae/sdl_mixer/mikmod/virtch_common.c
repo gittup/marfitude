@@ -31,8 +31,6 @@
 
 #include "mikmod_internals.h"
 
-extern BOOL  VC1_Init(void);
-extern BOOL  VC2_Init(void);
 static BOOL (*VC_Init_ptr)(void)=VC1_Init;
 extern void  VC1_Exit(void);
 extern void  VC2_Exit(void);
@@ -141,7 +139,7 @@ void VC_/**/suffix/**/(typ1 a,typ2 b) { VC_/**/suffix/**/_ptr(a,b); }
 ret VC_/**/suffix/**/(typ1 a,typ2 b) { return VC_/**/suffix/**/_ptr(a,b); }
 #endif
 
-VC_FUNC0(Init,BOOL);
+VC_FUNC0(Init,BOOL)
 VC_PROC0(Exit)
 VC_FUNC0(SetNumVoices,BOOL)
 VC_FUNC1(SampleSpace,ULONG,int)
@@ -239,6 +237,7 @@ static ULONG bytes2samples(ULONG bytes)
 
 /* Fill the buffer with 'todo' bytes of silence (it depends on the mixing mode
    how the buffer is filled) */
+ULONG VC1_SilenceBytes(SBYTE* buf,ULONG todo);
 ULONG VC1_SilenceBytes(SBYTE* buf,ULONG todo)
 {
 	todo=samples2bytes(bytes2samples(todo));
@@ -257,6 +256,7 @@ void VC1_WriteSamples(SBYTE*,ULONG);
 /* Writes 'todo' mixed SBYTES (!!) to 'buf'. It returns the number of SBYTES
    actually written to 'buf' (which is rounded to number of samples that fit
    into 'todo' bytes). */
+ULONG VC1_WriteBytes(SBYTE* buf,ULONG todo);
 ULONG VC1_WriteBytes(SBYTE* buf,ULONG todo)
 {
 	if(!vc_softchn)
@@ -268,6 +268,7 @@ ULONG VC1_WriteBytes(SBYTE* buf,ULONG todo)
 	return samples2bytes(todo);
 }
 
+void VC1_Exit(void);
 void VC1_Exit(void)
 {
 	if(vc_tickbuf) free(vc_tickbuf);
@@ -281,26 +282,31 @@ void VC1_Exit(void)
 	VC_SetupPointers();
 }
 
+UWORD VC1_VoiceGetVolume(UBYTE voice);
 UWORD VC1_VoiceGetVolume(UBYTE voice)
 {
 	return vinf[voice].vol;
 }
 
+ULONG VC1_VoiceGetPanning(UBYTE voice);
 ULONG VC1_VoiceGetPanning(UBYTE voice)
 {
 	return vinf[voice].pan;
 }
 
+void VC1_VoiceSetFrequency(UBYTE voice,ULONG frq);
 void VC1_VoiceSetFrequency(UBYTE voice,ULONG frq)
 {
 	vinf[voice].frq=frq;
 }
 
+ULONG VC1_VoiceGetFrequency(UBYTE voice);
 ULONG VC1_VoiceGetFrequency(UBYTE voice)
 {
 	return vinf[voice].frq;
 }
 
+void VC1_VoicePlay(UBYTE voice,SWORD handle,ULONG start,ULONG size,ULONG reppos,ULONG repend,UWORD flags);
 void VC1_VoicePlay(UBYTE voice,SWORD handle,ULONG start,ULONG size,ULONG reppos,ULONG repend,UWORD flags)
 {
 	vinf[voice].flags    = flags;
@@ -312,21 +318,25 @@ void VC1_VoicePlay(UBYTE voice,SWORD handle,ULONG start,ULONG size,ULONG reppos,
 	vinf[voice].kick     = 1;
 }
 
+void VC1_VoiceStop(UBYTE voice);
 void VC1_VoiceStop(UBYTE voice)
 {
 	vinf[voice].active = 0;
 }
 
+BOOL VC1_VoiceStopped(UBYTE voice);
 BOOL VC1_VoiceStopped(UBYTE voice)
 {
 	return(vinf[voice].active==0);
 }
 
+SLONG VC1_VoiceGetPosition(UBYTE voice);
 SLONG VC1_VoiceGetPosition(UBYTE voice)
 {
 	return(vinf[voice].current>>FRACBITS);
 }
 
+void VC1_VoiceSetVolume(UBYTE voice,UWORD vol);
 void VC1_VoiceSetVolume(UBYTE voice,UWORD vol)
 {
 	/* protect against clicks if volume variation is too high */
@@ -335,6 +345,7 @@ void VC1_VoiceSetVolume(UBYTE voice,UWORD vol)
 	vinf[voice].vol=vol;
 }
 
+void VC1_VoiceSetPanning(UBYTE voice,ULONG pan);
 void VC1_VoiceSetPanning(UBYTE voice,ULONG pan)
 {
 	/* protect against clicks if panning variation is too high */
@@ -345,6 +356,7 @@ void VC1_VoiceSetPanning(UBYTE voice,ULONG pan)
 
 /*========== External mixer interface */
 
+void VC1_SampleUnload(SWORD handle);
 void VC1_SampleUnload(SWORD handle)
 {
 	if (Samples && handle<MAXSAMPLEHANDLES) {
@@ -354,6 +366,7 @@ void VC1_SampleUnload(SWORD handle)
 	}
 }
 
+SWORD VC1_SampleLoad(struct SAMPLOAD* sload,int type);
 SWORD VC1_SampleLoad(struct SAMPLOAD* sload,int type)
 {
 	SAMPLE *s = sload->sample;
@@ -402,18 +415,23 @@ SWORD VC1_SampleLoad(struct SAMPLOAD* sload,int type)
 	return handle;
 }
 
+ULONG VC1_SampleSpace(int type);
 ULONG VC1_SampleSpace(int type)
 {
+	if(type) {}
 	return vc_memory;
 }
 
+ULONG VC1_SampleLength(int type,SAMPLE* s);
 ULONG VC1_SampleLength(int type,SAMPLE* s)
 {
+	if(type) {}
 	if (!s) return 0;
 
 	return (s->length*((s->flags&SF_16BITS)?2:1))+16;
 }
 
+ULONG VC1_VoiceRealVolume(UBYTE voice);
 ULONG VC1_VoiceRealVolume(UBYTE voice)
 {
 	ULONG i,s,size;

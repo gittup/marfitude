@@ -337,6 +337,7 @@ static MODULE *ML_AllocUniMod(void)
 	return (mf=_mm_malloc(sizeof(MODULE)));
 }
 
+void Player_Free_internal(MODULE *mf);
 void Player_Free_internal(MODULE *mf)
 {
 	if(mf) {
@@ -395,6 +396,7 @@ CHAR* Player_LoadTitle(CHAR* filename)
 }
 
 /* Loads a module given an reader */
+MODULE* Player_LoadGeneric_internal(MREADER *reader,int maxchan,BOOL curious);
 MODULE* Player_LoadGeneric_internal(MREADER *reader,int maxchan,BOOL curious)
 {
 	int t;

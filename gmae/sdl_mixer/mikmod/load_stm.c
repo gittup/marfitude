@@ -26,6 +26,10 @@
 
 ==============================================================================*/
 
+#ifdef __STRICT_ANSI__
+extern char *strdup(const char *s);
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -78,7 +82,7 @@ static STMNOTE *stmbuf = NULL;
 static STMHEADER *mh = NULL;
 
 /* tracker identifiers */
-static CHAR* STM_Version[STM_NTRACKERS] = {
+static const CHAR* STM_Version[STM_NTRACKERS] = {
 	"Screamtracker 2",
 	"Converted by MOD2STM (STM format)",
 	"Wuzamod (STM format)"
@@ -86,6 +90,7 @@ static CHAR* STM_Version[STM_NTRACKERS] = {
 
 /*========== Loader code */
 
+BOOL STM_Test(void);
 BOOL STM_Test(void)
 {
 	UBYTE str[44];
@@ -106,6 +111,7 @@ BOOL STM_Test(void)
 	return 0;
 }
 
+BOOL STM_Init(void);
 BOOL STM_Init(void)
 {
 	if(!(mh=(STMHEADER*)_mm_malloc(sizeof(STMHEADER)))) return 0;
@@ -218,7 +224,7 @@ static BOOL STM_LoadPatterns(void)
 
 	/* Allocate temporary buffer for loading and converting the patterns */
 	for(t=0;t<of.numpat;t++) {
-		for(s=0;s<(64U*of.numchn);s++) {
+		for(s=0;(unsigned)s<(64U*of.numchn);s++) {
 			stmbuf[s].note   = _mm_read_UBYTE(modreader);
 			stmbuf[s].insvol = _mm_read_UBYTE(modreader);
 			stmbuf[s].volcmd = _mm_read_UBYTE(modreader);
@@ -236,12 +242,14 @@ static BOOL STM_LoadPatterns(void)
 	return 1;
 }
 
+BOOL STM_Load(BOOL curious);
 BOOL STM_Load(BOOL curious)
 {
 	int t; 
 	ULONG MikMod_ISA; /* We must generate our own ISA, it's not stored in stm */
 	SAMPLE *q;
 
+	if(curious) {}
 	/* try to read stm header */
 	_mm_read_string(mh->songname,20,modreader);
 	_mm_read_string(mh->trackername,8,modreader);
@@ -338,6 +346,7 @@ BOOL STM_Load(BOOL curious)
 	return 1;
 }
 
+CHAR *STM_LoadTitle(void);
 CHAR *STM_LoadTitle(void)
 {
 	CHAR s[20];

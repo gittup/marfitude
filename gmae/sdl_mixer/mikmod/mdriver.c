@@ -25,6 +25,9 @@
   These routines are used to access the available soundcard drivers.
 
 ==============================================================================*/
+#ifdef __STRICT_ANSI__
+extern int strcasecmp(const char *s1, const char *s2);
+#endif
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -730,6 +733,7 @@ BOOL MikMod_Active(void)
    criticals).
 
    Returns the voice that the sound is being played on.                       */
+SBYTE Sample_Play_internal(SAMPLE *s,ULONG start,UBYTE flags);
 SBYTE Sample_Play_internal(SAMPLE *s,ULONG start,UBYTE flags)
 {
 	int orig=sfxpool;/* for cases where all channels are critical */
@@ -792,16 +796,16 @@ long MikMod_GetVersion(void)
 	pthread_mutex_t _mm_mutex_##name=PTHREAD_MUTEX_INITIALIZER
 #elif defined(__OS2__)||defined(__EMX__)
 #define INIT_MUTEX(name) \
-	HMTX _mm_mutex_##name
+	HMTX _mm_mutex_##name;
 #elif defined(WIN32)
 #define INIT_MUTEX(name) \
-	HANDLE _mm_mutex_##name
+	HANDLE _mm_mutex_##name;
 #else
 #define INIT_MUTEX(name)
 #endif
 
-INIT_MUTEX(vars);
-INIT_MUTEX(lists);
+INIT_MUTEX(vars)
+INIT_MUTEX(lists)
 
 BOOL MikMod_InitThreads(void)
 {

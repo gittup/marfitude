@@ -26,6 +26,10 @@
 
 ==============================================================================*/
 
+#ifdef __STRICT_ANSI__
+extern char *strdup(const char *s);
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -91,7 +95,7 @@ static UWORD     *paraptr = NULL; /* parapointer array (see S3M docs) */
 
 /* tracker identifiers */
 #define NUMTRACKERS 4
-static CHAR* S3M_Version[] = {
+static const CHAR* S3M_Version[] = {
 	"Screamtracker x.xx",
 	"Imago Orpheus x.xx (S3M format)",
 	"Impulse Tracker x.xx (S3M format)",
@@ -104,6 +108,7 @@ static int numeric[NUMTRACKERS]={14,14,16,16};
 
 /*========== Loader code */
 
+BOOL S3M_Test(void);
 BOOL S3M_Test(void)
 {
 	UBYTE id[4];
@@ -114,6 +119,7 @@ BOOL S3M_Test(void)
 	return 0;
 }
 
+BOOL S3M_Init(void);
 BOOL S3M_Init(void)
 {
 	if(!(s3mbuf=(S3MNOTE*)_mm_malloc(32*64*sizeof(S3MNOTE)))) return 0;
@@ -124,6 +130,7 @@ BOOL S3M_Init(void)
 	return 1;
 }
 
+void S3M_Cleanup(void);
 void S3M_Cleanup(void)
 {
 	_mm_free(s3mbuf);
@@ -236,6 +243,7 @@ static UBYTE* S3M_ConvertTrack(S3MNOTE* tr)
 	return UniDup();
 }
 
+BOOL S3M_Load(BOOL curious);
 BOOL S3M_Load(BOOL curious)
 {
 	int t,u,track = 0;
@@ -425,6 +433,7 @@ BOOL S3M_Load(BOOL curious)
 	return 1;
 }
 
+CHAR *S3M_LoadTitle(void);
 CHAR *S3M_LoadTitle(void)
 {
 	CHAR s[28];

@@ -26,6 +26,10 @@
 
 ==============================================================================*/
 
+#ifdef __STRICT_ANSI__
+extern char *strdup(const char *s);
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -154,6 +158,7 @@ static CHAR MED_Version[] = "OctaMED (MMDx)";
 
 /*========== Loader code */
 
+BOOL MED_Test(void);
 BOOL MED_Test(void)
 {
 	UBYTE id[4];
@@ -165,6 +170,7 @@ BOOL MED_Test(void)
 	return 0;
 }
 
+BOOL MED_Init(void);
 BOOL MED_Init(void)
 {
 	if (!(me = (MEDEXP *)_mm_malloc(sizeof(MEDEXP))))
@@ -176,6 +182,7 @@ BOOL MED_Init(void)
 	return 1;
 }
 
+void MED_Cleanup(void);
 void MED_Cleanup(void)
 {
 	_mm_free(me);
@@ -421,6 +428,7 @@ static BOOL LoadMMD1Patterns(void)
 	return 1;
 }
 
+BOOL MED_Load(BOOL curious);
 BOOL MED_Load(BOOL curious)
 {
 	int t;
@@ -677,6 +685,7 @@ BOOL MED_Load(BOOL curious)
 	return 1;
 }
 
+CHAR *MED_LoadTitle(void);
 CHAR *MED_LoadTitle(void)
 {
 	ULONG posit, namelen;

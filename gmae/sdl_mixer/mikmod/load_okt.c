@@ -33,6 +33,10 @@
 
 */
 
+#ifdef __STRICT_ANSI__
+extern char *strdup(const char *s);
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -67,6 +71,7 @@ static OKTNOTE *okttrk = NULL;
 
 /*========== Loader code */
 
+BOOL OKT_Test(void);
 BOOL OKT_Test(void)
 {
 	CHAR id[8];
@@ -203,9 +208,9 @@ static BOOL OKT_doSAMP(int len)
 		else {
 			s.len--;
 			/* sanity checks */
-			if (s.loopbeg > s.len)
+			if (s.loopbeg > (signed)s.len)
 				s.loopbeg = s.len;
-			if (s.loopbeg + s.looplen > s.len)
+			if (s.loopbeg + s.looplen > (signed)s.len)
 				s.looplen = s.len - s.loopbeg;
 			if (s.looplen < 2)
 				s.looplen = 0;
@@ -308,6 +313,7 @@ static void OKT_doSBOD(int insnum)
 	of.samples[insnum].seekpos = _mm_ftell(modreader);
 }
 
+BOOL OKT_Load(BOOL curious);
 BOOL OKT_Load(BOOL curious)
 {
 	UBYTE id[4];
@@ -317,6 +323,7 @@ BOOL OKT_Load(BOOL curious)
 			= 0, seen_spee = 0;
 	int patnum = 0, insnum = 0;
 
+	if(curious) {}
 	/* skip OKTALYZER header */
 	_mm_fseek(modreader, 8, SEEK_SET);
 	of.songname = strdup("");
@@ -425,6 +432,7 @@ BOOL OKT_Load(BOOL curious)
 	return 1;
 }
 
+CHAR *OKT_LoadTitle(void);
 CHAR *OKT_LoadTitle(void)
 {
 	return strdup("");

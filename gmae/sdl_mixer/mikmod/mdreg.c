@@ -34,6 +34,7 @@
 
 MIKMODAPI extern struct MDRIVER drv_sdl;    /* Simple Direct Media */
 
+void _mm_registeralldrivers(void);
 void _mm_registeralldrivers(void)
 {
 	_mm_registerdriver(&drv_sdl);
