@@ -4,6 +4,6 @@ EXTRACFLAGS := $(BDECFLAGS)
 
 INCDIRS := $(d)
 
-include $(MK)/lang/c.mk
+include mk/lang/c.mk
 
-include $(MK)/tgt/staticlib.mk
+include mk/tgt/staticlib.mk

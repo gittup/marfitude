@@ -4,9 +4,9 @@ INCDIRS := $(d)/mikmod
 
 TARGET = libsdl_mixer
 
-include $(MK)/lang/c.mk
+include mk/lang/c.mk
 
-include $(MK)/tgt/staticlib.mk
+include mk/tgt/staticlib.mk
 
 subdir := mikmod
-include $(MK)/Recurse.mk
+include mk/Recurse.mk
