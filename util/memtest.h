@@ -20,8 +20,6 @@
  * Allows the ability to override memory functions to track leaks
  */
 
-#include "memtest.cfg"
-
 #if CONFIG_MEMTEST == 1
 #define malloc(x) MyMalloc(x, __LINE__, __FILE__)
 #define realloc(p, x) MyRealloc(p, x, __LINE__, __FILE__)
