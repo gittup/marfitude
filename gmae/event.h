@@ -18,9 +18,11 @@
 */
 
 struct joykey {
-	int type; /* -1 for keybd, 0-n for joysticks */
-	int button;	/* keysym.sym for keybd, button # for joystick button
-			 * 1 if axis>0, -1 if axis<0 */
+	int type; /* -1 for keybd, -2 for mouse, 0-n for joysticks */
+	int button;	/* keysym.sym for keybd, mouse button for mouse,
+			 * button # for joystick button
+			 * 1 if axis>0, -1 if axis<0
+			 */
 	int axis; /* -1 if no axis, >=0 if this was an axis */
 };
 
@@ -66,6 +68,3 @@ enum buttonType {
 	B_MENU,
 	B_LAST
 };
-
-#define JK_KEYBOARD -1
-#define JK_JOYBUTTON -1

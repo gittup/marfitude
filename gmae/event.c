@@ -33,6 +33,10 @@
 #include "memtest.h"
 #include "strfunc.h"
 
+#define JK_KEYBOARD -1
+#define JK_MOUSE -2
+#define JK_BUTTON -1
+
 struct event {
 	EventHandler handler;
 	int stopHere;
@@ -42,9 +46,11 @@ struct event {
 static char *NextDot(char *s);
 static int CfgButton(struct joykey *key, const char *cfgParam);
 static int KeyEqual(struct joykey *key, SDL_KeyboardEvent *e);
+static int MouseButtonEqual(struct joykey *key, SDL_MouseButtonEvent *e);
 static int JoyButtonEqual(struct joykey *key, SDL_JoyButtonEvent *e);
 static int JoyAxisEqual(struct joykey *key, SDL_JoyAxisEvent *e);
 static void KeyDownEvent(SDL_KeyboardEvent *e);
+static void MouseButtonEvent(SDL_MouseButtonEvent *e);
 static void JoyButtonDownEvent(SDL_JoyButtonEvent *e);
 static void JoyAxisEvent(SDL_JoyAxisEvent *e);
 
@@ -133,8 +139,10 @@ int ConfigureJoyKey(void)
 
 char *JoyKeyName(int button)
 {
+	int len;
 	char *s = NULL;
 	struct joykey *jk = buttons+button;
+
 	if(jk->type == JK_KEYBOARD)
 	{
 		char *t;
@@ -142,19 +150,24 @@ char *JoyKeyName(int button)
 		s = (char*)malloc(sizeof(char) * (strlen(t)+1));
 		strcpy(s, t);
 	}
+	else if(jk->type == JK_MOUSE)
+	{
+		len = IntLen(jk->button) + 7;
+		s = (char*)malloc(sizeof(char) * len);
+		sprintf(s, "Mouse %i", jk->button);
+	}
 	else /* joystick */
 	{
-		int len;
-		if(jk->axis == JK_JOYBUTTON) /* button event */
+		if(jk->axis == JK_BUTTON) /* button event */
 		{
 			len = IntLen(jk->type) + IntLen(jk->button) + 13;
-			s = (char*)malloc(sizeof(char) * (len+1));
+			s = (char*)malloc(sizeof(char) * len);
 			sprintf(s, "Joy %i Button %i", jk->type, jk->button);
 		}
 		else /* axis event */
 		{
 			len = IntLen(jk->type) + IntLen(jk->button) + 15;
-			s = (char*)malloc(sizeof(char) * (len+1));
+			s = (char*)malloc(sizeof(char) * len);
 			sprintf(s, "Joy %i Axis %i (%c)", jk->type, jk->axis, (jk->button > 0) ? '+' : '-');
 		}
 	}
@@ -163,9 +176,18 @@ char *JoyKeyName(int button)
 
 int KeyEqual(struct joykey *key, SDL_KeyboardEvent *e)
 {
-	if(	key->type == -1 &&
+	if(	key->type == JK_KEYBOARD &&
 		key->button == (signed)e->keysym.sym &&
-		key->axis == -1)
+		key->axis == JK_BUTTON)
+		return 1;
+	return 0;
+}
+
+int MouseButtonEqual(struct joykey *key, SDL_MouseButtonEvent *e)
+{
+	if(	key->type == JK_MOUSE &&
+		key->button == (signed)e->button &&
+		key->axis == JK_BUTTON)
 		return 1;
 	return 0;
 }
@@ -174,7 +196,7 @@ int JoyButtonEqual(struct joykey *key, SDL_JoyButtonEvent *e)
 {
 	if(	key->type == e->which &&
 		key->button == e->button &&
-		key->axis == -1)
+		key->axis == JK_BUTTON)
 		return 1;
 	return 0;
 }
@@ -273,6 +295,7 @@ void KeyDownEvent(SDL_KeyboardEvent *e)
 {
 	int x;
 	struct joykey jk;
+
 	if(eventMode == KEY && keyHandler)
 	{
 		jk.type = JK_KEYBOARD;
@@ -322,15 +345,43 @@ void KeyDownEvent(SDL_KeyboardEvent *e)
 	/* no else (ignore eventMode == KEY and no keyHandler) */
 }
 
+void MouseButtonEvent(SDL_MouseButtonEvent *e)
+{
+	int x;
+	struct joykey jk;
+
+	if(eventMode == KEY && keyHandler)
+	{
+		jk.type = JK_MOUSE;
+		jk.button = e->button;
+		jk.axis = JK_BUTTON;
+		keyHandler(&jk);
+	}
+	else if(eventMode == MENU)
+	{
+		if(MouseButtonEqual(&buttons[B_MENU], e))
+			FireEvent(EVENT_MENU);
+		else
+			FireEvent(EVENT_ENTER);
+	}
+	else if(eventMode == GAME)
+	{
+		for(x=0;x<B_LAST;x++)
+			if(MouseButtonEqual(&buttons[x], e)) FireEvent(x);
+	}
+	/* no else (ignore eventMode == KEY and no keyHandler) */
+}
+
 void JoyButtonDownEvent(SDL_JoyButtonEvent *e)
 {
 	int x;
 	struct joykey jk;
+
 	if(eventMode == KEY && keyHandler)
 	{
 		jk.type = e->which;
 		jk.button = e->button;
-		jk.axis = JK_JOYBUTTON;
+		jk.axis = JK_BUTTON;
 		keyHandler(&jk);
 	}
 	else if(eventMode == MENU)
@@ -353,6 +404,7 @@ void JoyAxisEvent(SDL_JoyAxisEvent *e)
 {
 	int x;
 	struct joykey jk;
+
 	if(e->value == 0) return;
 	if(eventMode == KEY && keyHandler)
 	{
@@ -424,6 +476,9 @@ void EventLoop(void)
 			case SDL_JOYBUTTONDOWN:
 				if(JoyIgnoreButton(event.jbutton.which, event.jbutton.button)) break;
 				JoyButtonDownEvent(&event.jbutton);
+				break;
+			case SDL_MOUSEBUTTONDOWN:
+				MouseButtonEvent(&event.button);
 				break;
 			case SDL_QUIT:
 				quit = 1;
