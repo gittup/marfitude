@@ -1,5 +1,5 @@
+use ace_unrel.it as theme song?
 ace_unrel.it - is it supposed to be so empty in the beginning?
-	- also segfaults later -- too many notes?
 remove blank end patterns
 recursive search for best track representation?
 
@@ -69,7 +69,7 @@ sort transparent objects to render them properly (or cheat) (or leave as is)
 Add 3d font?
 compress sounds with zlib?
 check mem usage?
-rename game to Wavelength - intro screen
+rename game to Wammo - intro screen
 midi support?
 get MinGW and port to windows
 writing a gmae :)
