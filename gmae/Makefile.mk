@@ -1,7 +1,7 @@
 project: $(src_gmae)/marfitude$(BINARYEXT)
 
 $(src_gmae)/marfitude$(BINARYEXT): $(src_gmae)/$(ARCH)/marfitude$(BINARYEXT)
-	$(move)
+	$(copy)
 
 EXTRACFLAGS = `$(SDL_CONFIG) --cflags` $(BDECFLAGS)
 
