@@ -40,7 +40,7 @@ GLuint LoadTexture(char *filename)
 			format = GL_RGBA;
 			break;
 		default:
-			Log("\nERROR: Incorrect image format in %s - image must be RGB or RGBA\n", filename);
+			ELog("\nERROR: Incorrect image format in %s - image must be RGB or RGBA\n", filename);
 			return 0;
 	}
 	GLTexImage2D(GL_TEXTURE_2D, 0, s->format->BytesPerPixel, s->w, s->h, 0, format, GL_UNSIGNED_BYTE, s->pixels);
@@ -65,7 +65,7 @@ int InitTextures(void)
 		s = IMG_Load(TEX_LIST[x]);
 		if(!s)
 		{
-			Log("\nERROR: Couldn't load texture '%s': %s\n", TEX_LIST[x], IMG_GetError());
+			ELog("\nERROR: Couldn't load texture '%s': %s\n", TEX_LIST[x], IMG_GetError());
 			return 0;
 		}
 		GLBindTexture(GL_TEXTURE_2D, GLTexture[x]);
@@ -82,7 +82,7 @@ int InitTextures(void)
 				format = GL_RGBA;
 				break;
 			default:
-				Log("\nERROR: Incorrect image format in tex.dat - image must be RGB or RGBA\n");
+				ELog("\nERROR: Incorrect image format in tex.dat - image must be RGB or RGBA\n");
 				return 0;
 		}
 		GLTexImage2D(GL_TEXTURE_2D, 0, s->format->BytesPerPixel, s->w, s->h, 0, format, GL_UNSIGNED_BYTE, s->pixels);
