@@ -842,7 +842,7 @@ int WriteWam(const char *modFile)
 	wamFile = Mod2Wam(modFile);
 	Log(("Write MOD: %s\nWAM: %s\n", modFile, wamFile));
 	if(!SaveWam(wam, wamFile)) {
-		ELog(("Error: Couldn't save wam. Make sure the wam/ directory in the data directory: '%s' is writeable\n", DATADIR));
+		ELog(("Error: Couldn't save wam. Make sure the wam/ directory in the data directory: '%s' is writeable\n", MARFDATADIR));
 		free(wamFile);
 		return 0;
 	}
@@ -916,7 +916,7 @@ struct wam *LoadWam(const char *modFile)
 			return 0;
 		}
 		if(!SaveWam(wam, wamFile)) {
-			ELog(("Error: Couldn't save wam. Make sure the wam/ directory in the data directory: '%s' is writeable\n", DATADIR));
+			ELog(("Error: Couldn't save wam. Make sure the wam/ directory in the data directory: '%s' is writeable\n", MARFDATADIR));
 		}
 	}
 

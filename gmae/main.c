@@ -92,8 +92,8 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if(DATADIR[0] && chdir(DATADIR)) {
-		ELog(("ERROR: Couldn't change to the %s directory\n", DATADIR));
+	if(MARFDATADIR[0] && chdir(MARFDATADIR)) {
+		ELog(("ERROR: Couldn't change to the %s directory\n", MARFDATADIR));
 	}
 
 	/* initialize all the different subsystems, or quit
