@@ -47,7 +47,7 @@
 #  if defined(LIBMIKMOD_VERSION)                /* libmikmod 3.1.8 */
 #    define UNIMOD			MODULE
 #    define MikMod_Init()		MikMod_Init(NULL)
-#    define MikMod_LoadSong(a,b)	Player_Load(a,b,0)
+#    define MikMod_LoadSong(a,b)	Player_Load(a,b,1)
 #    define MikMod_FreeSong		Player_Free
 /*     extern int MikMod_errno;*/
 #  else                                        /* old MikMod 3.0.3 */
