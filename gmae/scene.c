@@ -79,11 +79,11 @@ int SwitchScene(int scene)
 	if(!scenes[scene].InitScene()) {
 		activeScene = &(scenes[NULLSCENE]);
 		ELog(("Scene switch failed\n"));
-		return 0;
+		return 1;
 	}
 	activeScene = &(scenes[scene]);
 	Log(("Scene switched\n"));
-	return 1;
+	return 0;
 }
 
 int SceneActive(int scene)

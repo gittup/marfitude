@@ -64,10 +64,10 @@ int InitLog(void)
 {
 #ifdef LOG
 	logFile = fopen("log.txt", "w");
-	if(!logFile) return 0;
+	if(!logFile) return 1;
 	printf("Logging initialized\n");
 #endif
-	return 1;
+	return 0;
 }
 
 void QuitLog(void)

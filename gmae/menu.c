@@ -893,13 +893,13 @@ int SwitchMenu(int m)
 	{
 		activeMenu = &(menus[NULLMENU]);
 		Log(("Menu switch failed\n"));
-		return 0;
+		return 1;
 	}
 	activeMenu = &(menus[m]);
 	if(activeMenuItem < numItems && items[activeMenuItem].type >= MENU_SELECTABLE)
 		activeMenuItem = FindActiveItem(items, numItems);
 	Log(("Menu switched\n"));
-	return 1;
+	return 0;
 }
 
 /*void DrawButton(GLuint button, int x, int y, int on)
