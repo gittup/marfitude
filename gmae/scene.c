@@ -26,6 +26,7 @@
 #include "scene.h"
 #include "cfg.h"
 #include "event.h"
+#include "fft.h"
 #include "glfunc.h"
 #include "log.h"
 #include "main.h"
@@ -594,6 +595,8 @@ int MainInit()
 	Log(("Load Wam\n"));
 	cursong = CfgSCpy("main", "song");
 
+        init_fft();
+
 	wam = LoadWam(cursong);
 	if(wam == NULL) {
 		ELog(("Error: Couldn't load WAM file\n"));
@@ -790,6 +793,7 @@ void MainQuit(void)
 	slist_free(hitList);
 	slist_free(notesList);
 	slist_free(unusedList);
+	free_fft();
 	Log(("Main scene quit finished\n"));
 }
 
@@ -1272,6 +1276,7 @@ void MainScene(void)
 	float temp[4] = {.35, 0.0, 0.0, .5};
 	float sintmp;
 	struct row *row;
+	unsigned int x;
 
 	Log(("MainScene\n"));
 
@@ -1314,6 +1319,7 @@ void MainScene(void)
 			(double)curTic+partialTic+POSITIVE_TICKS :
 			(double)wam->numTics);
 
+
 	Log(("B"));
 	DrawNotes();
 	Log(("C"));
@@ -1339,6 +1345,40 @@ void MainScene(void)
 	StopParticles();
 
 	Log(("L"));
+
+	SetOrthoProjection();
+	glDisable(GL_TEXTURE_2D);
+	{
+	double width;
+	double divisor = .0058 * fft.max;
+	int display_width;
+	display_width = DisplayWidth(); /* stupid cast warning! */
+	width = (double)display_width / (double)fft.len;
+	for(x=0;x<fft.len;x++) {
+		int fft_col;
+		double red, green;
+
+		glDisable(GL_TEXTURE_2D);
+		fft_col = (DisplayHeight() * fft.data[x])/divisor;
+		glNormal3f(0.0, 0.0, 1.0);
+		red = (double)fft_col / DisplayHeight();
+		green = 1.0 - red;
+		if(red>1.0)
+			red = 1.0;
+		if(green<0.0)
+			green = 0.0;
+		glBegin(GL_QUADS); {
+			glColor4f(0.0, 1.0, 0.0, 0.5);
+			glVertex3f(x*width, 0, -1.0);
+			glVertex3f((x+1) * width, 0, -1.0);
+			glColor4f(red, green, 0.0, 0.5);
+			glVertex3f((x+1) * width, (double)fft_col, -1.0);
+			glVertex3f(x * width, (double)fft_col, -1.0);
+		} glEnd();
+		glEnable(GL_TEXTURE_2D);
+	}
+	}
+	ResetProjection();
 
 	glBindTexture(GL_TEXTURE_2D, fireball_tex);
 	temp[0] *= 3.0;
