@@ -29,6 +29,7 @@
 #include "cfg.h"
 #include "event.h"
 #include "glfunc.h"
+#include "fft.h"
 #include "joy.h"
 #include "log.h"
 #include "menu.h"
@@ -56,6 +57,8 @@ void Shutdown(void)
 	QuitJoystick();
 	QuitGL();
 	QuitAudio();
+	QuitEvents();
+	QuitFFT();
 	QuitConfig();
 	QuitLog();
 }
