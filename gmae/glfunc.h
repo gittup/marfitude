@@ -3,13 +3,6 @@
 #define FONT_HEIGHT 14
 #define FONT_WIDTH 10
 
-typedef struct {
-	float r;
-	float g;
-	float b;
-	float a;
-	} Color;
-
 SDL_Surface *InitGL();
 void QuitGL(void);
 void SetOrthoProjection();
@@ -22,16 +15,11 @@ void UpdateScreen(); // swap buffers and update fps
 
 int DisplayWidth();
 int DisplayHeight();
-//void InitView(); // initialize myPos and viewPos to default values
-//void SetView(); // updates modelview matrix based on globals myPos and viewPos
-//extern float myPos[3]; // x,y,z of my current position
-//extern float viewPos[3];
 
 // functions between glBegin and glEnd can't call the error function
 
 //#define GLAdoo(...) glAdoo(__VA_ARGS__); GLError(__FILE__, __LINE__, "Adoo");
 #define GLClear(...) glClear(__VA_ARGS__); GLError(__FILE__, __LINE__, "Clear");
-#define GLBegin(...) glBegin(__VA_ARGS__); //GLError(__FILE__, __LINE__, "Begin");
 #define GLEnd(...) glEnd(__VA_ARGS__); GLError(__FILE__, __LINE__, "End");
 #define GLGenTextures(...) glGenTextures(__VA_ARGS__); GLError(__FILE__, __LINE__, "GenTextures");
 #define GLDeleteTextures(...) glDeleteTextures(__VA_ARGS__); GLError(__FILE__, __LINE__, "DeleteTextures");
@@ -41,11 +29,6 @@ int DisplayHeight();
 #define GLMatrixMode(...) glMatrixMode(__VA_ARGS__); GLError(__FILE__, __LINE__, "MatrixMode");
 #define GLPushMatrix(...) glPushMatrix(__VA_ARGS__); GLError(__FILE__, __LINE__, "PushMatrix");
 #define GLPopMatrix(...) glPopMatrix(__VA_ARGS__); GLError(__FILE__, __LINE__, "PopMatrix");
-
-#define GLTexCoord2f(...) glTexCoord2f(__VA_ARGS__);// GLError(__FILE__, __LINE__, "TexCoord2f");
-#define GLVertex2f(...) glVertex2f(__VA_ARGS__);// GLError(__FILE__, __LINE__, "Vertex2f");
-#define GLVertex3f(...) glVertex3f(__VA_ARGS__);// GLError(__FILE__, __LINE__, "Vertex3f");
-#define GLColor3f(...) glColor3f(__VA_ARGS__);
 
 #define GLTexParameteri(...) glTexParameteri(__VA_ARGS__); GLError(__FILE__, __LINE__, "TexParameteri");
 

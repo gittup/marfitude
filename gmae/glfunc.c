@@ -6,11 +6,12 @@
 #include "GL/gl.h"
 #include "GL/glu.h"
 
-#include "glfunc.h"
-#include "fps.h"
 #include "cfg.h"
-#include "textures.h"
+#include "fps.h"
+#include "glfunc.h"
 #include "log.h"
+#include "particles.h"
+#include "textures.h"
 #include "../util/memtest.h"
 #include "../util/sdlfatalerror.h"
 
@@ -50,7 +51,7 @@ int DisplayHeight()
 void GLError(char *file, int line, char *func)
 {
 	int i = glGetError();
-	if(i) Log("OpenGL (gl%s) Error in file %s line %i: %s\n", func, file, line, gluErrorString(i));
+	if(i) ELog("OpenGL (gl%s) Error in file %s line %i: %s\n", func, file, line, gluErrorString(i));
 }
 
 int LoadFont(void)
@@ -59,7 +60,7 @@ int LoadFont(void)
 	fontTex = LoadTexture("Font.png");
 	if(!fontTex)
 	{
-		Log("Error loading Font.png!\n");
+		ELog("Error loading Font.png!\n");
 		return 0;
 	}
 	// i think this makes the newline portable :)
@@ -201,6 +202,18 @@ SDL_Surface *InitGL()
 	}
 	fontInited = 1;
 
+	if(!InitTextures())
+	{
+		ELog("ERROR: Couldn't load textures!\n");
+		return NULL;
+	}
+
+	if(!InitParticles())
+	{
+		ELog("ERROR: Couldn't load particles!\n");
+		return NULL;
+	}
+
 	return screen;
 }
 
@@ -209,6 +222,8 @@ void QuitGL()
 	if(!sdlInited) return;
 	SDL_Quit();
 	if(!fontInited) return;
+	QuitParticles();
+	QuitTextures();
 	free(pbuf);
 	GLDeleteLists(fontList, numChars);
 	GLDeleteTextures(1, &fontTex);
