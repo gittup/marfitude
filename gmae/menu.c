@@ -774,7 +774,8 @@ int SwitchMenu(int m)
 		return 0;
 	}
 	activeMenu = &(menus[m]);
-	activeMenuItem = FindActiveItem(items, numItems);
+	if(activeMenuItem < numItems && items[activeMenuItem].type >= SELECTABLE)
+		activeMenuItem = FindActiveItem(items, numItems);
 	Log("Menu switched\n");
 	return 1;
 }
