@@ -16,6 +16,14 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/** @file util/strfunc.h
+  * @brief Some simple string functions.
+  *
+  * This file adds some string manipulation functions to the utility
+  * library.
+  */
+
 int IntLen(int x);
 int StrEq(const char *a, const char *b);
 char *CatStr(const char *a, const char *b);
+char *StringCopy(const char *s);
