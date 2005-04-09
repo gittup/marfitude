@@ -21,5 +21,5 @@
  * Provides access to the quit global
  */
 
-/** Set to 1 and the program will exit */
-extern int quit;
+/** Causes the main game loop to exit on the next iteration */
+void gmae_quit(void);
