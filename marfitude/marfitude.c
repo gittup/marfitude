@@ -88,8 +88,8 @@ struct attackCol {
 };
 
 static void ResetAp(void);
-static void ChannelUp(void);
-static void ChannelDown(void);
+static void ChannelUp(int);
+static void ChannelDown(int);
 static struct column *ColumnFromNum(int col);
 static void Setmute(struct column *c, int mute);
 static void UpdateModule(void);
@@ -153,10 +153,10 @@ void button_handler(const void *data)
 
 	switch(b->button) {
 		case B_RIGHT:
-			ChannelUp();
+			ChannelUp(b->shift);
 			break;
 		case B_LEFT:
-			ChannelDown();
+			ChannelDown(b->shift);
 			break;
 		case B_BUTTON1:
 			lastkeypressed = 1;
@@ -200,7 +200,7 @@ void Load(void)
 	AddPlugin("laser");
 	AddPlugin("targets");
 	AddPlugin("lines");
-	AddPlugin("fft-curtain");
+/*	AddPlugin("fft-curtain");*/
 	AddPlugin("fireball");
 	AddPlugin("scoreboard");
 }
@@ -472,20 +472,26 @@ void MainScene(void)
 	Log(("endMainScene\n"));
 }
 
-void ChannelUp(void)
+void ChannelUp(int shift)
 {
 	if(channelFocus + 1 < wam->numCols) {
-		channelFocus++;
+		if(shift)
+			channelFocus = wam->numCols - 1;
+		else
+			channelFocus++;
 		if(ap.notesHit > 0) multiplier = 1;
 		ResetAp();
 		ac[channelFocus].hit = ap.startTic - 1;
 	}
 }
 
-void ChannelDown(void)
+void ChannelDown(int shift)
 {
 	if(channelFocus != 0) {
-		channelFocus--;
+		if(shift)
+			channelFocus = 0;
+		else
+			channelFocus--;
 		if(ap.notesHit > 0) multiplier = 1;
 		ResetAp();
 		ac[channelFocus].hit = ap.startTic - 1;
