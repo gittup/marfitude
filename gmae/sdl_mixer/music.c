@@ -55,10 +55,10 @@
 #  if defined(LIBMIKMOD_VERSION)                /* libmikmod 3.1.8 */
 #    define UNIMOD			MODULE
 #    define MikMod_Init()		MikMod_Init(NULL)
-#    define MikMod_LoadSong(a,b)	Player_Load(a,b,0)
+#    define MikMod_LoadSong(a,b)	Player_Load(a,b,1)
 #    ifdef USE_RWOPS
 #      ifndef LIBMIKMOD_MUSIC
-#      define MikMod_LoadSongRW(a,b)	Player_LoadRW(a,b,0)
+#      define MikMod_LoadSongRW(a,b)	Player_LoadRW(a,b,1)
 #    endif
 #    endif
 #    define MikMod_FreeSong		Player_Free
@@ -1299,7 +1299,7 @@ MODULE *MikMod_LoadSongRW(SDL_RWops *rw, int maxchan)
 	SDL_RWseek(rw,0,SEEK_END);
 	lmmmr.eof=SDL_RWtell(rw);
 	SDL_RWseek(rw,lmmmr.offset,SEEK_SET);
-	m=Player_LoadGeneric((MREADER*)&lmmmr,maxchan,0);
+	m=Player_LoadGeneric((MREADER*)&lmmmr,maxchan,1);
 	return m;
 }
 # endif
