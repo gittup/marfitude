@@ -22,6 +22,7 @@
 #include <math.h>
 #include <ctype.h> /* for isprint */
 #include <getopt.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "main.h"
@@ -45,7 +46,12 @@
 
 static void Shutdown(void);
 
-int quit = 0;
+static int quit = 0;
+
+void gmae_quit(void)
+{
+	quit = 1;
+}
 
 void Shutdown(void)
 {
@@ -180,6 +186,7 @@ int main(int argc, char **argv)
 
 	clear_input();
 
+	srand(time(NULL));
 	while(!quit)
 	{
 		Log(("input loop\n"));
