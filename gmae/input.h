@@ -30,7 +30,7 @@
 enum buttonType {
 	B_UP = 0, B_DOWN, B_LEFT, B_RIGHT,
 	B_BUTTON1, B_BUTTON2, B_BUTTON3, B_BUTTON4,
-	B_SELECT, B_MENU,
+	B_SELECT, B_SHIFT, B_MENU,
 	B_LAST
 };
 
@@ -38,6 +38,7 @@ enum buttonType {
  */
 struct button_e {
 	enum buttonType button; /**< The button that caused the event */
+	int shift;              /**< 1 if shift is held down, 0 if not */
 };
 
 /** A joystick / keyboard wrapper struct.

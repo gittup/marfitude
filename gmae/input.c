@@ -69,7 +69,9 @@ static const char *cfgMsg[B_LAST] = {	"buttons.up",
 					"buttons.button3",
 					"buttons.button4",
 					"buttons.select",
+					"buttons.shift",
 					"buttons.menu"};
+static int shift = 0;
 
 /** Clear out the SDL_Event queue */
 void clear_input(void)
@@ -96,7 +98,8 @@ void input_loop(void)
 				key_down_event(&event.key);
 				break;
 			case SDL_KEYUP:
-/*				printf("Key up\n"); */
+				if(key_equal(&buttons[B_SHIFT], &event.key))
+					shift = 0;
 				break;
 			case SDL_JOYAXISMOTION:
 				joy_axis_event(&event.jaxis);
@@ -119,11 +122,20 @@ void input_loop(void)
 				if(JoyIgnoreButton(event.jbutton.which, event.jbutton.button)) break;
 				joy_button_down_event(&event.jbutton);
 				break;
+			case SDL_JOYBUTTONUP:
+				if(JoyIgnoreButton(event.jbutton.which, event.jbutton.button)) break;
+				if(joy_button_equal(&buttons[B_SHIFT], &event.jbutton))
+					shift = 0;
+				break;
 			case SDL_MOUSEBUTTONDOWN:
 				mouse_button_event(&event.button);
 				break;
+			case SDL_MOUSEBUTTONUP:
+				if(mouse_button_equal(&buttons[B_SHIFT], &event.button))
+					shift = 0;
+				break;
 			case SDL_QUIT:
-				quit = 1;
+				gmae_quit();
 			default:
 				break;
 		}
@@ -215,6 +227,7 @@ void button_event(int button)
 {
 	struct button_e b;
 	b.button = button;
+	b.shift = shift;
 	FireEvent("button", &b);
 }
 
@@ -311,10 +324,11 @@ void key_down_event(SDL_KeyboardEvent *e)
 	}
 	else if(cur_mode == MENU)
 	{
-		if(	e->keysym.sym == SDLK_ESCAPE ||
+		if(key_equal(&buttons[B_SHIFT], e))
+			shift = 1;
+		else if(	e->keysym.sym == SDLK_ESCAPE ||
 				key_equal(&buttons[B_MENU], e))
 			button_event(B_MENU);
-
 		else if(	e->keysym.sym == SDLK_UP ||
 				key_equal(&buttons[B_UP], e))
 			button_event(B_UP);
@@ -336,7 +350,7 @@ void key_down_event(SDL_KeyboardEvent *e)
 				key_equal(&buttons[B_BUTTON2], e) ||
 				key_equal(&buttons[B_BUTTON3], e) ||
 				key_equal(&buttons[B_BUTTON4], e))
-			FireEvent("enter", NULL);
+			FireEvent("enter", &shift);
 		else if (	e->keysym.sym == SDLK_TAB ||
 				key_equal(&buttons[B_SELECT], e)
 			)
@@ -373,10 +387,12 @@ void mouse_button_event(SDL_MouseButtonEvent *e)
 	}
 	else if(cur_mode == MENU)
 	{
-		if(mouse_button_equal(&buttons[B_MENU], e))
+		if(mouse_button_equal(&buttons[B_SHIFT], e))
+			shift = 1;
+		else if(mouse_button_equal(&buttons[B_MENU], e))
 			button_event(B_MENU);
 		else
-			FireEvent("enter", NULL);
+			FireEvent("enter", &shift);
 	}
 	else if(cur_mode == GAME)
 	{
@@ -400,19 +416,24 @@ void joy_button_down_event(SDL_JoyButtonEvent *e)
 	}
 	else if(cur_mode == MENU)
 	{
-		/* all buttons activate in menu mode except MENU/SELECT */
-		if(joy_button_equal(&buttons[B_MENU], e))
+		/* all buttons activate in menu mode except MENU/SELECT/SHIFT */
+		if(joy_button_equal(&buttons[B_SHIFT], e))
+			shift = 1;
+		else if(joy_button_equal(&buttons[B_MENU], e))
 			button_event(B_MENU);
-		if(joy_button_equal(&buttons[B_SELECT], e))
+		else if(joy_button_equal(&buttons[B_SELECT], e))
 			button_event(B_SELECT);
 		else
-			FireEvent("enter", NULL);
+			FireEvent("enter", &shift);
 	}
 	else if(cur_mode == GAME)
 	{
-		for(x=B_UP;x<B_LAST;x++)
-			if(joy_button_equal(&buttons[x], e))
-				button_event(x);
+		if(joy_button_equal(&buttons[B_SHIFT], e))
+			shift = 1;
+		else
+			for(x=B_UP;x<B_LAST;x++)
+				if(joy_button_equal(&buttons[x], e))
+					button_event(x);
 	}
 }
 

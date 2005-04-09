@@ -38,6 +38,7 @@
 #include "util/memtest.h"
 #include "util/fatalerror.h"
 #include "util/flist.h"
+#include "util/myrand.h"
 #include "util/slist.h"
 #include "util/strfunc.h"
 
@@ -88,7 +89,7 @@ struct boolean {
 
 /** A button menu object */
 struct button {
-	void (*activeFunc)(void); /**< The function to execute when activated */
+	void (*activeFunc)(int); /**< The function to execute when activated */
 };
 
 /** A button menu object that takes a parameter */
@@ -139,15 +140,15 @@ static void ClearMenuItems(struct screenMenu *m);
 static void UpdateBox(struct screenMenu *m, int x1, int y1, int x2, int y2);
 /*static struct slider *CreateSlider(const char *name, int min, int max, int delta, int initVal);
 static struct boolean *CreateBoolean(const char *name, const char *trueString, const char *falseString, int initVal);*/
-static struct button *CreateButton(struct screenMenu *m, const char *name, void (*activeFunc)(void));
+static struct button *CreateButton(struct screenMenu *m, const char *name, void (*activeFunc)(int));
 static struct buttonParam *CreateButtonParam(struct screenMenu *m, const char *name, int (*activeFunc)(int), int param);
 static struct text *CreateText(struct screenMenu *m, const char *name, float *c, int x, int y);
 static int MenuClamp(struct screenMenu *m);
 static int MenuWrap(struct screenMenu *m);
 static int DownOne(struct screenMenu *m);
-static void MenuDown(void);
 static int UpOne(struct screenMenu *m);
-static void MenuUp(void);
+static void MenuUp(int);
+static void MenuDown(int);
 static void MenuDec(void);
 static void MenuInc(void);
 static void MenuActivate(const void *);
@@ -158,7 +159,7 @@ static int FightMenuInit(void);
 static void FightMenuQuit(void);
 static void EQTriangle(void);
 static void FightMenu(void);
-static void MenuBack(void);
+static void MenuBack(int);
 static void RegisterMenuEvents(void);
 static void ShowMenu(const void *);
 static void HideMenu(void);
@@ -168,11 +169,11 @@ static void NullMenu(void);
 static int NoMenuInit(void);
 static void NoMenuQuit(void);
 static void NoMenu(void);
-static void Retry(void);
+static void Retry(int);
 static int MainMenuInit(void);
 static void MainMenuQuit(void);
 static void MainMenu(void);
-static void FightActivate(void);
+static void FightActivate(int);
 static void FightPageUp(const void *);
 static void FightPageDown(const void *);
 static void FightHome(const void *);
@@ -185,7 +186,7 @@ static int ConfigButton(int b);
 static int ConfigMenuInit(void);
 static void ConfigMenuQuit(void);
 static void ConfigMenu(void);
-static void Quit(void);
+static void Quit(int);
 static int QuitMenuInit(void);
 static void QuitMenuQuit(void);
 static void QuitMenu(void);
@@ -208,10 +209,10 @@ void button_handler(const void *data)
 	const struct button_e *b = data;
 	switch(b->button) {
 		case B_UP:
-			MenuUp();
+			MenuUp(b->shift);
 			break;
 		case B_DOWN:
-			MenuDown();
+			MenuDown(b->shift);
 			break;
 		case B_LEFT:
 			MenuDec();
@@ -220,7 +221,7 @@ void button_handler(const void *data)
 			MenuInc();
 			break;
 		case B_MENU:
-			MenuBack();
+			MenuBack(0);
 			break;
 		case B_SELECT:
 			MenuSelect();
@@ -442,7 +443,7 @@ struct boolean *CreateBoolean(const char *name, const char *trueString, const ch
 	return b;
 }*/
 
-struct button *CreateButton(struct screenMenu *m, const char *name, void (*activeFunc)(void))
+struct button *CreateButton(struct screenMenu *m, const char *name, void (*activeFunc)(int))
 {
 	struct button *b;
 	b = malloc(sizeof(struct button));
@@ -513,17 +514,19 @@ int DownOne(struct screenMenu *m)
 	else return 1;
 }
 
-void MenuDown(void)
+void MenuDown(int shift)
 {
 	struct screenMenu *m = &screenMenus[curMenu];
 	int old = m->activeMenuItem;
 	int play = 0;
+	int num = (shift && m->BoundsCheck == MenuClamp) ? m->menuSize : 1;
 
 	do {
 		if(DownOne(m)) {
 			if(m->items[m->activeMenuItem].type < MENU_SELECTABLE) {
-				play = 1;
-				break;
+				play++;
+				if(play == num)
+					break;
 			}
 		}
 		else break;
@@ -542,17 +545,19 @@ int UpOne(struct screenMenu *m)
 	else return 1;
 }
 
-void MenuUp(void)
+void MenuUp(int shift)
 {
 	struct screenMenu *m = &screenMenus[curMenu];
 	int old = m->activeMenuItem;
 	int play = 0;
+	int num = (shift && m->BoundsCheck == MenuClamp) ? m->menuSize : 1;
 
 	do {
 		if(UpOne(m)) {
 			if(m->items[m->activeMenuItem].type < MENU_SELECTABLE) {
-				play = 1;
-				break;
+				play++;
+				if(play == num)
+					break;
 			}
 		}
 		else break;
@@ -574,14 +579,13 @@ void MenuActivate(const void *data)
 {
 	struct buttonParam *bp;
 	struct screenMenu *m = &screenMenus[curMenu];
-
-	if(data) {}
+	int shift = *(const int*)data;
 
 	MPlaySound(snd_push);
 	switch(m->items[m->activeMenuItem].type)
 	{
 		case MENU_BUTTON:
-			((struct button*)m->items[m->activeMenuItem].item)->activeFunc();
+			((struct button*)m->items[m->activeMenuItem].item)->activeFunc(shift);
 			break;
 		case MENU_BUTTONPARAM:
 			bp = (struct buttonParam*)m->items[m->activeMenuItem].item;
@@ -600,8 +604,9 @@ void MenuSelect(void)
 		MPlaySound(snd_tick);
 }
 
-void MenuBack(void)
+void MenuBack(int shift)
 {
+	if(shift) {}
 	MPlaySound(snd_back);
 	SwitchMenu(activeMenu->back);
 }
@@ -671,8 +676,9 @@ void NoMenu(void)
 {
 }
 
-void Retry(void)
+void Retry(int shift)
 {
+	if(shift) {}
 	SwitchMenu(NOMENU);
 	Log(("Retry SwitchScene\n"));
 	SwitchScene(MAINSCENE);
@@ -722,16 +728,21 @@ static struct slist *fileList;
 static struct slist *sceneList;
 static struct screenMenu *fightSceneSelect = &screenMenus[1];
 
-void FightActivate(void)
+void FightActivate(int shift)
 {
-	char *m = cat_str(MUSICDIR, (char*)slist_nth(fileList, mainMenu->activeMenuItem)->data);
-	char *s = cat_str(SCENEDIR, (char*)slist_nth(sceneList, fightSceneSelect->activeMenuItem)->data);
+	char *song = cat_str(MUSICDIR, (char*)slist_nth(fileList, mainMenu->activeMenuItem)->data);
+	char *scene = cat_str(SCENEDIR, (char*)slist_nth(sceneList, fightSceneSelect->activeMenuItem)->data);
 
+	if(shift) {
+		struct screenMenu *m = &screenMenus[curMenu];
+		m->activeMenuItem = rand_int(m->numItems);
+		return;
+	}
 	printf("Activating %i, %i\n", mainMenu->activeMenuItem, fightSceneSelect->activeMenuItem);
-	CfgSetS("main.song", m);
-	CfgSetS("main.scene", s);
-	free(m);
-	free(s);
+	CfgSetS("main.song", song);
+	CfgSetS("main.scene", scene);
+	free(song);
+	free(scene);
 	SwitchMenu(NOMENU);
 	Log(("FightActivate SwitchScene\n"));
 	SwitchScene(MAINSCENE);
@@ -940,7 +951,7 @@ void FightMenu(void)
 }
 
 static int configuring = -1;
-static const char *cfglabels[] = {"Up", "Down", "Left", "Right", "Laser 1", "Laser 2", "Laser 3", "Repeat", "Select", "Menu"};
+static const char *cfglabels[] = {"Up", "Down", "Left", "Right", "Laser 1", "Laser 2", "Laser 3", "Repeat", "Select", "Shift", "Menu"};
 static struct text *newKeyText;
 
 void ConfigCreateItems(void)
@@ -1010,9 +1021,10 @@ void ConfigMenu(void)
 	DrawMenu(mainMenu);
 }
 
-void Quit(void)
+void Quit(int shift)
 {
-	quit = 1; /* causes main loop to exit */
+	if(shift) {}
+	gmae_quit();
 }
 
 int QuitMenuInit(void)
