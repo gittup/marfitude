@@ -9,7 +9,6 @@
 #include "gmae/wam.h"
 
 /* tmp */
-extern struct wam *wam;
 extern int curTic;
 extern double partialTic;
 extern int channelFocus;
@@ -23,11 +22,15 @@ void __attribute__ ((destructor)) fireball_exit(void);
 static void fireball_draw(const void *);
 
 static int fireball_tex;
-float fireball[4] = {0.0, 0.5, 0.0, 1.0};
+float fireball[4];
 
 void fireball_init(void)
 {
 	fireball_tex = TextureNum("Fireball.png");
+	fireball[0] = 0.0;
+	fireball[1] = 0.5;
+	fireball[2] = 0.0;
+	fireball[3] = 1.0;
 
 	RegisterEvent("draw transparent", fireball_draw, EVENTTYPE_MULTI);
 }
