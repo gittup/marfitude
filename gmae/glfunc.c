@@ -23,6 +23,7 @@
 
 #include "SDL.h"
 #include "SDL_opengl.h"
+#include "SDL_image.h"
 
 #include "glfunc.h"
 #include "cfg.h"
@@ -43,6 +44,7 @@ extern int vsnprintf(char *buf, size_t size, const char *fmt, va_list args);
 #endif
 
 static int LoadFont(void);
+static void set_icon(void);
 
 /** number of fonts stored in the Font.png file (assumed 16 characters wide) */
 #define FONT_SIZE 96
@@ -150,6 +152,17 @@ int LoadFont(void)
 	return 1;
 }
 
+void set_icon(void)
+{
+	SDL_Surface *icon;
+
+	icon = IMG_Load("icon.png");
+	if(icon) {
+		SDL_WM_SetIcon(icon, NULL);
+		SDL_FreeSurface(icon);
+	}
+}
+
 /** Loads the font, and sets up the OpenGL parameters to some nice defaults */
 int InitGL(void)
 {
@@ -241,6 +254,7 @@ int InitGL(void)
 	{
 		return 3;
 	}
+	set_icon();
 	fontInited = 1;
 
 	pbufsize = 128;
