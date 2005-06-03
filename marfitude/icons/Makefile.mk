@@ -1,0 +1,3 @@
+INSTALL_DIR = $(DATADIR)
+INSTALL_LIST = icon.png
+EXEC = data
