@@ -32,5 +32,5 @@ int CfgIp(const char *header, const char *option);
 int CfgI(const char *key);
 /*float CfgF(const char *key);*/
 int CfgEq(const char *key, const char *string);
-int InitConfig(void);
-void QuitConfig(void);
+int init_config(void);
+void quit_config(void);

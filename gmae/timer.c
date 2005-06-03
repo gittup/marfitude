@@ -30,14 +30,14 @@ Uint32 ticDiff;	 /**< number of ticks between frames */
 double timeDiff; /**< time (seconds) between frames */
 
 /** Starts the timer */
-void InitTimer(void)
+void init_timer(void)
 {
 	curTime = SDL_GetTicks();
 	timeDiff = 0;
 }
 
 /** Update the timer. This should be called each frame */
-void UpdateTimer(void)
+void update_timer(void)
 {
 	Uint32 tmp;
 	tmp = SDL_GetTicks();

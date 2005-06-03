@@ -23,8 +23,8 @@
  */
 
 /** This sets up the main scene */
-int MainInit(void);
+int main_init(void);
 /** Render a frame of the main scene */
-void MainScene(void);
+void main_scene(void);
 /** Clean up the main scene */
-void MainQuit(void);
+void main_quit(void);

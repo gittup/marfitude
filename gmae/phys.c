@@ -36,7 +36,7 @@ static struct slist *objs = NULL;
  * 1.0
  * @return A pointer to an object structure
  */
-struct obj *NewObj(void)
+struct obj *new_obj(void)
 {
 	struct obj *o;
 	o = (struct obj*)calloc(1, sizeof(struct obj));
@@ -49,7 +49,7 @@ struct obj *NewObj(void)
 /** Deletes the object structure @a o
  * @param o The object to delete
  */
-void DeleteObj(struct obj *o)
+void delete_obj(struct obj *o)
 {
 	free(o);
 	objs = slist_remove(objs, (void *)o);
@@ -59,7 +59,7 @@ void DeleteObj(struct obj *o)
  * parameters.
  * @param dt The time that has elapsed, in seconds
  */
-void UpdateObjs(double dt)
+void update_objs(double dt)
 {
 	struct slist *t;
 
@@ -87,7 +87,7 @@ void UpdateObjs(double dt)
 /** Check to see how many objects exist. Call at the end to see if some objects
  * have not been accounted for.
  */
-void CheckObjs(void)
+void check_objs(void)
 {
 	if(slist_length(objs))
 	{

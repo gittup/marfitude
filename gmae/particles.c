@@ -119,7 +119,7 @@ void Gen2TQuad(GLuint tex1, GLuint tex2)
 }
 
 /** Allocates all memory for the particle engine */
-int InitParticles(void)
+int init_particles(void)
 {
 	int x;
 	int numpTypes;
@@ -140,8 +140,8 @@ int InitParticles(void)
 		/* these are defined at runtime, so we set the true texture
 		 * values now
 		 */
-		t1 = TextureNum(pt->tex1);
-		t2 = TextureNum(pt->tex2);
+		t1 = texture_num(pt->tex1);
+		t2 = texture_num(pt->tex2);
 
 		glNewList(plist+x, GL_COMPILE);
 		switch(pt->type)
@@ -169,7 +169,7 @@ int InitParticles(void)
 }
 
 /** Frees the particle engine */
-void QuitParticles(void)
+void quit_particles(void)
 {
 	free(particles);
 	glDeleteLists(plist, sizeof(particleTypes) / sizeof(struct particle));
@@ -208,12 +208,12 @@ void DrawParticle(struct particle *p)
 	if(p->life < 0.0)
 	{
 	       	p->active = 0;
-		DeleteObj(p->o);
+		delete_obj(p->o);
 	}
 }
 
 /** Draws all of the active particles */
-void DrawParticles(void)
+void draw_particles(void)
 {
 	int x;
 	Log(("Draw Particles()\n"));
@@ -225,19 +225,19 @@ void DrawParticles(void)
 }
 
 /** Draws all particles that pass the testing function @a p */
-void DrawParticlesTest(PTestFunc p)
+void draw_particles_test(PTestFunc p)
 {
 	int x;
-	Log(("DrawParticlesTest()\n"));
+	Log(("draw_particles_test()\n"));
 	for(x=0;x<numParticles;x++)
 	{
 		if(particles[x].active && p(&particles[x])) DrawParticle(&particles[x]);
 	}
-	Log(("DrawParticlesTest() done\n"));
+	Log(("draw_particles_test() done\n"));
 }
 
 /** Sets up the OpenGL variables to start drawing particles */
-void StartParticles(void)
+void start_particles(void)
 {
 	glDisable(GL_LIGHTING);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
@@ -245,7 +245,7 @@ void StartParticles(void)
 }
 
 /** Un-sets the OpenGL variables that were used to draw particles */
-void StopParticles(void)
+void stop_particles(void)
 {
 	glDepthMask(GL_TRUE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -258,13 +258,13 @@ void StopParticles(void)
  * @param type Which particle to draw
  * @param size How big the particle is (somewhat dependent on the type)
  */
-void CreateParticle(struct obj *o, float col[4], int type, float size)
+void create_particle(struct obj *o, float col[4], int type, float size)
 {
 	struct particle *p;
 	Log(("Create Particle()\n"));
 	if(numParticles <= 0) return;
 	p = &particles[curParticle];
-	if(p->active) DeleteObj(p->o);
+	if(p->active) delete_obj(p->o);
 	p->o = o;
 	p->col[0] = col[0];
 	p->col[1] = col[1];
@@ -280,17 +280,17 @@ void CreateParticle(struct obj *o, float col[4], int type, float size)
 }
 
 /** Deletes all of the objects associated with the particles */
-void ClearParticles(void)
+void clear_particles(void)
 {
 	int x;
-	Log(("ClearParticles()\n"));
+	Log(("clear_particles()\n"));
 	for(x=0;x<numParticles;x++)
 	{
 		if(particles[x].active)
 		{
 			particles[x].active = 0;
-			DeleteObj(particles[x].o);
+			delete_obj(particles[x].o);
 		}
 	}
-	Log(("ClearParticles done\n"));
+	Log(("clear_particles done\n"));
 }

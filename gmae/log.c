@@ -31,7 +31,7 @@ static FILE *logFile = NULL;
  * @param file The file that generated the log message
  * @param line The line number in the file
  */
-void LogFile(const char *file, int line)
+void log_file(const char *file, int line)
 {
 	if(logFile)
 		fprintf(logFile, "%s line %i ", file, line);
@@ -41,7 +41,7 @@ void LogFile(const char *file, int line)
  * writes the log message.
  * @param s The log message
  */
-void LogMsg(const char *s, ...)
+void log_msg(const char *s, ...)
 {
 	va_list ap;
 	if(logFile) {
@@ -56,16 +56,16 @@ void LogMsg(const char *s, ...)
  * @param file The file that generated the log message
  * @param line The line number in the file
  */
-void ELogFile(const char *file, int line)
+void elog_file(const char *file, int line)
 {
-	LogFile(file, line);
+	log_file(file, line);
 	fprintf(stderr, "%s line %i: ", file, line);
 }
 
 /** The internal error log function, called by the ELog macro.
  * @param s The log message
  */
-void ELogMsg(const char *s, ...)
+void elog_msg(const char *s, ...)
 {
 	va_list ap;
 	va_start(ap, s);
@@ -76,7 +76,7 @@ void ELogMsg(const char *s, ...)
 /** Opens the log file if logging has been requested on the command line.
  * @return 0 on success, 1 if the log could not be opened
  */
-int InitLog(void)
+int init_log(void)
 {
 	if(logging) {
 		logFile = fopen("log.txt", "w");
@@ -88,7 +88,7 @@ int InitLog(void)
 
 /** Closes the log file. Also checks for memory usage if CONFIG_MEMTEST
  * has been enabled. */
-void QuitLog(void)
+void quit_log(void)
 {
 	if(logging) {
 		if(logFile) fclose(logFile);

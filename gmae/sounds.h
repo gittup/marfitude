@@ -22,6 +22,6 @@
  */
 
 void MPlaySound(int snd);
-int SoundNum(const char *name);
-int InitSounds(void);
-void QuitSounds(void);
+int sound_num(const char *name);
+int init_sounds(void);
+void quit_sounds(void);

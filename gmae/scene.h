@@ -28,9 +28,9 @@ struct scene {
 	void (*Render)(void);    /**< Pointer to the runtime function */
 };
 
-const struct scene *ActiveScene(void);
-int SwitchScene(int scene);
-int IsSceneActive(int scene); /* is this scene active */
+const struct scene *active_scene(void);
+int switch_scene(int scene);
+int is_scene_active(int scene); /* is this scene active */
 
 /** An empty scene */
 #define NULLSCENE 0

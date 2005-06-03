@@ -32,7 +32,7 @@ static Uint32 fpsticks, frames;
 static float fps;
 
 /** Initializes some FPS variables needed to calculate the frames per second */
-void InitFPS(void)
+void init_fps(void)
 {
 	frames = 0;
 	fpsticks = 0;
@@ -40,17 +40,17 @@ void InitFPS(void)
 }
 
 /** Displays the FPS in the top corner of the screen */
-void PrintFPS(void)
+void print_fps(void)
 {
-	SetFontSize(.75);
+	set_font_size(.75);
 	glColor4f(0.0, 1.0, 1.0, 1.0);
-	if(fps < 100.0) PrintGL(DisplayWidth() - 75, 5, "FPS: %2.1f", fps);
-	else PrintGL(DisplayWidth() - 75, 5, "FPS:%3.1f", fps);
-	SetFontSize(1.0);
+	if(fps < 100.0) print_gl(display_width() - 75, 5, "FPS: %2.1f", fps);
+	else print_gl(display_width() - 75, 5, "FPS:%3.1f", fps);
+	set_font_size(1.0);
 }
 
 /** Increments the frame count by one, and recalculates the FPS every second */
-void UpdateFPS(void)
+void update_fps(void)
 {
 	frames++;
 	fpsticks += ticDiff;

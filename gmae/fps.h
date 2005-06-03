@@ -21,6 +21,6 @@
  * Provides the FPS API
  */
 
-void InitFPS(void);
-void PrintFPS(void);
-void UpdateFPS(void);
+void init_fps(void);
+void print_fps(void);
+void update_fps(void);

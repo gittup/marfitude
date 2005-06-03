@@ -66,13 +66,13 @@ struct particleType {
 /** A function pointer to test a particle for drawing */
 typedef int (*PTestFunc)(struct particle *);
 
-int InitParticles(void);
-void QuitParticles(void);
-void DrawParticles(void);
-void DrawParticlesTest(PTestFunc p);
-void StartParticles(void);
-void StopParticles(void);
-void CreateParticle(struct obj *o, float col[4], int type, float size);
-void ClearParticles(void);
+int init_particles(void);
+void quit_particles(void);
+void draw_particles(void);
+void draw_particles_test(PTestFunc p);
+void start_particles(void);
+void stop_particles(void);
+void create_particle(struct obj *o, float col[4], int type, float size);
+void clear_particles(void);
 
 extern GLuint plist;

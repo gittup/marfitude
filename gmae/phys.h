@@ -50,7 +50,7 @@ struct obj {
 	float mass;         /**< object's mass */
 };
 
-struct obj *NewObj(void);
-void DeleteObj(struct obj *o);
-void UpdateObjs(double dt);
-void CheckObjs(void);
+struct obj *new_obj(void);
+void delete_obj(struct obj *o);
+void update_objs(double dt);
+void check_objs(void);

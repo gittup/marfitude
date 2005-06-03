@@ -36,4 +36,4 @@ struct fft_data {
 extern const struct fft_data *fft;
 void init_fft(void);
 void free_fft(void);
-void QuitFFT(void);
+void quit_fft(void);

@@ -37,10 +37,10 @@ static void ChkEvent(struct event *e);
 static struct event *events = NULL;
 
 /** Returns the struct event if one exists for @a s, or creates a new
- * struct event and returns that. Can be used with HandleEvent() as a
- * replacement for FireEvent if speed is an issue.
+ * struct event and returns that. Can be used with handle_event() as a
+ * replacement for fire_event if speed is an issue.
  */
-struct event *GetEvent(const char *s)
+struct event *get_event(const char *s)
 {
 	struct event *e;
 	e = FindEvent(s);
@@ -71,22 +71,22 @@ struct event *FindEvent(const char *s)
 }
 
 /** Fires the event named @a event, passing the event-specific @a data */
-void FireEvent(const char *event, const void *data)
+void fire_event(const char *event, const void *data)
 {
 	struct event *e;
 
 	e = FindEvent(event);
 
 	if(e != NULL) {
-		HandleEvent(e, data);
+		handle_event(e, data);
 	}
 }
 
 /** Fires the event structure represented by @a e, passing the event-specific
- * @a data. Can be used with GetEvent() as a replacement for FireEvent()
+ * @a data. Can be used with get_event() as a replacement for fire_event()
  * if speed is a concern.
  */
-void HandleEvent(struct event *e, const void *data)
+void handle_event(struct event *e, const void *data)
 {
 	static int handling = 0;
 	struct event_handler *h;
@@ -114,12 +114,12 @@ void HandleEvent(struct event *e, const void *data)
  * is specified, then this becomes the last event to fire until it is
  * unregistered.
  */
-void RegisterEvent(const char *event, EventHandler handler, int stopHere)
+void register_event(const char *event, event_handler handler, int stopHere)
 {
 	struct event *e;
 	struct event_handler *h;
 
-	e = GetEvent(event);
+	e = get_event(event);
 	h = e->handlers;
 	if(stopHere) {
 		if(h && h->registered)
@@ -139,7 +139,7 @@ void RegisterEvent(const char *event, EventHandler handler, int stopHere)
 }
 
 /** Deregisters the @a handler from the event named @a event. */
-void DeregisterEvent(const char *event, EventHandler handler)
+void deregister_event(const char *event, event_handler handler)
 {
 	struct event *e;
 	struct event_handler *h;
@@ -180,7 +180,7 @@ void ChkEvent(struct event *e)
 /** All the struct events are kept around for the life of the program. This
  * ends that life.
  */
-void QuitEvents(void)
+void quit_events(void)
 {
 	struct event *e = events;
 

@@ -44,7 +44,7 @@
 #include "util/memtest.h"
 #include "util/fatalerror.h"
 
-static void Shutdown(void);
+static void shutdown(void);
 
 static int quit = 0;
 
@@ -53,18 +53,18 @@ void gmae_quit(void)
 	quit = 1;
 }
 
-void Shutdown(void)
+void shutdown(void)
 {
-	SwitchScene(NULLSCENE);
-	SwitchMenu(NULLMENU);
-	QuitSounds();
-	QuitJoystick();
-	QuitGL();
-	QuitAudio();
-	QuitEvents();
-	QuitFFT();
-	QuitConfig();
-	QuitLog();
+	switch_scene(NULLSCENE);
+	switch_menu(NULLMENU);
+	quit_sounds();
+	quit_joystick();
+	quit_gl();
+	quit_audio();
+	quit_events();
+	quit_fft();
+	quit_config();
+	quit_log();
 }
 
 int main(int argc, char **argv)
@@ -106,24 +106,24 @@ int main(int argc, char **argv)
 	/* initialize all the different subsystems, or quit
 	 * if they fail for some reason
 	 */
-	if(InitLog())
+	if(init_log())
 	{
 		printf("Error creating log file!");
-		Shutdown();
+		shutdown();
 		return 1;
 	}
 
-	if(InitConfig())
+	if(init_config())
 	{
 		ELog(("ERROR: Couldn't set configuration options!\n"));
-		Shutdown();
+		shutdown();
 		return 1;
 	}
 
-	if(InitAudio())
+	if(init_audio())
 	{
 		ELog(("ERROR: Couldn't start audio!\n"));
-		Shutdown();
+		shutdown();
 		return 1;
 	}
 
@@ -134,53 +134,53 @@ int main(int argc, char **argv)
 	if(convertSong != NULL)
 	{
 		printf("Generating WAM file for: %s\n", convertSong);
-		WriteWam(convertSong);
-		Shutdown();
+		write_wam(convertSong);
+		shutdown();
 		return 0;
 	}
 
 	/* finish initializing the rest of the subsystems */
-	if(InitGL())
+	if(init_gl())
 	{
 		ELog(("Error initializing SDL/OpenGL!\n"));
-		Shutdown();
+		shutdown();
 		return 1;
 	}
 
-	if(InitSounds())
+	if(init_sounds())
 	{
 		ELog(("ERROR: Couldn't load sounds!\n"));
-		Shutdown();
+		shutdown();
 		return 1;
 	}
 
-	InitJoystick();
+	init_joystick();
 
 	SDL_EnableKeyRepeat(0, 0); /* disable key repeating */
 	SDL_ShowCursor(SDL_DISABLE);
 	if(configure_joykeys())
 	{
-		SwitchScene(NULLSCENE);
-		if(SwitchMenu(CONFIGMENU))
+		switch_scene(NULLSCENE);
+		if(switch_menu(CONFIGMENU))
 		{
 			ELog(("Error switching to the configuration menu.\n"));
-			Shutdown();
+			shutdown();
 			return 1;
 		}
 	}
 	else
 	{
-		SwitchScene(INTROSCENE);
-		if(SwitchMenu(NOMENU))
+		switch_scene(INTROSCENE);
+		if(switch_menu(NOMENU))
 		{
 			ELog(("Error enabling the menu.\n"));
-			Shutdown();
+			shutdown();
 			return 1;
 		}
-		if(SwitchScene(MAINSCENE))
+		if(switch_scene(MAINSCENE))
 		{
 			ELog(("Error switching to main scene.\n"));
-			SwitchMenu(MAINMENU);
+			switch_menu(MAINMENU);
 		}
 	}
 
@@ -191,18 +191,18 @@ int main(int argc, char **argv)
 	{
 		Log(("input loop\n"));
 		input_loop();
-		Log(("UpdateTimer\n"));
-		UpdateTimer();
+		Log(("update_timer\n"));
+		update_timer();
 		Log(("Scene Render\n"));
-		ActiveScene()->Render();
+		active_scene()->Render();
 		Log(("Menu Render\n"));
-		ActiveMenu()->Render();
+		active_menu()->Render();
 		Log(("Update Screen\n"));
-		UpdateScreen();
+		update_screen();
 		Log(("Next loop\n"));
 		SDL_Delay(1);
 	}
 	
-	Shutdown();
+	shutdown();
 	return 0;
 }

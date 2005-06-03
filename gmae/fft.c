@@ -88,7 +88,7 @@ void free_fft(void)
  * is to make sure the FFT engine gets pulled into the executable so plugins
  * can use it. This was done instead of doing a whole-archive.
  */
-void QuitFFT(void)
+void quit_fft(void)
 {
 	if(samples) {
 		/* 32 bits = 4294967295 samples before overflow. Sampled at

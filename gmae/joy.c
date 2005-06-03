@@ -45,7 +45,7 @@ static int joyInited = 0;
  * @param button the button (event.jbutton.button)
  * @return 1 if the button is ignored, 0 if not.
  */
-int JoyIgnoreButton(int joy, int button)
+int joy_ignore_button(int joy, int button)
 {
 	joyButtonCfg[17] = joy / 10 + '0';
 	joyButtonCfg[18] = joy % 10 + '0';
@@ -55,7 +55,7 @@ int JoyIgnoreButton(int joy, int button)
 }
 
 /** Opens all of the joysticks from SDL */
-void InitJoystick(void)
+void init_joystick(void)
 {
 	int i;
 	const char *name;
@@ -88,7 +88,7 @@ void InitJoystick(void)
 }
 
 /** Closes all of the SDL joysticks */
-void QuitJoystick(void)
+void quit_joystick(void)
 {
 	int i;
 	if(!joyInited) return;

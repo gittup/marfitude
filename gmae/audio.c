@@ -34,7 +34,7 @@ static int audioInited = 0;
 /** Initializes SDL_Mixer
  * @return 0 on success, 1 on failure
  */
-int InitAudio(void)
+int init_audio(void)
 {
 	int stereo;
 	Uint16 flags;
@@ -62,7 +62,7 @@ int InitAudio(void)
 }
 
 /** Quits SDL_Mixer if the audio has been initialized. */
-void QuitAudio(void)
+void quit_audio(void)
 {
 	if(!audioInited) return;
 	Mix_CloseAudio();

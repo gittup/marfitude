@@ -42,7 +42,7 @@ static void IntroQuit(void);
 static struct scene scenes[NUMSCENES] = {
 	{NullInit, NullQuit, NullScene},
 	{IntroInit, IntroQuit, IntroScene},
-	{MainInit, MainQuit, MainScene}
+	{main_init, main_quit, main_scene}
 };
 
 static struct scene *activeScene = NULL;
@@ -50,7 +50,7 @@ static struct scene *activeScene = NULL;
 /** Gets a pointer to the active scene.
  * @return the struct scene
  */
-const struct scene *ActiveScene(void)
+const struct scene *active_scene(void)
 {
 	return activeScene;
 }
@@ -59,7 +59,7 @@ const struct scene *ActiveScene(void)
  * @param scene one of NULLSCENE, INTROSCENE, or MAINSCENE
  * @return 0 if the scene could be switched to, 1 if not
  */
-int SwitchScene(int scene)
+int switch_scene(int scene)
 {
 	if(scene < 0 || scene >= NUMSCENES) return 0;
 	Log(("Switching scene: %i\n", scene));
@@ -78,7 +78,7 @@ int SwitchScene(int scene)
  * @param scene one of NULLSCENE, INTROSCENE, MAINSCENE
  * @return 1 if the scene is active, 0 if not
  */
-int IsSceneActive(int scene)
+int is_scene_active(int scene)
 {
 	if(activeScene == &(scenes[scene])) return 1;
 	return 0;

@@ -52,9 +52,9 @@ static struct tex_entry *textures;
 static int texInited = 0;
 static int num_textures = 0;
 
-static int ValidPngFile(const char *s);
+static int valid_png_file(const char *s);
 
-int ValidPngFile(const char *s)
+int valid_png_file(const char *s)
 {
 	int x = 0;
 	while(s[x]) x++;
@@ -71,7 +71,7 @@ int ValidPngFile(const char *s)
  * @return The OpenGL texture number from glGenTextures. You should call
  * glDeleteTextures on it when you're done.
  */
-GLuint LoadTexture(const char *filename)
+GLuint load_texture(const char *filename)
 {
 	int format;
 	GLuint tex;
@@ -110,7 +110,7 @@ GLuint LoadTexture(const char *filename)
  * @param name The filename of the texture
  * @return The OpenGL texture number from glGenTextures
  */
-GLuint TextureNum(const char *name)
+GLuint texture_num(const char *name)
 {
 	int x;
 
@@ -125,7 +125,7 @@ GLuint TextureNum(const char *name)
 }
 
 /** Loads all the textures in the images directory. */
-int InitTextures(void)
+int init_textures(void)
 {
 	int x;
 	int format;
@@ -134,7 +134,7 @@ int InitTextures(void)
 	SDL_Surface *s;
 
 	flist_foreach(&f, TEXDIR) {
-		if(ValidPngFile(f.filename)) {
+		if(valid_png_file(f.filename)) {
 			textures = (struct tex_entry*)realloc(textures, sizeof(struct tex_entry) * (num_textures+1));
 			textures[num_textures].name = malloc(strlen(f.filename) + 1);
 			strcpy(textures[num_textures].name, f.filename);
@@ -183,7 +183,7 @@ int InitTextures(void)
 }
 
 /** Frees all of the automatically loaded textures */
-void QuitTextures(void)
+void quit_textures(void)
 {
 	int x;
 	if(!texInited) return;

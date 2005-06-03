@@ -21,9 +21,9 @@
  * Loads joysticks for use by SDL
  */
 
-int JoyIgnoreButton(int joy, int button);
-void InitJoystick(void);
-void QuitJoystick(void);
+int joy_ignore_button(int joy, int button);
+void init_joystick(void);
+void quit_joystick(void);
 
 /** How far an analog axis can be pushed before it is enabled. Currently,
  * this sucks. Consider analog joysticks borked.

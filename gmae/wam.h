@@ -90,6 +90,6 @@ struct wam {
 	struct row *rowData;        /**< numRows Rows */
 };
 
-void FreeWam(struct wam *wam);
-int WriteWam(const char *modFile);
-struct wam *LoadWam(const char *modFile);
+void free_wam(struct wam *wam);
+int write_wam(const char *modFile);
+struct wam *load_wam(const char *modFile);

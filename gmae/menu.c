@@ -233,7 +233,7 @@ void button_handler(const void *data)
 
 void ShadedBox(int x1, int y1, int x2, int y2)
 {
-	SetOrthoProjection();
+	set_ortho_projection();
 	glColor4f(.3, .3, .3, .5);
 	glDisable(GL_TEXTURE_2D);
 	glBegin(GL_QUADS);
@@ -253,7 +253,7 @@ void ShadedBox(int x1, int y1, int x2, int y2)
 		glVertex2i(x2, y1);
 	} glEnd();
 	glEnable(GL_TEXTURE_2D);
-	ResetProjection();
+	reset_projection();
 }
 
 void EQTriangle(void)
@@ -311,20 +311,20 @@ void DrawPartialMenu(struct screenMenu *m, int start, int stop)
 						glColor3f(0.0, 0.0, 1.0);
 				}
 				else glColor3f(1.0, 1.0, 1.0);
-				PrintGL(m->menuX, m->menuY+(x-start)*FONT_HEIGHT, m->items[x].name);
+				print_gl(m->menuX, m->menuY+(x-start)*FONT_HEIGHT, m->items[x].name);
 				break;
 			case MENU_TEXT:
 				t = (struct text*)m->items[x].item;
 				if(t->active)
 				{
 					glColor4f(t->c[RED], t->c[GREEN], t->c[BLUE], t->c[ALPHA]);
-					PrintGL(t->x, t->y, m->items[x].name);
+					print_gl(t->x, t->y, m->items[x].name);
 				}
 		}
 	}
 
 	glColor3f(1.0, 1.0, 1.0);
-	SetOrthoProjection();
+	set_ortho_projection();
 	if(m->itemStart)
 	{
 		glPushMatrix();
@@ -342,7 +342,7 @@ void DrawPartialMenu(struct screenMenu *m, int start, int stop)
 			EQTriangle();
 		glPopMatrix();
 	}
-	ResetProjection();
+	reset_projection();
 }
 
 void DrawMenu(struct screenMenu *m)
@@ -608,15 +608,15 @@ void MenuBack(int shift)
 {
 	if(shift) {}
 	MPlaySound(snd_back);
-	SwitchMenu(activeMenu->back);
+	switch_menu(activeMenu->back);
 }
 
 void RegisterMenuEvents(void)
 {
 	menuActive = 1;
 	curMenu = 0;
-	RegisterEvent("button", button_handler, EVENTTYPE_STOP);
-	RegisterEvent("enter", MenuActivate, EVENTTYPE_STOP);
+	register_event("button", button_handler, EVENTTYPE_STOP);
+	register_event("enter", MenuActivate, EVENTTYPE_STOP);
 }
 
 void ShowMenu(const void *data)
@@ -630,8 +630,8 @@ void ShowMenu(const void *data)
 	RegisterMenuEvents();
 	MPlaySound(snd_push);
 	m.active = 1;
-	FireEvent("menu", &m);
-	SwitchMenu(MAINMENU);
+	fire_event("menu", &m);
+	switch_menu(MAINMENU);
 }
 
 void HideMenu(void)
@@ -639,10 +639,10 @@ void HideMenu(void)
 	struct menu_e m;
 	if(!menuActive) return;
 	menuActive = 0;
-	DeregisterEvent("enter", MenuActivate);
-	DeregisterEvent("button", button_handler);
+	deregister_event("enter", MenuActivate);
+	deregister_event("button", button_handler);
 	m.active = 0;
-	FireEvent("menu", &m);
+	fire_event("menu", &m);
 }
 
 int NullMenuInit(void)
@@ -663,13 +663,13 @@ int NoMenuInit(void)
 {
 	input_mode(GAME);
 	HideMenu();
-	RegisterEvent("button", ShowMenu, EVENTTYPE_MULTI);
+	register_event("button", ShowMenu, EVENTTYPE_MULTI);
 	return 0;
 }
 
 void NoMenuQuit(void)
 {
-	DeregisterEvent("button", ShowMenu);
+	deregister_event("button", ShowMenu);
 }
 
 void NoMenu(void)
@@ -679,9 +679,9 @@ void NoMenu(void)
 void Retry(int shift)
 {
 	if(shift) {}
-	SwitchMenu(NOMENU);
-	Log(("Retry SwitchScene\n"));
-	SwitchScene(MAINSCENE);
+	switch_menu(NOMENU);
+	Log(("Retry switch_scene\n"));
+	switch_scene(MAINSCENE);
 	Log(("Retry Scene Switched\n"));
 }
 
@@ -691,10 +691,10 @@ int MainMenuInit(void)
 	input_mode(MENU);
 	mainMenu->menuX = 200;
 	mainMenu->menuY = 200;
-	CreateButtonParam(mainMenu, "Fight", SwitchMenu, FIGHTMENU);
-	if(IsSceneActive(MAINSCENE)) CreateButton(mainMenu, "Retry", Retry);
-	CreateButtonParam(mainMenu, "Configure", SwitchMenu, CONFIGMENU);
-	CreateButtonParam(mainMenu, "Quit", SwitchMenu, QUITMENU);
+	CreateButtonParam(mainMenu, "Fight", switch_menu, FIGHTMENU);
+	if(is_scene_active(MAINSCENE)) CreateButton(mainMenu, "Retry", Retry);
+	CreateButtonParam(mainMenu, "Configure", switch_menu, CONFIGMENU);
+	CreateButtonParam(mainMenu, "Quit", switch_menu, QUITMENU);
 	return 0;
 }
 
@@ -705,10 +705,10 @@ void MainMenuQuit(void)
 
 void MainMenu(void)
 {
-	SetOrthoProjection();
+	set_ortho_projection();
 	glLoadIdentity();
 
-	glBindTexture(GL_TEXTURE_2D, TextureNum("Title.png"));
+	glBindTexture(GL_TEXTURE_2D, texture_num("Title.png"));
 	glDisable(GL_LIGHTING);
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_QUADS);
@@ -721,7 +721,7 @@ void MainMenu(void)
 
 	DrawMenu(mainMenu);
 
-	ResetProjection();
+	reset_projection();
 }
 
 static struct slist *fileList;
@@ -743,9 +743,9 @@ void FightActivate(int shift)
 	CfgSetS("main.scene", scene);
 	free(song);
 	free(scene);
-	SwitchMenu(NOMENU);
-	Log(("FightActivate SwitchScene\n"));
-	SwitchScene(MAINSCENE);
+	switch_menu(NOMENU);
+	Log(("FightActivate switch_scene\n"));
+	switch_scene(MAINSCENE);
 	Log(("FightActivate SceneSwitched\n"));
 }
 
@@ -906,10 +906,10 @@ int FightMenuInit(void)
 		cnt++;
 	}
 
-	RegisterEvent("pageup", FightPageUp, EVENTTYPE_STOP);
-	RegisterEvent("pagedown", FightPageDown, EVENTTYPE_STOP);
-	RegisterEvent("home", FightHome, EVENTTYPE_STOP);
-	RegisterEvent("end", FightEnd, EVENTTYPE_STOP);
+	register_event("pageup", FightPageUp, EVENTTYPE_STOP);
+	register_event("pagedown", FightPageDown, EVENTTYPE_STOP);
+	register_event("home", FightHome, EVENTTYPE_STOP);
+	register_event("end", FightEnd, EVENTTYPE_STOP);
 	return 0;
 }
 
@@ -928,10 +928,10 @@ void FightMenuQuit(void)
 	slist_free(sceneList);
 
 	ClearMenuItems(mainMenu);
-	DeregisterEvent("pageup", FightPageUp);
-	DeregisterEvent("pagedown", FightPageDown);
-	DeregisterEvent("home", FightHome);
-	DeregisterEvent("end", FightEnd);
+	deregister_event("pageup", FightPageUp);
+	deregister_event("pagedown", FightPageDown);
+	deregister_event("home", FightHome);
+	deregister_event("end", FightEnd);
 }
 
 void FightMenu(void)
@@ -993,7 +993,7 @@ void ConfigKeyHandler(const void *data)
 int ConfigButton(int b)
 {
 	configuring = b;
-	RegisterEvent("key", ConfigKeyHandler, EVENTTYPE_STOP);
+	register_event("key", ConfigKeyHandler, EVENTTYPE_STOP);
 	newKeyText->active = 1;
 	input_mode(KEY);
 	return 1;
@@ -1016,7 +1016,7 @@ void ConfigMenu(void)
 {
 	if(configuring != -1 && newKeyText->active == 0) {
 		configuring = -1;
-		DeregisterEvent("key", ConfigKeyHandler);
+		deregister_event("key", ConfigKeyHandler);
 	}
 	DrawMenu(mainMenu);
 }
@@ -1075,7 +1075,7 @@ int FindActiveItem(struct menuItem *activeItems, int numActiveItems)
 /** Get the active menu
  * @return the struct menu
  */
-const struct menu *ActiveMenu(void)
+const struct menu *active_menu(void)
 {
 	return activeMenu;
 }
@@ -1084,13 +1084,13 @@ const struct menu *ActiveMenu(void)
  * @param n The menu number to switch to
  * @return 0 if the menu is switched in, 1 if not
  */
-int SwitchMenu(int n)
+int switch_menu(int n)
 {
 	if(n < 0 || n >= NUMMENUS) return 0;
 
-	snd_tick = SoundNum("wepnsel1.wav");
-	snd_push = SoundNum("spnray03.wav");
-	snd_back = SoundNum("spnray02.wav");
+	snd_tick = sound_num("wepnsel1.wav");
+	snd_push = sound_num("spnray03.wav");
+	snd_back = sound_num("spnray02.wav");
 
 	Log(("Switching Menu: %i\n", n));
 	if(activeMenu) activeMenu->QuitMenu();

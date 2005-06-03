@@ -108,22 +108,22 @@ void input_loop(void)
 				{
 					if(event.jaxis.value > JOY_THRESHOLD)
 					{
-						FireEvent(EVENT_DOWN);
+						fire_event(EVENT_DOWN);
 					}
 					if(event.jaxis.value < -JOY_THRESHOLD)
 					{
-						FireEvent(EVENT_UP);
+						fire_event(EVENT_UP);
 					}
 					/* wait for event.jaxis.value to be less than JOY_THRESHOLD before executing menu again */
 				}
 #endif
 				break;
 			case SDL_JOYBUTTONDOWN:
-				if(JoyIgnoreButton(event.jbutton.which, event.jbutton.button)) break;
+				if(joy_ignore_button(event.jbutton.which, event.jbutton.button)) break;
 				joy_button_down_event(&event.jbutton);
 				break;
 			case SDL_JOYBUTTONUP:
-				if(JoyIgnoreButton(event.jbutton.which, event.jbutton.button)) break;
+				if(joy_ignore_button(event.jbutton.which, event.jbutton.button)) break;
 				if(joy_button_equal(&buttons[B_SHIFT], &event.jbutton))
 					shift = 0;
 				break;
@@ -228,7 +228,7 @@ void button_event(int button)
 	struct button_e b;
 	b.button = button;
 	b.shift = shift;
-	FireEvent("button", &b);
+	fire_event("button", &b);
 }
 
 /* finds the beginning of the next . number
@@ -320,7 +320,7 @@ void key_down_event(SDL_KeyboardEvent *e)
 		jk.type = JK_KEYBOARD;
 		jk.button = e->keysym.sym;
 		jk.axis = JK_KEYBOARD;
-		FireEvent("key", &jk);
+		fire_event("key", &jk);
 	}
 	else if(cur_mode == MENU)
 	{
@@ -350,19 +350,19 @@ void key_down_event(SDL_KeyboardEvent *e)
 				key_equal(&buttons[B_BUTTON2], e) ||
 				key_equal(&buttons[B_BUTTON3], e) ||
 				key_equal(&buttons[B_BUTTON4], e))
-			FireEvent("enter", &shift);
+			fire_event("enter", &shift);
 		else if (	e->keysym.sym == SDLK_TAB ||
 				key_equal(&buttons[B_SELECT], e)
 			)
 			button_event(B_SELECT);
 		else if(e->keysym.sym == SDLK_PAGEUP)
-			FireEvent("pageup", NULL);
+			fire_event("pageup", NULL);
 		else if(e->keysym.sym == SDLK_PAGEDOWN)
-			FireEvent("pagedown", NULL);
+			fire_event("pagedown", NULL);
 		else if(e->keysym.sym == SDLK_HOME)
-			FireEvent("home", NULL);
+			fire_event("home", NULL);
 		else if(e->keysym.sym == SDLK_END)
-			FireEvent("end", NULL);
+			fire_event("end", NULL);
 		/* no else cuz all other keys are ignored :) */
 	}
 	else if(cur_mode == GAME)
@@ -383,7 +383,7 @@ void mouse_button_event(SDL_MouseButtonEvent *e)
 		jk.type = JK_MOUSE;
 		jk.button = e->button;
 		jk.axis = JK_BUTTON;
-		FireEvent("key", &jk);
+		fire_event("key", &jk);
 	}
 	else if(cur_mode == MENU)
 	{
@@ -392,7 +392,7 @@ void mouse_button_event(SDL_MouseButtonEvent *e)
 		else if(mouse_button_equal(&buttons[B_MENU], e))
 			button_event(B_MENU);
 		else
-			FireEvent("enter", &shift);
+			fire_event("enter", &shift);
 	}
 	else if(cur_mode == GAME)
 	{
@@ -412,7 +412,7 @@ void joy_button_down_event(SDL_JoyButtonEvent *e)
 		jk.type = e->which;
 		jk.button = e->button;
 		jk.axis = JK_BUTTON;
-		FireEvent("key", &jk);
+		fire_event("key", &jk);
 	}
 	else if(cur_mode == MENU)
 	{
@@ -424,7 +424,7 @@ void joy_button_down_event(SDL_JoyButtonEvent *e)
 		else if(joy_button_equal(&buttons[B_SELECT], e))
 			button_event(B_SELECT);
 		else
-			FireEvent("enter", &shift);
+			fire_event("enter", &shift);
 	}
 	else if(cur_mode == GAME)
 	{
@@ -448,7 +448,7 @@ void joy_axis_event(SDL_JoyAxisEvent *e)
 		jk.type = e->which;
 		jk.button = (e->value>0)?1:-1;
 		jk.axis = e->axis;
-		FireEvent("key", &jk);
+		fire_event("key", &jk);
 	}
 	else if(cur_mode == MENU)
 	{

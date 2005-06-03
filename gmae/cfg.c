@@ -330,13 +330,13 @@ int SaveConfig(const char *filename)
 }
 
 /** Initializes the configuration from a file */
-int InitConfig(void)
+int init_config(void)
 {
 	char *homedir;
 
 	homedir = getenv("HOME");
 	if(homedir != NULL) {
-		/* this is freed in QuitConfig() */
+		/* this is freed in quit_config() */
 		cfgFileName = malloc(sizeof(char) * (strlen(homedir) + 16));
 		strcpy(cfgFileName, homedir);
 		strcat(cfgFileName, "/.marfitude.cfg");
@@ -364,7 +364,7 @@ int InitConfig(void)
 /** Saves the new configuration (if it was changed by the program) and frees
  * all memory used to hold the data.
  */
-void QuitConfig(void)
+void quit_config(void)
 {
 	if(!cfgInited) return;
 

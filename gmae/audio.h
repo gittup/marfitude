@@ -21,5 +21,5 @@
  * Manages starting and stopping the audio.
  */
 
-int InitAudio(void);
-void QuitAudio(void);
+int init_audio(void);
+void quit_audio(void);

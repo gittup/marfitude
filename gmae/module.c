@@ -44,7 +44,7 @@ static Mix_Music *modMusic = NULL;
  * @param modFile Only the coolest files can be modFiles
  * @return 0 on success, else on error
  */
-int StartModule(const char *modFile)
+int start_module(const char *modFile)
 {
 	Log(("Loading module...\n"));
 	modMusic = Mix_LoadMUS(modFile);
@@ -79,7 +79,7 @@ int StartModule(const char *modFile)
 }
 
 /** Stop the currently playing mod, if any */
-void StopModule(void)
+void stop_module(void)
 {
 	if(!modMusic) return;
 	Log(("Freeing Mod music\n"));

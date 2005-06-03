@@ -65,7 +65,7 @@ int ValidWavFile(const char *s)
 }
 
 /** Calls Mix_PlayChannel on the appropriate sound chunk for @a snd.
- * @param snd The sound number retrieved from SoundNum()
+ * @param snd The sound number retrieved from sound_num()
  */
 void MPlaySound(int snd)
 {
@@ -79,7 +79,7 @@ void MPlaySound(int snd)
  * @param name The filename that the sound was loaded from
  * @return The sound index
  */
-int SoundNum(const char *name)
+int sound_num(const char *name)
 {
 	int x;
 	for(x=0;x<num_sounds;x++) {
@@ -91,9 +91,9 @@ int SoundNum(const char *name)
 }
 
 /** Loads all sounds in the "sounds" directory, and assigns them numbers. The
- * sounds can then be retrieved by calling SoundNum() with the file name.
+ * sounds can then be retrieved by calling sound_num() with the file name.
  */
-int InitSounds(void)
+int init_sounds(void)
 {
 	int x;
 	char *t;
@@ -130,7 +130,7 @@ int InitSounds(void)
 }
 
 /** Frees all the information used to manage the sounds */
-void QuitSounds(void)
+void quit_sounds(void)
 {
 	int x;
 	if(!sndInited) return;

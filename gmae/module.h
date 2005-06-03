@@ -25,8 +25,8 @@
 #include "gmae/sdl_mixer/mikmod/mikmod.h"
 #endif
 
-int StartModule(const char *modFile);
-void StopModule(void);
+int start_module(const char *modFile);
+void stop_module(void);
 
 extern MODULE *mod;
 

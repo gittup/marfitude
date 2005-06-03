@@ -27,11 +27,11 @@
 /** All functions that will be registered for events must be of this type.
  * The void * parameter is dependent on the specific event that is registered.
  */
-typedef void (*EventHandler)(const void *);
+typedef void (*event_handler)(const void *);
 
 /** A list of event structures */
 struct event_handler {
-	EventHandler handler;        /**< The function to call on an event */
+	event_handler handler;        /**< The function to call on an event */
 	int stopHere;                /**< Don't call all other handlers */
 	int registered;              /**< 1 if enabled, 0 if not */
 	struct event_handler *next;  /**< Next handler in the list */
@@ -45,12 +45,12 @@ struct event {
 	struct event *next;             /**< Next event in the list */
 };
 
-void FireEvent(const char *event, const void *data);
-void HandleEvent(struct event *e, const void *data);
-struct event *GetEvent(const char *event);
-void RegisterEvent(const char *event, EventHandler handler, int stopHere);
-void DeregisterEvent(const char *event, EventHandler handler);
-void QuitEvents(void);
+void fire_event(const char *event, const void *data);
+void handle_event(struct event *e, const void *data);
+struct event *get_event(const char *event);
+void register_event(const char *event, event_handler handler, int stopHere);
+void deregister_event(const char *event, event_handler handler);
+void quit_events(void);
 
 /** allows already registered events to fire */
 #define EVENTTYPE_MULTI 0

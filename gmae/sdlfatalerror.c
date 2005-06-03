@@ -26,7 +26,7 @@
  */
 
 /** The underlying function called by the SDLError macro */
-void SDLFatalError(const char *file, int line, const char *msg)
+void sdl_fatal_error(const char *file, int line, const char *msg)
 {
 	fprintf(stderr, "SDL error (%s) in %s, line %i: %s\n", msg, file, line, SDL_GetError());
 }

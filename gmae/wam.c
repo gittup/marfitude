@@ -800,7 +800,7 @@ struct wam *CreateWam(const char *modFile)
 {
 	struct wam *wam;
 
-	if(StartModule(modFile))
+	if(start_module(modFile))
 	{
 		ELog(("Error: Couldn't start module.\n"));
 		return NULL;
@@ -828,7 +828,7 @@ void ReadCol(int fno, struct column *col)
  * @param modFile filename of the mod
  * @returns 1 if successful, 0 on failure
  */
-int WriteWam(const char *modFile)
+int write_wam(const char *modFile)
 {
 	struct wam *wam;
 	char *wamFile;
@@ -888,11 +888,11 @@ struct wam *ReadWam(const char *wamFile)
 }
 
 /** Loads the wam related to the @a modFile and returns it.  Must be freed
- * later by FreeWam
+ * later by free_wam
  * @param modFile The filename of the mod
  * @return The wam for the mod file
  */
-struct wam *LoadWam(const char *modFile)
+struct wam *load_wam(const char *modFile)
 {
 	struct wam *wam;
 	char *wamFile;
@@ -924,8 +924,8 @@ struct wam *LoadWam(const char *modFile)
 	return wam;
 }
 
-/** Frees the @a wam from that was created by LoadWam */
-void FreeWam(struct wam *wam)
+/** Frees the @a wam from that was created by load_wam */
+void free_wam(struct wam *wam)
 {
 	int x, y;
 	Log(("Freeing Wam\n"));

@@ -23,5 +23,5 @@
 /** Displays the error returned from SDL_GetError() along with the file and
  * line number.
  */
-#define SDLError(err) SDLFatalError(__FILE__, __LINE__, err);
-void SDLFatalError(const char *, int, const char *);
+#define SDLError(err) sdl_fatal_error(__FILE__, __LINE__, err);
+void sdl_fatal_error(const char *, int, const char *);

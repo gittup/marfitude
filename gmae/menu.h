@@ -29,8 +29,8 @@ struct menu {
 	int back;               /**< Refers to the 'previous' menu */
 };
 
-const struct menu *ActiveMenu(void);
-int SwitchMenu(int menu);
+const struct menu *active_menu(void);
+int switch_menu(int menu);
 
 /** Data for the "menu" event */
 struct menu_e {

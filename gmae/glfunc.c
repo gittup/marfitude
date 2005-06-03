@@ -43,7 +43,7 @@
 extern int vsnprintf(char *buf, size_t size, const char *fmt, va_list args);
 #endif
 
-static int LoadFont(void);
+static int load_font(void);
 static void set_icon(void);
 
 /** number of fonts stored in the Font.png file (assumed 16 characters wide) */
@@ -58,7 +58,7 @@ static unsigned char numChars; /* total number of characters = FONT_SIZE+space-n
 
 static int screenWidth = 0, screenHeight = 0;
 
-static char *pbuf = NULL;    /* buffer used to hold messages for PrintGL - it is
+static char *pbuf = NULL;    /* buffer used to hold messages for print_gl - it is
                               * allocated once and then doubled as necessary
                               * so memory isn't constantly allocated/freed
                               */
@@ -72,19 +72,19 @@ static GLuint fontList;      /* display lists to show individual characters in
 static float fontSize = 1.0; /* scaling factor for the font */
 
 /** Returns the current screen width */
-int DisplayWidth(void)
+int display_width(void)
 {
 	return screenWidth;
 }
 
 /** Returns the current screen height */
-int DisplayHeight(void)
+int display_height(void)
 {
 	return screenHeight;
 }
 
 /** Prints the gluErrorString error along with the file and line number */
-void GLError(char *file, int line, char *func)
+void error_gl(char *file, int line, char *func)
 {
 	int i = glGetError();
 	if(file || line || func) {} /* Get rid of warnings with no logging */
@@ -94,10 +94,10 @@ void GLError(char *file, int line, char *func)
 	}
 }
 
-int LoadFont(void)
+int load_font(void)
 {
 	int x, y;
-	fontTex = LoadTexture("Font.png");
+	fontTex = load_texture("Font.png");
 	if(!fontTex)
 	{
 		ELog(("Error loading Font.png!\n"));
@@ -111,7 +111,7 @@ int LoadFont(void)
 
 	glNewList(fontList, GL_COMPILE); /* newline character */
 	{
-		glPopMatrix(); /* matrix is saved before glCallLists in PrintGL */
+		glPopMatrix(); /* matrix is saved before glCallLists in print_gl */
 		glTranslated(0.0, FONT_HEIGHT, 0.0);
 		glPushMatrix();
 	} glEndList();
@@ -164,7 +164,7 @@ void set_icon(void)
 }
 
 /** Loads the font, and sets up the OpenGL parameters to some nice defaults */
-int InitGL(void)
+int init_gl(void)
 {
 	Uint32 flags = SDL_OPENGL;
 	SDL_Surface *screen;
@@ -216,7 +216,7 @@ int InitGL(void)
 	}
 	Log(("Video mode set: (%i, %i)\n", CfgI("video.width"), CfgI("video.height")));
 	SDL_WM_SetCaption("Gmae", NULL); /* second arg is icon */
-	InitFPS();
+	init_fps();
 	glViewport(0, 0, screenWidth, screenHeight);
 	glEnable(GL_TEXTURE_2D);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -250,23 +250,22 @@ int InitGL(void)
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuseLight);
 	glEnable(GL_LIGHT1);
 
-	if(!LoadFont())
-	{
+	if(!load_font())
 		return 3;
-	}
+
 	set_icon();
 	fontInited = 1;
 
 	pbufsize = 128;
 	pbuf = malloc(sizeof(char) * pbufsize);
 
-	if(InitTextures())
+	if(init_textures())
 	{
 		ELog(("ERROR: Couldn't load textures!\n"));
 		return 4;
 	}
 
-	if(!InitParticles())
+	if(!init_particles())
 	{
 		ELog(("ERROR: Couldn't load particles!\n"));
 		return 5;
@@ -276,11 +275,11 @@ int InitGL(void)
 }
 
 /** Shuts down OpenGL */
-void QuitGL(void)
+void quit_gl(void)
 {
 	if(!sdlInited || !fontInited) return;
-	QuitParticles();
-	QuitTextures();
+	quit_particles();
+	quit_textures();
 	free(pbuf);
 	if(fontInited)
 	{
@@ -294,25 +293,25 @@ void QuitGL(void)
 	}
 }
 
-/** Sets an orthographic projection matrix. Be sure to call ResetProjection()
+/** Sets an orthographic projection matrix. Be sure to call reset_projection()
  * afterward.
  */
-void SetOrthoProjection(void)
+void set_ortho_projection(void)
 {
 	glMatrixMode(GL_PROJECTION);
-	glPushMatrix(); /* popped in ResetProjection() */
+	glPushMatrix(); /* popped in reset_projection() */
 	glLoadIdentity();
 	glOrtho(0, screenWidth, screenHeight, 0, 0, 1);
 	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix(); /* popped in ResetProjection() */
+	glPushMatrix(); /* popped in reset_projection() */
 	glLoadIdentity();
 	glDisable(GL_LIGHTING);
 }
 
 /** Resets the projection and modelview matrix. This balances out the
- * SetOrthoProjection() function.
+ * set_ortho_projection() function.
  */
-void ResetProjection(void)
+void reset_projection(void)
 {
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
@@ -322,16 +321,16 @@ void ResetProjection(void)
 }
 
 /** Swap buffers and update FPS */
-void UpdateScreen(void)
+void update_screen(void)
 {
-	PrintFPS();
+	print_fps();
 	SDL_GL_SwapBuffers();
-	UpdateFPS();
+	update_fps();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 /** Sets the scaling factor for the font display */
-void SetFontSize(float size)
+void set_font_size(float size)
 {
 	fontSize = size;
 }
@@ -342,7 +341,7 @@ void SetFontSize(float size)
  * @param msg The message to print, as in printf. The remaining arguments are
  * the parameters for the message.
  */
-void PrintGL(int x, int y, const char *msg, ...)
+void print_gl(int x, int y, const char *msg, ...)
 {
 	va_list ap;
 	int len;
@@ -367,7 +366,7 @@ void PrintGL(int x, int y, const char *msg, ...)
 	 * also from NeHe tutorial
 	 */
 	glBindTexture(GL_TEXTURE_2D, fontTex);
-	SetOrthoProjection();
+	set_ortho_projection();
 	glPushMatrix();
 	glTranslated((double)x, (double)y, 0);
 	glScalef(fontSize, fontSize, 1.0);
@@ -378,5 +377,5 @@ void PrintGL(int x, int y, const char *msg, ...)
 	glPopMatrix();
 	glPopAttrib();
 	glPopMatrix();
-	ResetProjection();
+	reset_projection();
 }

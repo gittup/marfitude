@@ -23,8 +23,8 @@
 
 #include "SDL.h"
 
-void InitTimer(void);
-void UpdateTimer(void);
+void init_timer(void);
+void update_timer(void);
 
 extern Uint32 curTime;
 extern Uint32 ticDiff;

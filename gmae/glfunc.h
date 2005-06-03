@@ -26,14 +26,14 @@
 /** The width of a font character */
 #define FONT_WIDTH 10
 
-int InitGL(void);
-void QuitGL(void);
-void SetOrthoProjection(void);
-void ResetProjection(void);
-void GLError(char *file, int line, char *func);
-void PrintGL(int x, int y, const char *msg, ...);
-void SetFontSize(float size);
-void UpdateScreen(void);
+int init_gl(void);
+void quit_gl(void);
+void set_ortho_projection(void);
+void reset_projection(void);
+void error_gl(char *file, int line, char *func);
+void print_gl(int x, int y, const char *msg, ...);
+void set_font_size(float size);
+void update_screen(void);
 
-int DisplayWidth(void);
-int DisplayHeight(void);
+int display_width(void);
+int display_height(void);
