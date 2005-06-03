@@ -43,8 +43,8 @@ static float theta = 0.0;
 int curTic; /* tick counter from 0 - total ticks in the song */
 static int firstVb, curVb, lastVb;     /* tick counters for the three rows */
 int firstRow, rowIndex, lastRow;  /* first row on screen, current row
-                                          * playing and the last row on screen
-                                          */
+                                   * playing and the last row on screen
+                                   */
 struct row *curRow;
 double modTime;
 double partialTic;
@@ -245,19 +245,20 @@ void Unload(void)
 	numPlugins = 0;
 }
 
-int MainInit()
+int main_init()
 {
 	int x;
+
 	Log(("Load Wam\n"));
 	cursong = CfgSCpy("main", "song");
 
-	wam = LoadWam(cursong);
+	wam = load_wam(cursong);
 	if(wam == NULL) {
 		ELog(("Error: Couldn't load WAM file\n"));
 		return 1;
 	}
 	Log(("Start module\n"));
-	if(StartModule(cursong)) {
+	if(start_module(cursong)) {
 		ELog(("Error: Couldn't start module\n"));
 		return 2;
 	}
@@ -328,23 +329,23 @@ int MainInit()
 	}
 	for(x=0;x<=lastRow;x++) AddNotes(x);
 
-	for(x=0;x<=lastRow;x++) FireEvent("row", &wam->rowData[x]);
+	for(x=0;x<=lastRow;x++) fire_event("row", &wam->rowData[x]);
 
 	ap.nextStartRow = -1;
 	ResetAp();
-	RegisterEvent("button", button_handler, EVENTTYPE_MULTI);
+	register_event("button", button_handler, EVENTTYPE_MULTI);
 	Log(("Creating lists\n"));
 	rowList = glGenLists(wam->numCols);
 	noteList = glGenLists(1);
 
-	mainTexes[0] = TextureNum("Slate.png");
-	mainTexes[1] = TextureNum("Walnut.png");
-	mainTexes[2] = TextureNum("ElectricBlue.png");
-	mainTexes[3] = TextureNum("Clovers.png");
-	mainTexes[4] = TextureNum("Lava.png");
-	mainTexes[5] = TextureNum("Parque3.png");
-	mainTexes[6] = TextureNum("Slate.png");
-	mainTexes[7] = TextureNum("ElectricBlue.png");
+	mainTexes[0] = texture_num("Slate.png");
+	mainTexes[1] = texture_num("Walnut.png");
+	mainTexes[2] = texture_num("ElectricBlue.png");
+	mainTexes[3] = texture_num("Clovers.png");
+	mainTexes[4] = texture_num("Lava.png");
+	mainTexes[5] = texture_num("Parque3.png");
+	mainTexes[6] = texture_num("Slate.png");
+	mainTexes[7] = texture_num("ElectricBlue.png");
 
 	for(x=0;x<wam->numCols;x++) {
 		glNewList(rowList+x, GL_COMPILE); {
@@ -387,12 +388,12 @@ int MainInit()
 		} glEnd();
 		glPopMatrix();
 	} glEndList();
-	InitTimer();
+	init_timer();
 	Log(("Lists created\n"));
 	return 0;
 }
 
-void MainQuit(void)
+void main_quit(void)
 {
 	Log(("Main Scene quit\n"));
 	if(score > highscore) {
@@ -402,11 +403,11 @@ void MainQuit(void)
 	oldHand = MikMod_RegisterPlayer(oldHand);
 	Log(("A\n"));
 	if(songStarted) {
-		DeregisterEvent("menu", menu_handler);
+		deregister_event("menu", menu_handler);
 	}
 	Log(("A\n"));
 	songStarted = 0;
-	DeregisterEvent("button", button_handler);
+	deregister_event("button", button_handler);
 	Log(("A\n"));
 	Unload();
 	glDeleteLists(rowList, wam->numCols);
@@ -417,22 +418,22 @@ void MainQuit(void)
 	Log(("A\n"));
 	free(noteOffset);
 	Log(("A\n"));
-	ClearParticles();
+	clear_particles();
 	Log(("A\n"));
-	CheckObjs();
+	check_objs();
 	Log(("A\n"));
-	FreeWam(wam);
+	free_wam(wam);
 	Log(("A\n"));
-	StopModule();
+	stop_module();
 	slist_free(hitList);
 	slist_free(notesList);
 	slist_free(unusedList);
 	Log(("Main scene quit finished\n"));
 }
 
-void MainScene(void)
+void main_scene(void)
 {
-	Log(("MainScene\n"));
+	Log(("main_scene\n"));
 
 	glLoadIdentity();
 	glPushMatrix();
@@ -440,7 +441,7 @@ void MainScene(void)
 	Log(("U"));
 	if(rowIndex != wam->numRows) UpdatePosition();
 	Log(("1"));
-	UpdateObjs(timeDiff);
+	update_objs(timeDiff);
 	Log(("u"));
 	SetMainView();
 
@@ -470,25 +471,25 @@ void MainScene(void)
 	DrawNotes();
 	Log(("C"));
 
-	SetOrthoProjection();
-	FireEvent("draw ortho", NULL);
-	ResetProjection();
+	set_ortho_projection();
+	fire_event("draw ortho", NULL);
+	reset_projection();
 
-	FireEvent("draw opaque", NULL);
+	fire_event("draw opaque", NULL);
 
 	glDisable(GL_LIGHTING);
 	glDepthMask(GL_FALSE);
-	FireEvent("draw transparent", NULL);
+	fire_event("draw transparent", NULL);
 	glDepthMask(GL_TRUE);
 	glEnable(GL_LIGHTING);
 
-	StartParticles();
+	start_particles();
 	Log(("F2\n"));
 	DrawHitNotes();
 	Log(("F3\n"));
-	DrawParticles();
+	draw_particles();
 	Log(("g"));
-	StopParticles();
+	stop_particles();
 
 	Log(("L"));
 
@@ -637,7 +638,7 @@ void Press(int button)
 	struct screenNote *sn;
 	struct row *r;
 
-	FireEvent("shoot", &button);
+	fire_event("shoot", &button);
 
 	rowStart = rowIndex;
 	while(rowStart > 0 && curRow->time - wam->rowData[Row(rowStart)].time < TIME_ERROR)
@@ -885,7 +886,7 @@ void UpdateClearedCols(void)
 			ac[x].part -= 1.0;
 			ac[x].minRow++;
 			r++;
-			o = NewObj();
+			o = new_obj();
 			o->pos.x = -x * 2.0;
 			o->pos.z = TIC_HEIGHT * (double)tic;
 			o->vel.x = rand_float() - 0.5;
@@ -894,7 +895,7 @@ void UpdateClearedCols(void)
 			o->rotvel = rand_float() * 720.0 - 360.0;
 			o->acc.y = -3.98;
 			RandomColor(col);
-			CreateParticle(o, col, P_StarBurst, 1.0);
+			create_particle(o, col, P_StarBurst, 1.0);
 		}
 	}
 }
@@ -935,7 +936,7 @@ void UpdatePosition(void)
 			if(rowIndex == 0) { /* start the song! */
 				Player_TogglePause();
 				songStarted = 1;
-				RegisterEvent("menu", menu_handler, EVENTTYPE_MULTI);
+				register_event("menu", menu_handler, EVENTTYPE_MULTI);
 			}
 		}
 		modTime = curRow->time + (curTic - curRow->ticpos) * BpmToSec(curRow->sngspd, curRow->bpm) / curRow->sngspd;
@@ -948,7 +949,7 @@ void UpdatePosition(void)
 			 */
 			RemoveNotes(firstRow);
 			if(firstRow >= 0 && firstRow < wam->numRows)
-				FireEvent("de-row", &wam->rowData[firstRow]);
+				fire_event("de-row", &wam->rowData[firstRow]);
 			firstRow++;
 		}
 
@@ -960,7 +961,7 @@ void UpdatePosition(void)
 			 */
 			AddNotes(lastRow);
 			if(lastRow >= 0 && lastRow < wam->numRows)
-				FireEvent("row", &wam->rowData[lastRow]);
+				fire_event("row", &wam->rowData[lastRow]);
 		}
 	}
 	UpdateClearedCols();

@@ -41,16 +41,16 @@ void lines_init(void)
 	startLine = 0;
 	stopLine = 0;
 
-	RegisterEvent("draw opaque", draw_lines, EVENTTYPE_MULTI);
-	RegisterEvent("row", create_line, EVENTTYPE_MULTI);
-	RegisterEvent("de-row", remove_line, EVENTTYPE_MULTI);
+	register_event("draw opaque", draw_lines, EVENTTYPE_MULTI);
+	register_event("row", create_line, EVENTTYPE_MULTI);
+	register_event("de-row", remove_line, EVENTTYPE_MULTI);
 }
 
 void lines_exit(void)
 {
-	DeregisterEvent("de-row", remove_line);
-	DeregisterEvent("row", create_line);
-	DeregisterEvent("draw opaque", draw_lines);
+	deregister_event("de-row", remove_line);
+	deregister_event("row", create_line);
+	deregister_event("draw opaque", draw_lines);
 	free(lines);
 }
 

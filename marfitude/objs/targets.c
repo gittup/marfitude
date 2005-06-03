@@ -19,13 +19,13 @@ static int target_tex;
 
 void targets_init(void)
 {
-	target_tex = TextureNum("Target.png");
-	RegisterEvent("draw transparent", draw_targets, EVENTTYPE_MULTI);
+	target_tex = texture_num("Target.png");
+	register_event("draw transparent", draw_targets, EVENTTYPE_MULTI);
 }
 
 void targets_exit(void)
 {
-	DeregisterEvent("draw transparent", draw_targets);
+	deregister_event("draw transparent", draw_targets);
 }
 
 void draw_targets(const void *data)

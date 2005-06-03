@@ -26,18 +26,18 @@ float fireball[4];
 
 void fireball_init(void)
 {
-	fireball_tex = TextureNum("Fireball.png");
+	fireball_tex = texture_num("Fireball.png");
 	fireball[0] = 0.0;
 	fireball[1] = 0.5;
 	fireball[2] = 0.0;
 	fireball[3] = 1.0;
 
-	RegisterEvent("draw transparent", fireball_draw, EVENTTYPE_MULTI);
+	register_event("draw transparent", fireball_draw, EVENTTYPE_MULTI);
 }
 
 void fireball_exit(void)
 {
-	DeregisterEvent("draw transparent", fireball_draw);
+	deregister_event("draw transparent", fireball_draw);
 }
 
 void fireball_draw(const void *data)

@@ -20,12 +20,12 @@ static void draw_scoreboard(const void *);
 
 void scoreboard_init(void)
 {
-	RegisterEvent("draw opaque", draw_scoreboard, EVENTTYPE_MULTI);
+	register_event("draw opaque", draw_scoreboard, EVENTTYPE_MULTI);
 }
 
 void scoreboard_exit(void)
 {
-	DeregisterEvent("draw opaque", draw_scoreboard);
+	deregister_event("draw opaque", draw_scoreboard);
 }
 
 void draw_scoreboard(const void *data)
@@ -36,33 +36,33 @@ void draw_scoreboard(const void *data)
 	marfitude_get_score(&m);
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 
-	PrintGL(50, 0, "Playing: %s", mod->songname);
+	print_gl(50, 0, "Playing: %s", mod->songname);
 	if(rowIndex == wam->numRows) {
-		PrintGL(50, 15, "Song complete!");
+		print_gl(50, 15, "Song complete!");
 		if(m.score > m.highscore) {
-			PrintGL(DisplayWidth() / 2 - 85, 120, "New High Score!!!");
+			print_gl(display_width() / 2 - 85, 120, "New High Score!!!");
 		}
 	} else if(rowIndex < 0) {
 		int timeLeft = (int)(- BpmToSec(wam->rowData[0].sngspd, wam->rowData[0].bpm) * (double)rowIndex);
-		if(timeLeft > 0) PrintGL(50, 15, "%i...", timeLeft);
-		else PrintGL(50, 15, "GO!!");
+		if(timeLeft > 0) print_gl(50, 15, "%i...", timeLeft);
+		else print_gl(50, 15, "GO!!");
 	}
-	PrintGL(50, 30, "Speed: %2i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
-/*	PrintGL(0, 50, "%i - %i, note: %i, hit: %i/%i  %.2f/%.2f\n", ap.startTic, ap.stopTic, ap.lastTic, ap.notesHit, ap.notesTotal, modTime, wam->songLength);*/
+	print_gl(50, 30, "Speed: %2i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
+/*	print_gl(0, 50, "%i - %i, note: %i, hit: %i/%i  %.2f/%.2f\n", ap.startTic, ap.stopTic, ap.lastTic, ap.notesHit, ap.notesTotal, modTime, wam->songLength);*/
 	if(m.score > m.highscore) {
 		glColor4f(1.0, 1.0, 0.7, 1.0);
 	} else {
 		glColor4f(1.0, 1.0, 1.0, 1.0);
 	}
-	PrintGL(350, 20, "Score: %6i\n", m.score);
+	print_gl(350, 20, "Score: %6i\n", m.score);
 
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	if(m.highscore) {
-		PrintGL(490, 20, "High: %i", m.highscore);
+		print_gl(490, 20, "High: %i", m.highscore);
 	}
-	PrintGL(350, 34, "Multiplier: %i\n", m.multiplier);
+	print_gl(350, 34, "Multiplier: %i\n", m.multiplier);
 
-	SetOrthoProjection();
+	set_ortho_projection();
 	glDisable(GL_TEXTURE_2D);
 
 	glColor4f(0.0, 0.8, 0.5, 1.0);
@@ -93,6 +93,6 @@ void draw_scoreboard(const void *data)
 		glVertex2i(6, 449);
 	} glEnd();
 	glEnable(GL_TEXTURE_2D);
-	ResetProjection();
+	reset_projection();
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 }

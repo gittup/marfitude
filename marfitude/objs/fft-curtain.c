@@ -11,12 +11,12 @@ static void fft_curtain_draw(const void *data);
 void fft_curtain_init(void)
 {
 	init_fft();
-	RegisterEvent("draw ortho", fft_curtain_draw, EVENTTYPE_MULTI);
+	register_event("draw ortho", fft_curtain_draw, EVENTTYPE_MULTI);
 }
 
 void fft_curtain_exit(void)
 {
-	DeregisterEvent("draw ortho", fft_curtain_draw);
+	deregister_event("draw ortho", fft_curtain_draw);
 	free_fft();
 }
 
@@ -25,20 +25,20 @@ void fft_curtain_draw(const void *data)
 	unsigned int x;
 	double width;
 	double divisor = .0058 * fft->max;
-	int display_width;
+	int tmp_width;
 
 	if(data) {}
 
 	glDisable(GL_TEXTURE_2D);
-	display_width = DisplayWidth(); /* stupid cast warning! */
-	width = (double)display_width / (double)fft->len;
+	tmp_width = display_width(); /* stupid cast warning! */
+	width = (double)tmp_width / (double)fft->len;
 	for(x=0;x<fft->len;x++) {
 		int fft_col;
 		double red, green;
 
-		fft_col = (DisplayHeight() * fft->data[x])/divisor;
+		fft_col = (display_height() * fft->data[x])/divisor;
 		glNormal3f(0.0, 0.0, 1.0);
-		red = (double)fft_col / DisplayHeight();
+		red = (double)fft_col / display_height();
 		green = 1.0 - red;
 		if(red>1.0)
 			red = 1.0;

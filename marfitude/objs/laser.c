@@ -46,10 +46,10 @@ static float firetest[4] = {0.0, 0.0, 0.0, 0.0};
 
 void laser_init(void)
 {
-	laser_tex = TextureNum("Laser.png");
+	laser_tex = texture_num("Laser.png");
 	numLasers = 0;
-	RegisterEvent("shoot", make_laser, EVENTTYPE_MULTI);
-	RegisterEvent("draw transparent", draw_lasers, EVENTTYPE_MULTI);
+	register_event("shoot", make_laser, EVENTTYPE_MULTI);
+	register_event("draw transparent", draw_lasers, EVENTTYPE_MULTI);
 	fireball_handle = load_plugin("fireball");
 	if(fireball_handle)
 		fireball = (float*)dlsym(fireball_handle, "fireball");
@@ -60,8 +60,8 @@ void laser_init(void)
 void laser_exit(void)
 {
 	free_plugin(fireball_handle);
-	DeregisterEvent("draw transparent", draw_lasers);
-	DeregisterEvent("shoot", make_laser);
+	deregister_event("draw transparent", draw_lasers);
+	deregister_event("shoot", make_laser);
 }
 
 void make_laser(const void *data)
