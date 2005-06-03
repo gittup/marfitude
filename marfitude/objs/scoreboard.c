@@ -10,10 +10,6 @@
 /* tmp */
 extern int rowIndex;
 extern struct wam *wam;
-extern int highscore;
-extern int score;
-extern int newhighscore;
-extern int multiplier;
 extern double modTime;
 /*extern struct attackPattern ap;*/
 /* endtmp */
@@ -34,14 +30,16 @@ void scoreboard_exit(void)
 
 void draw_scoreboard(const void *data)
 {
+	struct marfitude_score m;
 	if(data) {}
 
+	marfitude_get_score(&m);
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 
 	PrintGL(50, 0, "Playing: %s", mod->songname);
 	if(rowIndex == wam->numRows) {
 		PrintGL(50, 15, "Song complete!");
-		if(newhighscore) {
+		if(m.score > m.highscore) {
 			PrintGL(DisplayWidth() / 2 - 85, 120, "New High Score!!!");
 		}
 	} else if(rowIndex < 0) {
@@ -51,7 +49,18 @@ void draw_scoreboard(const void *data)
 	}
 	PrintGL(50, 30, "Speed: %2i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
 /*	PrintGL(0, 50, "%i - %i, note: %i, hit: %i/%i  %.2f/%.2f\n", ap.startTic, ap.stopTic, ap.lastTic, ap.notesHit, ap.notesTotal, modTime, wam->songLength);*/
-	PrintGL(350, 20, "Score: %6i High: %i\nMultiplier: %i\n", score, highscore, multiplier);
+	if(m.score > m.highscore) {
+		glColor4f(1.0, 1.0, 0.7, 1.0);
+	} else {
+		glColor4f(1.0, 1.0, 1.0, 1.0);
+	}
+	PrintGL(350, 20, "Score: %6i\n", m.score);
+
+	glColor4f(1.0, 1.0, 1.0, 1.0);
+	if(m.highscore) {
+		PrintGL(490, 20, "High: %i", m.highscore);
+	}
+	PrintGL(350, 34, "Multiplier: %i\n", m.multiplier);
 
 	SetOrthoProjection();
 	glDisable(GL_TEXTURE_2D);
