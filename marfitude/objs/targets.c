@@ -33,6 +33,7 @@ void draw_targets(const void *data)
 	int x;
 	if(data) {}
 
+	glPolygonOffset(0.0, 0.0);
 	glPushMatrix();
 	glTranslated((double)channelFocus * -BLOCK_WIDTH, 0.0, TIC_HEIGHT * ((double)curTic + partialTic));
 	glBindTexture(GL_TEXTURE_2D, target_tex);
@@ -53,4 +54,5 @@ void draw_targets(const void *data)
 		glTranslated(NOTE_WIDTH, 0.0, 0.0);
 	}
 	glPopMatrix();
+	glPolygonOffset(1.0, 1.0);
 }
