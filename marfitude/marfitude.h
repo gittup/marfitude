@@ -12,3 +12,12 @@
 
 #define UNMUTE 0
 #define MUTE 1
+
+struct marfitude_score {
+	int highscore;    /**< The previous high score */
+	int score;        /**< The player's current score */
+	int multiplier;   /**< The player's current multiplier */
+};
+
+struct wam *marfitude_get_wam(void);
+void marfitude_get_score(struct marfitude_score *);
