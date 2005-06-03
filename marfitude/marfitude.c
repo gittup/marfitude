@@ -47,7 +47,6 @@ int firstRow, rowIndex, lastRow;  /* first row on screen, current row
                                           */
 struct row *curRow;
 double modTime;
-
 double partialTic;
 
 /** A note on the screen */
@@ -125,10 +124,9 @@ static struct slist *notesList;	/* notes on the screen, not hit */
 static struct slist *hitList;	/* notes on the screen, hit */
 static int numNotes;	/* max number of notes on screen (wam->numCols * NUM_TICKS) */
 static char *cursong;
-int newhighscore;
-int highscore;
-int score;
-int multiplier;
+static int highscore;
+static int score;
+static int multiplier;
 
 int *noteOffset;
 static MikMod_player_t oldHand;
@@ -148,7 +146,7 @@ void menu_handler(const void *data)
 
 void button_handler(const void *data)
 {
-	static int lastkeypressed = 1;
+	static int lastkeypressed[2] = {1, 1};
 	const struct button_e *b = data;
 
 	switch(b->button) {
@@ -159,20 +157,50 @@ void button_handler(const void *data)
 			ChannelDown(b->shift);
 			break;
 		case B_BUTTON1:
-			lastkeypressed = 1;
-			Press(1);
+			if(b->shift) {
+				lastkeypressed[0] = 1;
+				lastkeypressed[1] = 1;
+				Press(1);
+				Press(1);
+			} else {
+				lastkeypressed[0] = lastkeypressed[1];
+				lastkeypressed[1] = 1;
+				Press(1);
+			}
 			break;
 		case B_BUTTON2:
-			lastkeypressed = 2;
-			Press(2);
+			if(b->shift) {
+				lastkeypressed[0] = 2;
+				lastkeypressed[1] = 2;
+				Press(2);
+				Press(2);
+			} else {
+				lastkeypressed[0] = lastkeypressed[1];
+				lastkeypressed[1] = 2;
+				Press(2);
+			}
 			break;
 		case B_BUTTON3:
 			/* yes, this is really 4 (3rd bit) */
-			lastkeypressed = 4;
-			Press(4);
+			if(b->shift) {
+				lastkeypressed[0] = 4;
+				lastkeypressed[1] = 4;
+				Press(4);
+				Press(4);
+			} else {
+				lastkeypressed[0] = lastkeypressed[1];
+				lastkeypressed[1] = 4;
+				Press(4);
+			}
 			break;
 		case B_BUTTON4:
-			Press(lastkeypressed);
+			if(b->shift) {
+				Press(lastkeypressed[0]);
+				Press(lastkeypressed[1]);
+			} else {
+				lastkeypressed[0] = lastkeypressed[1];
+				Press(lastkeypressed[1]);
+			}
 			break;
 		case B_UP:
 		case B_DOWN:
@@ -238,7 +266,6 @@ int MainInit()
 	 */
 	Log(("Module ready\n"));
 	highscore = CfgIp("highscore", cursong);
-	newhighscore = 0;
 	score = 0;
 	multiplier = 1;
 	tickCounter = 0;
@@ -368,8 +395,8 @@ int MainInit()
 void MainQuit(void)
 {
 	Log(("Main Scene quit\n"));
-	if(newhighscore) {
-		CfgSetIp("highscore", cursong, highscore);
+	if(score > highscore) {
+		CfgSetIp("highscore", cursong, score);
 	}
 	free(cursong);
 	oldHand = MikMod_RegisterPlayer(oldHand);
@@ -601,7 +628,6 @@ struct screenNote *FindNote(struct slist *list, int tic, int col)
 	return NULL;
 }
 
-
 void Press(int button)
 {
 	int i;
@@ -614,15 +640,16 @@ void Press(int button)
 	FireEvent("shoot", &button);
 
 	rowStart = rowIndex;
-	while(rowStart > 0 && curRow->time - wam->rowData[rowStart].time < TIME_ERROR)
+	while(rowStart > 0 && curRow->time - wam->rowData[Row(rowStart)].time < TIME_ERROR)
 		rowStart--;
+
 	rowStop = rowIndex;
-	while(rowStop < wam->numRows && wam->rowData[rowStop].time - curRow->time < TIME_ERROR)
+	while(rowStop < wam->numRows && wam->rowData[Row(rowStop)].time - curRow->time < TIME_ERROR)
 		rowStop++;
 
 	for(i=rowStart;i<=rowStop;i++) {
 		if(i >= 0 && i < wam->numRows) {
-			r = &wam->rowData[i];
+			r = &wam->rowData[Row(i)];
 			/* if we're in the attackpattern limits, and
 			 * if we didn't already play this row, and this row 
 			 * is within our acceptable error, and we hit the
@@ -662,10 +689,6 @@ void Press(int button)
 					ac[channelFocus].minRow = rowIndex;
 					ac[channelFocus].part = 0.0;
 					score += ap.notesHit * multiplier;
-					if(score > highscore) {
-						highscore = score;
-						newhighscore = 1;
-					}
 					if(multiplier < 8) multiplier++;
 					ap.notesHit = 0;
 				}
@@ -1047,4 +1070,20 @@ void DrawHitNotes(void)
 			glColor4f(0.5, 0.5, 0.5, 1.0);
 		glCallList(plist+P_BlueNova);
 	}
+}
+
+/** Gets the wam structure for the current song.
+ * @return The wam struct.
+ */
+struct wam *marfitude_get_wam(void)
+{
+	return wam;
+}
+
+/** Gets the current score structure and stores it in @a s */
+void marfitude_get_score(struct marfitude_score *s)
+{
+	s->highscore = highscore;
+	s->score = score;
+	s->multiplier = multiplier;
 }
