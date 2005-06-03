@@ -12,7 +12,6 @@
 extern int channelFocus;
 extern int curTic;
 extern double partialTic;
-extern struct wam *wam;
 /* end temporry */
 
 void __attribute__ ((constructor)) lines_init(void);
@@ -58,6 +57,7 @@ void lines_exit(void)
 void create_line(const void *data)
 {
 	const struct row *r= data;
+	struct wam *wam = marfitude_get_wam();
 
 	if(r->line) {
 		lines[stopLine].p1.x = 1.0;
