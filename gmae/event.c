@@ -31,8 +31,8 @@
  * Handles event registration/firing.
  */
 
-static struct event *FindEvent(const char *);
-static void ChkEvent(struct event *e);
+static struct event *find_event(const char *);
+static void chk_event(struct event *e);
 
 static struct event *events = NULL;
 
@@ -43,7 +43,7 @@ static struct event *events = NULL;
 struct event *get_event(const char *s)
 {
 	struct event *e;
-	e = FindEvent(s);
+	e = find_event(s);
 	if(e == NULL) {
 		e = malloc(sizeof(struct event));
 		e->name = string_copy(s);
@@ -57,7 +57,7 @@ struct event *get_event(const char *s)
 }
 
 /* Returns the struct event if one exists for s, or NULL if none do. */
-struct event *FindEvent(const char *s)
+struct event *find_event(const char *s)
 {
 	struct event *e;
 	e = events;
@@ -75,7 +75,7 @@ void fire_event(const char *event, const void *data)
 {
 	struct event *e;
 
-	e = FindEvent(event);
+	e = find_event(event);
 
 	if(e != NULL) {
 		handle_event(e, data);
@@ -144,7 +144,7 @@ void deregister_event(const char *event, event_handler handler)
 	struct event *e;
 	struct event_handler *h;
 
-	e = FindEvent(event);
+	e = find_event(event);
 	if(e == NULL) {
 		ELog(("Error: %s not available for deregister.\n", event));
 		return;
@@ -161,7 +161,7 @@ void deregister_event(const char *event, event_handler handler)
 		ELog(("Error: %s not available for deregister.\n", event));
 }
 
-void ChkEvent(struct event *e)
+void chk_event(struct event *e)
 {
 	struct event_handler *h;
 
@@ -186,7 +186,7 @@ void quit_events(void)
 
 	/* Free the first event in the list */
 	while(e != NULL) {
-		ChkEvent(e);
+		chk_event(e);
 		free(e->name);
 		free(e);
 		e = events->next;
