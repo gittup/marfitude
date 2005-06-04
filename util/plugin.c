@@ -31,7 +31,7 @@
 void *load_plugin(const char *file)
 {
 	void *handle;
-	char *error;
+	const char *error;
 	char *path;
 
 	path = malloc(strlen(file) + strlen(MARFSHLIBEXT) + 3);
