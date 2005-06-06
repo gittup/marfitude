@@ -1,4 +1,4 @@
-#if defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
 # include <dlfcn.h>
 #else
 # if defined(WIN32)
