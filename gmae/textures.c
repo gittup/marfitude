@@ -31,7 +31,6 @@
 
 #include "util/memtest.h"
 #include "util/textprogress.h"
-#include "util/fatalerror.h"
 #include "util/flist.h"
 #include "util/strfunc.h"
 
