@@ -107,6 +107,7 @@ static void DrawRows(double startTic, double stopTic);
 static void RandomColor(float col[4]);
 static int NearRow(void);
 static struct screenNote *FindNote(struct slist *list, int tic, int col);
+static int get_clear_column(int start);
 static void FixVb(int *vb, int *row);
 static void TickHandler(void);
 static void CheckMissedNotes(void);
@@ -629,6 +630,30 @@ struct screenNote *FindNote(struct slist *list, int tic, int col)
 	return NULL;
 }
 
+/** Convert the column @a start to the next line'd column. Also make sure
+ * there is enough space at the end for another attack pattern
+ */
+int get_clear_column(int start)
+{
+	int lines = 0;
+	int tmp;
+
+	/* clear to a line break */
+	while(start < wam->numRows && wam->rowData[start].line == 0)
+		start++;
+	tmp = start;
+	while(tmp < wam->numRows && lines < LINES_PER_AP) {
+		if(wam->rowData[tmp].line != 0)
+			lines++;
+		tmp++;
+	}
+
+	/* Not enough space to start a new AP, set to the end of the song */
+	if(lines < LINES_PER_AP)
+		start = wam->numRows;
+	return start;
+}
+
 void Press(int button)
 {
 	int i;
@@ -683,10 +708,7 @@ void Press(int button)
 				ap.notesHit++;
 				if(ap.notesHit == ap.notesTotal) {
 					ap.nextStartRow = ap.stopRow;
-					ac[channelFocus].cleared = ap.stopRow + LINES_PER_AP * ROWS_PER_LINE * wam->numCols;
-					/* clear to a line break */
-					while(ac[channelFocus].cleared < wam->numRows && wam->rowData[ac[channelFocus].cleared].line == 0)
-						ac[channelFocus].cleared++;
+					ac[channelFocus].cleared = get_clear_column(ap.stopRow + LINES_PER_AP * ROWS_PER_LINE * wam->numCols);
 					ac[channelFocus].minRow = rowIndex;
 					ac[channelFocus].part = 0.0;
 					score += ap.notesHit * multiplier;
@@ -773,10 +795,13 @@ void ResetAp(void)
 	ap.notesHit = 0;
 	ap.notesTotal = 0;
 	start = Row(Max(Max(NearRow(), ap.nextStartRow), ac[channelFocus].cleared));
-	while(start < wam->numRows && (wam->rowData[start].line == 0 || wam->rowData[start].ticpos <= ac[channelFocus].miss)) start++;
+	while(start < wam->numRows && (wam->rowData[start].line == 0 || wam->rowData[start].ticpos <= ac[channelFocus].miss))
+		start++;
 	if(start == wam->numRows)
 		start = wam->numRows - 1;
 	end = start;
+
+	/* Make sure there are at least LINES_PER_AP lines in the AP */
 	while(apLines < LINES_PER_AP && end < wam->numRows) {
 		/* don't count the note on the last row, since that will
 		 * be the beginning of the next "AttackPattern"
@@ -785,6 +810,19 @@ void ResetAp(void)
 		end++;
 		if(wam->rowData[end].line != 0) apLines++;
 	}
+
+	/* Make sure there is at least one note in the AP */
+	while(ap.notesTotal == 0 && end < wam->numRows) {
+		if(wam->rowData[end].notes[channelFocus]) ap.notesTotal++;
+		end++;
+	}
+
+	/* Make sure the AP ends on a line */
+	while(wam->rowData[end].line == 0 && end < wam->numRows) {
+		if(wam->rowData[end].notes[channelFocus]) ap.notesTotal++;
+		end++;
+	}
+
 	if(apLines < LINES_PER_AP) {
 		/* at the end of the song we can't find a valid pattern to do */
 		ap.startTic = -1;
