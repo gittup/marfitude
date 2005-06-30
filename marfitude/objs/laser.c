@@ -32,7 +32,7 @@ static void draw_lasers(const void *);
 static int laser_tex;
 static int numLasers;
 static struct laser laser[NUM_LASERS];
-static float *fireball;
+static const float *fireball;
 static void *fireball_handle = NULL;
 static float firetest[4] = {0.0, 0.0, 0.0, 0.0};
 
@@ -43,8 +43,11 @@ void laser_init(void)
 	register_event("shoot", make_laser, EVENTTYPE_MULTI);
 	register_event("draw transparent", draw_lasers, EVENTTYPE_MULTI);
 	fireball_handle = load_plugin("fireball");
-	if(fireball_handle)
-		fireball = (float*)dlsym(fireball_handle, "fireball");
+	if(fireball_handle) {
+		const float *(*fb)(void);
+		fb = (const float *(*)(void))dlsym(fireball_handle, "fireball_get_pos");
+		fireball = fb();
+	}
 	else
 		fireball = firetest;
 }

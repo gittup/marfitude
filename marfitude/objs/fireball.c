@@ -10,10 +10,11 @@
 
 void __attribute__ ((constructor)) fireball_init(void);
 void __attribute__ ((destructor)) fireball_exit(void);
+const float *fireball_get_pos(void);
 static void fireball_draw(const void *);
 
 static int fireball_tex;
-float fireball[4];
+static float fireball[4];
 
 void fireball_init(void)
 {
@@ -60,4 +61,9 @@ void fireball_draw(const void *data)
 		glTexCoord2f(0.0, 1.0);
 		glVertex3f(fireball[0]-.5, fireball[1]+.5, fireball[2]);
 	} glEnd();
+}
+
+const float *fireball_get_pos(void)
+{
+	return fireball;
 }
