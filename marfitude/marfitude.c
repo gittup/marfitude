@@ -945,7 +945,7 @@ void UpdatePosition(void)
 	/* calculate the amount of ticTime elapsed
 	 * every 2500 ticTime is one tick
 	 */
-	if(!menuActive) ticTime += ticDiff * curRow->bpm;
+	if(!is_menu_active()) ticTime += ticDiff * curRow->bpm;
 
 	/* adjust the ticTime if our time is different from the
 	 * song time.  This is needed in case a little blip in the process
