@@ -30,6 +30,7 @@ struct menu {
 };
 
 const struct menu *active_menu(void);
+int is_menu_active(void);
 int switch_menu(int menu);
 
 /** Data for the "menu" event */
@@ -53,5 +54,3 @@ struct menu_e {
 #define CONFIGMENU 4
 /** The quit menu */
 #define QUITMENU 5
-
-extern int menuActive;

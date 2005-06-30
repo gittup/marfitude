@@ -193,7 +193,7 @@ static void QuitMenu(void);
 static void button_handler(const void *data);
 
 /** Set to 1 if a menu is active, 0 otherwise */
-int menuActive = 0;
+static int menuActive = 0;
 
 static int curMenu;
 static int numScreenMenus = 1;
@@ -1078,6 +1078,14 @@ int FindActiveItem(struct menuItem *activeItems, int numActiveItems)
 const struct menu *active_menu(void)
 {
 	return activeMenu;
+}
+
+/** Determines whether or not a menu is currently active on the screen.
+ * @return 1 if a menu is active, 0 if not
+ */
+int is_menu_active(void)
+{
+	return menuActive;
 }
 
 /** Switch to menu @a n
