@@ -8,12 +8,6 @@
 #include "gmae/phys.h"
 #include "gmae/wam.h"
 
-/* temporry */
-extern int channelFocus;
-extern int curTic;
-extern double partialTic;
-/* end temporry */
-
 void __attribute__ ((constructor)) lines_init(void);
 void __attribute__ ((destructor)) lines_exit(void);
 static void create_line(const void *);
@@ -57,7 +51,7 @@ void lines_exit(void)
 void create_line(const void *data)
 {
 	const struct row *r= data;
-	struct wam *wam = marfitude_get_wam();
+	const struct wam *wam = marfitude_get_wam();
 
 	if(r->line) {
 		lines[stopLine].p1.x = 1.0;

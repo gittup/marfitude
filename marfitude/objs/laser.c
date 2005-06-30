@@ -13,15 +13,7 @@
 #define NUM_LASERS 10
 #define LASER_DECAY 3.0
 
-/* TMP */
-extern int *noteOffset;
-extern int channelFocus;
-extern int curTic;
-extern double partialTic;
-/* ENDTMP */
-
-/** Defines a laser
- */
+/** Defines a laser */
 struct laser {
 	struct vector p1; /**< One endpoint of the laser */
 	struct vector p2; /**< The other endpoint of the laser */
@@ -67,6 +59,10 @@ void laser_exit(void)
 void make_laser(const void *data)
 {
 	const int *s = data;
+	const int *offsets = marfitude_get_offsets();
+	struct marfitude_pos p;
+
+	marfitude_get_pos(&p);
 
 	/* p1 is set to the light position */
 	laser[numLasers].p1.x = fireball[0];
@@ -74,9 +70,9 @@ void make_laser(const void *data)
 	laser[numLasers].p1.z = fireball[2];
 
 	/* p2 is set to where the note is */
-	laser[numLasers].p2.x = -channelFocus * BLOCK_WIDTH - NOTE_WIDTH * noteOffset[*s];
+	laser[numLasers].p2.x = -p.channel * BLOCK_WIDTH - NOTE_WIDTH * offsets[*s];
 	laser[numLasers].p2.y = 0.0;
-	laser[numLasers].p2.z = TIC_HEIGHT * ((double)curTic + partialTic);
+	laser[numLasers].p2.z = TIC_HEIGHT * p.tic;
 	laser[numLasers].time = 1.0;
 	numLasers++;
 	if(numLasers >= NUM_LASERS) numLasers = 0;

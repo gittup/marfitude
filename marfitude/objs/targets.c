@@ -5,12 +5,6 @@
 #include "gmae/event.h"
 #include "gmae/textures.h"
 
-/* TEmproarry */
-extern int channelFocus;
-extern int curTic;
-extern double partialTic;
-/* End TEmproarry */
-
 void __attribute__ ((constructor)) targets_init(void);
 void __attribute__ ((destructor)) targets_exit(void);
 static void draw_targets(const void *);
@@ -31,11 +25,14 @@ void targets_exit(void)
 void draw_targets(const void *data)
 {
 	int x;
+	struct marfitude_pos p;
+
 	if(data) {}
+	marfitude_get_pos(&p);
 
 	glPolygonOffset(0.0, 0.0);
 	glPushMatrix();
-	glTranslated((double)channelFocus * -BLOCK_WIDTH, 0.0, TIC_HEIGHT * ((double)curTic + partialTic));
+	glTranslated((double)p.channel * -BLOCK_WIDTH, 0.0, TIC_HEIGHT * p.tic);
 	glBindTexture(GL_TEXTURE_2D, target_tex);
 	glTranslated(-NOTE_WIDTH, 0.0, 0.0);
 	glColor4f(1.0, 1.0, 1.0, 0.7);

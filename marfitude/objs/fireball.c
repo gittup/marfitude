@@ -8,15 +8,6 @@
 #include "gmae/textures.h"
 #include "gmae/wam.h"
 
-/* tmp */
-extern int curTic;
-extern double partialTic;
-extern int channelFocus;
-extern struct row *curRow;
-/* end tmp */
-
-
-
 void __attribute__ ((constructor)) fireball_init(void);
 void __attribute__ ((destructor)) fireball_exit(void);
 static void fireball_draw(const void *);
@@ -42,16 +33,18 @@ void fireball_exit(void)
 
 void fireball_draw(const void *data)
 {
+	struct marfitude_pos p;
 	float sintmp;
 	float bounceTime;
 
 	if(data) {}
+	marfitude_get_pos(&p);
 
-	bounceTime = 2.0 * 3.1415 * ((double)curRow->ticprt + (double)curTic - (double)curRow->ticpos + partialTic) / (double)curRow->ticgrp;
+	bounceTime = 2.0 * 3.1415 * ((double)p.row->ticprt + p.tic - (double)p.row->ticpos) / (double)p.row->ticgrp;
 	sintmp = sin(bounceTime);
-	fireball[0] = -BLOCK_WIDTH * channelFocus + cos(bounceTime);
+	fireball[0] = -BLOCK_WIDTH * p.channel + cos(bounceTime);
 	fireball[1] = 1.0 + sintmp * sintmp;
-	fireball[2] = TIC_HEIGHT * ((double)curTic + partialTic);
+	fireball[2] = TIC_HEIGHT * p.tic;
 	glLightfv(GL_LIGHT1, GL_POSITION, fireball);
 
 	glBindTexture(GL_TEXTURE_2D, fireball_tex);
