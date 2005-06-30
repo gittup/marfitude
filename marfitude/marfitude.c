@@ -27,8 +27,8 @@ static Uint32 ticTime;
 static GLuint rowList;
 static GLuint noteList;
 static GLuint mainTexes[MAX_COLS];
-int channelFocus = 0;
-struct wam *wam;	/* note file */
+static int channelFocus = 0;
+static struct wam *wam; /* note file */
 
 #define TIME_ERROR 0.1
 
@@ -40,14 +40,14 @@ static float theta = 0.0;
 #define Row(row) (row < 0 ? 0 : (row >= wam->numRows ? wam->numRows - 1: row))
 #define Max(a, b) ((a) > (b) ? (a) : (b))
 
-int curTic; /* tick counter from 0 - total ticks in the song */
+static int curTic; /* tick counter from 0 - total ticks in the song */
 static int firstVb, curVb, lastVb;     /* tick counters for the three rows */
-int firstRow, rowIndex, lastRow;  /* first row on screen, current row
+static int firstRow, rowIndex, lastRow;  /* first row on screen, current row
                                    * playing and the last row on screen
                                    */
-struct row *curRow;
-double modTime;
-double partialTic;
+static struct row *curRow;
+static double modTime;
+static double partialTic;
 
 /** A note on the screen */
 struct screenNote {
@@ -117,7 +117,7 @@ static int SortByTic(const void *a, const void *b);
 static void menu_handler(const void *data);
 static void button_handler(const void *data);
 
-struct attackPattern ap;
+static struct attackPattern ap;
 static struct attackCol ac[MAX_COLS];
 static struct screenNote *notesOnScreen; /* little ring buffer of notes */
 static struct slist *unusedList;	/* unused notes */
@@ -125,11 +125,10 @@ static struct slist *notesList;	/* notes on the screen, not hit */
 static struct slist *hitList;	/* notes on the screen, hit */
 static int numNotes;	/* max number of notes on screen (wam->numCols * NUM_TICKS) */
 static char *cursong;
-static int highscore;
-static int score;
-static int multiplier;
 
-int *noteOffset;
+static struct marfitude_score score;
+
+static int *noteOffset;
 static MikMod_player_t oldHand;
 static int tickCounter;
 static int songStarted;	/* this is set once we get to the first row, and the
@@ -267,9 +266,9 @@ int main_init()
 	 * and the module is paused
 	 */
 	Log(("Module ready\n"));
-	highscore = CfgIp("highscore", cursong);
-	score = 0;
-	multiplier = 1;
+	score.highscore = CfgIp("highscore", cursong);
+	score.score = 0;
+	score.multiplier = 1;
 	tickCounter = 0;
 	songStarted = 0;
 	modTime = -5.0;
@@ -397,8 +396,8 @@ int main_init()
 void main_quit(void)
 {
 	Log(("Main Scene quit\n"));
-	if(score > highscore) {
-		CfgSetIp("highscore", cursong, score);
+	if(score.score > score.highscore) {
+		CfgSetIp("highscore", cursong, score.score);
 	}
 	free(cursong);
 	oldHand = MikMod_RegisterPlayer(oldHand);
@@ -508,7 +507,7 @@ void ChannelUp(int shift)
 			channelFocus = wam->numCols - 1;
 		else
 			channelFocus++;
-		if(ap.notesHit > 0) multiplier = 1;
+		if(ap.notesHit > 0) score.multiplier = 1;
 		ResetAp();
 		ac[channelFocus].hit = ap.startTic - 1;
 	}
@@ -521,7 +520,7 @@ void ChannelDown(int shift)
 			channelFocus = 0;
 		else
 			channelFocus--;
-		if(ap.notesHit > 0) multiplier = 1;
+		if(ap.notesHit > 0) score.multiplier = 1;
 		ResetAp();
 		ac[channelFocus].hit = ap.startTic - 1;
 	}
@@ -711,8 +710,9 @@ void Press(int button)
 					ac[channelFocus].cleared = get_clear_column(ap.stopRow + LINES_PER_AP * ROWS_PER_LINE * wam->numCols);
 					ac[channelFocus].minRow = rowIndex;
 					ac[channelFocus].part = 0.0;
-					score += ap.notesHit * multiplier;
-					if(multiplier < 8) multiplier++;
+					score.score += ap.notesHit * score.multiplier;
+					if(score.multiplier < 8)
+						score.multiplier++;
 					ap.notesHit = 0;
 				}
 				ac[channelFocus].hit = r->ticpos;
@@ -725,7 +725,7 @@ void Press(int button)
 
 	if(!noteHit && curRow->ticpos >= ap.startTic && curRow->ticpos < ap.stopTic) {
 		/* oops, we missed! */
-		if(ap.notesHit > 0) multiplier = 1;
+		if(ap.notesHit > 0) score.multiplier = 1;
 		if(IsValidRow(rowIndex) && curRow->ticpos >= ap.startTic && curRow->ticpos < ap.stopTic)
 			ac[channelFocus].miss = curRow->ticpos;
 		ResetAp();
@@ -850,7 +850,8 @@ void CheckMissedNotes(void)
 		if(modTime - sn->time > TIME_ERROR && sn->tic > ac[sn->col].miss) {
 			ac[sn->col].miss = sn->tic;
 			if(sn->col == channelFocus && sn->tic >= ap.startTic && sn->tic < ap.stopTic) {
-				if(ap.notesHit > 0) multiplier = 1;
+				if(ap.notesHit > 0)
+					score.multiplier = 1;
 				ResetAp();
 			}
 		}
@@ -1114,15 +1115,29 @@ void DrawHitNotes(void)
 /** Gets the wam structure for the current song.
  * @return The wam struct.
  */
-struct wam *marfitude_get_wam(void)
+const struct wam *marfitude_get_wam(void)
 {
 	return wam;
 }
 
-/** Gets the current score structure and stores it in @a s */
-void marfitude_get_score(struct marfitude_score *s)
+/** Gets the note offsets, size MAX_NOTE+1 */
+const int *marfitude_get_offsets(void)
 {
-	s->highscore = highscore;
-	s->score = score;
-	s->multiplier = multiplier;
+	return noteOffset;
+}
+
+/** Gets the current score structure and stores it in @a s */
+const struct marfitude_score *marfitude_get_score(void)
+{
+	return &score;
+}
+
+/** Gets the current module time in seconds */
+void marfitude_get_pos(struct marfitude_pos *p)
+{
+	p->modtime = modTime;
+	p->tic = (double)curTic + partialTic;
+	p->row = curRow;
+	p->row_index = rowIndex;
+	p->channel = channelFocus;
 }
