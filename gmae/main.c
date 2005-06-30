@@ -87,7 +87,7 @@ int main(int argc, char **argv)
 				convertSong = optarg;
 				break;
 			case 'l':
-				logging = 1;
+				enable_logging();
 				break;
 			case '?':
 				if(isprint(optopt))

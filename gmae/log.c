@@ -24,7 +24,7 @@
 
 #include "util/memtest.h"
 
-int logging = 0;
+static int logging = 0;
 static FILE *logFile = NULL;
 
 /** The internal log function, called by the Log macro
@@ -97,4 +97,24 @@ void quit_log(void)
 #if CONFIG_MEMTEST == 1
 	CheckMemUsage();
 #endif
+}
+
+/** Determines whether or not logging is enabled.
+ * @return 1 if logging is enabled, 0 if not
+ */
+int log_enabled(void)
+{
+	return logging;
+}
+
+/** Enables logging */
+void enable_logging(void)
+{
+	logging = 1;
+}
+
+/** Disables logging */
+void disable_logging(void)
+{
+	logging = 0;
 }

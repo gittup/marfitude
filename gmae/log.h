@@ -22,13 +22,10 @@
  * contain the file and line number of where the message was logged from.
  */
 
-/** Defined as 1 if logging is enabled. Set by command line options */
-extern int logging;
-
 /** Write the logged message to a file, if logging is enabled */
-#define Log(s) do {if(logging) {log_file(__FILE__, __LINE__); log_msg s;}} while(0)
+#define Log(s) do {if(log_enabled()) {log_file(__FILE__, __LINE__); log_msg s;}} while(0)
 /** Write the logged message stderr. Also write to the log if enabled */
-#define ELog(s) do {elog_file(__FILE__, __LINE__); elog_msg s; if(logging) {log_msg s;}} while(0)
+#define ELog(s) do {elog_file(__FILE__, __LINE__); elog_msg s; if(log_enabled()) {log_msg s;}} while(0)
 
 void log_file(const char *file, int line);
 void log_msg(const char *s, ...);
@@ -36,3 +33,6 @@ void elog_file(const char *file, int line);
 void elog_msg(const char *s, ...);
 void quit_log(void);
 int init_log(void);
+int log_enabled(void);
+void enable_logging(void);
+void disable_logging(void);
