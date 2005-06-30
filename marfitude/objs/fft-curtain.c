@@ -22,6 +22,7 @@ void fft_curtain_exit(void)
 
 void fft_curtain_draw(const void *data)
 {
+	const struct fft_data *fft = fft_get_data();
 	unsigned int x;
 	double width;
 	double divisor = .0058 * fft->max;
