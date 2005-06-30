@@ -33,7 +33,7 @@ struct fft_data {
 	int max;              /**< The theoretical max, based on sample types */
 };
 
-extern const struct fft_data *fft;
+const struct fft_data *fft_get_data(void);
 void init_fft(void);
 void free_fft(void);
 void quit_fft(void);

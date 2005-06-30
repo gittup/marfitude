@@ -34,9 +34,6 @@ static int num_registers = 0;
 static int *data = NULL;
 static unsigned long samples = 0;
 
-/** The fft_data that a client can access. */
-const struct fft_data *fft = &my_fft;
-
 static struct cmp *weights = NULL;
 static double *window = NULL;
 static unsigned int *fft_bit_map = NULL;
@@ -99,6 +96,12 @@ void quit_fft(void)
 		 */
 		printf("Processed %lu FFT samples\n", samples);
 	}
+}
+
+/** Returns a structure of fft data the client can access */
+const struct fft_data *fft_get_data(void)
+{
+	return &my_fft;
 }
 
 int my_log(int x)
