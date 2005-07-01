@@ -47,4 +47,5 @@ const struct wam *marfitude_get_wam(void);
 const int *marfitude_get_offsets(void);
 const struct marfitude_score *marfitude_get_score(void);
 const struct slist *marfitude_get_notes(void);
+const struct slist *marfitude_get_hitnotes(void);
 void marfitude_get_pos(struct marfitude_pos *);

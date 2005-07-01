@@ -81,7 +81,6 @@ static void RemoveNotes(int row);
 
 static void Press(int button);
 static void SetMainView(void);
-static void DrawHitNotes(void);
 static void MoveHitNotes(int tic, int col);
 static void UpdateClearedCols(void);
 static void UpdatePosition(void);
@@ -211,6 +210,7 @@ void Load(void)
 	AddPlugin("targets");
 	AddPlugin("lines");
 	AddPlugin("greynotes");
+	AddPlugin("bluenotes");
 /*	AddPlugin("fft-curtain");*/
 	AddPlugin("fireball");
 	AddPlugin("scoreboard");
@@ -435,8 +435,6 @@ void main_scene(void)
 
 	start_particles();
 	Log(("F2\n"));
-	DrawHitNotes();
-	Log(("F3\n"));
 	draw_particles();
 	Log(("g"));
 	stop_particles();
@@ -996,37 +994,6 @@ void DrawRows(double startTic, double stopTic)
 	glPopMatrix();
 }
 
-void DrawHitNotes(void)
-{
-	struct slist *t;
-
-	slist_foreach(t, hitList) {
-		int i;
-		int j;
-		float mat[16];
-		struct marfitude_note *sn = t->data;
-
-		glPushMatrix();
-		glTranslated(	sn->pos.x,
-				sn->pos.y,
-				sn->pos.z+0.3);
-		glGetFloatv(GL_MODELVIEW_MATRIX, mat);
-		for(i=0;i<3;i++)
-			for(j=0;j<3;j++)
-			{
-				if(i == j) mat[i+j*4] = 1.0;
-				else mat[i+j*4] = 0.0;
-			}
-		glLoadMatrixf(mat);
-
-		if(sn->tic - curTic <= 0)
-			glColor4f(1.0, 1.0, 1.0, 1.0);
-		else
-			glColor4f(0.5, 0.5, 0.5, 1.0);
-		glCallList(plist+P_BlueNova);
-	}
-}
-
 /** Gets the wam structure for the current song.
  * @return The wam struct.
  */
@@ -1051,6 +1018,12 @@ const struct marfitude_score *marfitude_get_score(void)
 const struct slist *marfitude_get_notes(void)
 {
 	return notesList;
+}
+
+/** Returns a slist of the exploded notes */
+const struct slist *marfitude_get_hitnotes(void)
+{
+	return hitList;
 }
 
 /** Gets the current module time in seconds */
