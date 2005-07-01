@@ -1,4 +1,5 @@
 #include <math.h>
+#include <string.h>
 
 #include "marfitude.h"
 
@@ -231,6 +232,7 @@ void Unload(void)
 int main_init()
 {
 	int x;
+	char *scene;
 
 	Log(("Load Wam\n"));
 	cursong = CfgSCpy("main", "song");
@@ -264,7 +266,12 @@ int main_init()
 
 	curRow = &wam->rowData[Row(0)];
 
-	Load();
+	scene = CfgSp("main", "scene");
+	if(strcmp(scene, "scenes/default") == 0) {
+		Load();
+	} else {
+		AddPlugin(scene);
+	}
 
 	ticTime = 0;
 	channelFocus = 0;
