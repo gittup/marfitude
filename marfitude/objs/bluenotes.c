@@ -53,7 +53,7 @@ void draw_notes(const void *data)
 			glColor4f(1.0, 1.0, 1.0, 1.0);
 		else
 			glColor4f(0.5, 0.5, 0.5, 1.0);
-		glCallList(plist+P_BlueNova);
+		glCallList(particle(P_BlueNova));
 	}
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
