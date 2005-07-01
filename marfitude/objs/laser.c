@@ -21,8 +21,8 @@ struct laser {
 			   */
 };
 
-void __attribute__ ((constructor)) laser_init(void);
-void __attribute__ ((destructor)) laser_exit(void);
+void laser_init(void) __attribute__ ((constructor));
+void laser_exit(void) __attribute__ ((destructor));
 static double laser_adj(double a, double b, double dt);
 static void draw_laser(struct laser *l);
 static void make_laser(const void *);

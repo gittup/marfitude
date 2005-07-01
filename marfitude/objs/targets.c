@@ -5,8 +5,8 @@
 #include "gmae/event.h"
 #include "gmae/textures.h"
 
-void __attribute__ ((constructor)) targets_init(void);
-void __attribute__ ((destructor)) targets_exit(void);
+void targets_init(void) __attribute__ ((constructor));
+void targets_exit(void) __attribute__ ((destructor));
 static void draw_targets(const void *);
 
 static int target_tex;

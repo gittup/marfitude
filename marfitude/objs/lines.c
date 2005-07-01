@@ -7,8 +7,8 @@
 #include "gmae/event.h"
 #include "gmae/wam.h"
 
-void __attribute__ ((constructor)) lines_init(void);
-void __attribute__ ((destructor)) lines_exit(void);
+void lines_init(void) __attribute__ ((constructor));
+void lines_exit(void) __attribute__ ((destructor));
 static void create_line(const void *);
 static void remove_line(const void *);
 static void draw_lines(const void *);

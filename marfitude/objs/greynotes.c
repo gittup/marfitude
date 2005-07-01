@@ -11,8 +11,8 @@
 
 #include "util/slist.h"
 
-void __attribute__ ((constructor)) notes_init(void);
-void __attribute__ ((destructor)) notes_exit(void);
+void notes_init(void) __attribute__ ((constructor));
+void notes_exit(void) __attribute__ ((destructor));
 static void draw_notes(const void *);
 
 static GLuint noteGl;

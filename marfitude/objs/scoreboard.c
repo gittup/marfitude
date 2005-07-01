@@ -7,8 +7,8 @@
 #include "gmae/module.h"
 #include "gmae/wam.h"
 
-void __attribute__ ((constructor)) scoreboard_init(void);
-void __attribute__ ((destructor)) scoreboard_exit(void);
+void scoreboard_init(void) __attribute__ ((constructor));
+void scoreboard_exit(void) __attribute__ ((destructor));
 static void draw_scoreboard(const void *);
 
 void scoreboard_init(void)

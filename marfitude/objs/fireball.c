@@ -8,8 +8,8 @@
 #include "gmae/textures.h"
 #include "gmae/wam.h"
 
-void __attribute__ ((constructor)) fireball_init(void);
-void __attribute__ ((destructor)) fireball_exit(void);
+void fireball_init(void) __attribute__ ((constructor));
+void fireball_exit(void) __attribute__ ((destructor));
 const float *fireball_get_pos(void);
 static void fireball_draw(const void *);
 
