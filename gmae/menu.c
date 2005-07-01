@@ -154,6 +154,7 @@ static void MenuInc(void);
 static void MenuActivate(const void *);
 static void MenuSelect(void);
 static int valid_music_file(const char *s);
+static char *scene_convert(const char *s);
 static int alphabetical(const void *a, const void *b);
 static int FightMenuInit(void);
 static void FightMenuQuit(void);
@@ -806,6 +807,22 @@ int valid_music_file(const char *s)
 	return 0;
 }
 
+char *scene_convert(const char *s)
+{
+	char *t;
+	char *p;
+	t = string_copy(s);
+	p = t;
+	while(*p) {
+		if(*p == '.') {
+			*p = 0;
+			break;
+		}
+		p++;
+	}
+	return t;
+}
+
 int alphabetical(const void *a, const void *b)
 {
 	const char *s1 = a;
@@ -852,10 +869,13 @@ int FightMenuInit(void)
 	fightSceneSelect->minY = 0;
 	fightSceneSelect->maxX = 0;
 	fightSceneSelect->maxY = 0;
+
 	flist_foreach(&f, SCENEDIR) {
 		char *s;
-		s = string_copy(f.filename);
-		sceneList = slist_insert_sorted(sceneList, s, alphabetical);
+		if(valid_music_file(f.filename)) {
+			s = scene_convert(f.filename);
+			sceneList = slist_insert_sorted(sceneList, s, alphabetical);
+		}
 	}
 	sceneList = slist_insert(sceneList, string_copy("default"));
 
@@ -889,10 +909,11 @@ int FightMenuInit(void)
 		cnt++;
 	}
 
+	lastFile = CfgS("main.scene");
 	cnt = 0;
 	len = slist_length(sceneList);
 	slist_foreach(tmp, sceneList) {
-		char *t = cat_str(MUSICDIR, (char*)tmp->data);
+		char *t = cat_str(SCENEDIR, (char*)tmp->data);
 		if(strcmp(t, lastFile) == 0) {
 			fightSceneSelect->itemStart = cnt - fightSceneSelect->menuSize/2;
 			while(fightSceneSelect->itemStart > len - fightSceneSelect->menuSize)
