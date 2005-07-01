@@ -5,7 +5,6 @@
 #include "marfitude.h"
 
 #include "gmae/event.h"
-#include "gmae/phys.h"
 #include "gmae/wam.h"
 
 void __attribute__ ((constructor)) lines_init(void);

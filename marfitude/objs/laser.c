@@ -3,7 +3,6 @@
 #include "marfitude.h"
 
 #include "gmae/event.h"
-#include "gmae/phys.h"
 #include "gmae/textures.h"
 #include "gmae/timer.h"
 
