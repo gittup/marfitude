@@ -13,7 +13,6 @@
 #include "gmae/menu.h"
 #include "gmae/module.h"
 #include "gmae/particles.h"
-#include "gmae/phys.h"
 #include "gmae/textures.h"
 #include "gmae/timer.h"
 #include "gmae/wam.h"
@@ -25,14 +24,9 @@
 
 static Uint32 ticTime;
 static GLuint rowList;
-static GLuint noteList;
 static GLuint mainTexes[MAX_COLS];
 static int channelFocus = 0;
 static struct wam *wam; /* note file */
-
-#define TIME_ERROR 0.1
-
-static float theta = 0.0;
 
 /* returns 1 if the row is valid, 0 otherwise */
 #define IsValidRow(row) ((row >= 0 && row < wam->numRows) ? 1 : 0)
@@ -48,17 +42,6 @@ static int firstRow, rowIndex, lastRow;  /* first row on screen, current row
 static struct row *curRow;
 static double modTime;
 static double partialTic;
-
-/** A note on the screen */
-struct screenNote {
-	struct vector pos; /**< The coordinates of where to draw the note */
-	int tic;           /**< The mod tic this note is on */
-	double time;       /**< The time this note is on */
-	int col;           /**< The column the note is in */
-	int ins;           /**< DEBUG - the line in the src where this note was
-			    * added
-			    */
-};
 
 /** This structure keeps track of information needed for the column that is
  * being played
@@ -98,7 +81,6 @@ static void RemoveNotes(int row);
 
 static void Press(int button);
 static void SetMainView(void);
-static void DrawNotes(void);
 static void DrawHitNotes(void);
 static void MoveHitNotes(int tic, int col);
 static void UpdateClearedCols(void);
@@ -106,7 +88,7 @@ static void UpdatePosition(void);
 static void DrawRows(double startTic, double stopTic);
 static void RandomColor(float col[4]);
 static int NearRow(void);
-static struct screenNote *FindNote(struct slist *list, int tic, int col);
+static struct marfitude_note *FindNote(struct slist *list, int tic, int col);
 static int get_clear_column(int start);
 static void FixVb(int *vb, int *row);
 static void TickHandler(void);
@@ -119,7 +101,7 @@ static void button_handler(const void *data);
 
 static struct attackPattern ap;
 static struct attackCol ac[MAX_COLS];
-static struct screenNote *notesOnScreen; /* little ring buffer of notes */
+static struct marfitude_note *notesOnScreen; /* little ring buffer of notes */
 static struct slist *unusedList;	/* unused notes */
 static struct slist *notesList;	/* notes on the screen, not hit */
 static struct slist *hitList;	/* notes on the screen, hit */
@@ -228,6 +210,7 @@ void Load(void)
 	AddPlugin("laser");
 	AddPlugin("targets");
 	AddPlugin("lines");
+	AddPlugin("greynotes");
 /*	AddPlugin("fft-curtain");*/
 	AddPlugin("fireball");
 	AddPlugin("scoreboard");
@@ -285,7 +268,6 @@ int main_init()
 
 	ticTime = 0;
 	channelFocus = 0;
-	theta = 0.0;
 
 	for(x=0;x<wam->numCols;x++) {
 		int y;
@@ -319,7 +301,7 @@ int main_init()
 	partialTic = 0.0;
 
 	numNotes = wam->numCols * NUM_TICKS;
-	notesOnScreen = malloc(sizeof(struct screenNote) * numNotes);
+	notesOnScreen = malloc(sizeof(struct marfitude_note) * numNotes);
 	unusedList = NULL;
 	notesList = NULL;
 	hitList = NULL;
@@ -336,7 +318,6 @@ int main_init()
 	register_event("button", button_handler, EVENTTYPE_MULTI);
 	Log(("Creating lists\n"));
 	rowList = glGenLists(wam->numCols);
-	noteList = glGenLists(1);
 
 	mainTexes[0] = texture_num("Slate.png");
 	mainTexes[1] = texture_num("Walnut.png");
@@ -364,30 +345,6 @@ int main_init()
 		} glEndList();
 	}
 
-	glNewList(noteList, GL_COMPILE); {
-		glBegin(GL_TRIANGLE_FAN); {
-			glNormal3f( 0.0, 1.0, 0.0);
-			glVertex3f( 0.0, 0.15, 0.0);
-
-			glNormal3f( 0.2, 0.5, 0.0);
-			glVertex3f( 0.2, 0.0, 0.2);
-			glVertex3f( 0.2, 0.0, -0.2);
-
-			glNormal3f( 0.0, 0.5, -0.2);
-			glVertex3f( 0.2, 0.0, -0.2);
-			glVertex3f(-0.2, 0.0, -0.2);
-			
-			glNormal3f(-0.2, 0.5, 0.0);
-			glVertex3f(-0.2, 0.0, -0.2);
-			glVertex3f(-0.2, 0.0, 0.2);
-
-			glNormal3f(0.0, 0.5, 0.2);
-			glVertex3f(-0.2, 0.0, 0.2);
-			glVertex3f(0.2, 0.0, 0.2);
-
-		} glEnd();
-		glPopMatrix();
-	} glEndList();
 	init_timer();
 	Log(("Lists created\n"));
 	return 0;
@@ -411,8 +368,6 @@ void main_quit(void)
 	Log(("A\n"));
 	Unload();
 	glDeleteLists(rowList, wam->numCols);
-	Log(("A\n"));
-	glDeleteLists(noteList, 1);
 	Log(("A\n"));
 	free(notesOnScreen);
 	Log(("A\n"));
@@ -466,11 +421,6 @@ void main_scene(void)
 			(double)curTic+partialTic+POSITIVE_TICKS :
 			(double)wam->numTics);
 
-
-	Log(("B"));
-	DrawNotes();
-	Log(("C"));
-
 	set_ortho_projection();
 	fire_event("draw ortho", NULL);
 	reset_projection();
@@ -495,7 +445,6 @@ void main_scene(void)
 
 	glPopMatrix();
 
-	theta += timeDiff * 120.0;
 	Log(("H"));
 	Log(("endMainScene\n"));
 }
@@ -557,7 +506,7 @@ void AddNotes(int row)
 {
 	int x;
 	int tic;
-	struct screenNote *sn;
+	struct marfitude_note *sn;
 	if(row < 0 || row >= wam->numRows) return;
 	tic = wam->rowData[row].ticpos;
 	for(x=0;x<wam->numCols;x++) {
@@ -583,9 +532,9 @@ void AddNotes(int row)
 
 struct slist *RemoveList(struct slist *list, int tic)
 {
-	struct screenNote *sn;
+	struct marfitude_note *sn;
 	while(list) {
-		sn = (struct screenNote*)list->data;
+		sn = (struct marfitude_note*)list->data;
 		if(sn->tic != tic) break;
 		unusedList = slist_append(unusedList, list->data);
 		list = slist_remove(list, list->data);
@@ -618,11 +567,11 @@ void RandomColor(float col[4])
 	if(x&4) col[BLUE] = 1.0;
 }
 
-struct screenNote *FindNote(struct slist *list, int tic, int col)
+struct marfitude_note *FindNote(struct slist *list, int tic, int col)
 {
-	struct screenNote *sn;
+	struct marfitude_note *sn;
 	while(list) {
-		sn = (struct screenNote*)list->data;
+		sn = (struct marfitude_note*)list->data;
 		if(sn->tic == tic && sn->col == col) return sn;
 		list = slist_next(list);
 	}
@@ -659,17 +608,17 @@ void Press(int button)
 	int noteHit = 0;
 	int rowStart;
 	int rowStop;
-	struct screenNote *sn;
+	struct marfitude_note *sn;
 	struct row *r;
 
 	fire_event("shoot", &button);
 
 	rowStart = rowIndex;
-	while(rowStart > 0 && curRow->time - wam->rowData[Row(rowStart)].time < TIME_ERROR)
+	while(rowStart > 0 && curRow->time - wam->rowData[Row(rowStart)].time < MARFITUDE_TIME_ERROR)
 		rowStart--;
 
 	rowStop = rowIndex;
-	while(rowStop < wam->numRows && wam->rowData[Row(rowStop)].time - curRow->time < TIME_ERROR)
+	while(rowStop < wam->numRows && wam->rowData[Row(rowStop)].time - curRow->time < MARFITUDE_TIME_ERROR)
 		rowStop++;
 
 	for(i=rowStart;i<=rowStop;i++) {
@@ -684,7 +633,7 @@ void Press(int button)
 				r->ticpos >= ap.startTic &&
 				r->ticpos < ap.stopTic &&
 				r->ticpos > ap.lastTic &&
-				fabs(r->time - modTime) <= TIME_ERROR &&
+				fabs(r->time - modTime) <= MARFITUDE_TIME_ERROR &&
 				button == r->notes[channelFocus]) {
 
 				sn = FindNote(notesList, r->ticpos, channelFocus);
@@ -781,7 +730,7 @@ void TickHandler(void)
  */
 int NearRow(void)
 {
-	if(modTime - curRow->time < TIME_ERROR)
+	if(modTime - curRow->time < MARFITUDE_TIME_ERROR)
 		return rowIndex;
 	return rowIndex+1;
 }
@@ -842,12 +791,12 @@ void ResetAp(void)
 
 void CheckMissedNotes(void)
 {
-	struct screenNote *sn;
+	struct marfitude_note *sn;
 	struct slist *list;
 	list = notesList;
 	while(list) {
-		sn = (struct screenNote*)list->data;
-		if(modTime - sn->time > TIME_ERROR && sn->tic > ac[sn->col].miss) {
+		sn = (struct marfitude_note*)list->data;
+		if(modTime - sn->time > MARFITUDE_TIME_ERROR && sn->tic > ac[sn->col].miss) {
 			ac[sn->col].miss = sn->tic;
 			if(sn->col == channelFocus && sn->tic >= ap.startTic && sn->tic < ap.stopTic) {
 				if(ap.notesHit > 0)
@@ -870,26 +819,26 @@ void CheckColumn(int row)
 int NoteListTic(const void *snp, const void *tp)
 {
 	int tic = (int)tp;
-	const struct screenNote *sn = (const struct screenNote*)snp;
+	const struct marfitude_note *sn = (const struct marfitude_note*)snp;
 	return sn->tic - tic;
 }
 
 int SortByTic(const void *a, const void *b)
 {
-	const struct screenNote *an = (const struct screenNote*)a;
-	const struct screenNote *bn = (const struct screenNote*)b;
+	const struct marfitude_note *an = (const struct marfitude_note*)a;
+	const struct marfitude_note *bn = (const struct marfitude_note*)b;
 	return an->tic - bn->tic;
 }
 
 void MoveHitNotes(int tic, int col)
 {
-	struct screenNote *sn;
+	struct marfitude_note *sn;
 	struct slist *tmp;
 	struct slist *holder = NULL;
 	Log(("moveHIt\n"));
 	tmp = slist_find_custom(notesList, (void *)tic, NoteListTic);
 	while(tmp) {
-		sn = (struct screenNote*)tmp->data;
+		sn = (struct marfitude_note*)tmp->data;
 
 		if(sn->tic == tic && sn->col == col) {
 			hitList = slist_insert_sorted(hitList, sn, SortByTic);
@@ -1047,40 +996,6 @@ void DrawRows(double startTic, double stopTic)
 	glPopMatrix();
 }
 
-void DrawNotes(void)
-{
-	struct slist *t;
-	GLuint rotnoteList;
-
-	Log(("DN: %i, %i, %i\n", slist_length(notesList), slist_length(hitList), slist_length(unusedList)));
-	glDisable(GL_TEXTURE_2D);
-
-	rotnoteList = glGenLists(1);
-	glNewList(rotnoteList, GL_COMPILE); {
-		glRotatef(theta, 0.0, 1.0, 0.0);
-		glCallList(noteList);
-	} glEndList();
-
-	slist_foreach(t, notesList) {
-		struct screenNote *sn = t->data;
-		int mat = fabs(sn->time - modTime) <= TIME_ERROR;
-
-		glPushMatrix();
-		glTranslated(	sn->pos.x,
-				sn->pos.y,
-				sn->pos.z+0.3);
-		if(mat)
-			glColor4f(1.0, 0.4, 0.4, 1.0);
-		else
-			glColor4f(0.4, 0.4, 0.4, 1.0);
-		Log(("Dn\n"));
-		glCallList(rotnoteList);
-	}
-	glDeleteLists(rotnoteList, 1);
-	glEnable(GL_TEXTURE_2D);
-	Log(("dn\n"));
-}
-
 void DrawHitNotes(void)
 {
 	struct slist *t;
@@ -1089,7 +1004,7 @@ void DrawHitNotes(void)
 		int i;
 		int j;
 		float mat[16];
-		struct screenNote *sn = t->data;
+		struct marfitude_note *sn = t->data;
 
 		glPushMatrix();
 		glTranslated(	sn->pos.x,
@@ -1130,6 +1045,12 @@ const int *marfitude_get_offsets(void)
 const struct marfitude_score *marfitude_get_score(void)
 {
 	return &score;
+}
+
+/** Returns a slist of the notes to play */
+const struct slist *marfitude_get_notes(void)
+{
+	return notesList;
 }
 
 /** Gets the current module time in seconds */

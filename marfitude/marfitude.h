@@ -1,3 +1,4 @@
+#include "gmae/phys.h"
 
 #define BLOCK_HEIGHT .75
 #define TIC_HEIGHT .25
@@ -12,6 +13,8 @@
 
 #define UNMUTE 0
 #define MUTE 1
+
+#define MARFITUDE_TIME_ERROR 0.1
 
 /** A structure of score information */
 struct marfitude_score {
@@ -29,7 +32,19 @@ struct marfitude_pos {
 	int channel;           /**< Which channel is currently played */
 };
 
+/** A note on the screen */
+struct marfitude_note {
+	struct vector pos; /**< The coordinates of where to draw the note */
+	int tic;           /**< The mod tic this note is on */
+	double time;       /**< The time this note is on */
+	int col;           /**< The column the note is in */
+	int ins;           /**< DEBUG - the line in the src where this note was
+			    * added
+			    */
+};
+
 const struct wam *marfitude_get_wam(void);
 const int *marfitude_get_offsets(void);
 const struct marfitude_score *marfitude_get_score(void);
+const struct slist *marfitude_get_notes(void);
 void marfitude_get_pos(struct marfitude_pos *);
