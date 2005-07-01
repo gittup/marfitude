@@ -7,7 +7,6 @@
 #include "gmae/event.h"
 #include "gmae/log.h"
 #include "gmae/timer.h"
-#include "gmae/wam.h"
 
 #include "util/slist.h"
 
