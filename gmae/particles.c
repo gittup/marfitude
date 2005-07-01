@@ -41,8 +41,7 @@ static void GenTQuad(GLuint tex);
 static void Gen2TQuad(GLuint tex1, GLuint tex2);
 static void DrawParticle(struct particle *p);
 
-GLuint plist; /**< Allows access to the particle OpenGL lists */
-
+static GLuint plist;
 static int particlesInited = 0;
 static int numParticles;
 static int curParticle;
@@ -293,4 +292,10 @@ void clear_particles(void)
 		}
 	}
 	Log(("clear_particles done\n"));
+}
+
+/** Gets the particle texture associated with particle type @a p */
+GLuint particle(enum particleTypes p)
+{
+	return plist+p;
 }
