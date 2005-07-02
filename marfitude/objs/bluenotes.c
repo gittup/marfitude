@@ -1,22 +1,21 @@
 #include "SDL_opengl.h"
 
 #include "marfitude.h"
+#include "bluenotes.h"
 
 #include "gmae/event.h"
 #include "gmae/particles.h"
 
 #include "util/slist.h"
 
-void blue_notes_init(void) __attribute__ ((constructor));
-void blue_notes_exit(void) __attribute__ ((destructor));
 static void draw_notes(const void *);
 
-void blue_notes_init(void)
+void bluenotes_init(void)
 {
 	register_event("draw transparent", draw_notes, EVENTTYPE_MULTI);
 }
 
-void blue_notes_exit(void)
+void bluenotes_exit(void)
 {
 	deregister_event("draw transparent", draw_notes);
 }

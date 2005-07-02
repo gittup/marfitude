@@ -3,12 +3,11 @@
 #include "SDL_opengl.h"
 
 #include "marfitude.h"
+#include "lines.h"
 
 #include "gmae/event.h"
 #include "gmae/wam.h"
 
-void lines_init(void) __attribute__ ((constructor));
-void lines_exit(void) __attribute__ ((destructor));
 static void create_line(const void *);
 static void remove_line(const void *);
 static void draw_lines(const void *);

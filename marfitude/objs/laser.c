@@ -1,13 +1,12 @@
 #include "SDL_opengl.h"
 
 #include "marfitude.h"
+#include "laser.h"
+#include "fireball.h"
 
 #include "gmae/event.h"
 #include "gmae/textures.h"
 #include "gmae/timer.h"
-
-#include "util/dl.h"
-#include "util/plugin.h"
 
 #define NUM_LASERS 10
 #define LASER_DECAY 3.0
@@ -21,8 +20,6 @@ struct laser {
 			   */
 };
 
-void laser_init(void) __attribute__ ((constructor));
-void laser_exit(void) __attribute__ ((destructor));
 static double laser_adj(double a, double b, double dt);
 static void draw_laser(struct laser *l);
 static void make_laser(const void *);
@@ -31,9 +28,6 @@ static void draw_lasers(const void *);
 static int laser_tex;
 static int numLasers;
 static struct laser laser[NUM_LASERS];
-static const float *fireball;
-static void *fireball_handle = NULL;
-static float firetest[4] = {0.0, 0.0, 0.0, 0.0};
 
 void laser_init(void)
 {
@@ -41,19 +35,10 @@ void laser_init(void)
 	numLasers = 0;
 	register_event("shoot", make_laser, EVENTTYPE_MULTI);
 	register_event("draw transparent", draw_lasers, EVENTTYPE_MULTI);
-	fireball_handle = load_plugin("fireball");
-	if(fireball_handle) {
-		const float *(*fb)(void);
-		fb = (const float *(*)(void))dlsym(fireball_handle, "fireball_get_pos");
-		fireball = fb();
-	}
-	else
-		fireball = firetest;
 }
 
 void laser_exit(void)
 {
-	free_plugin(fireball_handle);
 	deregister_event("draw transparent", draw_lasers);
 	deregister_event("shoot", make_laser);
 }
@@ -63,6 +48,7 @@ void make_laser(const void *data)
 	const int *s = data;
 	const int *offsets = marfitude_get_offsets();
 	struct marfitude_pos p;
+	const float *fireball = fireball_get_pos();
 
 	marfitude_get_pos(&p);
 

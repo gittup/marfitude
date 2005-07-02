@@ -3,6 +3,7 @@
 #include "SDL_opengl.h"
 
 #include "marfitude.h"
+#include "greynotes.h"
 
 #include "gmae/event.h"
 #include "gmae/log.h"
@@ -10,14 +11,12 @@
 
 #include "util/slist.h"
 
-void notes_init(void) __attribute__ ((constructor));
-void notes_exit(void) __attribute__ ((destructor));
 static void draw_notes(const void *);
 
 static GLuint noteGl;
 static float theta;
 
-void notes_init(void)
+void greynotes_init(void)
 {
 	register_event("draw opaque", draw_notes, EVENTTYPE_MULTI);
 
@@ -50,7 +49,7 @@ void notes_init(void)
 	} glEndList();
 }
 
-void notes_exit(void)
+void greynotes_exit(void)
 {
 	glDeleteLists(noteGl, 1);
 	deregister_event("draw opaque", draw_notes);

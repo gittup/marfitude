@@ -2,6 +2,13 @@
 #include <string.h>
 
 #include "marfitude.h"
+#include "objs/bluenotes.h"
+#include "objs/fireball.h"
+#include "objs/greynotes.h"
+#include "objs/laser.h"
+#include "objs/lines.h"
+#include "objs/scoreboard.h"
+#include "objs/targets.h"
 
 #include "SDL_opengl.h"
 
@@ -110,6 +117,7 @@ static char *cursong;
 
 static struct marfitude_score score;
 
+static void *plugin = NULL;
 static int *noteOffset;
 static MikMod_player_t oldHand;
 static int tickCounter;
@@ -191,44 +199,6 @@ void button_handler(const void *data)
 	}
 }
 
-static void Load(void);
-static void Unload(void);
-static void AddPlugin(const char *s);
-
-static void **plugins = NULL;
-static int numPlugins = 0;
-
-void AddPlugin(const char *s)
-{
-	plugins = (void**)realloc(plugins, sizeof(void*) * (numPlugins + 1));
-	plugins[numPlugins] = load_plugin(s);
-	numPlugins++;
-}
-
-void Load(void)
-{
-	AddPlugin("laser");
-	AddPlugin("targets");
-	AddPlugin("lines");
-	AddPlugin("greynotes");
-	AddPlugin("bluenotes");
-/*	AddPlugin("fft-curtain");*/
-	AddPlugin("fireball");
-	AddPlugin("scoreboard");
-}
-
-void Unload(void)
-{
-	int x;
-
-	for(x=0; x<numPlugins; x++) {
-		free_plugin(plugins[x]);
-	}
-	free(plugins);
-	plugins = NULL;
-	numPlugins = 0;
-}
-
 int main_init()
 {
 	int x;
@@ -268,9 +238,16 @@ int main_init()
 
 	scene = CfgSp("main", "scene");
 	if(strcmp(scene, "scenes/default") == 0) {
-		Load();
+		laser_init();
+		targets_init();
+		lines_init();
+		greynotes_init();
+		bluenotes_init();
+		fireball_init();
+		scoreboard_init();
+		plugin = NULL;
 	} else {
-		AddPlugin(scene);
+		plugin = load_plugin(scene);
 	}
 
 	ticTime = 0;
@@ -363,6 +340,17 @@ void main_quit(void)
 	if(score.score > score.highscore) {
 		CfgSetIp("highscore", cursong, score.score);
 	}
+	if(plugin == NULL) {
+		laser_exit();
+		targets_exit();
+		lines_exit();
+		greynotes_exit();
+		bluenotes_exit();
+		fireball_exit();
+		scoreboard_exit();
+	} else {
+		free_plugin(plugin);
+	}
 	free(cursong);
 	oldHand = MikMod_RegisterPlayer(oldHand);
 	Log(("A\n"));
@@ -373,7 +361,6 @@ void main_quit(void)
 	songStarted = 0;
 	deregister_event("button", button_handler);
 	Log(("A\n"));
-	Unload();
 	glDeleteLists(rowList, wam->numCols);
 	Log(("A\n"));
 	free(notesOnScreen);

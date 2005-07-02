@@ -1,12 +1,11 @@
 #include "SDL_opengl.h"
 
 #include "marfitude.h"
+#include "targets.h"
 
 #include "gmae/event.h"
 #include "gmae/textures.h"
 
-void targets_init(void) __attribute__ ((constructor));
-void targets_exit(void) __attribute__ ((destructor));
 static void draw_targets(const void *);
 
 static int target_tex;

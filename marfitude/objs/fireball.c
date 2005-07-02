@@ -3,14 +3,12 @@
 #include "SDL_opengl.h"
 
 #include "marfitude.h"
+#include "fireball.h"
 
 #include "gmae/event.h"
 #include "gmae/textures.h"
 #include "gmae/wam.h"
 
-void fireball_init(void) __attribute__ ((constructor));
-void fireball_exit(void) __attribute__ ((destructor));
-const float *fireball_get_pos(void);
 static void fireball_draw(const void *);
 
 static int fireball_tex;

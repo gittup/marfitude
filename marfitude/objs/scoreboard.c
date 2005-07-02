@@ -1,14 +1,13 @@
 #include "SDL_opengl.h"
 
 #include "marfitude.h"
+#include "scoreboard.h"
 
 #include "gmae/event.h"
 #include "gmae/glfunc.h"
 #include "gmae/module.h"
 #include "gmae/wam.h"
 
-void scoreboard_init(void) __attribute__ ((constructor));
-void scoreboard_exit(void) __attribute__ ((destructor));
 static void draw_scoreboard(const void *);
 
 void scoreboard_init(void)
