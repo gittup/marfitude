@@ -219,15 +219,6 @@ int CfgIp(const char *header, const char *option)
 	return atoi(s);
 }
 
-/** Returns the integer value for the @a key */
-int CfgI(const char *key)
-{
-	char *s;
-	s = CfgS(key);
-	if(s == NULL) return 0;
-	return atoi(s);
-}
-
 /*float CfgF(const char *key)
 {
 	char *s;
