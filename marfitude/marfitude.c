@@ -205,7 +205,7 @@ int main_init()
 	char *scene;
 
 	Log(("Load Wam\n"));
-	cursong = CfgSCpy("main", "song");
+	cursong = cfg_copy("main", "song");
 
 	wam = load_wam(cursong);
 	if(wam == NULL) {
@@ -221,7 +221,7 @@ int main_init()
 	 * and the module is paused
 	 */
 	Log(("Module ready\n"));
-	score.highscore = CfgIp("highscore", cursong);
+	score.highscore = cfg_get_int("highscore", cursong);
 	score.score = 0;
 	score.multiplier = 1;
 	tickCounter = 0;
@@ -236,7 +236,7 @@ int main_init()
 
 	curRow = &wam->rowData[Row(0)];
 
-	scene = CfgSp("main", "scene");
+	scene = cfg_get("main", "scene");
 	if(strcmp(scene, "scenes/default") == 0) {
 		laser_init();
 		targets_init();
@@ -338,7 +338,7 @@ void main_quit(void)
 {
 	Log(("Main Scene quit\n"));
 	if(score.score > score.highscore) {
-		CfgSetIp("highscore", cursong, score.score);
+		cfg_set_int("highscore", cursong, score.score);
 	}
 	if(plugin == NULL) {
 		laser_exit();
