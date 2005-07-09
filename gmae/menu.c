@@ -740,8 +740,8 @@ void FightActivate(int shift)
 		return;
 	}
 	printf("Activating %i, %i\n", mainMenu->activeMenuItem, fightSceneSelect->activeMenuItem);
-	CfgSetS("main.song", song);
-	CfgSetS("main.scene", scene);
+	cfg_set("main", "song", song);
+	cfg_set("main", "scene", scene);
 	free(song);
 	free(scene);
 	switch_menu(NOMENU);
@@ -891,7 +891,7 @@ int FightMenuInit(void)
 		return 0;
 	}
 
-	lastFile = CfgS("main.song");
+	lastFile = cfg_get("main", "song");
 	cnt = 0;
 	len = slist_length(fileList);
 	slist_foreach(tmp, fileList) {
@@ -909,7 +909,7 @@ int FightMenuInit(void)
 		cnt++;
 	}
 
-	lastFile = CfgS("main.scene");
+	lastFile = cfg_get("main", "scene");
 	cnt = 0;
 	len = slist_length(sceneList);
 	slist_foreach(tmp, sceneList) {

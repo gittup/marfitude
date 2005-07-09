@@ -60,17 +60,17 @@ static void button_event(int button);
 
 static int cur_mode = MENU;
 static struct joykey buttons[B_LAST];
-static const char *cfgMsg[B_LAST] = {	"buttons.up",
-					"buttons.down",
-					"buttons.left",
-					"buttons.right",
-					"buttons.button1",
-					"buttons.button2",
-					"buttons.button3",
-					"buttons.button4",
-					"buttons.select",
-					"buttons.shift",
-					"buttons.menu"};
+static const char *cfgMsg[B_LAST] = {	"up",
+					"down",
+					"left",
+					"right",
+					"button1",
+					"button2",
+					"button3",
+					"button4",
+					"select",
+					"shift",
+					"menu"};
 static int shift = 0;
 
 /** Clear out the SDL_Event queue */
@@ -215,7 +215,7 @@ int set_button(int b, const struct joykey *jk)
 	if(b < 0 || b >= B_LAST) return 0;
 	s = malloc(int_len(jk->type)+int_len(jk->button)+int_len(jk->axis)+3);
 	sprintf(s, "%i.%i.%i", jk->type, jk->button, jk->axis);
-	CfgSetS(cfgMsg[b], s);
+	cfg_set("buttons", cfgMsg[b], s);
 	free(s);
 	buttons[b].type = jk->type;
 	buttons[b].button = jk->button;
@@ -246,27 +246,27 @@ int cfg_button(struct joykey *key, const char *cfgParam)
 {
 	char *s;
 	char *t;
-	if(CfgS(cfgParam) == NULL) {
+	if(cfg_get("buttons", cfgParam) == NULL) {
 		key->type = JK_UNSET;
 		key->button = 0;
 		key->axis = 0;
 		return 1;
 	}
-	s = malloc(sizeof(char) * (strlen(CfgS(cfgParam))+1));
-	strcpy(s, CfgS(cfgParam));
+	s = malloc(sizeof(char) * (strlen(cfg_get("buttons", cfgParam))+1));
+	strcpy(s, cfg_get("buttons", cfgParam));
 	t = s;
 	key->type = atoi(s);
 	s = next_dot(s);
 	if(s == NULL)
 	{
-		ELog(("Invalid configuration string for '%s'.\n", cfgParam));
+		ELog(("Invalid configuration string for 'buttons.%s'.\n", cfgParam));
 		return 1;
 	}
 	key->button = atoi(s);
 	s = next_dot(s);
 	if(s == NULL)
 	{
-		ELog(("Invalid configuration string for '%s'.\n", cfgParam));
+		ELog(("Invalid configuration string for 'buttons.%s'.\n", cfgParam));
 		return 1;
 	}
 	key->axis = atoi(s);

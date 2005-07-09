@@ -46,10 +46,7 @@ struct header {
 	int numOps;         /**< The number of the struct options */
 };
 
-static const char *OptionPart(const char *s);
-static char *HeaderPart(const char *s);
 static void AddOp(struct header *h, const char *key, const char *value);
-static void CfgAdd(const char *header, const char *key, const char *value);
 static int LoadConfig(const char *filename);
 static int SaveConfig(const char *filename);
 
@@ -57,34 +54,6 @@ static struct header *cfg = NULL;
 static int numHeaders = 0;
 static int cfgInited = 0;
 static char *cfgFileName = NULL;
-
-/* s is "a.b", returns "a" - must be freed */
-char *HeaderPart(const char *s)
-{
-	int x = 0;
-	char *h;
-	while(s[x] != '.')
-	{
-		if(!s[x]) return NULL;
-		x++;
-	}
-	h = malloc(sizeof(char) * (x+1));
-	strncpy(h, s, x);
-	h[x] = 0;
-	return h;
-}
-
-/* s is "a.b", returns "b", no freeing */
-const char *OptionPart(const char *s)
-{
-	int x = 0;
-	while(s[x])
-	{
-		if(s[x] == '.') return s+x+1;
-		x++;
-	}
-	return NULL;
-}
 
 void AddOp(struct header *h, const char *key, const char *value)
 {
@@ -96,7 +65,7 @@ void AddOp(struct header *h, const char *key, const char *value)
 	h->numOps++;
 }
 
-void CfgAdd(const char *header, const char *key, const char *value)
+void cfg_set(const char *header, const char *key, const char *value)
 {
 	int x, y;
 	int foundHeader = 0, foundOp = 0;
@@ -131,60 +100,31 @@ void CfgAdd(const char *header, const char *key, const char *value)
 	}
 }
 
-/** Sets the configuration @a key to the new string @a value */
-void CfgSetS(const char *key, char *value)
-{
-	char *header;
-	header = HeaderPart(key);
-	CfgAdd(header, OptionPart(key), value);
-	free(header);
-}
-
 /** Sets the configuration header.option to the new integer @a value */
-void CfgSetIp(const char *header, const char *option, int value)
+void cfg_set_int(const char *header, const char *option, int value)
 {
 	char *s;
 	s = malloc(int_len(value) + 1);
 	sprintf(s, "%i", value);
-	CfgAdd(header, option, s);
+	cfg_set(header, option, s);
 	free(s);
 }
-
-/** Sets the configuration @a key to the new integer @a value */
-void CfgSetI(const char *key, int value)
-{
-	char *header;
-	header = HeaderPart(key);
-	CfgSetIp(header, OptionPart(key), value);
-	free(header);
-}
-
-/*void CfgSetF(const char *key, float value)
-{
-	char *header;
-	char *s;
-	s = MallocString("%f", value);
-	header = HeaderPart(key);
-	CfgAdd(header, OptionPart(key), s);
-	free(header);
-	free(s);
-}*/
 
 /** Copy the CfgS of header.option into a new string.
  * @return The value of the configuration option, which must be freed.
  */
-char *CfgSCpy(const char *header, const char *option)
+char *cfg_copy(const char *header, const char *option)
 {
 	char *s;
 	char *t;
-	t = CfgSp(header, option);
+	t = cfg_get(header, option);
 	s = malloc(strlen(t) + 1);
 	strcpy(s, t);
 	return s;
 }
 
 /** Returns a pointer to the configuration value for the header.option key */
-char *CfgSp(const char *header, const char *option)
+char *cfg_get(const char *header, const char *option)
 {
 	int x, y;
 	for(x=0;x<numHeaders;x++) {
@@ -199,39 +139,20 @@ char *CfgSp(const char *header, const char *option)
 	return NULL;
 }
 
-/** Returns a pointer to the configuration value for the @a key */
-char *CfgS(const char *key)
-{
-	char *header;
-	char *s;
-	header = HeaderPart(key);
-	s = CfgSp(header, OptionPart(key));
-	free(header);
-	return s;
-}
-
 /** Returns the integer value of the header.option key */
-int CfgIp(const char *header, const char *option)
+int cfg_get_int(const char *header, const char *option)
 {
 	char *s;
-	s = CfgSp(header, option);
+	s = cfg_get(header, option);
 	if(s == NULL) return 0;
 	return atoi(s);
 }
 
-/*float CfgF(const char *key)
-{
-	char *s;
-	s = CfgS(key);
-	if(s == NULL) return 0.0;
-	return atof(s);
-}*/
-
 /** Returns 1 if the value of the configuration @a key is equal to @a string */
-int CfgEq(const char *key, const char *string)
+int cfg_eq(const char *header, const char *option, const char *string)
 {
 	char *s;
-	s = CfgS(key);
+	s = cfg_get(header, option);
 	if(s == NULL) return 0;
 	if(strcmp(s, string) == 0) return 1;
 	return 0;
@@ -273,7 +194,7 @@ int LoadConfig(const char *filename)
 				{
 					Log(("Invalid format for config file. Paramaters must be <name>=<value>\n"));
 				}
-				CfgAdd(header, t.token, eq.token);
+				cfg_set(header, t.token, eq.token);
 				free(eq.token);
 				free(t.token);
 				break;

@@ -21,15 +21,11 @@
  * Has some functions to query and set configuration options
  */
 
-void CfgSetS(const char *key, char *value);
-void CfgSetIp(const char *header, const char *option, int value);
-void CfgSetI(const char *key, int value);
-/*void CfgSetF(const char *key, float value);*/
-char *CfgSCpy(const char *header, const char *option);
-char *CfgSp(const char *header, const char *option);
-char *CfgS(const char *key);
-int CfgIp(const char *header, const char *option);
-/*float CfgF(const char *key);*/
-int CfgEq(const char *key, const char *string);
+void cfg_set(const char *header, const char *option, const char *value);
+void cfg_set_int(const char *header, const char *option, int value);
+char *cfg_copy(const char *header, const char *option);
+char *cfg_get(const char *header, const char *option);
+int cfg_get_int(const char *header, const char *option);
+int cfg_eq(const char *header, const char *option, const char *string);
 int init_config(void);
 void quit_config(void);

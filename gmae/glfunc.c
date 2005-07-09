@@ -185,9 +185,9 @@ int init_gl(void)
 	sdlInited = 1;
 	Log(("SDL Initialized\n"));
 
-	screenWidth = CfgIp("video", "width");
-	screenHeight = CfgIp("video", "height");
-	bpp = CfgIp("video", "bpp");
+	screenWidth = cfg_get_int("video", "width");
+	screenHeight = cfg_get_int("video", "height");
+	bpp = cfg_get_int("video", "bpp");
 
 	switch(bpp)
 	{
@@ -209,7 +209,7 @@ int init_gl(void)
 	}
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	if(CfgEq("video.fullscreen", "yes")) flags |= SDL_FULLSCREEN;
+	if(cfg_eq("video", "fullscreen", "yes")) flags |= SDL_FULLSCREEN;
 	screen = SDL_SetVideoMode(screenWidth, screenHeight, bpp, flags);
 	if(screen == NULL)
 	{
