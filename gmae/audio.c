@@ -37,10 +37,12 @@ static int audioInited = 0;
 int init_audio(void)
 {
 	int stereo;
+	int hz;
+	int channels;
 	Uint16 flags;
 
 	printf("Starting audio...\n");
-	if(CfgI("sound.bits") == 16)
+	if(CfgIp("sound", "bits") == 16)
 		flags = AUDIO_S16SYS;
 	else
 		flags = AUDIO_U8;
@@ -50,14 +52,17 @@ int init_audio(void)
 	else
 		stereo = 1;
 
-	if(Mix_OpenAudio(CfgI("sound.hz"), flags, stereo, CfgI("sound.buffersize")))
+	hz = CfgIp("sound", "hz");
+	channels = CfgIp("sound", "channels");
+
+	if(Mix_OpenAudio(hz, flags, stereo, CfgIp("sound", "buffersize")))
 	{
 		SDLError("initializing audio");
 		return 1;
 	}
-	Mix_AllocateChannels(CfgI("sound.channels"));
+	Mix_AllocateChannels(channels);
 	audioInited = 1;
-	printf("Audio initialized at %iHz, %i channels\n", CfgI("sound.hz"), CfgI("sound.channels"));
+	printf("Audio initialized at %iHz, %i channels\n", hz, channels);
 	return 0;
 }
 

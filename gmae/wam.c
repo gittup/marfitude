@@ -532,7 +532,7 @@ void ClearTrack(struct track *t, int chan)
 int SetSample(struct sample *s, int chan)
 {
 	int volThreshold;
-	volThreshold = CfgI("main.volumethreshold");
+	volThreshold = CfgIp("main", "volumethreshold");
 	/* can't use the 'sample' and 'note' values
 	 * from the MP_CONTROL struct in
 	 * mikmod_internals.h since they aren't
@@ -599,7 +599,7 @@ struct wam *LoadTrackData(void)
 	oldSngPos = -1;
 	lineCount = 0;
 
-	wam->numCols = CfgI("main.tracks");
+	wam->numCols = CfgIp("main", "tracks");
 	if(wam->numCols >= mod->numchn) wam->numCols = mod->numchn;
 	if(wam->numCols >= MAX_COLS) wam->numCols = MAX_COLS;
 

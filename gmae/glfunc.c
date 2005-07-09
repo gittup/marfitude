@@ -168,6 +168,7 @@ int init_gl(void)
 {
 	Uint32 flags = SDL_OPENGL;
 	SDL_Surface *screen;
+	int bpp;
 	float ambientLight[4] = {0.7, 0.7, 0.7, 0.7};
 	float diffuseLight[4] = {1.0, 1.0, 1.0, 1.0};
 	float blackLight[4] = {0.0, 0.0, 0.0, 1.0};
@@ -184,10 +185,11 @@ int init_gl(void)
 	sdlInited = 1;
 	Log(("SDL Initialized\n"));
 
-	screenWidth = CfgI("video.width");
-	screenHeight = CfgI("video.height");
+	screenWidth = CfgIp("video", "width");
+	screenHeight = CfgIp("video", "height");
+	bpp = CfgIp("video", "bpp");
 
-	switch(CfgI("video.bpp"))
+	switch(bpp)
 	{
 		case 32:
 		case 24:
@@ -208,13 +210,13 @@ int init_gl(void)
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	if(CfgEq("video.fullscreen", "yes")) flags |= SDL_FULLSCREEN;
-	screen = SDL_SetVideoMode(CfgI("video.width"), CfgI("video.height"), CfgI("video.bpp"), flags);
+	screen = SDL_SetVideoMode(screenWidth, screenHeight, bpp, flags);
 	if(screen == NULL)
 	{
 		SDLError("setting video mode");
 		return 2;
 	}
-	Log(("Video mode set: (%i, %i)\n", CfgI("video.width"), CfgI("video.height")));
+	Log(("Video mode set: (%i, %i)\n", screenWidth, screenHeight));
 	SDL_WM_SetCaption("Gmae", NULL); /* second arg is icon */
 	init_fps();
 	glViewport(0, 0, screenWidth, screenHeight);

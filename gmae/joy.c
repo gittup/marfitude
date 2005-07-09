@@ -34,7 +34,7 @@
  */
 
 static SDL_Joystick **joys = NULL;
-static char joyButtonCfg[23] = "joystick.ignorejs00b00";
+static char joyButtonCfg[14] = "ignorejs00b00";
 static int joyInited = 0;
 
 /** Checks if a joystick button has been set to be ignored by the config file.
@@ -47,11 +47,11 @@ static int joyInited = 0;
  */
 int joy_ignore_button(int joy, int button)
 {
-	joyButtonCfg[17] = joy / 10 + '0';
-	joyButtonCfg[18] = joy % 10 + '0';
-	joyButtonCfg[20] = button / 10 + '0';
-	joyButtonCfg[21] = button % 10 + '0';
-	return CfgI(joyButtonCfg);
+	joyButtonCfg[8] = joy / 10 + '0';
+	joyButtonCfg[9] = joy % 10 + '0';
+	joyButtonCfg[11] = button / 10 + '0';
+	joyButtonCfg[12] = button % 10 + '0';
+	return CfgIp("joystick", joyButtonCfg);
 }
 
 /** Opens all of the joysticks from SDL */
@@ -59,7 +59,7 @@ void init_joystick(void)
 {
 	int i;
 	const char *name;
-	if(CfgI("joystick.joystickenable") == 0) return;
+	if(CfgIp("joystick", "joystickenable") == 0) return;
 	Log(("Starting joystick...\n"));
 	i = SDL_NumJoysticks();
 	if(i)
