@@ -36,7 +36,7 @@ void explode(const void *data)
 	o->rotvel = rand_float() * 720.0 - 360.0;
 	o->acc.y = -3.98;
 
-	x = rand_int(7);
+	x = rand_int(7) + 1;
 	col[ALPHA] = 1.0;
 	col[RED] = 0.0;
 	col[GREEN] = 0.0;
