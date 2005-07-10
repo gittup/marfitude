@@ -132,7 +132,7 @@ struct screenMenu {
 	int maxY;  /**< Bottom side of the bounding box */
 };
 
-static void ShadedBox(int x1, int y1, int x2, int y2);
+static void ShadedBox(int x1, int y1, int x2, int y2, int fade);
 static void DrawPartialMenu(struct screenMenu *m, int start, int stop);
 static void DrawMenu(struct screenMenu *m);
 static void AddMenuItem(struct screenMenu *m, const char *name, void *item, int type);
@@ -158,7 +158,7 @@ static char *scene_convert(const char *s);
 static int alphabetical(const void *a, const void *b);
 static int FightMenuInit(void);
 static void FightMenuQuit(void);
-static void EQTriangle(void);
+static void EQTriangle(int fade);
 static void FightMenu(void);
 static void MenuBack(int);
 static void RegisterMenuEvents(void);
@@ -232,10 +232,11 @@ void button_handler(const void *data)
 	}
 }
 
-void ShadedBox(int x1, int y1, int x2, int y2)
+void ShadedBox(int x1, int y1, int x2, int y2, int fade)
 {
 	set_ortho_projection();
-	glColor4f(.3, .3, .3, .5);
+	glColor4f(0.3, 0.3, 0.3, 0.5);
+
 	glDisable(GL_TEXTURE_2D);
 	glBegin(GL_QUADS);
 	{
@@ -245,7 +246,10 @@ void ShadedBox(int x1, int y1, int x2, int y2)
 		glVertex2i(x2, y1);
 	} glEnd();
 
-	glColor4f(1.0, 1.0, 1.0, 1.0);
+	if(fade)
+		glColor4f(0.7, 0.7, 0.7, 1.0);
+	else
+		glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_LINE_LOOP);
 	{
 		glVertex2i(x1, y1);
@@ -257,7 +261,7 @@ void ShadedBox(int x1, int y1, int x2, int y2)
 	reset_projection();
 }
 
-void EQTriangle(void)
+void EQTriangle(int fade)
 {
 	glDisable(GL_TEXTURE_2D);
 
@@ -269,7 +273,10 @@ void EQTriangle(void)
 		glVertex3f(0.0, 1.732050807, 0.0);
 	} glEnd();
 
-	glColor4f(1.0, 1.0, 1.0, 1.0);
+	if(fade)
+		glColor4f(0.7, 0.7, 0.7, 1.0);
+	else
+		glColor4f(1.0, 1.0, 1.0, 1.0);
 	glTranslatef(0.0, 0.0, 0.3);
 	glBegin(GL_LINE_LOOP); {
 		glVertex3f(-1.0, 0.0, 0.0);
@@ -292,7 +299,7 @@ void DrawPartialMenu(struct screenMenu *m, int start, int stop)
 		x = m->minY + FONT_HEIGHT * m->menuSize;
 		bottom = (m->maxY < x) ? m->maxY : x;
 	}
-	ShadedBox(m->minX-BBO, m->minY-BBO, m->maxX+BBO, bottom + BBO);
+	ShadedBox(m->minX-BBO, m->minY-BBO, m->maxX+BBO, bottom + BBO, m != &screenMenus[curMenu]);
 	if(start < 0 || start >= m->numItems) start = 0;
 	if(stop < 0 || stop >= m->numItems) stop = m->numItems;
 	for(x=start;x<stop;x++)
@@ -309,16 +316,21 @@ void DrawPartialMenu(struct screenMenu *m, int start, int stop)
 					if(m == &screenMenus[curMenu])
 						glColor3f(1.0, 0.0, 0.0);
 					else
-						glColor3f(0.0, 0.0, 1.0);
+						glColor3f(0.7, 0.0, 0.0);
 				}
-				else glColor3f(1.0, 1.0, 1.0);
+				else {
+					if(m == &screenMenus[curMenu])
+						glColor3f(1.0, 1.0, 1.0);
+					else
+						glColor3f(0.7, 0.7, 0.7);
+				}
 				print_gl(m->menuX, m->menuY+(x-start)*FONT_HEIGHT, m->items[x].name);
 				break;
 			case MENU_TEXT:
 				t = (struct text*)m->items[x].item;
 				if(t->active)
 				{
-					glColor4f(t->c[RED], t->c[GREEN], t->c[BLUE], t->c[ALPHA]);
+					glColor4fv(t->c);
 					print_gl(t->x, t->y, m->items[x].name);
 				}
 		}
@@ -331,7 +343,7 @@ void DrawPartialMenu(struct screenMenu *m, int start, int stop)
 		glPushMatrix();
 			glTranslatef(m->menuX-20, m->menuY, 0.0);
 			glScalef(10.0, -10.0, 1.0);
-			EQTriangle();
+			EQTriangle(m != &screenMenus[curMenu]);
 		glPopMatrix();
 	}
 	if(m->menuSize != -1 && m->itemStart < m->numItems - m->menuSize)
@@ -340,7 +352,7 @@ void DrawPartialMenu(struct screenMenu *m, int start, int stop)
 		glPushMatrix();
 			glTranslatef(m->menuX-20, tmp, 0.0);
 			glScalef(10.0, 10.0, 1.0);
-			EQTriangle();
+			EQTriangle(m != &screenMenus[curMenu]);
 		glPopMatrix();
 	}
 	reset_projection();
