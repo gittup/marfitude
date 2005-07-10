@@ -3,6 +3,7 @@
 
 #include "marfitude.h"
 #include "objs/bluenotes.h"
+#include "objs/explode.h"
 #include "objs/fireball.h"
 #include "objs/greynotes.h"
 #include "objs/laser.h"
@@ -93,7 +94,6 @@ static void MoveHitNotes(int tic, int col);
 static void UpdateClearedCols(void);
 static void UpdatePosition(void);
 static void DrawRows(double startTic, double stopTic);
-static void RandomColor(float col[4]);
 static int NearRow(void);
 static struct marfitude_note *FindNote(struct slist *list, int tic, int col);
 static int get_clear_column(int start);
@@ -244,6 +244,7 @@ int main_init()
 		greynotes_init();
 		bluenotes_init();
 		fireball_init();
+		explode_init();
 		scoreboard_init();
 		plugin = NULL;
 	} else {
@@ -341,13 +342,14 @@ void main_quit(void)
 		cfg_set_int("highscore", cursong, score.score);
 	}
 	if(plugin == NULL) {
-		laser_exit();
-		targets_exit();
-		lines_exit();
-		greynotes_exit();
-		bluenotes_exit();
-		fireball_exit();
 		scoreboard_exit();
+		explode_exit();
+		fireball_exit();
+		bluenotes_exit();
+		greynotes_exit();
+		lines_exit();
+		targets_exit();
+		laser_exit();
 	} else {
 		free_plugin(plugin);
 	}
@@ -545,18 +547,6 @@ void RemoveNotes(int row)
 	Log(("RMHit: %i\n", hitList));
 	hitList = RemoveList(hitList, tic);
 	Log(("done: %i\n", hitList));
-}
-
-void RandomColor(float col[4])
-{
-	int x = (int)(7.0 * rand() / (RAND_MAX+1.0)) + 1;
-	col[ALPHA] = 1.0;
-	col[RED] = 0.0;
-	col[GREEN] = 0.0;
-	col[BLUE] = 0.0;
-	if(x&1) col[RED] = 1.0;
-	if(x&2) col[GREEN] = 1.0;
-	if(x&4) col[BLUE] = 1.0;
 }
 
 struct marfitude_note *FindNote(struct slist *list, int tic, int col)
@@ -852,30 +842,28 @@ void UpdateClearedCols(void)
 {
 	int x;
 	int tic;
-	float col[4];
 	struct row *r;
-	struct obj *o;
 
 	for(x=0;x<wam->numCols;x++) {
 		r = &wam->rowData[Row(ac[x].minRow)];
 		/* Yes I realize this is a bunch of magic numbers. Sue me. */
 		ac[x].part += (double)ticDiff * (double)r->bpm / (833.0 * (double)r->sngspd);
 		while(ac[x].part >= 1.0 && ac[x].minRow < ac[x].cleared && ac[x].minRow < wam->numRows) {
+			struct marfitude_pos p;
+
 			tic = r->ticpos;
 			MoveHitNotes(tic, x);
+
+			p.modtime = modTime;
+			p.tic = tic;
+			p.row = r;
+			p.row_index = Row(ac[x].minRow);
+			p.channel =  x;
+			fire_event("row explosion", &p);
+
 			ac[x].part -= 1.0;
 			ac[x].minRow++;
 			r++;
-			o = new_obj();
-			o->pos.x = -x * 2.0;
-			o->pos.z = TIC_HEIGHT * (double)tic;
-			o->vel.x = rand_float() - 0.5;
-			o->vel.y = 2.0 + rand_float();
-			o->vel.z = 13.0 + rand_float();
-			o->rotvel = rand_float() * 720.0 - 360.0;
-			o->acc.y = -3.98;
-			RandomColor(col);
-			create_particle(o, col, P_StarBurst, 1.0);
 		}
 	}
 }
