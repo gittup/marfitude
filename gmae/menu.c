@@ -247,7 +247,7 @@ void ShadedBox(int x1, int y1, int x2, int y2, int fade)
 	} glEnd();
 
 	if(fade)
-		glColor4f(0.7, 0.7, 0.7, 1.0);
+		glColor4f(0.58, 0.58, 0.58, 1.0);
 	else
 		glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_LINE_LOOP);
@@ -274,7 +274,7 @@ void EQTriangle(int fade)
 	} glEnd();
 
 	if(fade)
-		glColor4f(0.7, 0.7, 0.7, 1.0);
+		glColor4f(0.58, 0.58, 0.58, 1.0);
 	else
 		glColor4f(1.0, 1.0, 1.0, 1.0);
 	glTranslatef(0.0, 0.0, 0.3);
@@ -316,13 +316,13 @@ void DrawPartialMenu(struct screenMenu *m, int start, int stop)
 					if(m == &screenMenus[curMenu])
 						glColor3f(1.0, 0.0, 0.0);
 					else
-						glColor3f(0.7, 0.0, 0.0);
+						glColor3f(0.58, 0.0, 0.0);
 				}
 				else {
 					if(m == &screenMenus[curMenu])
 						glColor3f(1.0, 1.0, 1.0);
 					else
-						glColor3f(0.7, 0.7, 0.7);
+						glColor3f(0.58, 0.58, 0.58);
 				}
 				print_gl(m->menuX, m->menuY+(x-start)*FONT_HEIGHT, m->items[x].name);
 				break;
