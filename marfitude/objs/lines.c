@@ -33,7 +33,7 @@ void lines_init(void)
 	startLine = 0;
 	stopLine = 0;
 
-	register_event("draw opaque", draw_lines, EVENTTYPE_MULTI);
+	register_event("draw transparent", draw_lines, EVENTTYPE_MULTI);
 	register_event("row", create_line, EVENTTYPE_MULTI);
 	register_event("de-row", remove_line, EVENTTYPE_MULTI);
 }
@@ -42,7 +42,7 @@ void lines_exit(void)
 {
 	deregister_event("de-row", remove_line);
 	deregister_event("row", create_line);
-	deregister_event("draw opaque", draw_lines);
+	deregister_event("draw transparent", draw_lines);
 	free(lines);
 }
 
