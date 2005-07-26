@@ -43,9 +43,37 @@ struct marfitude_note {
 			    */
 };
 
+/** This structure keeps track of clearing information for each column */
+struct marfitude_attack_col {
+	double part;	/**< cumulative row adder, when >= 1.0 inc minRow */
+	int minRow;	/**< equal to cleared, but doesn't get set to 0
+			 * after the column is recreated
+			 */
+	int cleared;	/**< equals the last row this col is cleared to, 0 if
+			 * not cleared
+			 */
+	int hit;	/**< equals the tic of the last hit note */
+	int miss;	/**< equals the tic of the last missed note */
+};
+
+/** This structure keeps track of information needed for the column that is
+ * being played
+ */
+struct marfitude_attack_pat {
+	int startTic;     /**< first tic that we need to play */
+	int stopTic;      /**< last tic that we need to play */
+	int stopRow;      /**< corresponding row to stopTic */
+	int nextStartRow; /**< which row the game is cleared to. */
+	int lastTic;      /**< last note played is in lastTic */
+	int notesHit;     /**< number of notes we hit so far */
+	int notesTotal;   /**< total number of notes we need to play */
+};
+
 const struct wam *marfitude_get_wam(void);
 const int *marfitude_get_offsets(void);
 const struct marfitude_score *marfitude_get_score(void);
 const struct slist *marfitude_get_notes(void);
 const struct slist *marfitude_get_hitnotes(void);
+const struct marfitude_attack_col *marfitude_get_ac(void);
+const struct marfitude_attack_pat *marfitude_get_ap(void);
 void marfitude_get_pos(struct marfitude_pos *);

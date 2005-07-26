@@ -8,6 +8,7 @@
 #include "objs/greynotes.h"
 #include "objs/laser.h"
 #include "objs/lines.h"
+#include "objs/rows.h"
 #include "objs/scoreboard.h"
 #include "objs/targets.h"
 
@@ -32,9 +33,8 @@
 #include "util/slist.h"
 
 static Uint32 ticTime;
-static GLuint rowList;
-static GLuint mainTexes[MAX_COLS];
 static int channelFocus = 0;
+static double viewFocus = 0.0;
 static struct wam *wam; /* note file */
 
 /* returns 1 if the row is valid, 0 otherwise */
@@ -52,32 +52,6 @@ static struct row *curRow;
 static double modTime;
 static double partialTic;
 
-/** This structure keeps track of information needed for the column that is
- * being played
- */
-struct attackPattern {
-	int startTic;     /**< first tic that we need to play */
-	int stopTic;      /**< last tic that we need to play */
-	int stopRow;      /**< corresponding row to stopTic */
-	int nextStartRow; /**< which row the game is cleared to. */
-	int lastTic;      /**< last note played is in lastTic */
-	int notesHit;     /**< number of notes we hit so far */
-	int notesTotal;   /**< total number of notes we need to play */
-};
-
-/** This structure keeps track of clearing information for each column */
-struct attackCol {
-	double part;	/**< cumulative row adder, when >= 1.0 inc minRow */
-	int minRow;	/**< equal to cleared, but doesn't get set to 0
-			 * after the column is recreated
-			 */
-	int cleared;	/**< equals the last row this col is cleared to, 0 if
-			 * not cleared
-			 */
-	int hit;	/**< equals the tic of the last hit note */
-	int miss;	/**< equals the tic of the last missed note */
-};
-
 static void ResetAp(void);
 static void ChannelUp(int);
 static void ChannelDown(int);
@@ -93,7 +67,6 @@ static void SetMainView(void);
 static void MoveHitNotes(int tic, int col);
 static void UpdateClearedCols(void);
 static void UpdatePosition(void);
-static void DrawRows(double startTic, double stopTic);
 static int NearRow(void);
 static struct marfitude_note *FindNote(struct slist *list, int tic, int col);
 static int get_clear_column(int start);
@@ -106,8 +79,8 @@ static int SortByTic(const void *a, const void *b);
 static void menu_handler(const void *data);
 static void button_handler(const void *data);
 
-static struct attackPattern ap;
-static struct attackCol ac[MAX_COLS];
+static struct marfitude_attack_pat ap;
+static struct marfitude_attack_col ac[MAX_COLS];
 static struct marfitude_note *notesOnScreen; /* little ring buffer of notes */
 static struct slist *unusedList;	/* unused notes */
 static struct slist *notesList;	/* notes on the screen, not hit */
@@ -238,6 +211,7 @@ int main_init()
 
 	scene = cfg_get("main", "scene");
 	if(strcmp(scene, "scenes/default") == 0) {
+		rows_init();
 		laser_init();
 		targets_init();
 		lines_init();
@@ -253,6 +227,7 @@ int main_init()
 
 	ticTime = 0;
 	channelFocus = 0;
+	viewFocus = 0.0;
 
 	for(x=0;x<wam->numCols;x++) {
 		int y;
@@ -301,34 +276,6 @@ int main_init()
 	ap.nextStartRow = -1;
 	ResetAp();
 	register_event("button", button_handler, EVENTTYPE_MULTI);
-	Log(("Creating lists\n"));
-	rowList = glGenLists(wam->numCols);
-
-	mainTexes[0] = texture_num("Slate.png");
-	mainTexes[1] = texture_num("Walnut.png");
-	mainTexes[2] = texture_num("ElectricBlue.png");
-	mainTexes[3] = texture_num("Clovers.png");
-	mainTexes[4] = texture_num("Lava.png");
-	mainTexes[5] = texture_num("Parque3.png");
-	mainTexes[6] = texture_num("Slate.png");
-	mainTexes[7] = texture_num("ElectricBlue.png");
-
-	for(x=0;x<wam->numCols;x++) {
-		glNewList(rowList+x, GL_COMPILE); {
-			glColor4f(1.0, 1.0, 1.0, 1.0);
-			glNormal3f(0.0, 1.0, 0.0);
-			glBegin(GL_QUADS); {
-				glTexCoord2f(0.0, (double)x/4.0);
-				glVertex3f(-1.0, 0.0, 0.0);
-				glTexCoord2f(1.0, (double)x/4.0);
-				glVertex3f(1.0, 0.0, 0.0);
-				glTexCoord2f(1.0, (double)(x+1)/4.0);
-				glVertex3f(1.0, 0.0, BLOCK_HEIGHT);
-				glTexCoord2f(0.0, (double)(x+1)/4.0);
-				glVertex3f(-1.0, 0.0, BLOCK_HEIGHT);
-			} glEnd();
-		} glEndList();
-	}
 
 	init_timer();
 	Log(("Lists created\n"));
@@ -350,6 +297,7 @@ void main_quit(void)
 		lines_exit();
 		targets_exit();
 		laser_exit();
+		rows_exit();
 	} else {
 		free_plugin(plugin);
 	}
@@ -362,8 +310,6 @@ void main_quit(void)
 	Log(("A\n"));
 	songStarted = 0;
 	deregister_event("button", button_handler);
-	Log(("A\n"));
-	glDeleteLists(rowList, wam->numCols);
 	Log(("A\n"));
 	free(notesOnScreen);
 	Log(("A\n"));
@@ -399,23 +345,6 @@ void main_scene(void)
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 
 	Log(("A"));
-	/* usually we draw from -NEGATIVE_TICKS to +POSITIVE_TICKS, with the
-	 * notes currently being played at position 0.
-	 * At the beginning of the song, we start drawing instead from 
-	 * 0 to +POSITIVE_TICKS, and at the end of the song we draw from
-	 * -NEGATIVE_TICKS to wam->numTics.  Of course, if the song is less than
-	 * NEGATIVE_TICKS + POSITIVE_TICKS long, some other combinations will
-	 * arise :)
-	 */
-	DrawRows(
-			/* start */
-			curTic - NEGATIVE_TICKS >= 0 ?
-			((double)curTic + partialTic - NEGATIVE_TICKS) :
-			0.0,
-			/* end */
-			curTic < wam->numTics - POSITIVE_TICKS ?
-			(double)curTic+partialTic+POSITIVE_TICKS :
-			(double)wam->numTics);
 
 	set_ortho_projection();
 	fire_event("draw ortho", NULL);
@@ -483,7 +412,7 @@ void Setmute(struct column *c, int mute)
 	}
 }
 
-/* update which channels are playing based on attackCol contents */
+/* update which channels are playing based on marfitude_attack_col contents */
 void UpdateModule(void)
 {
 	int x;
@@ -669,12 +598,13 @@ void SetMainView(void)
 	float mainPos[3] = {0.0, 3.0, -8.0};
 	float mainView[3] = {0.0, 0.8, 0.0};
 
+	viewFocus += ((double)channelFocus - viewFocus) * timeDiff * 8.0;
 	mainView[2] = TIC_HEIGHT * ((double)curTic + partialTic);
 	mainPos[2] = mainView[2] - 8.0;
 
 	glLoadIdentity();
-	gluLookAt(	mainPos[0] - channelFocus * BLOCK_WIDTH, mainPos[1], mainPos[2],
-			mainView[0] - channelFocus * BLOCK_WIDTH, mainView[1], mainView[2],
+	gluLookAt(	mainPos[0] - viewFocus * BLOCK_WIDTH, mainPos[1], mainPos[2],
+			mainView[0] - viewFocus * BLOCK_WIDTH, mainView[1], mainView[2],
 			0.0, 1.0, 0.0);
 }
 
@@ -936,46 +866,6 @@ void UpdatePosition(void)
 	partialTic = (double)ticTime / 2500.0;
 }
 
-void DrawRows(double startTic, double stopTic)
-{
-	int col;
-	double start, stop;
-	if(startTic >= stopTic) return;
-	glPushMatrix();
-	glDisable(GL_LIGHTING);
-	for(col=0;col<wam->numCols;col++) {
-		start = startTic;
-		stop = stopTic;
-		glBindTexture(GL_TEXTURE_2D, mainTexes[col]);
-		if(wam->rowData[Row(ac[col].minRow)].ticpos > start)
-			start = wam->rowData[Row(ac[col].minRow)].ticpos;
-		if(col == channelFocus && ap.startTic != -1) {
-			if(ap.startTic > start) start = ap.startTic;
-			if(ap.stopTic < stop) stop = ap.stopTic;
-		}
-		if(start >= stop) {
-			glTranslated(-BLOCK_WIDTH, 0, 0);
-			continue;
-		}
-		start *= TIC_HEIGHT;
-		stop *= TIC_HEIGHT;
-		glBegin(GL_QUADS); {
-			glTexCoord2f(0.0, start/ 4.0);
-			glVertex3f(-1.0, 0.0, start);
-			glTexCoord2f(1.0, start / 4.0);
-			glVertex3f(1.0, 0.0, start);
-			glTexCoord2f(1.0, stop / 4.0);
-			glVertex3f(1.0, 0.0, stop);
-			glTexCoord2f(0.0, stop / 4.0);
-			glVertex3f(-1.0, 0.0, stop);
-		} glEnd();
-
-		glTranslated(-BLOCK_WIDTH, 0, 0);
-	}
-	glEnable(GL_LIGHTING);
-	glPopMatrix();
-}
-
 /** Gets the wam structure for the current song.
  * @return The wam struct.
  */
@@ -1006,6 +896,20 @@ const struct slist *marfitude_get_notes(void)
 const struct slist *marfitude_get_hitnotes(void)
 {
 	return hitList;
+}
+
+/** Returns an array of attack columns. Size is MAX_COLS, only wam->numCols
+ * are populated with stuff.
+ */
+const struct marfitude_attack_col *marfitude_get_ac(void)
+{
+	return ac;
+}
+
+/** Gets the current attack pattern. */
+const struct marfitude_attack_pat *marfitude_get_ap(void)
+{
+	return &ap;
 }
 
 /** Gets the current module time in seconds */
