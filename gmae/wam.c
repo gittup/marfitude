@@ -663,7 +663,10 @@ struct wam *LoadTrackData(void)
 					}
 				}
 			}
-			else if(!(lineCount&3)) wam->rowData[wam->numRows].line = 1;
+			else if(lineCount >= 24) {
+				wam->rowData[wam->numRows].line = 1;
+				lineCount = 0;
+			}
 			else wam->rowData[wam->numRows].line = 0;
 
 			Log(("Sng: %i Pat: %i row: %i, alloc: %i\n", mod->sngpos, mod->patpos, wam->numRows, rowsAlloced));
@@ -693,7 +696,7 @@ struct wam *LoadTrackData(void)
 				numgrps = 0;
 				grpCount = 0;
 			}
-			lineCount++;
+			lineCount+=mod->sngspd;
 
 			for(x=0;x<mod->numchn;x++)
 			{
