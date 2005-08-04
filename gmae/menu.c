@@ -899,8 +899,12 @@ int FightMenuInit(void)
 		}
 	}
 	if(slist_length(fileList) == 0) {
+		float c[4] = {0.0, 1.0, 1.0, 1.0};
 		Error("Generating playlist");
-		return 0;
+		CreateText(mainMenu, "Download MODs from", c, 200, 200);
+		CreateText(mainMenu, " http://www.modarchive.com !", c, 200, 200 + FONT_HEIGHT);
+		CreateText(mainMenu, "For more info go to ", c, 200, 200 + FONT_HEIGHT * 3);
+		CreateText(mainMenu, " http://www.erestar.net/games/marfitude", c, 200, 200 + FONT_HEIGHT * 4);
 	}
 
 	lastFile = cfg_get("main", "song");
