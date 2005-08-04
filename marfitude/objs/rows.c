@@ -87,7 +87,6 @@ void draw_rows(const void *data)
 
 	if(startTic >= stopTic) return;
 	glPushMatrix();
-	glDisable(GL_LIGHTING);
 	for(col=0;col<wam->numCols;col++) {
 		start = startTic;
 		stop = stopTic;
@@ -117,6 +116,5 @@ void draw_rows(const void *data)
 
 		glTranslated(-BLOCK_WIDTH, 0, 0);
 	}
-	glEnable(GL_LIGHTING);
 	glPopMatrix();
 }

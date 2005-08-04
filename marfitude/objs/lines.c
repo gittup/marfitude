@@ -90,7 +90,6 @@ void draw_lines(const void *data)
 	if(data) {}
 
 	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_LIGHTING);
 	glNormal3f(0.0, 1.0, 0.0);
 	glBegin(GL_LINES);
 	if(startLine <= stopLine) {
@@ -104,6 +103,5 @@ void draw_lines(const void *data)
 			draw_line(x);
 	}
 	glEnd();
-	glEnable(GL_LIGHTING);
 	glEnable(GL_TEXTURE_2D);
 }
