@@ -9,7 +9,6 @@
 #define POSITIVE_TICKS 57*6
 #define NUM_TICKS 64*6
 #define LINES_PER_AP 8
-#define ROWS_PER_LINE 4
 
 #define UNMUTE 0
 #define MUTE 1
