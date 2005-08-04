@@ -69,7 +69,7 @@ static void UpdateClearedCols(void);
 static void UpdatePosition(void);
 static int NearRow(void);
 static struct marfitude_note *FindNote(struct slist *list, int tic, int col);
-static int get_clear_column(int start);
+static int get_clear_column(int start, int skip_lines);
 static void FixVb(int *vb, int *row);
 static void TickHandler(void);
 static void CheckMissedNotes(void);
@@ -489,14 +489,20 @@ struct marfitude_note *FindNote(struct slist *list, int tic, int col)
 	return NULL;
 }
 
-/** Convert the column @a start to the next line'd column. Also make sure
- * there is enough space at the end for another attack pattern
+/** Convert the column @a start plus @a lines line columns to the next line'd
+ * column. Also make sure there is enough space at the end for another attack
+ * pattern.
  */
-int get_clear_column(int start)
+int get_clear_column(int start, int skip_lines)
 {
 	int lines = 0;
 	int tmp;
 
+	while(start < wam->numRows && skip_lines > 0) {
+		if(wam->rowData[start].line != 0)
+			skip_lines--;
+		start++;
+	}
 	/* clear to a line break */
 	while(start < wam->numRows && wam->rowData[start].line == 0)
 		start++;
@@ -567,7 +573,7 @@ void Press(int button)
 				ap.notesHit++;
 				if(ap.notesHit == ap.notesTotal) {
 					ap.nextStartRow = ap.stopRow;
-					ac[channelFocus].cleared = get_clear_column(ap.stopRow + LINES_PER_AP * ROWS_PER_LINE * wam->numCols);
+					ac[channelFocus].cleared = get_clear_column(ap.stopRow, LINES_PER_AP * wam->numCols);
 					ac[channelFocus].minRow = rowIndex;
 					ac[channelFocus].part = 0.0;
 					score.score += ap.notesHit * score.multiplier;
