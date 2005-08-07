@@ -73,6 +73,7 @@ struct row {
 	int patnum;  /**< the pattern this row is in */
 	double time; /**< The time in seconds since the start of the song */
 	char notes[MAX_COLS]; /**< 0 = no note, 1, 2, 4 = position of note */
+	char difficulty[MAX_COLS]; /**< 0 = easiest, 3 is hardest */
 };
 
 /** The wam is the structure that corresponds to a mod file. The wam contains

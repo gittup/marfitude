@@ -51,21 +51,28 @@
  * to squish a Mod file down into like 3 notes.
  */
 
-/** Describes a sample. This information is taken from MikMod */
+/** Describes a sample. The difficulty value is calculated based on a
+ * completely silly and subjective algorithm. The rest of the information
+ * is straight from MikMod.
+ */
 struct sample {
 	int note; /**< The note that is played */
 	int ins;  /**< The instrument playing */
 	int vol;  /**< The volume of the sample */
+	int difficulty; /**< How tough this note is to play */
 };
 
 /** Describes a track, which is one or more channels of a mod in a single
  * pattern.
  */
 struct track {
-	struct sample *samples;	/**< list of samples. length is the same
-				 * for all tracks, so it is kept in the
-				 * function and not in the struct
+	struct sample *samples;	/**< list of samples. Size numSamples, valid
+				 * length trklen
 				 */
+	int trklen;             /**< Length of the sample data above. This
+				 * is actually the same for all tracks.
+				 */
+	int numSamples;         /**< The size of the samples array */
 	int *notes;		/**< some temporary space to find the best
 				 * tracks in a pattern
 				 */
@@ -91,14 +98,15 @@ static char *Mod2Wam(const char *modFile);
 static int GetNote(UBYTE *trk, UWORD row);
 static int GetInstrument(UBYTE *trk, UWORD row);
 static void Handler(void);
-static void CombineSingleInsTracks(struct track *t1, struct track *t2, int trklen);
-static int TracksIntersect(struct track *t1, struct track *t2, int trklen);
+static void calculate_difficulty(struct track *t, struct wam *wam, int row);
+static void CombineSingleInsTracks(struct track *t1, struct track *t2);
+static int TracksIntersect(struct track *t1, struct track *t2);
 static int NextPos(int pos, int movinup, Uint32 note, Uint32 *mem);
-static int GenTrackData(struct track *t, int trklen, int pos);
+static int GenTrackData(struct track *t, int pos);
 static int BestTrack(struct track *t);
-static void SetColumn(struct column *col, struct track *trk, struct wam *wam, int colnum, int patnum, int trklen, int startRow);
+static void SetColumn(struct column *col, struct track *trk, struct wam *wam, int colnum, int patnum, int startRow);
 static int EmptyCol(struct column *cols, int numCols, struct column **retptr);
-static void UpdateRowData(struct track *t, int trklen, struct wam *wam, int startRow, int patnum);
+static void UpdateRowData(struct track *t, struct wam *wam, int startRow, int patnum);
 static void ClearTrack(struct track *t, int chan);
 static int SetSample(struct sample *s, int chan);
 static void WriteCol(int fno, struct column *col);
@@ -206,7 +214,7 @@ void Handler(void)
  * t1 becomes the intersection of t1 and t2, with notes averaged
  * volumes are copied, unaveraged
  */
-void CombineSingleInsTracks(struct track *t1, struct track *t2, int trklen)
+void CombineSingleInsTracks(struct track *t1, struct track *t2)
 {
 	int x;
 	/* keep the singleIns field up-to-date */
@@ -222,7 +230,7 @@ void CombineSingleInsTracks(struct track *t1, struct track *t2, int trklen)
 	/* now copy all the notes/instruments from t2 into t1
 	 * if t1 doesn't have a note there, copy t2 over it
 	 */
-	for(x=0;x<trklen;x++)
+	for(x=0;x<t1->trklen;x++)
 	{
 		if(t2->samples[x].note)
 		{
@@ -248,10 +256,10 @@ void CombineSingleInsTracks(struct track *t1, struct track *t2, int trklen)
 /* if both t1 and t2 have a note in the same row, they 'intersect'
  * and a 1 is returned. otherwise, 0
  */
-int TracksIntersect(struct track *t1, struct track *t2, int trklen)
+int TracksIntersect(struct track *t1, struct track *t2)
 {
 	int x;
-	for(x=0;x<trklen;x++)
+	for(x=0;x<t1->trklen;x++)
 	{
 		if(t1->samples[x].note && t2->samples[x].note) return 1;
 	}
@@ -276,7 +284,7 @@ int NextPos(int pos, int movinup, Uint32 note, Uint32 *mem)
 	return pos>>1;
 }
 
-int GenTrackData(struct track *t, int trklen, int pos)
+int GenTrackData(struct track *t, int pos)
 {
 	int x;
 	int mishaps = 0;
@@ -288,7 +296,7 @@ int GenTrackData(struct track *t, int trklen, int pos)
 	*oldnote = 0;
 	*newnote = 0;
 
-	for(x=0;x<trklen;x++)
+	for(x=0;x<t->trklen;x++)
 	{
 		if(t->samples[x].note)
 		{
@@ -350,7 +358,7 @@ int BestTrack(struct track *t)
 	return bestTrack;
 }
 
-void SetColumn(struct column *col, struct track *trk, struct wam *wam, int colnum, int patnum, int trklen, int startRow)
+void SetColumn(struct column *col, struct track *trk, struct wam *wam, int colnum, int patnum, int startRow)
 {
 	int y;
 	trk->isEmpty = 2;
@@ -358,9 +366,10 @@ void SetColumn(struct column *col, struct track *trk, struct wam *wam, int colnu
 	col->numchn = trk->numChannels;
 	col->chan = malloc(sizeof(int) * col->numchn);
 	memcpy(col->chan, trk->channels, sizeof(int) * col->numchn);
-	for(y=0;y<trklen;y++)
+	for(y=0;y<trk->trklen;y++)
 	{
 		wam->rowData[startRow+y].notes[colnum] = trk->notes[y];
+		wam->rowData[startRow+y].difficulty[colnum] = trk->samples[y].difficulty;
 		wam->rowData[startRow+y].patnum = patnum;
 	}
 }
@@ -380,7 +389,52 @@ int EmptyCol(struct column *cols, int numCols, struct column **retptr)
 	return -1;
 }
 
-void UpdateRowData(struct track *t, int trklen, struct wam *wam, int startRow, int patnum)
+void calculate_difficulty(struct track *t, struct wam *wam, int row)
+{
+	int x;
+	int difficulty = 0;
+	double last = -5.0;
+	const double toughness = .20;
+	int count = 1;
+
+	for(x=0; x<t->trklen; x++) {
+		if(t->samples[x].ins >= 0) {
+			double time = wam->rowData[row+x].time;
+			double sor;
+
+			sor = (double)count + (double)difficulty;
+			if(time - last < toughness / sor) {
+				difficulty += 2;
+			} else if(time - last < toughness * 2.0 / sor) {
+				difficulty++;
+			} else if(time - last < toughness * 3.0 / sor) {
+				/* No change */
+			} else if(time - last < toughness * 4.0 / sor) {
+				difficulty--;
+			} else if(time - last < toughness * 5.0 / sor) {
+				difficulty -= 2;
+			} else {
+				difficulty = 0;
+			}
+
+			if(difficulty < 0)
+				difficulty = 0;
+			if(difficulty > 3)
+				difficulty = 3;
+
+			last = time;
+			if(difficulty == 0) {
+				count = 1;
+			} else {
+				count += difficulty;
+			}
+
+			t->samples[x].difficulty = difficulty;
+		}
+	}
+}
+
+void UpdateRowData(struct track *t, struct wam *wam, int startRow, int patnum)
 {
 	int x, y;
 	int bestStart, bestCount, tmpCount;
@@ -390,59 +444,49 @@ void UpdateRowData(struct track *t, int trklen, struct wam *wam, int startRow, i
 	struct track *trk;
 
 	pat = &wam->patterns[patnum];
-	/* try to combine tracks that are one instrument line that is */
-	/* split among several tracks. These can be found by checking if */
-	/* two (or more) tracks all use the same instrument, but in different */
-	/* rows */
+	/* try to combine tracks that are one instrument line that is
+	 * split among several tracks. These can be found by checking if
+	 * two (or more) tracks all use the same instrument, but in different
+	 * rows
+	 */
 	for(x=0;x<mod->numchn-1;x++)
 	{
 		if(t[x].isEmpty || t[x].singleIns == -1) continue;
 		for(y=x+1;y<mod->numchn;y++)
 		{
 			if(t[y].isEmpty) continue;
-			if(t[x].singleIns == t[y].singleIns && !TracksIntersect(&t[x], &t[y], trklen))
+			if(t[x].singleIns == t[y].singleIns && !TracksIntersect(&t[x], &t[y]))
 			{
-				CombineSingleInsTracks(&t[x], &t[y], trklen);
+				CombineSingleInsTracks(&t[x], &t[y]);
 			}
 		}
 	}
 
 	for(x=0;x<mod->numchn;x++)
 	{
+		calculate_difficulty(&t[x], wam, startRow);
+
 		bestStart = 0;
-		bestCount = trklen;
+		bestCount = t->trklen;
 		for(y=1;y<=MAX_NOTE;y*=2)
 		{
-			tmpCount = GenTrackData(&t[x], trklen, y);
+			tmpCount = GenTrackData(&t[x], y);
 			if(!bestStart || tmpCount < bestCount)
 			{
 				bestStart = y;
 				bestCount = tmpCount;
 			}
 		}
-		/* if the best data is already in memory, no need to */
-		/* generate it again, so save a little time :) */
-		if(bestStart != MAX_NOTE) GenTrackData(&t[x], trklen, bestStart);
+		/* if the best data is already in memory, no need to
+		 * generate it again, so save a little time :)
+		 */
+		if(bestStart != MAX_NOTE) GenTrackData(&t[x], bestStart);
 	}
 
-	/* now combine tracks that are duplicates of each other - no sense */
-	/* having a bunch of tracks that are all the same thing */
-/*	for(x=0;x<mod->numchn-1;x++)
-	{
-		if(t[x].isEmpty) continue;
-		for(y=x+1;y<mod->numchn;y++)
-		{
-			if(t[y].isEmpty) continue;
-			if(TracksAreEqual(t[x].samples, t[y].samples, trklen))
-			{
-				*CombineTracks(&t[x], &t[y], trklen); *
-			}
-		}
-	}*/
-
-	/* get a list of the best tracks */
-	/* mark them empty as we go through, BestTrack picks up the best */
-	/* "non-empty" track */
+	/* get a list of the best tracks
+	 * mark them empty as we go through, BestTrack picks up the best
+	 * "non-empty" track
+	 */
 	Log(("A\n"));
 	for(x=0;x<wam->numCols;x++)
 	{
@@ -455,7 +499,8 @@ void UpdateRowData(struct track *t, int trklen, struct wam *wam, int startRow, i
 	}
 	Log(("B\n"));
 
-	/* place all the best tracks that can be placed in their previous slots */
+	/* place all the best tracks that can be placed in their previous slots
+	 */
 	for(x=0;x<wam->numCols;x++)
 	{
 		if(bestTrks[x] == -1) continue;
@@ -466,7 +511,7 @@ void UpdateRowData(struct track *t, int trklen, struct wam *wam, int startRow, i
 			if(col->chan == NULL)
 			{
 				Log(("Replace: %i\n", trk->lastCol));
-				SetColumn(col, trk, wam, trk->lastCol, patnum, trklen, startRow);
+				SetColumn(col, trk, wam, trk->lastCol, patnum, startRow);
 			}
 		}
 	}
@@ -485,7 +530,7 @@ void UpdateRowData(struct track *t, int trklen, struct wam *wam, int startRow, i
 			{
 				ELog(("ERROR: No empty column!\n"));
 			}
-			SetColumn(col, trk, wam, y, patnum, trklen, startRow);
+			SetColumn(col, trk, wam, y, patnum, startRow);
 		}
 	}
 	/* set empty rowdata for unused columns */
@@ -495,7 +540,7 @@ void UpdateRowData(struct track *t, int trklen, struct wam *wam, int startRow, i
 		if(col->chan == NULL)
 		{
 			Log(("Empty: %i\n", x));
-			for(y=0;y<trklen;y++)
+			for(y=0;y<t->trklen;y++)
 			{
 				wam->rowData[startRow+y].notes[x] = 0;
 				wam->rowData[startRow+y].patnum = patnum;
@@ -523,6 +568,7 @@ void ClearTrack(struct track *t, int chan)
 	t->isEmpty = 1;
 	t->singleIns = -1;
 	t->interest = 0;
+	t->trklen = 0;
 }
 
 /* sets the sample information in s from channel chan = [0..mod->numchn-1]
@@ -552,30 +598,27 @@ int SetSample(struct sample *s, int chan)
 		s->ins = GetInstrument(mod->control[chan].row, 0);
 		s->note = GetNote(mod->control[chan].row, 0);
 	}
-	if(s->note) return s->ins;
-	else return -1;
+	if(!s->note)
+		s->ins = -1;
+	return s->ins;
 }
 
 /* returns a new WAM structure containing all data necessary for the game */
 struct wam *LoadTrackData(void)
 {
 	int x, oldSngPos, lineCount;
+	int lineTicker;
 	int ins;
 	int tickCount = 0;
 	int grpCount = 0;
 	int numgrps = 0;
 	int startRow = 0;
 	int rowsAlloced = 0;	/* number of rows allocated in WAM file */
-	int numSamples = 64;	/* numSamples = how much we have allocated */
-				/* start with 64, since that's the default */
-				/* number of rows/pattern for most mods */
-	int trklen = 0;		/* trklen is how many samples we are actually */
-				/* using, since patterns can vary in length, */
-				/* even in the same song */
-	struct track *tracks;	/* track data */
-				/* we keep one pattern worth of samples */
-				/* in memory to check for redundant tracks */
-				/* and pick the best remaining tracks to play */
+	struct track *tracks;	/* track data
+				 * we keep one pattern worth of samples
+				 * in memory to check for redundant tracks
+				 * and pick the best remaining tracks to play
+				 */
 	struct wam *wam;	/* the wam we'll create and return */
 	double time = 0.0;      /* time in seconds */
 	MikMod_player_t oldHand; /* handler should stop multiple conflicting */
@@ -587,8 +630,9 @@ struct wam *LoadTrackData(void)
 	tracks = malloc(sizeof(struct track) * mod->numchn);
 	for(x=0;x<mod->numchn;x++)
 	{
-		tracks[x].samples = malloc(sizeof(struct sample) * numSamples);
-		tracks[x].notes = malloc(sizeof(int) * numSamples);
+		tracks[x].numSamples = 64;
+		tracks[x].samples = malloc(sizeof(struct sample) * tracks[x].numSamples);
+		tracks[x].notes = malloc(sizeof(int) * tracks[x].numSamples);
 		tracks[x].channels = malloc(sizeof(int) * mod->numchn);
 		ClearTrack(&tracks[x], x);
 		tracks[x].lastCol = -1;
@@ -598,6 +642,7 @@ struct wam *LoadTrackData(void)
 	oldHand = MikMod_RegisterPlayer(Handler);
 	oldSngPos = -1;
 	lineCount = 0;
+	lineTicker = 0;
 
 	wam->numCols = cfg_get_int("main", "tracks");
 	if(wam->numCols >= mod->numchn) wam->numCols = mod->numchn;
@@ -632,6 +677,7 @@ struct wam *LoadTrackData(void)
 				wam->rowData[wam->numRows].line = 2;
 				oldSngPos = mod->sngpos;
 				lineCount = 0;
+				lineTicker = 0;
 				/* now convert the track data to something
 				 * usable. mod->sngpos == 0 the first time
 				 * through, so there won't be any track data
@@ -652,20 +698,20 @@ struct wam *LoadTrackData(void)
 					grpCount = 0;
 
 					wam->patterns = (struct pattern*)realloc(wam->patterns, sizeof(struct pattern) * (wam->numPats+1));
-					UpdateRowData(tracks, trklen, wam, startRow, wam->numPats);
+					UpdateRowData(tracks, wam, startRow, wam->numPats);
 					update_progress(mod->sngpos, mod->numpos);
 					wam->numPats++;
 					startRow = wam->numRows;
-					trklen = 0;
 					for(x=0;x<mod->numchn;x++)
 					{
 						ClearTrack(&tracks[x], x);
 					}
 				}
 			}
-			else if(lineCount >= 24) {
+			else if(lineTicker >= 20 && (lineCount&3) == 0) {
 				wam->rowData[wam->numRows].line = 1;
 				lineCount = 0;
+				lineTicker = 0;
 			}
 			else wam->rowData[wam->numRows].line = 0;
 
@@ -696,20 +742,22 @@ struct wam *LoadTrackData(void)
 				numgrps = 0;
 				grpCount = 0;
 			}
-			lineCount+=mod->sngspd;
+			lineCount++;
+			lineTicker += mod->sngspd;
 
 			for(x=0;x<mod->numchn;x++)
 			{
-				ins = SetSample(tracks[x].samples+trklen, x);
-				/* some confusing logic ahead :) */
-				/* basically it clears the isEmpty var */
-				/* if an instrument is used, and ensures that */
-				/* singleIns is set to the single instrument */
-				/* used if there is only one instrument.  If */
-				/* more than one is used or the track is empty, */
-				/* it is set to -1 (ClearTrack() sets it to */
-				/* -1 when to start, and is not modified when */
-				/* it's empty) */
+				ins = SetSample(tracks[x].samples+tracks[x].trklen, x);
+				/* some confusing logic ahead :)
+				 * basically it clears the isEmpty var
+				 * if an instrument is used, and ensures that
+				 * singleIns is set to the single instrument
+				 * used if there is only one instrument.  If
+				 * more than one is used or the track is empty,
+				 * it is set to -1 (ClearTrack() sets it to
+				 * -1 when to start, and is not modified when
+				 * it's empty)
+				 */
 				if(ins != -1)
 				{
 					if(tracks[x].isEmpty)
@@ -725,15 +773,11 @@ struct wam *LoadTrackData(void)
 						}
 					}
 				}
-			}
-			trklen++;
-			if(trklen == numSamples)
-			{
-				numSamples *= 2;
-				for(x=0;x<mod->numchn;x++)
-				{
-					tracks[x].samples = (struct sample*)realloc(tracks[x].samples, sizeof(struct sample) * numSamples);
-					tracks[x].notes = (int*)realloc(tracks[x].notes, sizeof(int) * numSamples);
+				tracks[x].trklen++;
+				if(tracks[x].trklen == tracks[x].numSamples) {
+					tracks[x].numSamples *= 2;
+					tracks[x].samples = (struct sample*)realloc(tracks[x].samples, sizeof(struct sample) * tracks[x].numSamples);
+					tracks[x].notes = (int*)realloc(tracks[x].notes, sizeof(int) * tracks[x].numSamples);
 				}
 			}
 			wam->numRows++;
@@ -742,7 +786,7 @@ struct wam *LoadTrackData(void)
 		wam->numTics++;
 	}
 	wam->patterns = (struct pattern*)realloc(wam->patterns, sizeof(struct pattern) * (wam->numPats+1));
-	UpdateRowData(tracks, trklen, wam, startRow, wam->numPats);
+	UpdateRowData(tracks, wam, startRow, wam->numPats);
 	update_progress(mod->sngpos, mod->numpos);
 	end_progress_meter();
 	wam->numPats++;
