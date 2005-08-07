@@ -32,10 +32,12 @@
 #include "util/plugin.h"
 #include "util/slist.h"
 
+
 static Uint32 ticTime;
 static int channelFocus = 0;
 static double viewFocus = 0.0;
 static struct wam *wam; /* note file */
+static int difficulty = 0;
 
 /* returns 1 if the row is valid, 0 otherwise */
 #define IsValidRow(row) ((row >= 0 && row < wam->numRows) ? 1 : 0)
@@ -58,6 +60,7 @@ static void ChannelDown(int);
 static struct column *ColumnFromNum(int col);
 static void Setmute(struct column *c, int mute);
 static void UpdateModule(void);
+static int is_note(int row, int col);
 static void AddNotes(int row);
 static struct slist *RemoveList(struct slist *list, int tic);
 static void RemoveNotes(int row);
@@ -194,6 +197,7 @@ int main_init()
 	 * and the module is paused
 	 */
 	Log(("Module ready\n"));
+	difficulty = cfg_get_int("main", "difficulty");
 	score.highscore = cfg_get_int("highscore", cursong);
 	score.score = 0;
 	score.multiplier = 1;
@@ -425,6 +429,13 @@ void UpdateModule(void)
 	Setmute(&wam->patterns[curRow->patnum].unplayed, UNMUTE);
 }
 
+int is_note(int row, int col)
+{
+	if(wam->rowData[row].notes[col] &&
+			wam->rowData[row].difficulty[col] <= difficulty)
+		return 1;
+	return 0;
+}
 void AddNotes(int row)
 {
 	int x;
@@ -433,7 +444,7 @@ void AddNotes(int row)
 	if(row < 0 || row >= wam->numRows) return;
 	tic = wam->rowData[row].ticpos;
 	for(x=0;x<wam->numCols;x++) {
-		if(wam->rowData[row].notes[x]) {
+		if(is_note(row, x)) {
 			sn = unusedList->data;
 			if(row < ac[x].minRow) {
 				hitList = slist_append(hitList, sn);
@@ -449,6 +460,7 @@ void AddNotes(int row)
 			sn->tic = tic;
 			sn->time = wam->rowData[row].time;
 			sn->col = x;
+			sn->difficulty = wam->rowData[row].difficulty[x];
 		}
 	}
 }
@@ -544,14 +556,16 @@ void Press(int button)
 			/* if we're in the attackpattern limits, and
 			 * if we didn't already play this row, and this row 
 			 * is within our acceptable error, and we hit the
-			 * right note, then yay
+			 * right note, and it's within the difficulty range,
+			 * then yay
 			 */
 			if(	
 				r->ticpos >= ap.startTic &&
 				r->ticpos < ap.stopTic &&
 				r->ticpos > ap.lastTic &&
 				fabs(r->time - modTime) <= MARFITUDE_TIME_ERROR &&
-				button == r->notes[channelFocus]) {
+				button == r->notes[channelFocus] &&
+				r->difficulty[channelFocus] <= difficulty) {
 
 				sn = FindNote(notesList, r->ticpos, channelFocus);
 				if(!sn) {
@@ -673,20 +687,20 @@ void ResetAp(void)
 		/* don't count the note on the last row, since that will
 		 * be the beginning of the next "AttackPattern"
 		 */
-		if(wam->rowData[end].notes[channelFocus]) ap.notesTotal++;
+		if(is_note(end, channelFocus)) ap.notesTotal++;
 		end++;
 		if(wam->rowData[end].line != 0) apLines++;
 	}
 
 	/* Make sure there is at least one note in the AP */
 	while(ap.notesTotal == 0 && end < wam->numRows) {
-		if(wam->rowData[end].notes[channelFocus]) ap.notesTotal++;
+		if(is_note(end, channelFocus)) ap.notesTotal++;
 		end++;
 	}
 
 	/* Make sure the AP ends on a line */
 	while(wam->rowData[end].line == 0 && end < wam->numRows) {
-		if(wam->rowData[end].notes[channelFocus]) ap.notesTotal++;
+		if(is_note(end, channelFocus)) ap.notesTotal++;
 		end++;
 	}
 

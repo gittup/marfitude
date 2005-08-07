@@ -37,6 +37,7 @@ struct marfitude_note {
 	int tic;           /**< The mod tic this note is on */
 	double time;       /**< The time this note is on */
 	int col;           /**< The column the note is in */
+	int difficulty;    /**< The difficulty of this note */
 	int ins;           /**< DEBUG - the line in the src where this note was
 			    * added
 			    */
