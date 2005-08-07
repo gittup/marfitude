@@ -78,6 +78,9 @@ struct slider {
 	int max; /**< The maximum value */
 	int del; /**< The delta */
 	int val; /**< The actual value */
+	int namelen; /**< The length of the name of the slider */
+	char **strs; /**< Optional list of strings describing the values */
+	float c[4]; /**< The color of the slider object */
 };
 
 /** A boolean menu object */
@@ -134,12 +137,15 @@ struct screenMenu {
 
 static void ShadedBox(int x1, int y1, int x2, int y2, int fade);
 static void DrawPartialMenu(struct screenMenu *m, int start, int stop);
+static void active_color(int item, struct screenMenu *m);
 static void DrawMenu(struct screenMenu *m);
 static void AddMenuItem(struct screenMenu *m, const char *name, void *item, int type);
 static void ClearMenuItems(struct screenMenu *m);
 static void UpdateBox(struct screenMenu *m, int x1, int y1, int x2, int y2);
-/*static struct slider *CreateSlider(const char *name, int min, int max, int delta, int initVal);
-static struct boolean *CreateBoolean(const char *name, const char *trueString, const char *falseString, int initVal);*/
+static int clip_slider_val(struct slider *s);
+static void name_slider_item(struct screenMenu *m, struct slider *s, int i, const char *name);
+static struct slider *CreateSlider(struct screenMenu *m, const char *name, float *c, int min, int max, int delta, int initVal);
+/*static struct boolean *CreateBoolean(const char *name, const char *trueString, const char *falseString, int initVal);*/
 static struct button *CreateButton(struct screenMenu *m, const char *name, void (*activeFunc)(int));
 static struct buttonParam *CreateButtonParam(struct screenMenu *m, const char *name, int (*activeFunc)(int), int param);
 static struct text *CreateText(struct screenMenu *m, const char *name, float *c, int x, int y);
@@ -160,6 +166,9 @@ static int FightMenuInit(void);
 static void FightMenuQuit(void);
 static void EQTriangle(int fade);
 static void FightMenu(void);
+static int option_menu_init(void);
+static void option_menu_quit(void);
+static void option_menu(void);
 static void MenuBack(int);
 static void RegisterMenuEvents(void);
 static void ShowMenu(const void *);
@@ -287,51 +296,68 @@ void EQTriangle(int fade)
 	glEnable(GL_TEXTURE_2D);
 }
 
+void active_color(int item, struct screenMenu *m)
+{
+	if(item == m->activeMenuItem) {
+		if(m == &screenMenus[curMenu])
+			glColor3f(1.0, 0.0, 0.0);
+		else
+			glColor3f(0.58, 0.0, 0.0);
+	}
+	else {
+		if(m == &screenMenus[curMenu])
+			glColor3f(1.0, 1.0, 1.0);
+		else
+			glColor3f(0.58, 0.58, 0.58);
+	}
+}
+
 void DrawPartialMenu(struct screenMenu *m, int start, int stop)
 {
-	int x;
+	int i;
+	int x, y;
 	int bottom;
 	struct text *t;
+	struct slider *s;
 
 	if(m->menuSize == -1) {
 		bottom = m->maxY;
 	} else {
-		x = m->minY + FONT_HEIGHT * m->menuSize;
-		bottom = (m->maxY < x) ? m->maxY : x;
+		i = m->minY + FONT_HEIGHT * m->menuSize;
+		bottom = (m->maxY < i) ? m->maxY : i;
 	}
 	ShadedBox(m->minX-BBO, m->minY-BBO, m->maxX+BBO, bottom + BBO, m != &screenMenus[curMenu]);
 	if(start < 0 || start >= m->numItems) start = 0;
 	if(stop < 0 || stop >= m->numItems) stop = m->numItems;
-	for(x=start;x<stop;x++)
+	for(i=start;i<stop;i++)
 	{
-		switch(m->items[x].type)
+		x = m->menuX;
+		y = m->menuY + (i-start) * FONT_HEIGHT;
+		switch(m->items[i].type)
 		{
 			case MENU_SLIDER:
+				s = (struct slider*)m->items[i].item;
+				print_gl(x, y, m->items[i].name);
+				active_color(i, m);
+				if(s->val <= s->max && s->val >= s->min &&
+						s->strs[s->val] != NULL)
+					print_gl(m->maxX - strlen(s->strs[s->val]) * FONT_WIDTH, y, s->strs[s->val]);
+				else
+					print_gl(m->maxX - int_len(s->val) * FONT_WIDTH, y, "%i", s->val);
 				break;
 			case MENU_BOOLEAN:
 				break;
 			case MENU_BUTTON:
 			case MENU_BUTTONPARAM:
-				if(x == m->activeMenuItem) {
-					if(m == &screenMenus[curMenu])
-						glColor3f(1.0, 0.0, 0.0);
-					else
-						glColor3f(0.58, 0.0, 0.0);
-				}
-				else {
-					if(m == &screenMenus[curMenu])
-						glColor3f(1.0, 1.0, 1.0);
-					else
-						glColor3f(0.58, 0.58, 0.58);
-				}
-				print_gl(m->menuX, m->menuY+(x-start)*FONT_HEIGHT, m->items[x].name);
+				active_color(i, m);
+				print_gl(x, y, m->items[i].name);
 				break;
 			case MENU_TEXT:
-				t = (struct text*)m->items[x].item;
+				t = (struct text*)m->items[i].item;
 				if(t->active)
 				{
 					glColor4fv(t->c);
-					print_gl(t->x, t->y, m->items[x].name);
+					print_gl(t->x, t->y, m->items[i].name);
 				}
 		}
 	}
@@ -376,7 +402,9 @@ void AddMenuItem(struct screenMenu *m, const char *name, void *item, int type)
 void ClearMenuItems(struct screenMenu *m)
 {
 	int x;
+	int y;
 	struct boolean *b;
+	struct slider *s;
 	Log(("Clearing items...\n"));
 	m->minX = NOBOX;
 	m->minY = 0;
@@ -388,7 +416,12 @@ void ClearMenuItems(struct screenMenu *m)
 		switch(m->items[x].type)
 		{
 			case MENU_SLIDER:
-				free(m->items[x].item);
+				s = (struct slider*)m->items[x].item;
+				for(y=0; y<s->max; y++) {
+					free(s->strs[y]);
+				}
+				free(s->strs);
+				free(s);
 				break;
 			case MENU_BOOLEAN:
 				b = (struct boolean*)m->items[x].item;
@@ -431,19 +464,62 @@ void UpdateBox(struct screenMenu *m, int x1, int y1, int x2, int y2)
 	}
 }
 
-/*struct slider *CreateSlider(const char *name, int min, int max, int delta, int initVal)
+int clip_slider_val(struct slider *s)
+{
+	if(s->val < s->min) {
+		s->val = s->min;
+		return 0;
+	}
+	if(s->val > s->max) {
+		s->val = s->max;
+		return 0;
+	}
+	return 1;
+}
+
+#define SLIDER_SPACING 3
+void name_slider_item(struct screenMenu *m, struct slider *s, int i, const char *name)
+{
+	int len;
+
+	if(i < s->min || i > s->max) {
+		ELog(("Slider item '%s' for index %i not in range of %i-%i\n",
+					name, i, s->min, s->max));
+		return;
+	}
+	s->strs[i] = string_copy(name);
+	len = s->namelen + strlen(name) + SLIDER_SPACING;
+	UpdateBox(m, m->minX, m->minY, m->menuX + len * FONT_WIDTH, m->maxY);
+}
+
+struct slider *CreateSlider(struct screenMenu *m, const char *name, float *c, int min, int max, int delta, int initVal)
 {
 	struct slider *s;
+	int x;
+	int len;
+
 	s = malloc(sizeof(struct slider));
 	s->min = min;
 	s->max = max;
 	s->del = delta;
 	s->val = initVal;
-	AddMenuItem(name, (void*)s, SLIDER);
+	s->c[RED] = c[RED];
+	s->c[GREEN] = c[GREEN];
+	s->c[BLUE] = c[BLUE];
+	s->c[ALPHA] = c[ALPHA];
+	s->namelen = strlen(name);
+	s->strs = (char**)malloc(sizeof(char*) * max + 1);
+	for(x=0; x<=max; x++) {
+		s->strs[x] = NULL;
+	}
+
+	len = s->namelen + int_len(max) + SLIDER_SPACING;
+	UpdateBox(m, m->menuX, m->menuY + FONT_HEIGHT * m->numItems, m->menuX + len * FONT_WIDTH, m->menuY + FONT_HEIGHT * (m->numItems+1));
+	AddMenuItem(m, name, (void*)s, MENU_SLIDER);
 	return s;
 }
 
-struct boolean *CreateBoolean(const char *name, const char *trueString, const char *falseString, int initVal)
+/*struct boolean *CreateBoolean(const char *name, const char *trueString, const char *falseString, int initVal)
 {
 	struct boolean *b;
 	b = malloc(sizeof(struct boolean));
@@ -580,12 +656,38 @@ void MenuUp(int shift)
 
 void MenuDec(void)
 {
-	printf("Menu item decremented\n");
+	struct screenMenu *m = &screenMenus[curMenu];
+	struct menuItem *i = &m->items[m->activeMenuItem];
+	struct slider *s;
+	int play = 0;
+
+	switch(i->type) {
+		case MENU_SLIDER:
+			s = (struct slider*)i->item;
+			s->val--;
+			if(clip_slider_val(s))
+				play = 1;
+			break;
+	}
+	if(play) MPlaySound(snd_tick);
 }
 
 void MenuInc(void)
 {
-	printf("Menu item incremented\n");
+	struct screenMenu *m = &screenMenus[curMenu];
+	struct menuItem *i = &m->items[m->activeMenuItem];
+	struct slider *s;
+	int play = 0;
+
+	switch(i->type) {
+		case MENU_SLIDER:
+			s = (struct slider*)i->item;
+			s->val++;
+			if(clip_slider_val(s))
+				play = 1;
+			break;
+	}
+	if(play) MPlaySound(snd_tick);
 }
 
 void MenuActivate(const void *data)
@@ -707,6 +809,7 @@ int MainMenuInit(void)
 	CreateButtonParam(mainMenu, "Fight", switch_menu, FIGHTMENU);
 	if(is_scene_active(MAINSCENE)) CreateButton(mainMenu, "Retry", Retry);
 	CreateButtonParam(mainMenu, "Configure", switch_menu, CONFIGMENU);
+	CreateButtonParam(mainMenu, "Options", switch_menu, OPTIONMENU);
 	CreateButtonParam(mainMenu, "Quit", switch_menu, QUITMENU);
 	return 0;
 }
@@ -987,6 +1090,34 @@ void FightMenu(void)
 	DrawPartialMenu(fightSceneSelect, fightSceneSelect->itemStart, fightSceneSelect->itemStart+fightSceneSelect->menuSize);
 }
 
+int option_menu_init(void)
+{
+	float c[4] = {0.0, 1.0, 1.0, 1.0};
+	struct slider *s;
+	int difficulty = cfg_get_int("main", "difficulty");
+
+	if(!menuActive) RegisterMenuEvents();
+	s = CreateSlider(mainMenu, "Difficulty", c, 0, 3, 1, difficulty);
+	name_slider_item(mainMenu, s, 0, "Muffins & Lollipops");
+	name_slider_item(mainMenu, s, 1, "DJ McFunAdoo");
+	name_slider_item(mainMenu, s, 2, "Too-Dope Extreme!");
+	name_slider_item(mainMenu, s, 3, "The Heart Stopper!!");
+	return 0;
+}
+
+void option_menu_quit(void)
+{
+	struct slider *s;
+	s = (struct slider*)mainMenu->items[0].item;
+	cfg_set_int("main", "difficulty", s->val);
+	ClearMenuItems(mainMenu);
+}
+
+void option_menu(void)
+{
+	DrawMenu(mainMenu);
+}
+
 static int configuring = -1;
 static const char *cfglabels[] = {"Up", "Down", "Left", "Right", "Laser 1", "Laser 2", "Laser 3", "Repeat", "Select", "Shift", "Menu"};
 static struct text *newKeyText;
@@ -1089,13 +1220,14 @@ void QuitMenu(void)
 }
 
 /** The number of menus that are defined */
-#define NUMMENUS 6
+#define NUMMENUS 7
 static struct menu menus[NUMMENUS] = {
 	{NullMenuInit, NullMenuQuit, NullMenu, NULLMENU},
 	{NoMenuInit, NoMenuQuit, NoMenu, NULLMENU},
 	{MainMenuInit, MainMenuQuit, MainMenu, NOMENU},
 	{FightMenuInit, FightMenuQuit, FightMenu, MAINMENU},
 	{ConfigMenuInit, ConfigMenuQuit, ConfigMenu, MAINMENU},
+	{option_menu_init, option_menu_quit, option_menu, MAINMENU},
 	{QuitMenuInit, QuitMenuQuit, QuitMenu, MAINMENU}
 };
 

@@ -52,5 +52,7 @@ struct menu_e {
 #define FIGHTMENU 3
 /** The configuration menu */
 #define CONFIGMENU 4
+/** The options menu */
+#define OPTIONMENU 5
 /** The quit menu */
-#define QUITMENU 5
+#define QUITMENU 6
