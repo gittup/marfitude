@@ -34,7 +34,7 @@ void draw_targets(const void *data)
 	glTranslated((double)p.channel * -BLOCK_WIDTH, 0.0, TIC_HEIGHT * p.tic);
 	glBindTexture(GL_TEXTURE_2D, target_tex);
 	glTranslated(-NOTE_WIDTH, 0.0, 0.0);
-	glColor4f(1.0, 1.0, 1.0, 0.7);
+	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glNormal3f(0.0, 1.0, 0.0);
 	for(x=-1;x<=1;x++) {
 		glBegin(GL_QUADS); {
