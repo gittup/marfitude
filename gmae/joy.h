@@ -25,7 +25,9 @@ int joy_ignore_button(int joy, int button);
 void init_joystick(void);
 void quit_joystick(void);
 
+/** How far back the joystick must go before it can be re-enabled. */
+#define JOY_MIN_THRESHOLD 5000
 /** How far an analog axis can be pushed before it is enabled. Currently,
  * this sucks. Consider analog joysticks borked.
  */
-#define JOY_THRESHOLD 5000
+#define JOY_MAX_THRESHOLD 20000

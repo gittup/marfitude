@@ -30,7 +30,7 @@
 enum buttonType {
 	B_UP = 0, B_DOWN, B_LEFT, B_RIGHT,
 	B_BUTTON1, B_BUTTON2, B_BUTTON3, B_BUTTON4,
-	B_SELECT, B_SHIFT, B_MENU,
+	B_SHIFT, B_SELECT, B_MENU,
 	B_LAST
 };
 
@@ -64,6 +64,7 @@ enum event_mode {
 
 void clear_input(void);
 void input_loop(void);
+void set_key_repeat(int button, int repeatable);
 void input_mode(enum event_mode mode);
 int configure_joykeys(void);
 char *joykey_name(int button);

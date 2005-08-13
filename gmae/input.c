@@ -29,9 +29,11 @@
 #include "joy.h"
 #include "log.h"
 #include "main.h"
+#include "timer.h"
 
 #include "util/memtest.h"
 #include "util/strfunc.h"
+#include "util/slist.h"
 
 /** The type field in struct joykey for keyboardses */
 #define JK_KEYBOARD -1
@@ -46,17 +48,31 @@
  * Handles SDL events.
  */
 
+struct keypush {
+	struct joykey key;
+	Uint32 time_hit;
+	int active;
+	int repeating;
+	int repeatable;
+	void (*handler)(struct joykey*);
+};
+
+static struct slist *keys = NULL;
+
+static void handle_action(struct keypush *kp, int action);
+static struct keypush *get_keypush(const struct joykey *jk, void (*)(struct joykey*));
+static int fire_joykey(const struct joykey *jk);
+static void reset_key_repeats(void);
 static char *next_dot(char *s);
 static int cfg_button(struct joykey *key, const char *cfgParam);
-static int key_equal(struct joykey *key, SDL_KeyboardEvent *e);
-static int mouse_button_equal(struct joykey *key, SDL_MouseButtonEvent *e);
-static int joy_button_equal(struct joykey *key, SDL_JoyButtonEvent *e);
-static int joy_axis_equal(struct joykey *key, SDL_JoyAxisEvent *e);
-static void key_down_event(SDL_KeyboardEvent *e);
-static void mouse_button_event(SDL_MouseButtonEvent *e);
-static void joy_button_down_event(SDL_JoyButtonEvent *e);
-static void joy_axis_event(SDL_JoyAxisEvent *e);
+static int joykey_equal(const struct joykey *a, const struct joykey *b);
+static void key_handler(struct joykey *);
+static void mouse_button_handler(struct joykey *);
+static void joy_button_handler(struct joykey *);
+static void joy_axis_handler(struct joykey *);
+static void null_handler(struct joykey *);
 static void button_event(int button);
+static void menu_button_event(int button);
 
 static int cur_mode = MENU;
 static struct joykey buttons[B_LAST];
@@ -84,10 +100,19 @@ void clear_input(void)
 void input_loop(void)
 {
 	int moreEvents = 1;
+	struct joykey jk;
+	int action;
+	void (*special_menu_handler)(struct joykey *) = null_handler;
+	struct slist *t;
 	SDL_Event event;
 
 	while(moreEvents && SDL_PollEvent(&event))
 	{
+		struct keypush *kp;
+
+		action = -1;
+		special_menu_handler = null_handler;
+
 		/* this checks if there's another event waiting
 		 * so if the event takes too long to process we won't
 		 * stay in the event loop forever :) */
@@ -95,59 +120,104 @@ void input_loop(void)
 		switch(event.type)
 		{
 			case SDL_KEYDOWN:
-				key_down_event(&event.key);
+				jk.type = JK_KEYBOARD;
+				jk.button = event.key.keysym.sym;
+				jk.axis = JK_BUTTON;
+				special_menu_handler = key_handler;
+				action = 1;
 				break;
 			case SDL_KEYUP:
-				if(key_equal(&buttons[B_SHIFT], &event.key))
-					shift = 0;
+				jk.type = JK_KEYBOARD;
+				jk.button = event.key.keysym.sym;
+				jk.axis = JK_BUTTON;
+				special_menu_handler = key_handler;
+				action = 0;
 				break;
 			case SDL_JOYAXISMOTION:
-				joy_axis_event(&event.jaxis);
-#if 0
-				if(event.jaxis.axis == 1)
-				{
-					if(event.jaxis.value > JOY_THRESHOLD)
-					{
-						fire_event(EVENT_DOWN);
-					}
-					if(event.jaxis.value < -JOY_THRESHOLD)
-					{
-						fire_event(EVENT_UP);
-					}
-					/* wait for event.jaxis.value to be less than JOY_THRESHOLD before executing menu again */
+				if(event.jaxis.value == 0) {
+					/* Cancel both the left&right or
+					 * up&down keypushes.
+					 */
+					jk.type = event.jaxis.which;
+					jk.button = 1;
+					jk.axis = event.jaxis.axis;
+					kp = get_keypush(&jk, joy_axis_handler);
+					handle_action(kp, 0);
 				}
-#endif
+				jk.type = event.jaxis.which;
+				jk.button = (event.jaxis.value>0)?1:-1;
+				jk.axis = event.jaxis.axis;
+				special_menu_handler = joy_axis_handler;
+				if(abs(event.jaxis.value) > JOY_MAX_THRESHOLD)
+					action = 1;
+				if(abs(event.jaxis.value) < JOY_MIN_THRESHOLD)
+					action = 0;
 				break;
 			case SDL_JOYBUTTONDOWN:
 				if(joy_ignore_button(event.jbutton.which, event.jbutton.button)) break;
-				joy_button_down_event(&event.jbutton);
+				jk.type = event.jbutton.which;
+				jk.button = event.jbutton.button;
+				jk.axis = JK_BUTTON;
+				special_menu_handler = joy_button_handler;
+				action = 1;
 				break;
 			case SDL_JOYBUTTONUP:
 				if(joy_ignore_button(event.jbutton.which, event.jbutton.button)) break;
-				if(joy_button_equal(&buttons[B_SHIFT], &event.jbutton))
-					shift = 0;
+				jk.type = event.jbutton.which;
+				jk.button = event.jbutton.button;
+				jk.axis = JK_BUTTON;
+				special_menu_handler = joy_button_handler;
+				action = 0;
+				break;
+			case SDL_JOYHATMOTION:
+				printf("%i, %i, %i, %i\n", event.jhat.type, event.jhat.which, event.jhat.hat, event.jhat.value);
 				break;
 			case SDL_MOUSEBUTTONDOWN:
-				mouse_button_event(&event.button);
+				jk.type = JK_MOUSE;
+				jk.button = event.button.button;
+				jk.axis = JK_BUTTON;
+				special_menu_handler = mouse_button_handler;
+				action = 1;
 				break;
 			case SDL_MOUSEBUTTONUP:
-				if(mouse_button_equal(&buttons[B_SHIFT], &event.button))
-					shift = 0;
+				jk.type = JK_MOUSE;
+				jk.button = event.button.button;
+				jk.axis = JK_BUTTON;
+				special_menu_handler = mouse_button_handler;
+				action = 0;
 				break;
 			case SDL_QUIT:
 				gmae_quit();
 			default:
 				break;
 		}
+
+		kp = get_keypush(&jk, special_menu_handler);
+		handle_action(kp, action);
 	}
-	return;
+
+	slist_foreach(t, keys) {
+		struct keypush *kp = t->data;
+		handle_action(kp, -1);
+	}
+}
+
+/** Set the @a button to be @a repeatable.
+ *
+ * @param button The button to set
+ * @param repeatable 1 if this key should repeat when held down, 0 if not
+ */
+void set_key_repeat(int button, int repeatable)
+{
+	struct keypush *kp;
+
+	kp = get_keypush(&buttons[button], null_handler);
+	kp->repeatable = repeatable;
 }
 
 /** Set the input mode to one of KEY, MENU, or GAME */
 void input_mode(enum event_mode mode)
 {
-	if(mode == MENU) SDL_EnableKeyRepeat(500, 20);
-	else SDL_EnableKeyRepeat(0, 0);
 	cur_mode = mode;
 }
 
@@ -208,11 +278,16 @@ char *joykey_name(int button)
 	return s;
 }
 
-/** Set the game button @a b to be set to the joykey structure @a jk */
+/** Set the game button @a b to be set to the joykey structure @a jk
+ * @retval 0 Success
+ * @retval 1 @a b is an invalid button
+ */
 int set_button(int b, const struct joykey *jk)
 {
 	char *s;
-	if(b < 0 || b >= B_LAST) return 0;
+	if(b < 0 || b >= B_LAST) return 1;
+
+	reset_key_repeats();
 	s = malloc(int_len(jk->type)+int_len(jk->button)+int_len(jk->axis)+3);
 	sprintf(s, "%i.%i.%i", jk->type, jk->button, jk->axis);
 	cfg_set("buttons", cfgMsg[b], s);
@@ -220,7 +295,107 @@ int set_button(int b, const struct joykey *jk)
 	buttons[b].type = jk->type;
 	buttons[b].button = jk->button;
 	buttons[b].axis = jk->axis;
-	return 1;
+	return 0;
+}
+
+void handle_action(struct keypush *kp, int action)
+{
+	int fire = 0;
+
+	if(action == 1 && kp->active == 0) {
+		kp->active = 1;
+		kp->time_hit = curTime;
+		fire = 1;
+	} else if(action == 0) {
+		if(joykey_equal(&buttons[B_SHIFT], &kp->key))
+			shift = 0;
+		kp->active = 0;
+		kp->repeating = 0;
+	} else {
+		if(kp->active && (kp->repeatable || cur_mode == MENU)) {
+			if(kp->repeating && curTime - kp->time_hit > 30) {
+				kp->time_hit = curTime;
+				fire = 1;
+			} else if(!kp->repeating && curTime - kp->time_hit > 500) {
+				kp->time_hit = curTime;
+				kp->repeating = 1;
+				fire = 1;
+			}
+		}
+	}
+
+	if(fire && fire_joykey(&kp->key))
+		kp->handler(&kp->key);
+}
+
+struct keypush *get_keypush(const struct joykey *jk, void (*handler)(struct joykey*))
+{
+	const struct slist *t;
+	struct keypush *kp;
+
+	slist_foreach(t, keys) {
+		kp = t->data;
+		if(joykey_equal(jk, &kp->key)) {
+			/* Overwrite the handler in case the first time
+			 * get_keypush was called was with the null_handler
+			 */
+			if(handler != null_handler)
+				kp->handler = handler;
+			return kp;
+		}
+	}
+
+	/* Create a new keypush structure, append to the list */
+	kp = malloc(sizeof(struct keypush));
+	kp->key.type = jk->type;
+	kp->key.button = jk->button;
+	kp->key.axis = jk->axis;
+	kp->time_hit = 0;
+	kp->active = 0;
+	kp->repeating = 0;
+	kp->repeatable = 1;
+	kp->handler = handler;
+	keys = slist_append(keys, kp);
+	return kp;
+}
+
+int fire_joykey(const struct joykey *jk)
+{
+	int x;
+	/* This if statement is weird: the shift key is only set if it's
+	 * in MENU or GAME mode. So that's why the second if part doesn't
+	 * match up with the rest.
+	 */
+	if(cur_mode == KEY) {
+		fire_event("key", jk);
+	} else if(joykey_equal(&buttons[B_SHIFT], jk)) {
+		shift = 1;
+	} else if(cur_mode == MENU) {
+		int fired = 0;
+
+		for(x=0;x<B_LAST;x++)
+			if(joykey_equal(&buttons[x], jk)) {
+				menu_button_event(x);
+				fired = 1;
+			}
+		if(!fired)
+			return 1;
+	} else if(cur_mode == GAME) {
+		for(x=0;x<B_LAST;x++)
+			if(joykey_equal(&buttons[x], jk))
+				button_event(x);
+	}
+	return 0;
+}
+
+void reset_key_repeats(void)
+{
+	struct slist *t;
+
+	slist_foreach(t, keys) {
+		struct keypush *kp = t->data;
+		kp->repeatable = 1;
+	}
 }
 
 void button_event(int button)
@@ -229,6 +404,18 @@ void button_event(int button)
 	b.button = button;
 	b.shift = shift;
 	fire_event("button", &b);
+}
+
+void menu_button_event(int button)
+{
+	if(button >= B_BUTTON1 && button <= B_BUTTON4) {
+		fire_event("enter", &shift);
+	} else {
+		struct button_e b;
+		b.button = button;
+		b.shift = shift;
+		fire_event("button", &b);
+	}
 }
 
 /* finds the beginning of the next . number
@@ -274,214 +461,83 @@ int cfg_button(struct joykey *key, const char *cfgParam)
 	return 0;
 }
 
-int key_equal(struct joykey *key, SDL_KeyboardEvent *e)
+int joykey_equal(const struct joykey *a, const struct joykey *b)
 {
-	if(	key->type == JK_KEYBOARD &&
-		key->button == (signed)e->keysym.sym &&
-		key->axis == JK_BUTTON)
+	if(a->type == b->type && a->button == b->button && a->axis == b->axis)
 		return 1;
 	return 0;
 }
 
-int mouse_button_equal(struct joykey *key, SDL_MouseButtonEvent *e)
+void key_handler(struct joykey *jk)
 {
-	if(	key->type == JK_MOUSE &&
-		key->button == (signed)e->button &&
-		key->axis == JK_BUTTON)
-		return 1;
-	return 0;
+	if(jk->button == SDLK_ESCAPE)
+		button_event(B_MENU);
+
+	else if(jk->button == SDLK_UP)
+		button_event(B_UP);
+
+	else if(jk->button == SDLK_DOWN)
+		button_event(B_DOWN);
+
+	else if(jk->button == SDLK_RIGHT)
+		button_event(B_RIGHT);
+
+	else if(jk->button == SDLK_LEFT)
+		button_event(B_LEFT);
+
+	else if(jk->button == SDLK_RETURN)
+		fire_event("enter", &shift);
+
+	else if (jk->button == SDLK_TAB)
+		button_event(B_SELECT);
+
+	else if(jk->button == SDLK_PAGEUP)
+		fire_event("pageup", NULL);
+
+	else if(jk->button == SDLK_PAGEDOWN)
+		fire_event("pagedown", NULL);
+
+	else if(jk->button == SDLK_HOME)
+		fire_event("home", NULL);
+
+	else if(jk->button == SDLK_END)
+		fire_event("end", NULL);
+	/* no else cuz all other keys are ignored :) */
 }
 
-int joy_button_equal(struct joykey *key, SDL_JoyButtonEvent *e)
+void mouse_button_handler(struct joykey *jk)
 {
-	if(	key->type == e->which &&
-		key->button == e->button &&
-		key->axis == JK_BUTTON)
-		return 1;
-	return 0;
+	if(jk) {}
+	/* All mouse buttons activate the menu */
+	fire_event("enter", &shift);
 }
 
-int joy_axis_equal(struct joykey *key, SDL_JoyAxisEvent *e)
+void joy_button_handler(struct joykey *jk)
 {
-	if(	key->type == e->which &&
-		key->button == (e->value > JOY_THRESHOLD ? 1 : e->value < -JOY_THRESHOLD ? -1 : 0) &&
-		key->axis == e->axis)
-		return 1;
-	return 0;
+	if(jk) {}
+	/* All joystick buttons activate the menu */
+	fire_event("enter", &shift);
 }
 
-void key_down_event(SDL_KeyboardEvent *e)
+void joy_axis_handler(struct joykey *jk)
 {
-	int x;
-	struct joykey jk;
-
-	if(cur_mode == KEY)
-	{
-		jk.type = JK_KEYBOARD;
-		jk.button = e->keysym.sym;
-		jk.axis = JK_KEYBOARD;
-		fire_event("key", &jk);
-	}
-	else if(cur_mode == MENU)
-	{
-		if(key_equal(&buttons[B_SHIFT], e))
-			shift = 1;
-		else if(	e->keysym.sym == SDLK_ESCAPE ||
-				key_equal(&buttons[B_MENU], e))
-			button_event(B_MENU);
-		else if(	e->keysym.sym == SDLK_UP ||
-				key_equal(&buttons[B_UP], e))
-			button_event(B_UP);
-
-		else if(	e->keysym.sym == SDLK_DOWN ||
-				key_equal(&buttons[B_DOWN], e))
+	/* Handle up and down in menu mode
+	 * (I think all vertical axi / axes / axisi are odd, maybe)
+	 */
+	if(jk->axis & 1) {
+		if(jk->button == 1)
 			button_event(B_DOWN);
-
-		else if(	e->keysym.sym == SDLK_RIGHT ||
-				key_equal(&buttons[B_RIGHT], e))
+		if(jk->button == -1)
+			button_event(B_UP);
+	} else {
+		if(jk->button == 1)
 			button_event(B_RIGHT);
-
-		else if(	e->keysym.sym == SDLK_LEFT ||
-				key_equal(&buttons[B_LEFT], e))
+		if(jk->button == -1)
 			button_event(B_LEFT);
-
-		else if(	e->keysym.sym == SDLK_RETURN ||
-				key_equal(&buttons[B_BUTTON1], e) ||
-				key_equal(&buttons[B_BUTTON2], e) ||
-				key_equal(&buttons[B_BUTTON3], e) ||
-				key_equal(&buttons[B_BUTTON4], e))
-			fire_event("enter", &shift);
-		else if (	e->keysym.sym == SDLK_TAB ||
-				key_equal(&buttons[B_SELECT], e)
-			)
-			button_event(B_SELECT);
-		else if(e->keysym.sym == SDLK_PAGEUP)
-			fire_event("pageup", NULL);
-		else if(e->keysym.sym == SDLK_PAGEDOWN)
-			fire_event("pagedown", NULL);
-		else if(e->keysym.sym == SDLK_HOME)
-			fire_event("home", NULL);
-		else if(e->keysym.sym == SDLK_END)
-			fire_event("end", NULL);
-		/* no else cuz all other keys are ignored :) */
-	}
-	else if(cur_mode == GAME)
-	{
-		for(x=0;x<B_LAST;x++)
-			if(key_equal(&buttons[x], e))
-				button_event(x);
 	}
 }
 
-void mouse_button_event(SDL_MouseButtonEvent *e)
+void null_handler(struct joykey *jk)
 {
-	int x;
-	struct joykey jk;
-
-	if(cur_mode == KEY)
-	{
-		jk.type = JK_MOUSE;
-		jk.button = e->button;
-		jk.axis = JK_BUTTON;
-		fire_event("key", &jk);
-	}
-	else if(cur_mode == MENU)
-	{
-		if(mouse_button_equal(&buttons[B_SHIFT], e))
-			shift = 1;
-		else if(mouse_button_equal(&buttons[B_MENU], e))
-			button_event(B_MENU);
-		else
-			fire_event("enter", &shift);
-	}
-	else if(cur_mode == GAME)
-	{
-		for(x=0;x<B_LAST;x++)
-			if(mouse_button_equal(&buttons[x], e))
-				button_event(x);
-	}
-}
-
-void joy_button_down_event(SDL_JoyButtonEvent *e)
-{
-	int x;
-	struct joykey jk;
-
-	if(cur_mode == KEY)
-	{
-		jk.type = e->which;
-		jk.button = e->button;
-		jk.axis = JK_BUTTON;
-		fire_event("key", &jk);
-	}
-	else if(cur_mode == MENU)
-	{
-		/* all buttons activate in menu mode except MENU/SELECT/SHIFT */
-		if(joy_button_equal(&buttons[B_SHIFT], e))
-			shift = 1;
-		else if(joy_button_equal(&buttons[B_MENU], e))
-			button_event(B_MENU);
-		else if(joy_button_equal(&buttons[B_SELECT], e))
-			button_event(B_SELECT);
-		else
-			fire_event("enter", &shift);
-	}
-	else if(cur_mode == GAME)
-	{
-		if(joy_button_equal(&buttons[B_SHIFT], e))
-			shift = 1;
-		else
-			for(x=B_UP;x<B_LAST;x++)
-				if(joy_button_equal(&buttons[x], e))
-					button_event(x);
-	}
-}
-
-void joy_axis_event(SDL_JoyAxisEvent *e)
-{
-	int x;
-	struct joykey jk;
-
-	if(e->value == 0) return;
-	if(cur_mode == KEY)
-	{
-		jk.type = e->which;
-		jk.button = (e->value>0)?1:-1;
-		jk.axis = e->axis;
-		fire_event("key", &jk);
-	}
-	else if(cur_mode == MENU)
-	{
-		/* Only handle up and down in menu mode
-		 * (I think all verticle axi / axes / axisi are odd, maybe)
-		 */
-		if(e->axis & 1) {
-			if(e->value > JOY_THRESHOLD)
-			{
-				button_event(B_DOWN);
-			}
-			if(e->value < -JOY_THRESHOLD)
-			{
-				button_event(B_UP);
-			}
-			/* wait for event.jaxis.value to be less than
-			 * JOY_THRESHOLD before executing menu again?
-			 */
-		} else {
-			if(e->value > JOY_THRESHOLD)
-			{
-				button_event(B_RIGHT);
-			}
-			if(e->value < -JOY_THRESHOLD)
-			{
-				button_event(B_LEFT);
-			}
-		}
-	}
-	else if(cur_mode == GAME)
-	{
-		for(x=B_UP;x<B_LAST;x++)
-			if(joy_axis_equal(&buttons[x], e))
-				button_event(x);
-	}
+	if(jk) {}
 }
