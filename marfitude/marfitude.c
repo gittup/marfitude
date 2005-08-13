@@ -336,6 +336,12 @@ void main_scene(void)
 {
 	Log(("main_scene\n"));
 
+	/* Set key repeating here in case the configuration changes mid-game */
+	set_key_repeat(B_BUTTON1, 0);
+	set_key_repeat(B_BUTTON2, 0);
+	set_key_repeat(B_BUTTON3, 0);
+	set_key_repeat(B_BUTTON4, 0);
+
 	glLoadIdentity();
 	glPushMatrix();
 
