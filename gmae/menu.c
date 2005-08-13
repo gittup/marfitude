@@ -93,6 +93,7 @@ struct boolean {
 /** A button menu object */
 struct button {
 	void (*activeFunc)(int); /**< The function to execute when activated */
+	int sound_enabled;
 };
 
 /** A button menu object that takes a parameter */
@@ -337,6 +338,7 @@ void DrawPartialMenu(struct screenMenu *m, int start, int stop)
 		{
 			case MENU_SLIDER:
 				s = (struct slider*)m->items[i].item;
+				glColor4fv(s->c);
 				print_gl(x, y, m->items[i].name);
 				active_color(i, m);
 				if(s->val <= s->max && s->val >= s->min &&
@@ -537,6 +539,7 @@ struct button *CreateButton(struct screenMenu *m, const char *name, void (*activ
 	struct button *b;
 	b = malloc(sizeof(struct button));
 	b->activeFunc = activeFunc;
+	b->sound_enabled = 1;
 	UpdateBox(m, m->menuX, m->menuY + FONT_HEIGHT * m->numItems, m->menuX + strlen(name) * FONT_WIDTH, m->menuY + FONT_HEIGHT * (m->numItems+1));
 	AddMenuItem(m, name, (void*)b, MENU_BUTTON);
 	return b;
@@ -693,17 +696,20 @@ void MenuInc(void)
 void MenuActivate(const void *data)
 {
 	struct buttonParam *bp;
+	struct button *b;
 	struct screenMenu *m = &screenMenus[curMenu];
 	int shift = *(const int*)data;
 
-	MPlaySound(snd_push);
 	switch(m->items[m->activeMenuItem].type)
 	{
 		case MENU_BUTTON:
-			((struct button*)m->items[m->activeMenuItem].item)->activeFunc(shift);
+			b = m->items[m->activeMenuItem].item;
+			if(b->sound_enabled) MPlaySound(snd_push);
+			b->activeFunc(shift);
 			break;
 		case MENU_BUTTONPARAM:
-			bp = (struct buttonParam*)m->items[m->activeMenuItem].item;
+			bp = m->items[m->activeMenuItem].item;
+			MPlaySound(snd_push);
 			bp->activeFunc(bp->param);
 		default:
 			break;
@@ -1094,6 +1100,7 @@ int option_menu_init(void)
 {
 	float c[4] = {0.0, 1.0, 1.0, 1.0};
 	struct slider *s;
+	struct button *b;
 	int difficulty = cfg_get_int("main", "difficulty");
 
 	if(!menuActive) RegisterMenuEvents();
@@ -1102,6 +1109,8 @@ int option_menu_init(void)
 	name_slider_item(mainMenu, s, 1, "DJ McFunAdoo");
 	name_slider_item(mainMenu, s, 2, "Too-Dope Extreme!");
 	name_slider_item(mainMenu, s, 3, "The Heart Stopper!!");
+	b = CreateButton(mainMenu, "Back", MenuBack);
+	b->sound_enabled = 0;
 	return 0;
 }
 
@@ -1119,7 +1128,7 @@ void option_menu(void)
 }
 
 static int configuring = -1;
-static const char *cfglabels[] = {"Up", "Down", "Left", "Right", "Laser 1", "Laser 2", "Laser 3", "Repeat", "Select", "Shift", "Menu"};
+static const char *cfglabels[] = {"Up", "Down", "Left", "Right", "Laser 1", "Laser 2", "Laser 3", "Repeat", "Shift", "Select", "Menu"};
 static struct text *newKeyText;
 
 void ConfigCreateItems(void)
@@ -1147,7 +1156,7 @@ void ConfigKeyHandler(const void *data)
 	int tmp = mainMenu->activeMenuItem;
 	const struct joykey *jk = data;
 
-	if(!set_button(configuring, jk)) {
+	if(set_button(configuring, jk)) {
 		ELog(("Error setting configure button %i!\n", configuring));
 	}
 	MPlaySound(snd_push);
@@ -1198,12 +1207,15 @@ void Quit(int shift)
 int QuitMenuInit(void)
 {
 	float c[4] = {0.0, 1.0, 1.0, 1.0};
+	struct button *b;
+
 	if(!menuActive) RegisterMenuEvents();
 	input_mode(MENU);
 	mainMenu->menuX = 350;
 	mainMenu->menuY = 200;
 	CreateButton(mainMenu, "Yes", Quit);
-	CreateButton(mainMenu, "No", MenuBack);
+	b = CreateButton(mainMenu, "No", MenuBack);
+	b->sound_enabled = 0;
 	CreateText(mainMenu, "Really Quit?", c, 200, 200);
 	mainMenu->activeMenuItem = 1;
 	return 0;
