@@ -13,17 +13,17 @@
 
 static void draw_notes(const void *);
 
-static GLuint noteGl;
+static GLuint note;
 static float theta;
 
 void greynotes_init(void)
 {
 	register_event("draw opaque", draw_notes, EVENTTYPE_MULTI);
 
-	noteGl = glGenLists(1);
+	note = glGenLists(1);
 	theta = 0.0;
 
-	glNewList(noteGl, GL_COMPILE); {
+	glNewList(note, GL_COMPILE); {
 		glBegin(GL_TRIANGLE_FAN); {
 			glNormal3f( 0.0, 1.0, 0.0);
 			glVertex3f( 0.0, 0.15, 0.0);
@@ -51,7 +51,7 @@ void greynotes_init(void)
 
 void greynotes_exit(void)
 {
-	glDeleteLists(noteGl, 1);
+	glDeleteLists(note, 1);
 	deregister_event("draw opaque", draw_notes);
 }
 
@@ -69,7 +69,7 @@ void draw_notes(const void *data)
 	rotnoteList = glGenLists(1);
 	glNewList(rotnoteList, GL_COMPILE); {
 		glRotatef(theta, 0.0, 1.0, 0.0);
-		glCallList(noteGl);
+		glCallList(note);
 	} glEndList();
 
 	slist_foreach(t, marfitude_get_notes()) {

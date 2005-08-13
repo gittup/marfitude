@@ -26,13 +26,13 @@ static void make_laser(const void *);
 static void draw_lasers(const void *);
 
 static int laser_tex;
-static int numLasers;
+static int num_lasers;
 static struct laser laser[NUM_LASERS];
 
 void laser_init(void)
 {
 	laser_tex = texture_num("Laser.png");
-	numLasers = 0;
+	num_lasers = 0;
 	register_event("shoot", make_laser, EVENTTYPE_MULTI);
 	register_event("draw transparent", draw_lasers, EVENTTYPE_MULTI);
 }
@@ -53,17 +53,17 @@ void make_laser(const void *data)
 	marfitude_get_pos(&p);
 
 	/* p1 is set to the light position */
-	laser[numLasers].p1.x = fireball[0];
-	laser[numLasers].p1.y = fireball[1];
-	laser[numLasers].p1.z = fireball[2];
+	laser[num_lasers].p1.x = fireball[0];
+	laser[num_lasers].p1.y = fireball[1];
+	laser[num_lasers].p1.z = fireball[2];
 
 	/* p2 is set to where the note is */
-	laser[numLasers].p2.x = -p.channel * BLOCK_WIDTH - NOTE_WIDTH * offsets[*s];
-	laser[numLasers].p2.y = 0.0;
-	laser[numLasers].p2.z = TIC_HEIGHT * p.tic;
-	laser[numLasers].time = 1.0;
-	numLasers++;
-	if(numLasers >= NUM_LASERS) numLasers = 0;
+	laser[num_lasers].p2.x = -p.channel * BLOCK_WIDTH - NOTE_WIDTH * offsets[*s];
+	laser[num_lasers].p2.y = 0.0;
+	laser[num_lasers].p2.z = TIC_HEIGHT * p.tic;
+	laser[num_lasers].time = 1.0;
+	num_lasers++;
+	if(num_lasers >= NUM_LASERS) num_lasers = 0;
 }
 
 double laser_adj(double a, double b, double dt)

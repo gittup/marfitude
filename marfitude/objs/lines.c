@@ -22,16 +22,16 @@ struct line {
 };
 
 static struct line *lines;
-static int startLine;
-static int stopLine;
-static int numLines;
+static int start_line;
+static int stop_line;
+static int num_lines;
 
 void lines_init(void)
 {
-	numLines = NUM_TICKS;
-	lines = malloc(sizeof(struct line) * numLines);
-	startLine = 0;
-	stopLine = 0;
+	num_lines = NUM_TICKS;
+	lines = malloc(sizeof(struct line) * num_lines);
+	start_line = 0;
+	stop_line = 0;
 
 	register_event("draw transparent", draw_lines, EVENTTYPE_MULTI);
 	register_event("row", create_line, EVENTTYPE_MULTI);
@@ -52,16 +52,16 @@ void create_line(const void *data)
 	const struct wam *wam = marfitude_get_wam();
 
 	if(r->line) {
-		lines[stopLine].p1.x = 1.0;
-		lines[stopLine].p1.y = 0.005;
-		lines[stopLine].p1.z = TIC_HEIGHT * (double)r->ticpos;
-		lines[stopLine].p2.x = 1.0 - 2.0 * wam->numCols;
-		lines[stopLine].p2.y = 0.005;
-		lines[stopLine].p2.z = TIC_HEIGHT * (double)r->ticpos;
-		lines[stopLine].row = r;
-		lines[stopLine].color = r->line;
-		stopLine++;
-		if(stopLine == numLines) stopLine = 0;
+		lines[stop_line].p1.x = 1.0;
+		lines[stop_line].p1.y = 0.005;
+		lines[stop_line].p1.z = TIC_HEIGHT * (double)r->ticpos;
+		lines[stop_line].p2.x = 1.0 - 2.0 * wam->numCols;
+		lines[stop_line].p2.y = 0.005;
+		lines[stop_line].p2.z = TIC_HEIGHT * (double)r->ticpos;
+		lines[stop_line].row = r;
+		lines[stop_line].color = r->line;
+		stop_line++;
+		if(stop_line == num_lines) stop_line = 0;
 	}
 }
 
@@ -69,10 +69,10 @@ void remove_line(const void *data)
 {
 	const struct row *r = data;
 
-	while(lines[startLine].row == r) {
-		lines[startLine].row = NULL;
-		startLine++;
-		if(startLine == numLines) startLine = 0;
+	while(lines[start_line].row == r) {
+		lines[start_line].row = NULL;
+		start_line++;
+		if(start_line == num_lines) start_line = 0;
 	}
 }
 
@@ -92,14 +92,14 @@ void draw_lines(const void *data)
 	glDisable(GL_TEXTURE_2D);
 	glNormal3f(0.0, 1.0, 0.0);
 	glBegin(GL_LINES);
-	if(startLine <= stopLine) {
-		for(x=startLine;x<stopLine;x++)
+	if(start_line <= stop_line) {
+		for(x=start_line;x<stop_line;x++)
 			draw_line(x);
 	}
 	else {
-		for(x=startLine;x<numLines;x++)
+		for(x=start_line;x<num_lines;x++)
 			draw_line(x);
-		for(x=0;x<stopLine;x++)
+		for(x=0;x<stop_line;x++)
 			draw_line(x);
 	}
 	glEnd();
