@@ -1,19 +1,45 @@
+/*
+   Marfitude
+   Copyright (C) 2005 Mike Shal
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
 #include "gmae/phys.h"
 
-#define BLOCK_HEIGHT .75
-#define TIC_HEIGHT .25
-#define BLOCK_WIDTH 2.0
-#define NOTE_WIDTH .75
+/** @file
+ * Provide access to marfitude's phatty boom beat-matching capabilities.
+ */
 
-#define NEGATIVE_TICKS 7*6
-#define POSITIVE_TICKS 57*6
-#define NUM_TICKS 64*6
-#define LINES_PER_AP 8
+#define BLOCK_HEIGHT .75 /**< Height (into the screen) of a block */
+#define TIC_HEIGHT .25   /**< Height (into the screen) of a tic */
+#define BLOCK_WIDTH 2.0  /**< Width (left/right) of a block */
+#define NOTE_WIDTH .75   /**< Width positioning (left/right) of a note */
 
-#define UNMUTE 0
-#define MUTE 1
+#define NEGATIVE_TICKS 7*6  /**< How many ticks before the player to display */
+#define POSITIVE_TICKS 57*6 /**< How many ticks after the player to display */
+#define NUM_TICKS 64*6      /**< The size of POSITIVE_TICKS + NEGATIVE_TICKS */
+#define LINES_PER_AP 8      /**< How many lines are in an attack pattern */
 
-#define MARFITUDE_TIME_ERROR 0.1
+#define UNMUTE 0 /**< Unmute a channel */
+#define MUTE 1   /**< Mute a channel */
+
+#define MARFITUDE_TIME_ERROR 0.1 /**< How far off in seconds the player can miss
+				   * the note. The total time the player has to
+				   * play a note is 2 * MARFITUDE_TIME_ERROR
+				   */
 
 /** A structure of score information */
 struct marfitude_score {
@@ -44,7 +70,7 @@ struct marfitude_note {
 			    */
 };
 
-/** This structure keeps track of clearing information for each column */
+/** Keep track of clearing information for each column */
 struct marfitude_attack_col {
 	double part;	/**< cumulative row adder, when >= 1.0 inc minRow */
 	int minRow;	/**< equal to cleared, but doesn't get set to 0
@@ -57,9 +83,7 @@ struct marfitude_attack_col {
 	int miss;	/**< equals the tic of the last missed note */
 };
 
-/** This structure keeps track of information needed for the column that is
- * being played
- */
+/** Keep track of information needed for the column that is being played */
 struct marfitude_attack_pat {
 	int startTic;     /**< first tic that we need to play */
 	int stopTic;      /**< last tic that we need to play */
