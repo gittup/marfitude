@@ -21,7 +21,7 @@
  * Provides some timer information
  */
 
-#include "SDL.h"
+#include "SDL_types.h"
 
 void init_timer(void);
 void update_timer(void);
