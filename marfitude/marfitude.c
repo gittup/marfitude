@@ -343,18 +343,10 @@ void main_scene(void)
 	set_key_repeat(B_BUTTON4, 0);
 
 	glLoadIdentity();
-	glPushMatrix();
 
-	Log(("U"));
 	if(rowIndex != wam->numRows) UpdatePosition();
-	Log(("1"));
 	update_objs(timeDiff);
-	Log(("u"));
 	SetMainView();
-
-	glColor4f(1.0, 1.0, 1.0, 1.0);
-
-	Log(("A"));
 
 	set_ortho_projection();
 	fire_event("draw ortho", NULL);
@@ -365,20 +357,14 @@ void main_scene(void)
 	glDisable(GL_LIGHTING);
 	glDepthMask(GL_FALSE);
 	fire_event("draw transparent", NULL);
+
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	draw_particles();
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	glDepthMask(GL_TRUE);
 	glEnable(GL_LIGHTING);
 
-	start_particles();
-	Log(("F2\n"));
-	draw_particles();
-	Log(("g"));
-	stop_particles();
-
-	Log(("L"));
-
-	glPopMatrix();
-
-	Log(("H"));
 	Log(("endMainScene\n"));
 }
 
