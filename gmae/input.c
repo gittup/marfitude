@@ -48,9 +48,9 @@
  * Handles SDL events.
  */
 
-/** This structure keeps track of when a key was hit so it can be repeated
- * if held down. It is separate from the joykey/button dealy so in the menu
- * un-set buttons can be held and still repeat.
+/** Keeps track of when a key was hit so it can be repeated if held down.
+ * It is separate from the joykey/button dealy so in the menu un-set buttons
+ * can be held and still repeat.
  */
 struct keypush {
 	struct joykey key; /**< The corresponding joykey */

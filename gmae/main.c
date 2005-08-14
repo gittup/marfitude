@@ -46,10 +46,15 @@
 #include "util/memtest.h"
 #include "util/fatalerror.h"
 
+/** @file
+ * Initialize all the sub-systems and run the main execution loop.
+ */
+
 static void shutdown(void);
 
 static int quit = 0;
 
+/** Causes the main game loop to exit on the next iteration */
 void gmae_quit(void)
 {
 	quit = 1;
@@ -69,6 +74,7 @@ void shutdown(void)
 	quit_log();
 }
 
+/** Hurrah for main(). It lets me run things. */
 int main(int argc, char **argv)
 {
 	char c;

@@ -18,8 +18,7 @@
 */
 
 /** @file
- * Provides access to the quit global
+ * Provides the ability to quit the game.
  */
 
-/** Causes the main game loop to exit on the next iteration */
 void gmae_quit(void);

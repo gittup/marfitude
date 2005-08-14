@@ -21,8 +21,8 @@
  * The greatest FFT header of all time
  */
 
-/** This structure contains FFT data for the song that is played. It can be
- * used after a call to init_fft()
+/** FFT data for the song that is played. It can be used after a call to
+ * init_fft()
  */
 struct fft_data {
 	const int *data;      /**< len worth of data points */
