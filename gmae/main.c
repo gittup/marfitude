@@ -25,6 +25,8 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "SDL.h"
+
 #include "main.h"
 #include "audio.h"
 #include "cfg.h"
