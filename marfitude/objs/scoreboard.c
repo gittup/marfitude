@@ -25,6 +25,7 @@ void draw_scoreboard(const void *data)
 	struct marfitude_pos p;
 	const struct wam *wam = marfitude_get_wam();
 	const struct marfitude_score *s = marfitude_get_score();
+	const struct marfitude_attack_pat *ap = marfitude_get_ap();
 	if(data) {}
 
 	marfitude_get_pos(&p);
@@ -42,7 +43,6 @@ void draw_scoreboard(const void *data)
 		else print_gl(50, 15, "GO!!");
 	}
 	print_gl(50, 30, "Speed: %2i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
-/*	print_gl(0, 50, "%i - %i, note: %i, hit: %i/%i  %.2f/%.2f\n", ap.startTic, ap.stopTic, ap.lastTic, ap.notesHit, ap.notesTotal, p.modtime, wam->songLength);*/
 	if(s->score > s->highscore) {
 		glColor4f(1.0, 1.0, 0.7, 1.0);
 	} else {
@@ -54,7 +54,9 @@ void draw_scoreboard(const void *data)
 	if(s->highscore) {
 		print_gl(490, 20, "High: %i", s->highscore);
 	}
-	print_gl(350, 34, "Multiplier: %i\n", s->multiplier);
+	print_gl(350, 35, "Multiplier: %i\n", s->multiplier);
+	print_gl(350, 50, "Hit: %i/%i\n", ap->notesHit, ap->notesTotal);
+	print_gl(0, 65, "%.2f/%.2f\n", p.modtime, wam->songLength);
 
 	set_ortho_projection();
 	glDisable(GL_TEXTURE_2D);
