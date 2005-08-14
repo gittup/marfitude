@@ -235,22 +235,6 @@ void draw_particles_test(PTestFunc p)
 	Log(("draw_particles_test() done\n"));
 }
 
-/** Sets up the OpenGL variables to start drawing particles */
-void start_particles(void)
-{
-	glDisable(GL_LIGHTING);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-	glDepthMask(GL_FALSE);
-}
-
-/** Un-sets the OpenGL variables that were used to draw particles */
-void stop_particles(void)
-{
-	glDepthMask(GL_TRUE);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_LIGHTING);
-}
-
 /** Create a particle using the object definition @a o.
  * @param o The physics object that allows this particle to move
  * @param col The color of the particle

@@ -71,7 +71,5 @@ int init_particles(void);
 void quit_particles(void);
 void draw_particles(void);
 void draw_particles_test(PTestFunc p);
-void start_particles(void);
-void stop_particles(void);
 void create_particle(struct obj *o, float col[4], int type, float size);
 void clear_particles(void);
