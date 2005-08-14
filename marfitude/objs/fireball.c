@@ -41,7 +41,7 @@ void fireball_draw(const void *data)
 
 	bounceTime = 2.0 * 3.1415 * ((double)p.row->ticprt + p.tic - (double)p.row->ticpos) / (double)p.row->ticgrp;
 	sintmp = sin(bounceTime);
-	fireball[0] = -BLOCK_WIDTH * p.channel + cos(bounceTime);
+	fireball[0] = -BLOCK_WIDTH * p.view + cos(bounceTime);
 	fireball[1] = 1.0 + sintmp * sintmp;
 	fireball[2] = TIC_HEIGHT * p.tic;
 	glLightfv(GL_LIGHT1, GL_POSITION, fireball);
