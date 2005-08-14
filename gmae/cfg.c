@@ -46,7 +46,7 @@ struct header {
 	int numOps;         /**< The number of the struct options */
 };
 
-static void AddOp(struct header *h, const char *key, const char *value);
+static void AddOp(struct header *h, const char *option, const char *value);
 static int LoadConfig(const char *filename);
 static int SaveConfig(const char *filename);
 
@@ -55,17 +55,23 @@ static int numHeaders = 0;
 static int cfgInited = 0;
 static char *cfgFileName = NULL;
 
-void AddOp(struct header *h, const char *key, const char *value)
+void AddOp(struct header *h, const char *option, const char *value)
 {
 	h->ops = (struct option*)realloc(h->ops, sizeof(struct option) * (h->numOps+1));
-	h->ops[h->numOps].key = malloc(sizeof(char) * (strlen(key)+1));
+	h->ops[h->numOps].key = malloc(sizeof(char) * (strlen(option)+1));
 	h->ops[h->numOps].value = malloc(sizeof(char) * (strlen(value)+1));
-	strcpy(h->ops[h->numOps].key, key);
+	strcpy(h->ops[h->numOps].key, option);
 	strcpy(h->ops[h->numOps].value, value);
 	h->numOps++;
 }
 
-void cfg_set(const char *header, const char *key, const char *value)
+/** Set the @a header / @a option pair to be @a value.
+ *
+ * @param header The header part of the option
+ * @param option The key part of the option
+ * @param value The new string to set the option to
+ */
+void cfg_set(const char *header, const char *option, const char *value)
 {
 	int x, y;
 	int foundHeader = 0, foundOp = 0;
@@ -76,7 +82,7 @@ void cfg_set(const char *header, const char *key, const char *value)
 			foundHeader = 1;
 			for(y=0;y<cfg[x].numOps;y++)
 			{
-				if(strcmp(cfg[x].ops[y].key, key) == 0)
+				if(strcmp(cfg[x].ops[y].key, option) == 0)
 				{
 					foundOp = 1;
 					free(cfg[x].ops[y].value);
@@ -85,7 +91,7 @@ void cfg_set(const char *header, const char *key, const char *value)
 				}
 			}
 			if(!foundOp)
-				AddOp(cfg+x, key, value);
+				AddOp(cfg+x, option, value);
 		}
 	}
 	if(!foundHeader)
@@ -95,7 +101,7 @@ void cfg_set(const char *header, const char *key, const char *value)
 		cfg[numHeaders].ops = 0;
 		cfg[numHeaders].header = malloc(sizeof(char) * (strlen(header)+1));
 		strcpy(cfg[numHeaders].header, header);
-		AddOp(cfg+numHeaders, key, value);
+		AddOp(cfg+numHeaders, option, value);
 		numHeaders++;
 	}
 }
