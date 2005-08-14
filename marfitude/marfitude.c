@@ -609,8 +609,17 @@ void SetMainView(void)
 {
 	float mainPos[3] = {0.0, 3.0, -8.0};
 	float mainView[3] = {0.0, 0.8, 0.0};
+	double tmp;
 
-	viewFocus += ((double)channelFocus - viewFocus) * timeDiff * 8.0;
+	/* Make sure the view focus update doesn't go past channel focus.
+	 * It should be a smooth transition and stop when it gets there.
+	 */
+	tmp = viewFocus + ((double)channelFocus - viewFocus) * timeDiff * 8.0;
+	if( (channelFocus < viewFocus) != (channelFocus < tmp) ) {
+		viewFocus = (double)channelFocus;
+	} else {
+		viewFocus = tmp;
+	}
 	mainView[2] = TIC_HEIGHT * ((double)curTic + partialTic);
 	mainPos[2] = mainView[2] - 8.0;
 
