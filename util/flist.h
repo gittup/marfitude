@@ -23,7 +23,6 @@
   * utility library.
   */
 
-#include <stdio.h>
 #include <dirent.h>
 
 /** Used to iterate through a list of files
@@ -50,7 +49,7 @@ struct flist {
   */
 #define flist_foreach(f, p) \
 	for((f)->_d=opendir(p);\
-		((f)->_d!=NULL &&\
-		 ((f)->_ent=readdir((f)->_d))!=NULL &&\
-		 ((f)->filename=(f)->_ent->d_name)!=NULL) ||\
-		((f)->_d!=NULL && closedir((f)->_d),0);)
+		((f)->_d!=0 &&\
+		 ((f)->_ent=readdir((f)->_d))!=0 &&\
+		 ((f)->filename=(f)->_ent->d_name)!=0) ||\
+		((f)->_d!=0 && closedir((f)->_d),0);)
