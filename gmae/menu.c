@@ -93,7 +93,7 @@ struct boolean {
 /** A button menu object */
 struct button {
 	void (*activeFunc)(int); /**< The function to execute when activated */
-	int sound_enabled;
+	int sound_enabled;       /**< If a sound should play when activated */
 };
 
 /** A button menu object that takes a parameter */
@@ -479,6 +479,7 @@ int clip_slider_val(struct slider *s)
 	return 1;
 }
 
+/** Minimum spacing between the slider name and value */
 #define SLIDER_SPACING 3
 void name_slider_item(struct screenMenu *m, struct slider *s, int i, const char *name)
 {
