@@ -29,6 +29,7 @@ struct marfitude_pos {
 	const struct row *row; /**< Current row */
 	int row_index;         /**< Row index */
 	int channel;           /**< Which channel is currently played */
+	double view;           /**< The viewing position (x-axis) */
 };
 
 /** A note on the screen */

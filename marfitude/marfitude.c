@@ -941,4 +941,5 @@ void marfitude_get_pos(struct marfitude_pos *p)
 	p->row = curRow;
 	p->row_index = rowIndex;
 	p->channel = channelFocus;
+	p->view = viewFocus;
 }
