@@ -5,7 +5,6 @@
 
 #include "gmae/event.h"
 #include "gmae/textures.h"
-#include "gmae/timer.h"
 #include "gmae/wam.h"
 
 #define Row(row) (row < 0 ? 0 : (row >= wam->numRows ? wam->numRows - 1: row))
