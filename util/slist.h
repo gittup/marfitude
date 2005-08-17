@@ -49,3 +49,4 @@ struct slist *slist_find_custom(struct slist *l, void *d, CompareFunc c);
 struct slist *slist_next(struct slist *l);
 void slist_free(struct slist *l);
 void slist_usage(void);
+void quit_slist(void);

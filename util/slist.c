@@ -20,6 +20,7 @@
 #include <stdlib.h>
 
 #include "slist.h"
+#include "memtest.h"
 
 /** @file
  * Implements a singly-linked list
@@ -43,10 +44,9 @@ static int current = 0;
 void add_slists(struct listmem *m, int x)
 {
 	int i;
-	struct slist *s = malloc(sizeof(struct slist) * x);
 
 	for(i=0;i<x;i++) {
-		m->list = &s[i];
+		m->list = malloc(sizeof(struct slist));
 		m->active = 0;
 		m++;
 	}
@@ -264,4 +264,15 @@ void slist_usage(void)
 		if(mem[x].active)
 			printf("%i active\n", x);
 	printf("%i / %i mem used, at %i\n", memused, memsize, current);
+}
+
+/** Free all the memory used by slists */
+void quit_slist(void)
+{
+	int x;
+
+	for(x=0;x<memsize;x++) {
+		free(mem[x].list);
+	}
+	free(mem);
 }
