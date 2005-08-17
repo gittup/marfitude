@@ -99,7 +99,7 @@ void quit_log(void)
 		printf("Log shutdown\n");
 	}
 #if CONFIG_MEMTEST == 1
-	CheckMemUsage();
+	check_mem_usage();
 #endif
 }
 
