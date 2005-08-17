@@ -419,7 +419,7 @@ void ClearMenuItems(struct screenMenu *m)
 		{
 			case MENU_SLIDER:
 				s = (struct slider*)m->items[x].item;
-				for(y=0; y<s->max; y++) {
+				for(y=0; y<=s->max; y++) {
 					free(s->strs[y]);
 				}
 				free(s->strs);
@@ -853,14 +853,18 @@ static struct screenMenu *fightSceneSelect = &screenMenus[1];
 
 void FightActivate(int shift)
 {
-	char *song = cat_str(MUSICDIR, (char*)slist_nth(fileList, mainMenu->activeMenuItem)->data);
-	char *scene = cat_str(SCENEDIR, (char*)slist_nth(sceneList, fightSceneSelect->activeMenuItem)->data);
+	char *song;
+	char *scene;
 
 	if(shift) {
 		struct screenMenu *m = &screenMenus[curMenu];
 		m->activeMenuItem = rand_int(m->numItems);
 		return;
 	}
+
+	song = cat_str(MUSICDIR, (char*)slist_nth(fileList, mainMenu->activeMenuItem)->data);
+	scene = cat_str(SCENEDIR, (char*)slist_nth(sceneList, fightSceneSelect->activeMenuItem)->data);
+
 	printf("Activating %i, %i\n", mainMenu->activeMenuItem, fightSceneSelect->activeMenuItem);
 	cfg_set("main", "song", song);
 	cfg_set("main", "scene", scene);
@@ -1075,6 +1079,7 @@ void FightMenuQuit(void)
 	slist_free(sceneList);
 
 	ClearMenuItems(mainMenu);
+	ClearMenuItems(fightSceneSelect);
 	deregister_event("pageup", FightPageUp);
 	deregister_event("pagedown", FightPageDown);
 	deregister_event("home", FightHome);
