@@ -26,6 +26,7 @@
 
 #include "util/memtest.h"
 #include "util/strfunc.h"
+#include "util/slist.h"
 
 /** @file
  * Handles event registration/firing.
@@ -89,17 +90,22 @@ void fire_event(const char *event, const void *data)
 void handle_event(struct event *e, const void *data)
 {
 	struct event_handler *h;
+	struct slist *tmp = NULL;
+	struct slist *t;
 
 	e->fired++;
 	h = e->handlers;
 	while(h != NULL) {
-		struct event_handler *next;
-
-		next = h->next;
 		if(h->registered)
-			h->handler(data);
-		h = next;
+			tmp = slist_insert(tmp, h);
+		h = h->next;
 	}
+
+	slist_foreach(t, tmp) {
+		h = t->data;
+		h->handler(data);
+	}
+	slist_free(tmp);
 }
 
 /** Register's the @a handler with event named @a event. No guarantee is given
