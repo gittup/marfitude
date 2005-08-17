@@ -31,9 +31,8 @@ typedef void (*event_handler)(const void *);
 
 /** A list of event structures */
 struct event_handler {
-	event_handler handler;        /**< The function to call on an event */
-	int stopHere;                /**< Don't call all other handlers */
-	int registered;              /**< 1 if enabled, 0 if not */
+	event_handler handler;       /**< The function to call on an event */
+	int registered;              /**< 1 if this handler is registered */
 	struct event_handler *next;  /**< Next handler in the list */
 };
 
@@ -48,11 +47,6 @@ struct event {
 void fire_event(const char *event, const void *data);
 void handle_event(struct event *e, const void *data);
 struct event *get_event(const char *event);
-void register_event(const char *event, event_handler handler, int stopHere);
+void register_event(const char *event, event_handler handler);
 void deregister_event(const char *event, event_handler handler);
 void quit_events(void);
-
-/** allows already registered events to fire */
-#define EVENTTYPE_MULTI 0
-/** stops all future events from firing, until deregistered */
-#define EVENTTYPE_STOP 1

@@ -88,53 +88,44 @@ void fire_event(const char *event, const void *data)
  */
 void handle_event(struct event *e, const void *data)
 {
-	static int handling = 0;
 	struct event_handler *h;
-	int x = 0;
-	int y = 0;
-
-	handling++;
 
 	e->fired++;
 	h = e->handlers;
 	while(h != NULL) {
-		if(h->registered) {
+		struct event_handler *next;
+
+		next = h->next;
+		if(h->registered)
 			h->handler(data);
-			if(h->stopHere) break;
-			y++;
-		}
-		h = h->next;
-		x++;
+		h = next;
 	}
-	handling--;
 }
 
-/** Register's the @a handler with event named @a event. Normally, all
- * registered events are called when the event is fired. However, if @a stopHere
- * is specified, then this becomes the last event to fire until it is
- * unregistered.
+/** Register's the @a handler with event named @a event. No guarantee is given
+ * for the order the handlers are called when the event is fired. For example,
+ * if handles A and B are registered for the same event, A could be called
+ * before B, or B could be called for A.
+ *
+ * @param event The event name to register with.
+ * @param handler The function to call when the event is fired.
  */
-void register_event(const char *event, event_handler handler, int stopHere)
+void register_event(const char *event, event_handler handler)
 {
 	struct event *e;
 	struct event_handler *h;
 
 	e = get_event(event);
 	h = e->handlers;
-	if(stopHere) {
-		if(h && h->registered)
-			h = NULL;
-	} else {
-		while(h != NULL && h->registered)
-			h = h->next;
-	}
+	while(h != NULL && h->registered)
+		h = h->next;
+
 	if(h == NULL) {
 		h = malloc(sizeof(struct event_handler));
 		h->next = e->handlers;
 		e->handlers = h;
 	}
 	h->handler = handler;
-	h->stopHere = stopHere;
 	h->registered = 1;
 }
 
@@ -164,6 +155,7 @@ void deregister_event(const char *event, event_handler handler)
 void chk_event(struct event *e)
 {
 	struct event_handler *h;
+	int num_handlers = 0;
 
 	h = e->handlers;
 	while(h != NULL) {
@@ -173,8 +165,9 @@ void chk_event(struct event *e)
 		h = h->next;
 		free(e->handlers);
 		e->handlers = h;
+		num_handlers++;
 	}
-	printf("Free Event: \"%s\" fired %i times.\n", e->name, e->fired);
+	printf("Event: %18s %12i    %12i\n", e->name, e->fired, num_handlers);
 }
 
 /** All the struct events are kept around for the life of the program. This
@@ -184,6 +177,7 @@ void quit_events(void)
 {
 	struct event *e = events;
 
+	printf("       --- Free Event --- Times Fired --- Max Handlers ---\n");
 	/* Free the first event in the list */
 	while(e != NULL) {
 		chk_event(e);
