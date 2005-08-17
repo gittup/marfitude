@@ -737,8 +737,8 @@ void RegisterMenuEvents(void)
 {
 	menuActive = 1;
 	curMenu = 0;
-	register_event("button", button_handler, EVENTTYPE_STOP);
-	register_event("enter", MenuActivate, EVENTTYPE_STOP);
+	register_event("button", button_handler);
+	register_event("enter", MenuActivate);
 }
 
 void ShowMenu(const void *data)
@@ -785,7 +785,7 @@ int NoMenuInit(void)
 {
 	input_mode(GAME);
 	HideMenu();
-	register_event("button", ShowMenu, EVENTTYPE_MULTI);
+	register_event("button", ShowMenu);
 	return 0;
 }
 
@@ -1053,10 +1053,10 @@ int FightMenuInit(void)
 		cnt++;
 	}
 
-	register_event("pageup", FightPageUp, EVENTTYPE_STOP);
-	register_event("pagedown", FightPageDown, EVENTTYPE_STOP);
-	register_event("home", FightHome, EVENTTYPE_STOP);
-	register_event("end", FightEnd, EVENTTYPE_STOP);
+	register_event("pageup", FightPageUp);
+	register_event("pagedown", FightPageDown);
+	register_event("home", FightHome);
+	register_event("end", FightEnd);
 	return 0;
 }
 
@@ -1171,7 +1171,7 @@ void ConfigKeyHandler(const void *data)
 int ConfigButton(int b)
 {
 	configuring = b;
-	register_event("key", ConfigKeyHandler, EVENTTYPE_STOP);
+	register_event("key", ConfigKeyHandler);
 	newKeyText->active = 1;
 	input_mode(KEY);
 	return 1;
