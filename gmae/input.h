@@ -69,3 +69,4 @@ void input_mode(enum event_mode mode);
 int configure_joykeys(void);
 char *joykey_name(int button);
 int set_button(int b, const struct joykey *jk);
+void quit_input(void);

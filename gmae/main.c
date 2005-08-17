@@ -69,6 +69,8 @@ void shutdown(void)
 	quit_gl();
 	quit_audio();
 	quit_events();
+	quit_input();
+	quit_slist();
 	quit_fft();
 	quit_config();
 	quit_log();

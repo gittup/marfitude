@@ -545,3 +545,14 @@ void null_handler(struct joykey *jk)
 {
 	if(jk) {}
 }
+
+/** Frees up the memory used by the input module */
+void quit_input(void)
+{
+	struct slist *t;
+
+	slist_foreach(t, keys) {
+		free(t->data);
+	}
+	slist_free(keys);
+}
