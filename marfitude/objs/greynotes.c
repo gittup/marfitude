@@ -18,7 +18,7 @@ static float theta;
 
 void greynotes_init(void)
 {
-	register_event("draw opaque", draw_notes, EVENTTYPE_MULTI);
+	register_event("draw opaque", draw_notes);
 
 	note = glGenLists(1);
 	theta = 0.0;

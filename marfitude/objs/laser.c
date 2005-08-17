@@ -33,8 +33,8 @@ void laser_init(void)
 {
 	laser_tex = texture_num("Laser.png");
 	num_lasers = 0;
-	register_event("shoot", make_laser, EVENTTYPE_MULTI);
-	register_event("draw transparent", draw_lasers, EVENTTYPE_MULTI);
+	register_event("shoot", make_laser);
+	register_event("draw transparent", draw_lasers);
 }
 
 void laser_exit(void)

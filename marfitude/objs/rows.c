@@ -45,7 +45,7 @@ void rows_init(void)
 			} glEnd();
 		} glEndList();
 	}
-	register_event("draw opaque", draw_rows, EVENTTYPE_MULTI);
+	register_event("draw opaque", draw_rows);
 }
 
 void rows_exit(void)

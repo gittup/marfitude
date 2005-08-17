@@ -33,9 +33,9 @@ void lines_init(void)
 	start_line = 0;
 	stop_line = 0;
 
-	register_event("draw transparent", draw_lines, EVENTTYPE_MULTI);
-	register_event("row", create_line, EVENTTYPE_MULTI);
-	register_event("de-row", remove_line, EVENTTYPE_MULTI);
+	register_event("draw transparent", draw_lines);
+	register_event("row", create_line);
+	register_event("de-row", remove_line);
 }
 
 void lines_exit(void)

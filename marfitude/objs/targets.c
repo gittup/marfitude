@@ -13,7 +13,7 @@ static int target_tex;
 void targets_init(void)
 {
 	target_tex = texture_num("Target.png");
-	register_event("draw transparent", draw_targets, EVENTTYPE_MULTI);
+	register_event("draw transparent", draw_targets);
 }
 
 void targets_exit(void)

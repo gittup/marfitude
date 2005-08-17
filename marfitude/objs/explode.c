@@ -12,7 +12,7 @@ static void explode(const void *);
 
 void explode_init(void)
 {
-	register_event("row explosion", explode, EVENTTYPE_MULTI);
+	register_event("row explosion", explode);
 }
 
 void explode_exit(void)

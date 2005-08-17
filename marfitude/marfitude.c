@@ -139,6 +139,8 @@ void button_handler(const void *data)
 	static int lastkeypressed[2] = {1, 1};
 	const struct button_e *b = data;
 
+	if(is_menu_active()) return;
+
 	switch(b->button) {
 		case B_RIGHT:
 			ChannelUp(b->shift);
@@ -303,7 +305,7 @@ int main_init()
 
 	ap.nextStartRow = -1;
 	ResetAp();
-	register_event("button", button_handler, EVENTTYPE_MULTI);
+	register_event("button", button_handler);
 
 	init_timer();
 	Log(("Lists created\n"));
@@ -879,7 +881,7 @@ void UpdatePosition(void)
 			if(rowIndex == 0) { /* start the song! */
 				Player_TogglePause();
 				songStarted = 1;
-				register_event("menu", menu_handler, EVENTTYPE_MULTI);
+				register_event("menu", menu_handler);
 			}
 		}
 		modTime = curRow->time + (curTic - curRow->ticpos) * BpmToSec(curRow->sngspd, curRow->bpm) / curRow->sngspd;

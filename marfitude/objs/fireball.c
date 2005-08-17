@@ -22,7 +22,7 @@ void fireball_init(void)
 	fireball[2] = 0.0;
 	fireball[3] = 1.0;
 
-	register_event("draw transparent", fireball_draw, EVENTTYPE_MULTI);
+	register_event("draw transparent", fireball_draw);
 }
 
 void fireball_exit(void)

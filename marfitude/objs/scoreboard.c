@@ -12,7 +12,7 @@ static void draw_scoreboard(const void *);
 
 void scoreboard_init(void)
 {
-	register_event("draw opaque", draw_scoreboard, EVENTTYPE_MULTI);
+	register_event("draw opaque", draw_scoreboard);
 }
 
 void scoreboard_exit(void)

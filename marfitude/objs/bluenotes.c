@@ -12,7 +12,7 @@ static void draw_notes(const void *);
 
 void bluenotes_init(void)
 {
-	register_event("draw transparent", draw_notes, EVENTTYPE_MULTI);
+	register_event("draw transparent", draw_notes);
 }
 
 void bluenotes_exit(void)
