@@ -45,6 +45,7 @@
 
 #include "util/memtest.h"
 #include "util/fatalerror.h"
+#include "util/slist.h"
 
 /** @file
  * Initialize all the sub-systems and run the main execution loop.
