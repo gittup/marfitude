@@ -42,20 +42,18 @@
 #include "util/slist.h"
 #include "util/strfunc.h"
 
-/** A slider menu item. Currently not implemented */
+/** A slider menu item. Can select between a range of values. */
 #define MENU_SLIDER 0
-/** A boolean menu item. Currently not implemented */
-#define MENU_BOOLEAN 1
 /** A button menu item. Can be activated to call a function */
-#define MENU_BUTTON 2
+#define MENU_BUTTON 1
 /** A button param menu item. Can be activated to call a function with a
  * parameter.
  */
-#define MENU_BUTTONPARAM 3
+#define MENU_BUTTONPARAM 2
 /** A test menu item. Just writes text somewhere */
-#define MENU_TEXT 4
+#define MENU_TEXT 3
 /** Items from 0 to MENU_SELECTABLE are selectable */
-#define MENU_SELECTABLE 4
+#define MENU_SELECTABLE 3
 /** Where music files are located */
 #define MUSICDIR "music/"
 /** Where scenes are located */
@@ -65,6 +63,9 @@
 #define NOBOX -1
 /** Bounding box offset */
 #define BBO 5
+
+/** Minimum spacing between the name and value (for slider, boolean, etc) */
+#define MENU_SPACING 3
 
 /** @file
  * Draws a bunch of different menus and allows switching between them.
@@ -81,13 +82,6 @@ struct slider {
 	int namelen; /**< The length of the name of the slider */
 	char **strs; /**< Optional list of strings describing the values */
 	float c[4]; /**< The color of the slider object */
-};
-
-/** A boolean menu object */
-struct boolean {
-	char *trueString;  /**< String if true */
-	char *falseString; /**< String if false */
-	int val;           /**< Value (1 or 0) */
 };
 
 /** A button menu object */
@@ -146,7 +140,7 @@ static void UpdateBox(struct screenMenu *m, int x1, int y1, int x2, int y2);
 static int clip_slider_val(struct slider *s);
 static void name_slider_item(struct screenMenu *m, struct slider *s, int i, const char *name);
 static struct slider *CreateSlider(struct screenMenu *m, const char *name, float *c, int min, int max, int delta, int initVal);
-/*static struct boolean *CreateBoolean(const char *name, const char *trueString, const char *falseString, int initVal);*/
+static struct slider *CreateBoolean(struct screenMenu *m, const char *name, float *c, const char *trueString, const char *falseString, int initVal);
 static struct button *CreateButton(struct screenMenu *m, const char *name, void (*activeFunc)(int));
 static struct buttonParam *CreateButtonParam(struct screenMenu *m, const char *name, int (*activeFunc)(int), int param);
 static struct text *CreateText(struct screenMenu *m, const char *name, float *c, int x, int y);
@@ -347,8 +341,6 @@ void DrawPartialMenu(struct screenMenu *m, int start, int stop)
 				else
 					print_gl(m->maxX - int_len(s->val) * FONT_WIDTH, y, "%i", s->val);
 				break;
-			case MENU_BOOLEAN:
-				break;
 			case MENU_BUTTON:
 			case MENU_BUTTONPARAM:
 				active_color(i, m);
@@ -405,7 +397,6 @@ void ClearMenuItems(struct screenMenu *m)
 {
 	int x;
 	int y;
-	struct boolean *b;
 	struct slider *s;
 	Log(("Clearing items...\n"));
 	m->minX = NOBOX;
@@ -424,12 +415,6 @@ void ClearMenuItems(struct screenMenu *m)
 				}
 				free(s->strs);
 				free(s);
-				break;
-			case MENU_BOOLEAN:
-				b = (struct boolean*)m->items[x].item;
-				free(b->trueString);
-				free(b->falseString);
-				free(b);
 				break;
 			case MENU_BUTTON:
 			case MENU_BUTTONPARAM:
@@ -479,8 +464,6 @@ int clip_slider_val(struct slider *s)
 	return 1;
 }
 
-/** Minimum spacing between the slider name and value */
-#define SLIDER_SPACING 3
 void name_slider_item(struct screenMenu *m, struct slider *s, int i, const char *name)
 {
 	int len;
@@ -491,7 +474,7 @@ void name_slider_item(struct screenMenu *m, struct slider *s, int i, const char 
 		return;
 	}
 	s->strs[i] = string_copy(name);
-	len = s->namelen + strlen(name) + SLIDER_SPACING;
+	len = s->namelen + strlen(name) + MENU_SPACING;
 	UpdateBox(m, m->minX, m->minY, m->menuX + len * FONT_WIDTH, m->maxY);
 }
 
@@ -516,24 +499,22 @@ struct slider *CreateSlider(struct screenMenu *m, const char *name, float *c, in
 		s->strs[x] = NULL;
 	}
 
-	len = s->namelen + int_len(max) + SLIDER_SPACING;
+	len = s->namelen + int_len(max) + MENU_SPACING;
 	UpdateBox(m, m->menuX, m->menuY + FONT_HEIGHT * m->numItems, m->menuX + len * FONT_WIDTH, m->menuY + FONT_HEIGHT * (m->numItems+1));
 	AddMenuItem(m, name, (void*)s, MENU_SLIDER);
 	return s;
 }
 
-/*struct boolean *CreateBoolean(const char *name, const char *trueString, const char *falseString, int initVal)
+struct slider *CreateBoolean(struct screenMenu *m, const char *name, float *c, const char *trueString, const char *falseString, int initVal)
 {
-	struct boolean *b;
-	b = malloc(sizeof(struct boolean));
-	b->trueString = malloc(sizeof(char) * (strlen(trueString)+1));
-	b->falseString = malloc(sizeof(char) * (strlen(falseString)+1));
-	strcpy(b->trueString, trueString);
-	strcpy(b->falseString, falseString);
-	b->val = initVal;
-	AddMenuItem(name, (void*)b, BOOLEAN);
-	return b;
-}*/
+	struct slider *s;
+
+	s = CreateSlider(m, name, c, 0, 1, 1, initVal);
+	name_slider_item(m, s, 0, falseString);
+	name_slider_item(m, s, 1, trueString);
+
+	return s;
+}
 
 struct button *CreateButton(struct screenMenu *m, const char *name, void (*activeFunc)(int))
 {
@@ -1107,6 +1088,7 @@ int option_menu_init(void)
 	float c[4] = {0.0, 1.0, 1.0, 1.0};
 	struct slider *s;
 	struct button *b;
+	int fullscreen;
 	int difficulty = cfg_get_int("main", "difficulty");
 
 	if(!menuActive) RegisterMenuEvents();
@@ -1115,6 +1097,10 @@ int option_menu_init(void)
 	name_slider_item(mainMenu, s, 1, "DJ McFunAdoo");
 	name_slider_item(mainMenu, s, 2, "Too-Dope Extreme!");
 	name_slider_item(mainMenu, s, 3, "The Heart Stopper!!");
+
+	fullscreen = cfg_eq("video", "fullscreen", "yes");
+	CreateBoolean(mainMenu, "Full screen", c, "On", "Off", fullscreen);
+
 	b = CreateButton(mainMenu, "Back", MenuBack);
 	b->sound_enabled = 0;
 	return 0;
@@ -1123,8 +1109,13 @@ int option_menu_init(void)
 void option_menu_quit(void)
 {
 	struct slider *s;
+
 	s = (struct slider*)mainMenu->items[0].item;
 	cfg_set_int("main", "difficulty", s->val);
+
+	s = (struct slider*)mainMenu->items[1].item;
+	cfg_set("video", "fullscreen", s->val ? "yes" : "no");
+
 	ClearMenuItems(mainMenu);
 }
 
