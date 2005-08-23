@@ -128,7 +128,7 @@ void check_mem_usage(void)
 	{
 		if(mb[x].active)
 		{
-			printf("Block from %s line %i occupying %i bytes is active.\n", mb[x].file, mb[x].line, mb[x].size);
+			printf("Block from %s line %i occupying %i bytes is active.\n", mb[x].file, mb[x].line, (int)mb[x].size);
 		}
 	}
 }
