@@ -29,7 +29,7 @@ void draw_targets(const void *data)
 	if(data) {}
 	marfitude_get_pos(&p);
 
-	glPolygonOffset(0.0, 0.0);
+	glPolygonOffset(-1.0, 0.0);
 	glPushMatrix();
 	glTranslated((double)p.channel * -BLOCK_WIDTH, 0.0, TIC_HEIGHT * p.tic);
 	glBindTexture(GL_TEXTURE_2D, target_tex);
@@ -50,5 +50,5 @@ void draw_targets(const void *data)
 		glTranslated(NOTE_WIDTH, 0.0, 0.0);
 	}
 	glPopMatrix();
-	glPolygonOffset(1.0, 1.0);
+	glPolygonOffset(0.0, 0.0);
 }

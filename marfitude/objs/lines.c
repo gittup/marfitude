@@ -78,10 +78,12 @@ void remove_line(const void *data)
 
 void draw_line(int l)
 {
-	if(lines[l].color == 2) glColor4f(0.0, 0.0, 1.0, .7);
-	else glColor4f(0.8, 0.8, 0.8, .3);
+	if(lines[l].color == 2) glColor4f(0.0, 0.0, 1.0, .35);
+	else glColor4f(0.8, 0.8, 0.8, .15);
 	glVertex3f( lines[l].p1.x, lines[l].p1.y, lines[l].p1.z);
 	glVertex3f( lines[l].p2.x, lines[l].p2.y, lines[l].p2.z);
+	glVertex3f( lines[l].p2.x, lines[l].p2.y, lines[l].p2.z);
+	glVertex3f( lines[l].p1.x, lines[l].p1.y, lines[l].p1.z);
 }
 
 void draw_lines(const void *data)
@@ -89,9 +91,11 @@ void draw_lines(const void *data)
 	int x;
 	if(data) {}
 
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonOffset(-1.0, 0.0);
 	glDisable(GL_TEXTURE_2D);
 	glNormal3f(0.0, 1.0, 0.0);
-	glBegin(GL_LINES);
+	glBegin(GL_QUADS);
 	if(start_line <= stop_line) {
 		for(x=start_line;x<stop_line;x++)
 			draw_line(x);
@@ -104,4 +108,6 @@ void draw_lines(const void *data)
 	}
 	glEnd();
 	glEnable(GL_TEXTURE_2D);
+	glPolygonOffset(0.0, 0.0);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
