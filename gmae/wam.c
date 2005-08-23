@@ -36,6 +36,10 @@
 #include "util/memtest.h"
 #include "util/textprogress.h"
 
+/** The magic at the top of the wam. */
+#define WAM_MAGIC "wam-1.0"
+#define WAM_MAGIC_LEN (sizeof(WAM_MAGIC) / sizeof(WAM_MAGIC[0]))
+
 /** The max number of rows in a group */
 #define GRP_SIZE 32
 
@@ -823,6 +827,7 @@ int SaveWam(struct wam *wam, const char *wamFile)
 		Error("Opening Wam for write.");
 		return 0;
 	}
+	write(fno, WAM_MAGIC, WAM_MAGIC_LEN);
 	write(fno, &wam->numCols, sizeof(int));
 	write(fno, &wam->numTics, sizeof(int));
 	write(fno, &wam->numPats, sizeof(int));
@@ -901,11 +906,17 @@ struct wam *ReadWam(const char *wamFile)
 	int x;
 	int y;
 	int fno;
+	char magic[WAM_MAGIC_LEN];
 	struct wam *wam;
 
 	fno = open(wamFile, O_RDONLY | O_BINARY);
 	if(fno == -1)
 		return NULL;
+	read(fno, magic, WAM_MAGIC_LEN);
+	if(strcmp(magic, WAM_MAGIC) != 0) {
+		close(fno);
+		return NULL;
+	}
 	Log(("Loading wam\n"));
 	wam = malloc(sizeof(struct wam));
 	read(fno, &wam->numCols, sizeof(int));
