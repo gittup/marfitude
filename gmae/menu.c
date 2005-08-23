@@ -950,7 +950,7 @@ int alphabetical(const void *a, const void *b)
 int FightMenuInit(void)
 {
 	struct flist f;
-	char *lastFile;
+	const char *lastFile;
 	int cnt;
 	int len;
 	struct slist *tmp;
@@ -1003,6 +1003,8 @@ int FightMenuInit(void)
 	}
 
 	lastFile = cfg_get("main", "song");
+	if(!lastFile)
+		lastFile = "null";
 	cnt = 0;
 	len = slist_length(fileList);
 	slist_foreach(tmp, fileList) {
@@ -1021,6 +1023,8 @@ int FightMenuInit(void)
 	}
 
 	lastFile = cfg_get("main", "scene");
+	if(!lastFile)
+		lastFile = "null";
 	cnt = 0;
 	len = slist_length(sceneList);
 	slist_foreach(tmp, sceneList) {
