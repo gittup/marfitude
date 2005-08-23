@@ -38,6 +38,8 @@
 
 /** The magic at the top of the wam. */
 #define WAM_MAGIC "wam-1.0"
+
+/** Length of the magic wam string. */
 #define WAM_MAGIC_LEN (sizeof(WAM_MAGIC) / sizeof(WAM_MAGIC[0]))
 
 /** The max number of rows in a group */
