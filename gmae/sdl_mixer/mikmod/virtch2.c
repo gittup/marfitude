@@ -653,7 +653,8 @@ static void AddChannel(SLONG* ptr,NATIVE todo)
 			} else
 #endif
 #ifdef NO_64BIT_MIXER
-				/* Uh oh, the 64-bit mixers don't compile... */;
+				/* Uh oh, the 64-bit mixers don't compile... */
+			{}
 #else
 			       {
 				if(vc_mode & DMODE_STEREO) {

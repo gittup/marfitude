@@ -378,10 +378,11 @@ static void _Eff_position_table_u8(int chan, void *stream, int len, void *udata)
 
     for (i = 0; i < len; i += sizeof (Uint32)) {
 #if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
-        *(p++) = (d[l[(*p & 0xFF000000) >> 24]] << 24) |
+        *p = (d[l[(*p & 0xFF000000) >> 24]] << 24) |
                  (d[r[(*p & 0x00FF0000) >> 16]] << 16) |
                  (d[l[(*p & 0x0000FF00) >>  8]] <<  8) |
                  (d[r[(*p & 0x000000FF)      ]]      ) ;
+	p++;
 #else
         *p = (d[r[(*p & 0xFF000000) >> 24]] << 24) |
                  (d[l[(*p & 0x00FF0000) >> 16]] << 16) |
@@ -573,10 +574,11 @@ static void _Eff_position_table_s8(int chan, void *stream, int len, void *udata)
 
     for (i = 0; i < len; i += sizeof (Uint32)) {
 #if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
-        *(p++) = (d[l[((Sint16)(Sint8)((*p & 0xFF000000) >> 24))+128]] << 24) |
+        *p = (d[l[((Sint16)(Sint8)((*p & 0xFF000000) >> 24))+128]] << 24) |
                  (d[r[((Sint16)(Sint8)((*p & 0x00FF0000) >> 16))+128]] << 16) |
                  (d[l[((Sint16)(Sint8)((*p & 0x0000FF00) >>  8))+128]] <<  8) |
                  (d[r[((Sint16)(Sint8)((*p & 0x000000FF)      ))+128]]      ) ;
+	p++;
 #else
         *p = (d[r[((Sint16)(Sint8)((*p & 0xFF000000) >> 24))+128]] << 24) |
                  (d[l[((Sint16)(Sint8)((*p & 0x00FF0000) >> 16))+128]] << 16) |
