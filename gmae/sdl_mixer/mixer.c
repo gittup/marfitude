@@ -191,10 +191,10 @@ static void mix_channels(void *udata, Uint8 *stream, int len)
 				}
 			}
 			if ( mix_channel[i].playing > 0 ) {
-				int index = 0;
+				int ndx = 0;
 				int remaining = len;
-				while (mix_channel[i].playing > 0 && index < len) {
-					remaining = len - index;
+				while (mix_channel[i].playing > 0 && ndx < len) {
+					remaining = len - ndx;
 					volume = (mix_channel[i].volume*mix_channel[i].chunk->volume) / MIX_MAX_VOLUME;
 					mixable = mix_channel[i].playing;
 					if ( mixable > remaining ) {
@@ -202,13 +202,13 @@ static void mix_channels(void *udata, Uint8 *stream, int len)
 					}
 
 					mix_input = Mix_DoEffects(i, mix_channel[i].samples, mixable);
-					SDL_MixAudio(stream+index,mix_input,mixable,volume);
+					SDL_MixAudio(stream+ndx,mix_input,mixable,volume);
 					if (mix_input != mix_channel[i].samples)
 						free(mix_input);
 
 					mix_channel[i].samples += mixable;
 					mix_channel[i].playing -= mixable;
-					index += mixable;
+					ndx += mixable;
 
 					/* rcg06072001 Alert app if channel is done playing. */
 					if (!mix_channel[i].playing && !mix_channel[i].looping) {
@@ -218,22 +218,22 @@ static void mix_channels(void *udata, Uint8 *stream, int len)
 
 				/* If looping the sample and we are at its end, make sure
 				   we will still return a full buffer */
-				while ( mix_channel[i].looping && index < len ) {
+				while ( mix_channel[i].looping && ndx < len ) {
 					int alen = mix_channel[i].chunk->alen;
-					remaining = len - index;
+					remaining = len - ndx;
 				    	if (remaining > alen) {
 						remaining = alen;
 				    	}
 
 					mix_input = Mix_DoEffects(i, mix_channel[i].chunk->abuf, remaining);
-					SDL_MixAudio(stream+index, mix_input, remaining, volume);
+					SDL_MixAudio(stream+ndx, mix_input, remaining, volume);
 					if (mix_input != mix_channel[i].chunk->abuf)
 						free(mix_input);
 
 					--mix_channel[i].looping;
 					mix_channel[i].samples = mix_channel[i].chunk->abuf + remaining;
 					mix_channel[i].playing = mix_channel[i].chunk->alen - remaining;
-					index += remaining;
+					ndx += remaining;
 				}
 				if ( ! mix_channel[i].playing && mix_channel[i].looping ) {
 					if ( --mix_channel[i].looping ) {
