@@ -45,3 +45,14 @@ void update_timer(void)
 	timeDiff = (double)ticDiff / 1000.0;
 	curTime = tmp;
 }
+
+/** Adjust the timer by @a ticks values. This updates all timer variables. */
+void adjust_timer(int ticks)
+{
+	/* Don't adjust past 0 */
+	if(-ticks > (signed)ticDiff)
+		ticks = -ticDiff;
+	curTime += ticks;
+	ticDiff += ticks;
+	timeDiff = (double)ticDiff / 1000.0;
+}
