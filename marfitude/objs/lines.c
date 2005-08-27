@@ -53,7 +53,7 @@ void create_line(const void *data)
 
 	if(r->line) {
 		lines[stop_line].p1.x = 1.0;
-		lines[stop_line].p1.y = 0.005;
+		lines[stop_line].p1.y = 0.0;
 		lines[stop_line].p1.z = TIC_HEIGHT * (double)r->ticpos;
 		lines[stop_line].p2.x = 1.0 - 2.0 * wam->numCols;
 		lines[stop_line].p2.y = 0.005;
@@ -90,7 +90,6 @@ void draw_lines(const void *data)
 	if(data) {}
 
 	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_DEPTH_TEST);
 	glNormal3f(0.0, 1.0, 0.0);
 	glBegin(GL_LINES);
 	if(start_line <= stop_line) {
@@ -104,6 +103,5 @@ void draw_lines(const void *data)
 			draw_line(x);
 	}
 	glEnd();
-	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_TEXTURE_2D);
 }

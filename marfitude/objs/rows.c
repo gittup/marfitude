@@ -104,13 +104,13 @@ void draw_rows(const void *data)
 		stop *= TIC_HEIGHT;
 		glBegin(GL_QUADS); {
 			glTexCoord2f(0.0, start/ 4.0);
-			glVertex3f(-1.0, 0.0, start);
+			glVertex3f(-1.0, -0.01, start);
 			glTexCoord2f(1.0, start / 4.0);
-			glVertex3f(1.0, 0.0, start);
+			glVertex3f(1.0, -0.01, start);
 			glTexCoord2f(1.0, stop / 4.0);
-			glVertex3f(1.0, 0.0, stop);
+			glVertex3f(1.0, -0.01, stop);
 			glTexCoord2f(0.0, stop / 4.0);
-			glVertex3f(-1.0, 0.0, stop);
+			glVertex3f(-1.0, -0.01, stop);
 		} glEnd();
 
 		glTranslated(-BLOCK_WIDTH, 0, 0);
