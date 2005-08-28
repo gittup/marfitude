@@ -39,6 +39,7 @@ enum buttonType {
 struct button_e {
 	enum buttonType button; /**< The button that caused the event */
 	int shift;              /**< 1 if shift is held down, 0 if not */
+	int player;             /**< The player who made the event */
 };
 
 /** A joystick / keyboard wrapper struct.
@@ -67,6 +68,10 @@ void input_loop(void);
 void set_key_repeat(int button, int repeatable);
 void input_mode(enum event_mode mode);
 int configure_joykeys(void);
-char *joykey_name(int button);
-int set_button(int b, const struct joykey *jk);
+char *joykey_name(int button, int player);
+const float *get_player_color(int player);
+int set_button(int b, const struct joykey *jk, int player);
 void quit_input(void);
+
+/** The maximum number of players supported */
+#define MAX_PLAYERS 4

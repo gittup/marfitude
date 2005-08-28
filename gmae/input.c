@@ -65,21 +65,24 @@ static struct slist *keys = NULL;
 
 static void handle_action(struct keypush *kp, int action);
 static struct keypush *get_keypush(const struct joykey *jk, void (*)(struct joykey*));
+static char *malloc_bstr(int player);
+static int set_shift(const struct joykey *jk);
 static int fire_joykey(const struct joykey *jk);
 static void reset_key_repeats(void);
 static char *next_dot(char *s);
-static int cfg_button(struct joykey *key, const char *cfgParam);
+static int cfg_button(struct joykey *key, const char *cfgParam, int player);
 static int joykey_equal(const struct joykey *a, const struct joykey *b);
 static void key_handler(struct joykey *);
 static void mouse_button_handler(struct joykey *);
 static void joy_button_handler(struct joykey *);
 static void joy_axis_handler(struct joykey *);
 static void null_handler(struct joykey *);
-static void button_event(int button);
-static void menu_button_event(int button);
+static void button_event(int button, int player);
+static void menu_button_event(int button, int player);
 
 static int cur_mode = MENU;
-static struct joykey buttons[B_LAST];
+static struct joykey buttons[MAX_PLAYERS][B_LAST];
+static int shift[MAX_PLAYERS] = {0};
 static const char *cfgMsg[B_LAST] = {	"up",
 					"down",
 					"left",
@@ -91,7 +94,13 @@ static const char *cfgMsg[B_LAST] = {	"up",
 					"select",
 					"shift",
 					"menu"};
-static int shift = 0;
+
+static float pc[MAX_PLAYERS][4] = {
+	{0.6, 0.6, 1.0, 1.0},
+	{1.0, 0.3, 0.3, 1.0},
+	{1.0, 1.0, 0.0, 1.0},
+	{0.0, 1.0, 0.0, 1.0}
+};
 
 /** Clear out the SDL_Event queue */
 void clear_input(void)
@@ -214,9 +223,12 @@ void input_loop(void)
 void set_key_repeat(int button, int repeatable)
 {
 	struct keypush *kp;
+	int p;
 
-	kp = get_keypush(&buttons[button], null_handler);
-	kp->repeatable = repeatable;
+	for(p=0; p<MAX_PLAYERS; p++) {
+		kp = get_keypush(&buttons[p][button], null_handler);
+		kp->repeatable = repeatable;
+	}
 }
 
 /** Set the input mode to one of KEY, MENU, or GAME */
@@ -228,10 +240,17 @@ void input_mode(enum event_mode mode)
 /** Initializes joykeys from the configuration file */
 int configure_joykeys(void)
 {
-	int x;
+	int x, p;
 	int err = 0;
-	for(x=0;x<B_LAST;x++) {
-		err += cfg_button(&(buttons[x]), cfgMsg[x]);
+	for(p=0; p<MAX_PLAYERS; p++) {
+		for(x=0; x<B_LAST; x++) {
+			int tmp;
+			tmp = cfg_button(&(buttons[p][x]), cfgMsg[x], p);
+
+			/* Only worry if the first player's keys aren't set */
+			if(p == 0)
+				err += tmp;
+		}
 	}
 	return err;
 }
@@ -239,11 +258,11 @@ int configure_joykeys(void)
 /** Returns a string that represents the requested button from the buttonType
  * enum.
  */
-char *joykey_name(int button)
+char *joykey_name(int button, int player)
 {
 	int len;
 	char *s = NULL;
-	struct joykey *jk = buttons+button;
+	struct joykey *jk = &buttons[player][button];
 
 	if(jk->type == JK_KEYBOARD)
 	{
@@ -283,23 +302,37 @@ char *joykey_name(int button)
 }
 
 /** Set the game button @a b to be set to the joykey structure @a jk
+ *
  * @retval 0 Success
  * @retval 1 @a b is an invalid button
  */
-int set_button(int b, const struct joykey *jk)
+int set_button(int b, const struct joykey *jk, int player)
 {
 	char *s;
+	char *bstr;
 	if(b < 0 || b >= B_LAST) return 1;
 
+	bstr = malloc_bstr(player);
 	reset_key_repeats();
 	s = malloc(int_len(jk->type)+int_len(jk->button)+int_len(jk->axis)+3);
 	sprintf(s, "%i.%i.%i", jk->type, jk->button, jk->axis);
-	cfg_set("buttons", cfgMsg[b], s);
+	cfg_set(bstr, cfgMsg[b], s);
 	free(s);
-	buttons[b].type = jk->type;
-	buttons[b].button = jk->button;
-	buttons[b].axis = jk->axis;
+	buttons[player][b].type = jk->type;
+	buttons[player][b].button = jk->button;
+	buttons[player][b].axis = jk->axis;
+	free(bstr);
 	return 0;
+}
+
+/** Gets the @a player's colors in a float array.
+ *
+ * @param player The player (0 .. MAX_PLAYERS-1)
+ * @return The RGBA colors
+ */
+const float *get_player_color(int player)
+{
+	return pc[player];
 }
 
 void handle_action(struct keypush *kp, int action)
@@ -311,8 +344,11 @@ void handle_action(struct keypush *kp, int action)
 		kp->time_hit = curTime;
 		fire = 1;
 	} else if(action == 0) {
-		if(joykey_equal(&buttons[B_SHIFT], &kp->key))
-			shift = 0;
+		int p;
+
+		for(p=0; p<MAX_PLAYERS; p++)
+			if(joykey_equal(&buttons[p][B_SHIFT], &kp->key))
+				shift[p] = 0;
 		kp->active = 0;
 		kp->repeating = 0;
 	} else {
@@ -363,31 +399,56 @@ struct keypush *get_keypush(const struct joykey *jk, void (*handler)(struct joyk
 	return kp;
 }
 
+char *malloc_bstr(int player)
+{
+	char *bstr = string_copy("buttonsx");
+	bstr[7] = player+'0';
+	return bstr;
+}
+
+int set_shift(const struct joykey *jk)
+{
+	int ret = 0;
+	int p;
+
+	for(p=0; p<MAX_PLAYERS; p++) {
+		if(joykey_equal(&buttons[p][B_SHIFT], jk)) {
+			shift[p] = 1;
+			ret = 1;
+		}
+	}
+	return ret;
+}
+
 int fire_joykey(const struct joykey *jk)
 {
 	int x;
+	int p;
+
 	/* This if statement is weird: the shift key is only set if it's
 	 * in MENU or GAME mode. So that's why the second if part doesn't
 	 * match up with the rest.
 	 */
 	if(cur_mode == KEY) {
 		fire_event("key", jk);
-	} else if(joykey_equal(&buttons[B_SHIFT], jk)) {
-		shift = 1;
+	} else if(set_shift(jk)) {
+		/* shift is already set by set_shift */
 	} else if(cur_mode == MENU) {
 		int fired = 0;
 
-		for(x=0;x<B_LAST;x++)
-			if(joykey_equal(&buttons[x], jk)) {
-				menu_button_event(x);
-				fired = 1;
-			}
+		for(p=0; p<MAX_PLAYERS; p++)
+			for(x=0; x<B_LAST; x++)
+				if(joykey_equal(&buttons[p][x], jk)) {
+					menu_button_event(x, p);
+					fired = 1;
+				}
 		if(!fired)
 			return 1;
 	} else if(cur_mode == GAME) {
-		for(x=0;x<B_LAST;x++)
-			if(joykey_equal(&buttons[x], jk))
-				button_event(x);
+		for(p=0; p<MAX_PLAYERS; p++)
+			for(x=0; x<B_LAST; x++)
+				if(joykey_equal(&buttons[p][x], jk))
+					button_event(x, p);
 	}
 	return 0;
 }
@@ -402,22 +463,24 @@ void reset_key_repeats(void)
 	}
 }
 
-void button_event(int button)
+void button_event(int button, int player)
 {
 	struct button_e b;
 	b.button = button;
-	b.shift = shift;
+	b.shift = shift[player];
+	b.player = player;
 	fire_event("button", &b);
 }
 
-void menu_button_event(int button)
+void menu_button_event(int button, int player)
 {
 	if(button >= B_BUTTON1 && button <= B_BUTTON4) {
-		fire_event("enter", &shift);
+		fire_event("enter", &shift[player]);
 	} else {
 		struct button_e b;
 		b.button = button;
-		b.shift = shift;
+		b.shift = shift[player];
+		b.player = player;
 		fire_event("button", &b);
 	}
 }
@@ -433,35 +496,43 @@ char *next_dot(char *s)
 	return NULL;
 }
 
-int cfg_button(struct joykey *key, const char *cfgParam)
+int cfg_button(struct joykey *key, const char *cfgParam, int player)
 {
 	char *s;
 	char *t;
-	if(cfg_get("buttons", cfgParam) == NULL) {
+	char *bstr = malloc_bstr(player);
+
+	if(cfg_get(bstr, cfgParam) == NULL) {
 		key->type = JK_UNSET;
 		key->button = 0;
 		key->axis = 0;
+		free(bstr);
 		return 1;
 	}
-	s = malloc(sizeof(char) * (strlen(cfg_get("buttons", cfgParam))+1));
-	strcpy(s, cfg_get("buttons", cfgParam));
+	s = malloc(sizeof(char) * (strlen(cfg_get(bstr, cfgParam))+1));
+	strcpy(s, cfg_get(bstr, cfgParam));
 	t = s;
 	key->type = atoi(s);
 	s = next_dot(s);
 	if(s == NULL)
 	{
-		ELog(("Invalid configuration string for 'buttons.%s'.\n", cfgParam));
+		ELog(("Invalid configuration string for '%s.%s'.\n", bstr, cfgParam));
+		free(t);
+		free(bstr);
 		return 1;
 	}
 	key->button = atoi(s);
 	s = next_dot(s);
 	if(s == NULL)
 	{
-		ELog(("Invalid configuration string for 'buttons.%s'.\n", cfgParam));
+		ELog(("Invalid configuration string for '%s.%s'.\n", bstr, cfgParam));
+		free(t);
+		free(bstr);
 		return 1;
 	}
 	key->axis = atoi(s);
 	free(t);
+	free(bstr);
 	return 0;
 }
 
@@ -475,25 +546,25 @@ int joykey_equal(const struct joykey *a, const struct joykey *b)
 void key_handler(struct joykey *jk)
 {
 	if(jk->button == SDLK_ESCAPE)
-		button_event(B_MENU);
+		button_event(B_MENU, 0);
 
 	else if(jk->button == SDLK_UP)
-		button_event(B_UP);
+		button_event(B_UP, 0);
 
 	else if(jk->button == SDLK_DOWN)
-		button_event(B_DOWN);
+		button_event(B_DOWN, 0);
 
 	else if(jk->button == SDLK_RIGHT)
-		button_event(B_RIGHT);
+		button_event(B_RIGHT, 0);
 
 	else if(jk->button == SDLK_LEFT)
-		button_event(B_LEFT);
+		button_event(B_LEFT, 0);
 
 	else if(jk->button == SDLK_RETURN)
-		fire_event("enter", &shift);
+		fire_event("enter", &shift[0]);
 
 	else if (jk->button == SDLK_TAB)
-		button_event(B_SELECT);
+		button_event(B_SELECT, 0);
 
 	else if(jk->button == SDLK_PAGEUP)
 		fire_event("pageup", NULL);
@@ -513,14 +584,14 @@ void mouse_button_handler(struct joykey *jk)
 {
 	if(jk) {}
 	/* All mouse buttons activate the menu */
-	fire_event("enter", &shift);
+	fire_event("enter", &shift[0]);
 }
 
 void joy_button_handler(struct joykey *jk)
 {
 	if(jk) {}
 	/* All joystick buttons activate the menu */
-	fire_event("enter", &shift);
+	fire_event("enter", &shift[0]);
 }
 
 void joy_axis_handler(struct joykey *jk)
@@ -530,14 +601,14 @@ void joy_axis_handler(struct joykey *jk)
 	 */
 	if(jk->axis & 1) {
 		if(jk->button == 1)
-			button_event(B_DOWN);
+			button_event(B_DOWN, 0);
 		if(jk->button == -1)
-			button_event(B_UP);
+			button_event(B_UP, 0);
 	} else {
 		if(jk->button == 1)
-			button_event(B_RIGHT);
+			button_event(B_RIGHT, 0);
 		if(jk->button == -1)
-			button_event(B_LEFT);
+			button_event(B_LEFT, 0);
 	}
 }
 

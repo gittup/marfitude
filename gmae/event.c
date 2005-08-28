@@ -76,11 +76,8 @@ void fire_event(const char *event, const void *data)
 {
 	struct event *e;
 
-	e = find_event(event);
-
-	if(e != NULL) {
-		handle_event(e, data);
-	}
+	e = get_event(event);
+	handle_event(e, data);
 }
 
 /** Fires the event structure represented by @a e, passing the event-specific

@@ -82,6 +82,7 @@ struct slider {
 	int namelen; /**< The length of the name of the slider */
 	char **strs; /**< Optional list of strings describing the values */
 	float c[4]; /**< The color of the slider object */
+	void (*handler)(void); /**< Handler to call on change */
 };
 
 /** A button menu object */
@@ -94,6 +95,7 @@ struct button {
 struct buttonParam {
 	int (*activeFunc)(int); /**< The function to execute when activated */
 	int param;              /**< The parameter to send the function */
+	int xoffset;            /**< Move the param left or right */
 };
 
 /** A text menu object */
@@ -139,10 +141,10 @@ static void ClearMenuItems(struct screenMenu *m);
 static void UpdateBox(struct screenMenu *m, int x1, int y1, int x2, int y2);
 static int clip_slider_val(struct slider *s);
 static void name_slider_item(struct screenMenu *m, struct slider *s, int i, const char *name);
-static struct slider *CreateSlider(struct screenMenu *m, const char *name, float *c, int min, int max, int delta, int initVal);
+static struct slider *CreateSlider(struct screenMenu *m, const char *name, const float *c, int min, int max, int delta, int initVal);
 static struct slider *CreateBoolean(struct screenMenu *m, const char *name, float *c, const char *trueString, const char *falseString, int initVal);
 static struct button *CreateButton(struct screenMenu *m, const char *name, void (*activeFunc)(int));
-static struct buttonParam *CreateButtonParam(struct screenMenu *m, const char *name, int (*activeFunc)(int), int param);
+static struct buttonParam *CreateButtonParam(struct screenMenu *m, const char *name, int (*activeFunc)(int), int param, int xoff);
 static struct text *CreateText(struct screenMenu *m, const char *name, float *c, int x, int y);
 static int MenuClamp(struct screenMenu *m);
 static int MenuWrap(struct screenMenu *m);
@@ -185,6 +187,7 @@ static void FightHome(const void *);
 static void FightEnd(const void *);
 static int FindActiveItem(struct menuItem *activeItems, int numActiveItems);
 /*static void DrawButton(GLuint button, int x, int y, int on);*/
+static void ConfigChangeHandler(void);
 static void ConfigCreateItems(void);
 static void ConfigKeyHandler(const void *data);
 static int ConfigButton(int b);
@@ -196,6 +199,7 @@ static int QuitMenuInit(void);
 static void QuitMenuQuit(void);
 static void QuitMenu(void);
 static void button_handler(const void *data);
+static void null_handler(void);
 
 /** Set to 1 if a menu is active, 0 otherwise */
 static int menuActive = 0;
@@ -204,6 +208,7 @@ static int curMenu;
 static int numScreenMenus = 1;
 static struct screenMenu screenMenus[2];
 static struct screenMenu *mainMenu = &screenMenus[0];
+static int cur_player = 0;
 
 static int snd_tick;
 static int snd_push;
@@ -314,6 +319,7 @@ void DrawPartialMenu(struct screenMenu *m, int start, int stop)
 	int bottom;
 	struct text *t;
 	struct slider *s;
+	struct buttonParam *bp;
 
 	if(m->menuSize == -1) {
 		bottom = m->maxY;
@@ -342,9 +348,13 @@ void DrawPartialMenu(struct screenMenu *m, int start, int stop)
 					print_gl(m->maxX - int_len(s->val) * FONT_WIDTH, y, "%i", s->val);
 				break;
 			case MENU_BUTTON:
-			case MENU_BUTTONPARAM:
 				active_color(i, m);
 				print_gl(x, y, m->items[i].name);
+				break;
+			case MENU_BUTTONPARAM:
+				bp = (struct buttonParam*)m->items[i].item;
+				active_color(i, m);
+				print_gl(x + bp->xoffset, y, m->items[i].name);
 				break;
 			case MENU_TEXT:
 				t = (struct text*)m->items[i].item;
@@ -478,7 +488,7 @@ void name_slider_item(struct screenMenu *m, struct slider *s, int i, const char 
 	UpdateBox(m, m->minX, m->minY, m->menuX + len * FONT_WIDTH, m->maxY);
 }
 
-struct slider *CreateSlider(struct screenMenu *m, const char *name, float *c, int min, int max, int delta, int initVal)
+struct slider *CreateSlider(struct screenMenu *m, const char *name, const float *c, int min, int max, int delta, int initVal)
 {
 	struct slider *s;
 	int x;
@@ -488,12 +498,17 @@ struct slider *CreateSlider(struct screenMenu *m, const char *name, float *c, in
 	s->min = min;
 	s->max = max;
 	s->del = delta;
+	if(initVal < min)
+		initVal = min;
+	if(initVal > max)
+		initVal = max;
 	s->val = initVal;
 	s->c[RED] = c[RED];
 	s->c[GREEN] = c[GREEN];
 	s->c[BLUE] = c[BLUE];
 	s->c[ALPHA] = c[ALPHA];
 	s->namelen = strlen(name);
+	s->handler = null_handler;
 	s->strs = (char**)malloc(sizeof(char*) * max + 1);
 	for(x=0; x<=max; x++) {
 		s->strs[x] = NULL;
@@ -527,13 +542,14 @@ struct button *CreateButton(struct screenMenu *m, const char *name, void (*activ
 	return b;
 }
 
-struct buttonParam *CreateButtonParam(struct screenMenu *m, const char *name, int (*activeFunc)(int), int param)
+struct buttonParam *CreateButtonParam(struct screenMenu *m, const char *name, int (*activeFunc)(int), int param, int xoff)
 {
 	struct buttonParam *b;
 	b = malloc(sizeof(struct buttonParam));
 	b->activeFunc = activeFunc;
 	b->param = param;
-	UpdateBox(m, m->menuX, m->menuY + FONT_HEIGHT * m->numItems, m->menuX + strlen(name) * FONT_WIDTH, m->menuY + FONT_HEIGHT * (m->numItems+1));
+	b->xoffset = xoff;
+	UpdateBox(m, m->menuX + xoff, m->menuY + FONT_HEIGHT * m->numItems, m->menuX + strlen(name) * FONT_WIDTH + xoff, m->menuY + FONT_HEIGHT * (m->numItems+1));
 	AddMenuItem(m, name, (void*)b, MENU_BUTTONPARAM);
 	return b;
 }
@@ -650,8 +666,10 @@ void MenuDec(void)
 		case MENU_SLIDER:
 			s = (struct slider*)i->item;
 			s->val--;
-			if(clip_slider_val(s))
+			if(clip_slider_val(s)) {
+				s->handler();
 				play = 1;
+			}
 			break;
 	}
 	if(play) MPlaySound(snd_tick);
@@ -668,11 +686,14 @@ void MenuInc(void)
 		case MENU_SLIDER:
 			s = (struct slider*)i->item;
 			s->val++;
-			if(clip_slider_val(s))
+			if(clip_slider_val(s)) {
+				s->handler();
 				play = 1;
+			}
 			break;
 	}
-	if(play) MPlaySound(snd_tick);
+	if(play)
+		MPlaySound(snd_tick);
 }
 
 void MenuActivate(const void *data)
@@ -792,13 +813,11 @@ int MainMenuInit(void)
 {
 	if(!menuActive) RegisterMenuEvents();
 	input_mode(MENU);
-	mainMenu->menuX = 200;
-	mainMenu->menuY = 200;
-	CreateButtonParam(mainMenu, "Fight", switch_menu, FIGHTMENU);
+	CreateButtonParam(mainMenu, "Fight", switch_menu, FIGHTMENU, 0);
 	if(is_scene_active(MAINSCENE)) CreateButton(mainMenu, "Retry", Retry);
-	CreateButtonParam(mainMenu, "Configure", switch_menu, CONFIGMENU);
-	CreateButtonParam(mainMenu, "Options", switch_menu, OPTIONMENU);
-	CreateButtonParam(mainMenu, "Quit", switch_menu, QUITMENU);
+	CreateButtonParam(mainMenu, "Configure", switch_menu, CONFIGMENU, 0);
+	CreateButtonParam(mainMenu, "Options", switch_menu, OPTIONMENU, 0);
+	CreateButtonParam(mainMenu, "Quit", switch_menu, QUITMENU, 0);
 	return 0;
 }
 
@@ -1093,9 +1112,12 @@ int option_menu_init(void)
 	struct slider *s;
 	struct button *b;
 	int fullscreen;
+	int players = cfg_get_int("main", "players");
 	int difficulty = cfg_get_int("main", "difficulty");
 
 	if(!menuActive) RegisterMenuEvents();
+	CreateSlider(mainMenu, "Players", c, 1, 4, 1, players);
+
 	s = CreateSlider(mainMenu, "Difficulty", c, 0, 3, 1, difficulty);
 	name_slider_item(mainMenu, s, 0, "Muffins & Lollipops");
 	name_slider_item(mainMenu, s, 1, "DJ McFunAdoo");
@@ -1115,9 +1137,12 @@ void option_menu_quit(void)
 	struct slider *s;
 
 	s = (struct slider*)mainMenu->items[0].item;
-	cfg_set_int("main", "difficulty", s->val);
+	cfg_set_int("main", "players", s->val);
 
 	s = (struct slider*)mainMenu->items[1].item;
+	cfg_set_int("main", "difficulty", s->val);
+
+	s = (struct slider*)mainMenu->items[2].item;
 	cfg_set("video", "fullscreen", s->val ? "yes" : "no");
 
 	ClearMenuItems(mainMenu);
@@ -1131,6 +1156,14 @@ void option_menu(void)
 static int configuring = -1;
 static const char *cfglabels[] = {"Up", "Down", "Left", "Right", "Laser 1", "Laser 2", "Laser 3", "Repeat", "Shift", "Select", "Menu"};
 static struct text *newKeyText;
+static struct slider *config_player_slider;
+
+void ConfigChangeHandler(void)
+{
+	cur_player = config_player_slider->val - 1;
+	ClearMenuItems(mainMenu);
+	ConfigCreateItems();
+}
 
 void ConfigCreateItems(void)
 {
@@ -1138,17 +1171,18 @@ void ConfigCreateItems(void)
 	char *s;
 	float c[4] = {0.0, 1.0, 1.0, 1.0};
 
-	mainMenu->menuX = 290;
-	mainMenu->menuY = 200;
+	config_player_slider = CreateSlider(mainMenu, "Player", get_player_color(cur_player), 1, 4, 1, cur_player + 1);
+	config_player_slider->handler = ConfigChangeHandler;
+
 	for(x=0;x<B_LAST;x++) {
-		s = joykey_name(x);
-		CreateButtonParam(mainMenu, s, ConfigButton, x);
+		s = joykey_name(x, cur_player);
+		CreateButtonParam(mainMenu, s, ConfigButton, x, 90);
 		free(s);
 	}
 	for(x=0;x<(signed)(sizeof(cfglabels)/sizeof(*cfglabels));x++) {
-		CreateText(mainMenu, cfglabels[x], c, 200, 200 + x * FONT_HEIGHT);
+		CreateText(mainMenu, cfglabels[x], c, 200, 200 + (x+1) * FONT_HEIGHT);
 	}
-	newKeyText = CreateText(mainMenu, "Press a new key", c, mainMenu->menuX-90, mainMenu->menuY-FONT_HEIGHT);
+	newKeyText = CreateText(mainMenu, "Press a new key", c, mainMenu->menuX, mainMenu->menuY-FONT_HEIGHT);
 	newKeyText->active = 0;
 }
 
@@ -1157,7 +1191,7 @@ void ConfigKeyHandler(const void *data)
 	int tmp = mainMenu->activeMenuItem;
 	const struct joykey *jk = data;
 
-	if(set_button(configuring, jk)) {
+	if(set_button(configuring, jk, cur_player)) {
 		ELog(("Error setting configure button %i!\n", configuring));
 	}
 	MPlaySound(snd_push);
@@ -1308,6 +1342,10 @@ int switch_menu(int n)
 		mainMenu->activeMenuItem = FindActiveItem(mainMenu->items, mainMenu->numItems);
 	Log(("Menu switched\n"));
 	return 0;
+}
+
+void null_handler(void)
+{
 }
 
 /*void DrawButton(GLuint button, int x, int y, int on)
