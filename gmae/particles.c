@@ -241,7 +241,7 @@ void draw_particles_test(PTestFunc p)
  * @param type Which particle to draw
  * @param size How big the particle is (somewhat dependent on the type)
  */
-void create_particle(struct obj *o, float col[4], int type, float size)
+void create_particle(struct obj *o, const float col[4], int type, float size)
 {
 	struct particle *p;
 	Log(("Create Particle()\n"));
