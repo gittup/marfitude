@@ -135,19 +135,16 @@ struct slist *slist_remove(struct slist *l, void *d)
 {
 	struct slist *head = l;
 	struct slist *prev;
-	if(head->data == d) {
+
+	if(head && head->data == d) {
 		clear_mem(head);
 		return head->next;
 	}
-	prev = l;
-	l = l->next;
-	while(l != NULL) {
+	while(l && (prev = l, l = l->next) != NULL) {
 		if(l->data == d) {
 			prev->next = l->next;
 			clear_mem(l);
 		}
-		prev = l;
-		l = l->next;
 	}
 	return head;
 }
@@ -219,8 +216,25 @@ struct slist *slist_insert_sorted(struct slist *l, void *d, CompareFunc c)
 	return head;
 }
 
+/** Finds the first value in the list where @a d is equal to the list data. The
+ * data is compared by checking if the pointers are equal.
+ *
+ * @param l The list
+ * @param d The data member to compare
+ * @return The list where d == list->data
+ */
+struct slist *slist_find(struct slist *l, void *d)
+{
+	while(l != NULL) {
+		if(l->data == d) return l;
+		l = l->next;
+	}
+	return NULL;
+}
+
 /** Finds the first value in the list where @a d is equal to the list data. @a c
  * is used to compare the data. O(n) operation.
+ *
  * @param l The list
  * @param d The data member to compare
  * @param c A comparison function.

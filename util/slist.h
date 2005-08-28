@@ -45,6 +45,7 @@ struct slist *slist_remove(struct slist *l, void *d);
 struct slist *slist_nth(struct slist *l, int n);
 struct slist *slist_insert(struct slist *l, void *d);
 struct slist *slist_insert_sorted(struct slist *l, void *d, CompareFunc c);
+struct slist *slist_find(struct slist *l, void *d);
 struct slist *slist_find_custom(struct slist *l, void *d, CompareFunc c);
 struct slist *slist_next(struct slist *l);
 void slist_free(struct slist *l);
