@@ -51,22 +51,22 @@ void draw_scoreboard(const void *data)
 	print_gl(50, 30, "Speed: %2i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	if(highscore) {
-		print_gl(350, 0, "Highscore: %i", highscore);
+		print_gl(300, 15, "Highscore: %i", highscore);
 	}
 
 	print_gl(0, 65, "%.2f/%.2f\n", pos.modtime, wam->songLength);
 
-	print_gl(300, 20, "Score:");
-	print_gl(300, 35, "Multiplier:");
-	print_gl(300, 50, "Hits:");
+	print_gl(300, 30, "Score:");
+	print_gl(300, 45, "Multiplier:");
+	print_gl(300, 60, "Hits:");
 
 	for(p=0; p<marfitude_num_players(); p++) {
 		int space = p * 6 * FONT_WIDTH;
 		ps = marfitude_get_player(p);
 
 		glColor4fv(get_player_color(p));
-		print_gl(420 + space, 35, "%i\n", ps->score.multiplier);
-		print_gl(420 + space, 50, "%i/%i\n", ps->ap.notesHit, ps->ap.notesTotal);
+		print_gl(420 + space, 45, "%i\n", ps->score.multiplier);
+		print_gl(420 + space, 60, "%i/%i\n", ps->ap.notesHit, ps->ap.notesTotal);
 
 		if(ps->score.score && ps->score.score == marfitude_get_local_highscore()) {
 			if(ps->score.score > highscore)
@@ -74,7 +74,7 @@ void draw_scoreboard(const void *data)
 			else if(marfitude_num_players() > 1)
 				glColor4f(0.8, 0.8, 0.8, 1.0);
 		}
-		print_gl(420 + space - FONT_WIDTH * 5, 20, "%6i\n", ps->score.score);
+		print_gl(420 + space - FONT_WIDTH * 5, 30, "%6i\n", ps->score.score);
 	}
 
 	set_ortho_projection();
