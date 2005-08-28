@@ -30,6 +30,7 @@
 #include "objs/rows.h"
 #include "objs/scoreboard.h"
 #include "objs/targets.h"
+#include "objs/view.h"
 
 #include "SDL_opengl.h"
 
@@ -57,8 +58,6 @@
  */
 
 static Uint32 ticTime;
-static int channelFocus = 0;
-static double viewFocus = 0.0;
 static struct wam *wam; /* note file */
 static int difficulty = 0;
 
@@ -78,6 +77,8 @@ static struct row *curRow;
 static double modTime;
 static double partialTic;
 
+static void MoveBack(void);
+static void ResetCol(void);
 static void ResetAp(void);
 static void ChannelUp(int);
 static void ChannelDown(int);
@@ -89,8 +90,7 @@ static void AddNotes(int row);
 static struct slist *RemoveList(struct slist *list, int tic);
 static void RemoveNotes(int row);
 
-static void Press(int button);
-static void SetMainView(void);
+static void Press(int button, int player);
 static void MoveHitNotes(int tic, int col);
 static void UpdateClearedCols(void);
 static void UpdatePosition(void);
@@ -106,7 +106,6 @@ static int SortByTic(const void *a, const void *b);
 static void menu_handler(const void *data);
 static void button_handler(const void *data);
 
-static struct marfitude_attack_pat ap;
 static struct marfitude_attack_col ac[MAX_COLS];
 static struct marfitude_note *notesOnScreen; /* little ring buffer of notes */
 static struct slist *unusedList;	/* unused notes */
@@ -114,8 +113,12 @@ static struct slist *notesList;	/* notes on the screen, not hit */
 static struct slist *hitList;	/* notes on the screen, hit */
 static int numNotes;	/* max number of notes on screen (wam->numCols * NUM_TICKS) */
 static char *cursong;
+static int highscore; /* Previous high score */
+static int local_high; /* Current high score */
 
-static struct marfitude_score score;
+static struct marfitude_player ps[MAX_PLAYERS]; /* Array of players */
+static struct marfitude_player *curp; /* The current player */
+int num_players;
 
 static void *plugin = NULL;
 static int *noteOffset;
@@ -136,10 +139,19 @@ void menu_handler(const void *data)
 
 void button_handler(const void *data)
 {
-	static int lastkeypressed[2] = {1, 1};
+	static int lastkeypressed[MAX_PLAYERS][2] = {
+		{1, 1},
+		{1, 1},
+		{1, 1},
+		{1, 1}
+	};
 	const struct button_e *b = data;
+	int p;
 
 	if(is_menu_active()) return;
+
+	curp = &ps[b->player];
+	p = b->player;
 
 	switch(b->button) {
 		case B_RIGHT:
@@ -150,48 +162,48 @@ void button_handler(const void *data)
 			break;
 		case B_BUTTON1:
 			if(b->shift) {
-				lastkeypressed[0] = 1;
-				lastkeypressed[1] = 1;
-				Press(1);
-				Press(1);
+				lastkeypressed[p][0] = 1;
+				lastkeypressed[p][1] = 1;
+				Press(1, p);
+				Press(1, p);
 			} else {
-				lastkeypressed[0] = lastkeypressed[1];
-				lastkeypressed[1] = 1;
-				Press(1);
+				lastkeypressed[p][0] = lastkeypressed[p][1];
+				lastkeypressed[p][1] = 1;
+				Press(1, p);
 			}
 			break;
 		case B_BUTTON2:
 			if(b->shift) {
-				lastkeypressed[0] = 2;
-				lastkeypressed[1] = 2;
-				Press(2);
-				Press(2);
+				lastkeypressed[p][0] = 2;
+				lastkeypressed[p][1] = 2;
+				Press(2, p);
+				Press(2, p);
 			} else {
-				lastkeypressed[0] = lastkeypressed[1];
-				lastkeypressed[1] = 2;
-				Press(2);
+				lastkeypressed[p][0] = lastkeypressed[p][1];
+				lastkeypressed[p][1] = 2;
+				Press(2, p);
 			}
 			break;
 		case B_BUTTON3:
 			/* yes, this is really 4 (3rd bit) */
 			if(b->shift) {
-				lastkeypressed[0] = 4;
-				lastkeypressed[1] = 4;
-				Press(4);
-				Press(4);
+				lastkeypressed[p][0] = 4;
+				lastkeypressed[p][1] = 4;
+				Press(4, p);
+				Press(4, p);
 			} else {
-				lastkeypressed[0] = lastkeypressed[1];
-				lastkeypressed[1] = 4;
-				Press(4);
+				lastkeypressed[p][0] = lastkeypressed[p][1];
+				lastkeypressed[p][1] = 4;
+				Press(4, p);
 			}
 			break;
 		case B_BUTTON4:
 			if(b->shift) {
-				Press(lastkeypressed[0]);
-				Press(lastkeypressed[1]);
+				Press(lastkeypressed[p][0], p);
+				Press(lastkeypressed[p][1], p);
 			} else {
-				lastkeypressed[0] = lastkeypressed[1];
-				Press(lastkeypressed[1]);
+				lastkeypressed[p][0] = lastkeypressed[p][1];
+				Press(lastkeypressed[p][1], p);
 			}
 			break;
 		case B_UP:
@@ -204,6 +216,7 @@ void button_handler(const void *data)
 int main_init()
 {
 	int x;
+	int p;
 	char *scene;
 
 	Log(("Load Wam\n"));
@@ -223,10 +236,11 @@ int main_init()
 	 * and the module is paused
 	 */
 	Log(("Module ready\n"));
+
 	difficulty = cfg_get_int("main", "difficulty");
-	score.highscore = cfg_get_int("highscore", cursong);
-	score.score = 0;
-	score.multiplier = 1;
+	num_players = cfg_get_int("main", "players");
+	highscore = cfg_get_int("highscore", cursong);
+
 	tickCounter = 0;
 	songStarted = 0;
 	modTime = -5.0;
@@ -241,29 +255,28 @@ int main_init()
 
 	scene = cfg_get("main", "scene");
 	if(strcmp(scene, "scenes/default") == 0) {
-		rows_init();
-		laser_init();
-		targets_init();
-		lines_init();
-		greynotes_init();
 		bluenotes_init();
-		fireball_init();
 		explode_init();
+		fireball_init();
+		greynotes_init();
+		laser_init();
+		lines_init();
+		rows_init();
 		scoreboard_init();
+		targets_init();
+		view_init();
 		plugin = NULL;
 	} else {
 		plugin = load_plugin(scene);
 	}
 
 	ticTime = 0;
-	channelFocus = 0;
-	viewFocus = 0.0;
 
 	for(x=0;x<wam->numCols;x++) {
 		int y;
 		ac[x].part = 0.0;
 		ac[x].cleared = 0;
-		for(y=0; y<LINES_PER_AP*x; y++) {
+		for(y=0; y<LINES_PER_AP*(x / num_players); y++) {
 			ac[x].cleared++;
 			while(ac[x].cleared < wam->numRows && wam->rowData[ac[x].cleared].line == 0)
 				ac[x].cleared++;
@@ -271,6 +284,7 @@ int main_init()
 		ac[x].minRow = ac[x].cleared;
 		ac[x].hit = -1;
 		ac[x].miss = -2;
+		ac[x].ps = NULL;
 	}
 
 	/* start back about 3.5 seconds worth of ticks
@@ -301,10 +315,20 @@ int main_init()
 	}
 	for(x=0;x<=lastRow;x++) AddNotes(x);
 
+	local_high = 0;
+	for(p=0; p<num_players; p++) {
+		curp = &ps[p];
+		curp->score.score = 0;
+		curp->score.multiplier = 1;
+		curp->channel = p % wam->numRows;
+		curp->old_chan = curp->channel;
+		curp->ap.nextStartRow = -1;
+		MoveBack();
+		ResetAp();
+	}
+
 	for(x=0;x<=lastRow;x++) fire_event("row", &wam->rowData[x]);
 
-	ap.nextStartRow = -1;
-	ResetAp();
 	register_event("button", button_handler);
 
 	init_timer();
@@ -314,20 +338,28 @@ int main_init()
 
 void main_quit(void)
 {
+	int p;
+
 	Log(("Main Scene quit\n"));
-	if(score.score > score.highscore) {
-		cfg_set_int("highscore", cursong, score.score);
+	for(p=0; p<num_players; p++) {
+		if(ps[p].score.score > highscore) {
+			cfg_set_int("highscore", cursong, ps[p].score.score);
+		}
+	}
+	for(p=0; p<wam->numCols; p++) {
+		slist_free(ac[p].ps);
 	}
 	if(plugin == NULL) {
-		scoreboard_exit();
-		explode_exit();
-		fireball_exit();
-		bluenotes_exit();
-		greynotes_exit();
-		lines_exit();
+		view_exit();
 		targets_exit();
-		laser_exit();
+		scoreboard_exit();
 		rows_exit();
+		lines_exit();
+		laser_exit();
+		greynotes_exit();
+		fireball_exit();
+		explode_exit();
+		bluenotes_exit();
 	} else {
 		free_plugin(plugin);
 	}
@@ -368,11 +400,11 @@ void main_scene(void)
 	set_key_repeat(B_BUTTON3, 0);
 	set_key_repeat(B_BUTTON4, 0);
 
-	glLoadIdentity();
-
 	if(rowIndex != wam->numRows) UpdatePosition();
 	update_objs(timeDiff);
-	SetMainView();
+	curp = &ps[0];
+
+	fire_event("set view", NULL);
 
 	set_ortho_projection();
 	fire_event("draw ortho", NULL);
@@ -396,27 +428,31 @@ void main_scene(void)
 
 void ChannelUp(int shift)
 {
-	if(channelFocus + 1 < wam->numCols) {
+	if(curp->channel + 1 < wam->numCols) {
 		if(shift)
-			channelFocus = wam->numCols - 1;
+			curp->channel = wam->numCols - 1;
 		else
-			channelFocus++;
-		if(ap.notesHit > 0) score.multiplier = 1;
+			curp->channel++;
+		if(curp->ap.notesHit > 0) curp->score.multiplier = 1;
+		MoveBack();
 		ResetAp();
-		ac[channelFocus].hit = ap.startTic - 1;
+		if(ac[curp->channel].ps && ac[curp->channel].ps->data == curp)
+			ac[curp->channel].hit = curp->ap.startTic - 1;
 	}
 }
 
 void ChannelDown(int shift)
 {
-	if(channelFocus != 0) {
+	if(curp->channel != 0) {
 		if(shift)
-			channelFocus = 0;
+			curp->channel = 0;
 		else
-			channelFocus--;
-		if(ap.notesHit > 0) score.multiplier = 1;
+			curp->channel--;
+		if(curp->ap.notesHit > 0) curp->score.multiplier = 1;
+		MoveBack();
 		ResetAp();
-		ac[channelFocus].hit = ap.startTic - 1;
+		if(ac[curp->channel].ps && ac[curp->channel].ps->data == curp)
+			ac[curp->channel].hit = curp->ap.startTic - 1;
 	}
 }
 
@@ -454,6 +490,7 @@ int is_note(int row, int col)
 		return 1;
 	return 0;
 }
+
 void AddNotes(int row)
 {
 	int x;
@@ -549,7 +586,7 @@ int get_clear_column(int start, int skip_lines)
 	return start;
 }
 
-void Press(int button)
+void Press(int button, int player)
 {
 	int i;
 	int noteHit = 0;
@@ -557,8 +594,14 @@ void Press(int button)
 	int rowStop;
 	struct marfitude_note *sn;
 	struct row *r;
+	struct button_e b;
 
-	fire_event("shoot", &button);
+	b.button = button;
+	b.player = player;
+	b.shift = 0;
+	fire_event("shoot", &b);
+
+	if(!curp->ap.active) return;
 
 	rowStart = rowIndex;
 	while(rowStart > 0 && curRow->time - wam->rowData[Row(rowStart)].time < MARFITUDE_TIME_ERROR)
@@ -578,21 +621,21 @@ void Press(int button)
 			 * then yay
 			 */
 			if(	
-				r->ticpos >= ap.startTic &&
-				r->ticpos < ap.stopTic &&
-				r->ticpos > ap.lastTic &&
+				r->ticpos >= curp->ap.startTic &&
+				r->ticpos < curp->ap.stopTic &&
+				r->ticpos > curp->ap.lastTic &&
 				fabs(r->time - modTime) <= MARFITUDE_TIME_ERROR &&
-				button == r->notes[channelFocus] &&
-				r->difficulty[channelFocus] <= difficulty) {
+				button == r->notes[curp->channel] &&
+				r->difficulty[curp->channel] <= difficulty) {
 
-				sn = FindNote(notesList, r->ticpos, channelFocus);
+				sn = FindNote(notesList, r->ticpos, curp->channel);
 				if(!sn) {
 					ELog(("Error: Struck note not found!\n"));
-					sn = FindNote(hitList, r->ticpos, channelFocus);
+					sn = FindNote(hitList, r->ticpos, curp->channel);
 					if(sn) {
 						ELog(("note found in hitList: %i\n", sn->ins));
 					}
-					sn = FindNote(unusedList, r->ticpos, channelFocus);
+					sn = FindNote(unusedList, r->ticpos, curp->channel);
 					if(sn) {
 						ELog(("note found in unusedList: %i\n", sn->ins));
 					}
@@ -601,58 +644,39 @@ void Press(int button)
 				notesList = slist_remove(notesList, (void *)sn);
 				unusedList = slist_append(unusedList, (void *)sn);
 				sn->ins = __LINE__;
-				ap.lastTic = r->ticpos;
-				ap.notesHit++;
-				if(ap.notesHit == ap.notesTotal) {
-					ap.nextStartRow = ap.stopRow;
-					ac[channelFocus].cleared = get_clear_column(ap.stopRow, LINES_PER_AP * wam->numCols);
-					ac[channelFocus].minRow = rowIndex;
-					ac[channelFocus].part = 0.0;
-					score.score += ap.notesHit * score.multiplier;
-					if(score.multiplier < 8)
-						score.multiplier++;
-					ap.notesHit = 0;
+				curp->ap.lastTic = r->ticpos;
+				curp->ap.notesHit++;
+				if(curp->ap.notesHit == curp->ap.notesTotal) {
+					curp->ap.nextStartRow = curp->ap.stopRow;
+					ac[curp->channel].cleared = get_clear_column(curp->ap.stopRow, LINES_PER_AP * wam->numCols / num_players);
+					ac[curp->channel].minRow = rowIndex;
+					ac[curp->channel].part = 0.0;
+					curp->score.score += curp->ap.notesHit * curp->score.multiplier;
+					if(curp->score.score > local_high)
+						local_high = curp->score.score;
+					if(curp->score.multiplier < 8)
+						curp->score.multiplier++;
+					curp->ap.notesHit = 0;
 				}
-				ac[channelFocus].hit = r->ticpos;
+				ac[curp->channel].hit = r->ticpos;
 				noteHit = 1;
-				r->notes[channelFocus] = 0;
+				r->notes[curp->channel] = 0;
 				break;
 			}
 		}
 	}
 
-	if(!noteHit && curRow->ticpos >= ap.startTic && curRow->ticpos < ap.stopTic) {
+	if(!noteHit && curRow->ticpos >= curp->ap.startTic && curRow->ticpos < curp->ap.stopTic) {
 		/* oops, we missed! */
-		if(ap.notesHit > 0) score.multiplier = 1;
-		if(IsValidRow(rowIndex) && curRow->ticpos >= ap.startTic && curRow->ticpos < ap.stopTic)
-			ac[channelFocus].miss = curRow->ticpos;
-		ResetAp();
+		if(curp->ap.notesHit > 0) {
+			curp->score.multiplier = 1;
+			MoveBack();
+		}
+		if(IsValidRow(rowIndex) && curRow->ticpos >= curp->ap.startTic && curRow->ticpos < curp->ap.stopTic)
+			ac[curp->channel].miss = curRow->ticpos;
+		ResetCol();
 	}
 	UpdateModule();
-}
-
-void SetMainView(void)
-{
-	float mainPos[3] = {0.0, 3.0, -8.0};
-	float mainView[3] = {0.0, 0.8, 0.0};
-	double tmp;
-
-	/* Make sure the view focus update doesn't go past channel focus.
-	 * It should be a smooth transition and stop when it gets there.
-	 */
-	tmp = viewFocus + ((double)channelFocus - viewFocus) * timeDiff * 8.0;
-	if( (channelFocus < viewFocus) != (channelFocus < tmp) ) {
-		viewFocus = (double)channelFocus;
-	} else {
-		viewFocus = tmp;
-	}
-	mainView[2] = TIC_HEIGHT * ((double)curTic + partialTic);
-	mainPos[2] = mainView[2] - 8.0;
-
-	glLoadIdentity();
-	gluLookAt(	mainPos[0] - viewFocus * BLOCK_WIDTH, mainPos[1], mainPos[2],
-			mainView[0] - viewFocus * BLOCK_WIDTH, mainView[1], mainView[2],
-			0.0, 1.0, 0.0);
 }
 
 void FixVb(int *vb, int *row)
@@ -694,16 +718,44 @@ int NearRow(void)
 	return rowIndex+1;
 }
 
+void MoveBack(void)
+{
+	ac[curp->old_chan].ps = slist_remove(ac[curp->old_chan].ps, curp);
+	ac[curp->channel].ps = slist_append(ac[curp->channel].ps, curp);
+	curp->old_chan = curp->channel;
+}
+
+void ResetCol(void)
+{
+	struct marfitude_player *old_curp = curp;
+	struct slist *t;
+
+	slist_foreach(t, ac[curp->channel].ps) {
+		curp = t->data;
+		ResetAp();
+	}
+
+	curp = old_curp;
+}
+
 void ResetAp(void)
 {
+	int p;
 	int start;
 	int end;
 	int apLines = 0;
 
-	ap.notesHit = 0;
-	ap.notesTotal = 0;
-	start = Row(Max(Max(NearRow(), ap.nextStartRow), ac[channelFocus].cleared));
-	while(start < wam->numRows && (wam->rowData[start].line == 0 || wam->rowData[start].ticpos <= ac[channelFocus].miss))
+	for(p=0; p<num_players; p++)
+		ps[p].ap.active = 0;
+	for(p=0; p<wam->numCols; p++)
+		if(ac[p].ps)
+			((struct marfitude_player*)ac[p].ps->data)->ap.active = 1;
+
+	curp->ap.notesHit = 0;
+	curp->ap.notesTotal = 0;
+
+	start = Row(Max(Max(NearRow(), curp->ap.nextStartRow), ac[curp->channel].cleared));
+	while(start < wam->numRows && (wam->rowData[start].line == 0 || wam->rowData[start].ticpos <= ac[curp->channel].miss))
 		start++;
 	if(start == wam->numRows)
 		start = wam->numRows - 1;
@@ -714,53 +766,65 @@ void ResetAp(void)
 		/* don't count the note on the last row, since that will
 		 * be the beginning of the next "AttackPattern"
 		 */
-		if(is_note(end, channelFocus)) ap.notesTotal++;
+		if(is_note(end, curp->channel)) curp->ap.notesTotal++;
 		end++;
 		if(wam->rowData[end].line != 0) apLines++;
 	}
 
 	/* Make sure there is at least one note in the AP */
-	while(ap.notesTotal == 0 && end < wam->numRows) {
-		if(is_note(end, channelFocus)) ap.notesTotal++;
+	while(curp->ap.notesTotal == 0 && end < wam->numRows) {
+		if(is_note(end, curp->channel)) curp->ap.notesTotal++;
 		end++;
 	}
 
 	/* Make sure the AP ends on a line */
 	while(wam->rowData[end].line == 0 && end < wam->numRows) {
-		if(is_note(end, channelFocus)) ap.notesTotal++;
+		if(is_note(end, curp->channel)) curp->ap.notesTotal++;
 		end++;
 	}
 
 	if(apLines < LINES_PER_AP) {
 		/* at the end of the song we can't find a valid pattern to do */
-		ap.startTic = -1;
-		ap.stopTic = -1;
-		ap.lastTic = -1;
-		ap.stopRow = -1;
+		curp->ap.startTic = -1;
+		curp->ap.stopTic = -1;
+		curp->ap.lastTic = -1;
+		curp->ap.stopRow = -1;
+		curp->ap.active = 0;
 		return;
 	}
 	if(end == wam->numRows)
 		end = wam->numRows - 1;
 	Log(("StarT: %i, End: %i\n", start, end));
-	ap.startTic = wam->rowData[start].ticpos;
-	ap.stopTic = wam->rowData[end].ticpos;
-	ap.lastTic = wam->rowData[start].ticpos - 1;
-	ap.stopRow = end;
+	curp->ap.startTic = wam->rowData[start].ticpos;
+	curp->ap.stopTic = wam->rowData[end].ticpos;
+	curp->ap.lastTic = wam->rowData[start].ticpos - 1;
+	curp->ap.stopRow = end;
+	return;
 }
 
 void CheckMissedNotes(void)
 {
 	struct marfitude_note *sn;
 	struct slist *list;
+	int p;
+
 	list = notesList;
 	while(list) {
 		sn = (struct marfitude_note*)list->data;
 		if(modTime - sn->time > MARFITUDE_TIME_ERROR && sn->tic > ac[sn->col].miss) {
 			ac[sn->col].miss = sn->tic;
-			if(sn->col == channelFocus && sn->tic >= ap.startTic && sn->tic < ap.stopTic) {
-				if(ap.notesHit > 0)
-					score.multiplier = 1;
-				ResetAp();
+			for(p=0; p<num_players; p++) {
+				curp = &ps[p];
+				if(ac[sn->col].ps && ac[sn->col].ps->data == &ps[p]) {
+					if(sn->col == curp->channel && sn->tic >= curp->ap.startTic && sn->tic < curp->ap.stopTic) {
+						if(curp->ap.notesHit > 0) {
+							curp->score.multiplier = 1;
+							MoveBack();
+						}
+						ResetCol();
+					}
+					break;
+				}
 			}
 		}
 		list = slist_next(list);
@@ -848,6 +912,8 @@ void UpdateClearedCols(void)
 void UpdatePosition(void)
 {
 	int tmpAdj;
+	int p;
+
 	/* calculate the amount of ticTime elapsed
 	 * every 2500 ticTime is one tick
 	 */
@@ -876,12 +942,20 @@ void UpdatePosition(void)
 			curVb -= curRow->sngspd;
 			rowIndex++;
 			curRow = &wam->rowData[Row(rowIndex)];
-			if(rowIndex > ap.stopRow) ResetAp();
+			for(p=0; p<num_players; p++) {
+				curp = &ps[p];
+				if(curp->ap.active && rowIndex > curp->ap.stopRow) {
+					MoveBack();
+					ResetCol();
+				}
+			}
 			CheckColumn(Row(rowIndex));
 			if(rowIndex == 0) { /* start the song! */
 				Player_TogglePause();
 				songStarted = 1;
 				register_event("menu", menu_handler);
+			} else if(rowIndex == wam->numRows) {
+				fire_event("victory explosion", &local_high);
 			}
 		}
 		modTime = curRow->time + (curTic - curRow->ticpos) * BpmToSec(curRow->sngspd, curRow->bpm) / curRow->sngspd;
@@ -928,9 +1002,27 @@ const int *marfitude_get_offsets(void)
 }
 
 /** Gets the current score structure and stores it in @a s */
-const struct marfitude_score *marfitude_get_score(void)
+const struct marfitude_score *marfitude_get_score(int player)
 {
-	return &score;
+	return &ps[player].score;
+}
+
+/** Gets the previous high score of the current song */
+int marfitude_get_highscore(void)
+{
+	return highscore;
+}
+
+/** Gets the current high score among all players */
+int marfitude_get_local_highscore(void)
+{
+	return local_high;
+}
+
+/** Gets the number of active players */
+int marfitude_num_players(void)
+{
+	return num_players;
 }
 
 /** Returns a slist of the notes to play */
@@ -954,9 +1046,15 @@ const struct marfitude_attack_col *marfitude_get_ac(void)
 }
 
 /** Gets the current attack pattern. */
-const struct marfitude_attack_pat *marfitude_get_ap(void)
+const struct marfitude_attack_pat *marfitude_get_ap(int player)
 {
-	return &ap;
+	return &ps[player].ap;
+}
+
+/** Gets the player @a player */
+const struct marfitude_player *marfitude_get_player(int player)
+{
+	return &ps[player];
 }
 
 /** Gets the current module time in seconds */
@@ -966,6 +1064,5 @@ void marfitude_get_pos(struct marfitude_pos *p)
 	p->tic = (double)curTic + partialTic;
 	p->row = curRow;
 	p->row_index = rowIndex;
-	p->channel = channelFocus;
-	p->view = viewFocus;
+	p->channel = curp->channel;
 }

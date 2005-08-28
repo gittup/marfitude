@@ -5,6 +5,7 @@
 #include "fireball.h"
 
 #include "gmae/event.h"
+#include "gmae/input.h"
 #include "gmae/textures.h"
 #include "gmae/timer.h"
 
@@ -45,7 +46,7 @@ void laser_exit(void)
 
 void make_laser(const void *data)
 {
-	const int *s = data;
+	const struct button_e *b = data;
 	const int *offsets = marfitude_get_offsets();
 	struct marfitude_pos p;
 	const float *fireball = fireball_get_pos();
@@ -58,7 +59,7 @@ void make_laser(const void *data)
 	laser[num_lasers].p1.z = fireball[2];
 
 	/* p2 is set to where the note is */
-	laser[num_lasers].p2.x = -p.channel * BLOCK_WIDTH - NOTE_WIDTH * offsets[*s];
+	laser[num_lasers].p2.x = -p.channel * BLOCK_WIDTH - NOTE_WIDTH * offsets[b->button];
 	laser[num_lasers].p2.y = 0.0;
 	laser[num_lasers].p2.z = TIC_HEIGHT * p.tic;
 	laser[num_lasers].time = 1.0;

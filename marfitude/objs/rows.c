@@ -7,6 +7,8 @@
 #include "gmae/textures.h"
 #include "gmae/wam.h"
 
+#include "util/slist.h"
+
 #define Row(row) (row < 0 ? 0 : (row >= wam->numRows ? wam->numRows - 1: row))
 
 static void draw_rows(const void *data);
@@ -61,13 +63,13 @@ void draw_rows(const void *data)
 	int col;
 	double start, stop;
 	double startTic, stopTic;
-	struct marfitude_pos p;
+	struct marfitude_pos pos;
 	const struct wam *wam = marfitude_get_wam();
 	const struct marfitude_attack_col *ac = marfitude_get_ac();
-	const struct marfitude_attack_pat *ap = marfitude_get_ap();
+	const struct marfitude_player *ps;
 
 	if(data) {}
-	marfitude_get_pos(&p);
+	marfitude_get_pos(&pos);
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 
 	/* usually we draw from -NEGATIVE_TICKS to +POSITIVE_TICKS, with the
@@ -78,10 +80,10 @@ void draw_rows(const void *data)
 	 * NEGATIVE_TICKS + POSITIVE_TICKS long, some other combinations will
 	 * arise :)
 	 */
-	startTic = p.tic - NEGATIVE_TICKS >= 0 ?
-		((double)p.tic - NEGATIVE_TICKS) : 0.0;
-	stopTic = p.tic < wam->numTics - POSITIVE_TICKS ?
-		(double)p.tic + POSITIVE_TICKS :
+	startTic = pos.tic - NEGATIVE_TICKS >= 0 ?
+		((double)pos.tic - NEGATIVE_TICKS) : 0.0;
+	stopTic = pos.tic < wam->numTics - POSITIVE_TICKS ?
+		(double)pos.tic + POSITIVE_TICKS :
 		(double)wam->numTics;
 
 	if(startTic >= stopTic) return;
@@ -92,9 +94,14 @@ void draw_rows(const void *data)
 		glBindTexture(GL_TEXTURE_2D, row_texes[col]);
 		if(wam->rowData[Row(ac[col].minRow)].ticpos > start)
 			start = wam->rowData[Row(ac[col].minRow)].ticpos;
-		if(col == p.channel && ap->startTic != -1) {
-			if(ap->startTic > start) start = ap->startTic;
-			if(ap->stopTic < stop) stop = ap->stopTic;
+		ps = ac[col].ps ? ac[col].ps->data : NULL;
+		if(ps) {
+			if(col == ps->channel && ps->ap.startTic != -1) {
+				if(ps->ap.startTic > start)
+					start = ps->ap.startTic;
+				if(ps->ap.stopTic < stop)
+					stop = ps->ap.stopTic;
+			}
 		}
 		if(start >= stop) {
 			glTranslated(-BLOCK_WIDTH, 0, 0);

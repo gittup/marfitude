@@ -43,7 +43,6 @@
 
 /** A structure of score information */
 struct marfitude_score {
-	int highscore;    /**< The previous high score */
 	int score;        /**< The player's current score */
 	int multiplier;   /**< The player's current multiplier */
 };
@@ -55,7 +54,6 @@ struct marfitude_pos {
 	const struct row *row; /**< Current row */
 	int row_index;         /**< Row index */
 	int channel;           /**< Which channel is currently played */
-	double view;           /**< The viewing position (x-axis) */
 };
 
 /** A note on the screen */
@@ -72,15 +70,16 @@ struct marfitude_note {
 
 /** Keep track of clearing information for each column */
 struct marfitude_attack_col {
-	double part;	/**< cumulative row adder, when >= 1.0 inc minRow */
-	int minRow;	/**< equal to cleared, but doesn't get set to 0
-			 * after the column is recreated
-			 */
-	int cleared;	/**< equals the last row this col is cleared to, 0 if
-			 * not cleared
-			 */
-	int hit;	/**< equals the tic of the last hit note */
-	int miss;	/**< equals the tic of the last missed note */
+	double part;	  /**< cumulative row adder, when >= 1.0 inc minRow */
+	int minRow;	  /**< equal to cleared, but doesn't get set to 0
+			   * after the column is recreated
+			   */
+	int cleared;	  /**< equals the last row this col is cleared to, 0 if
+			   * not cleared
+			   */
+	int hit;	  /**< equals the tic of the last hit note */
+	int miss;	  /**< equals the tic of the last missed note */
+	struct slist *ps; /**< The players on this AC */
 };
 
 /** Keep track of information needed for the column that is being played */
@@ -92,13 +91,25 @@ struct marfitude_attack_pat {
 	int lastTic;      /**< last note played is in lastTic */
 	int notesHit;     /**< number of notes we hit so far */
 	int notesTotal;   /**< total number of notes we need to play */
+	int active;       /**< 1 means we can play, 0 means we're waiting */
+};
+
+struct marfitude_player {
+	struct marfitude_score score;
+	struct marfitude_attack_pat ap;
+	int channel;
+	int old_chan;
 };
 
 const struct wam *marfitude_get_wam(void);
 const int *marfitude_get_offsets(void);
-const struct marfitude_score *marfitude_get_score(void);
+const struct marfitude_score *marfitude_get_score(int player);
+int marfitude_get_highscore(void);
+int marfitude_get_local_highscore(void);
+int marfitude_num_players(void);
 const struct slist *marfitude_get_notes(void);
 const struct slist *marfitude_get_hitnotes(void);
 const struct marfitude_attack_col *marfitude_get_ac(void);
-const struct marfitude_attack_pat *marfitude_get_ap(void);
+const struct marfitude_attack_pat *marfitude_get_ap(int player);
+const struct marfitude_player *marfitude_get_player(int player);
 void marfitude_get_pos(struct marfitude_pos *);

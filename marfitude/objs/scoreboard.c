@@ -5,6 +5,7 @@
 
 #include "gmae/event.h"
 #include "gmae/glfunc.h"
+#include "gmae/input.h"
 #include "gmae/module.h"
 #include "gmae/wam.h"
 
@@ -22,41 +23,59 @@ void scoreboard_exit(void)
 
 void draw_scoreboard(const void *data)
 {
-	struct marfitude_pos p;
+	struct marfitude_pos pos;
 	const struct wam *wam = marfitude_get_wam();
-	const struct marfitude_score *s = marfitude_get_score();
-	const struct marfitude_attack_pat *ap = marfitude_get_ap();
+	const struct marfitude_player *ps;
+	int highscore = marfitude_get_highscore();
+	int p;
+
 	if(data) {}
 
-	marfitude_get_pos(&p);
+	marfitude_get_pos(&pos);
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 
-	print_gl(50, 0, "Playing: %s", mod->songname);
-	if(p.row_index == wam->numRows) {
+	print_gl(20, 0, "Playing: %s", mod->songname);
+	if(pos.row_index == wam->numRows) {
 		print_gl(50, 15, "Song complete!");
-		if(s->score > s->highscore) {
-			print_gl(display_width() / 2 - 85, 120, "New High Score!!!");
+		for(p=0; p<marfitude_num_players(); p++) {
+			ps = marfitude_get_player(p);
+			if(ps->score.score > highscore) {
+				print_gl(display_width() / 2 - 85, 120, "New High Score!!!");
+			}
 		}
-	} else if(p.row_index < 0) {
-		int timeLeft = (int)(- BpmToSec(wam->rowData[0].sngspd, wam->rowData[0].bpm) * (double)p.row_index);
+	} else if(pos.row_index < 0) {
+		int timeLeft = (int)(- BpmToSec(wam->rowData[0].sngspd, wam->rowData[0].bpm) * (double)pos.row_index);
 		if(timeLeft > 0) print_gl(50, 15, "%i...", timeLeft);
 		else print_gl(50, 15, "GO!!");
 	}
 	print_gl(50, 30, "Speed: %2i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
-	if(s->score > s->highscore) {
-		glColor4f(1.0, 1.0, 0.7, 1.0);
-	} else {
-		glColor4f(1.0, 1.0, 1.0, 1.0);
-	}
-	print_gl(350, 20, "Score: %6i\n", s->score);
-
 	glColor4f(1.0, 1.0, 1.0, 1.0);
-	if(s->highscore) {
-		print_gl(490, 20, "High: %i", s->highscore);
+	if(highscore) {
+		print_gl(350, 0, "Highscore: %i", highscore);
 	}
-	print_gl(350, 35, "Multiplier: %i\n", s->multiplier);
-	print_gl(350, 50, "Hit: %i/%i\n", ap->notesHit, ap->notesTotal);
-	print_gl(0, 65, "%.2f/%.2f\n", p.modtime, wam->songLength);
+
+	print_gl(0, 65, "%.2f/%.2f\n", pos.modtime, wam->songLength);
+
+	print_gl(300, 20, "Score:");
+	print_gl(300, 35, "Multiplier:");
+	print_gl(300, 50, "Hits:");
+
+	for(p=0; p<marfitude_num_players(); p++) {
+		int space = p * 6 * FONT_WIDTH;
+		ps = marfitude_get_player(p);
+
+		glColor4fv(get_player_color(p));
+		print_gl(420 + space, 35, "%i\n", ps->score.multiplier);
+		print_gl(420 + space, 50, "%i/%i\n", ps->ap.notesHit, ps->ap.notesTotal);
+
+		if(ps->score.score && ps->score.score == marfitude_get_local_highscore()) {
+			if(ps->score.score > highscore)
+				glColor4f(1.0, 1.0, 0.7, 1.0);
+			else if(marfitude_num_players() > 1)
+				glColor4f(0.8, 0.8, 0.8, 1.0);
+		}
+		print_gl(420 + space - FONT_WIDTH * 5, 20, "%6i\n", ps->score.score);
+	}
 
 	set_ortho_projection();
 	glDisable(GL_TEXTURE_2D);
@@ -78,7 +97,7 @@ void draw_scoreboard(const void *data)
 	} glEnd();
 
 	glBegin(GL_QUADS); {
-		float mult = p.modtime / wam->songLength;
+		float mult = pos.modtime / wam->songLength;
 		glColor4f(0.0, 0.8, 0.5, 1.0);
 		glVertex2i(6, 81*mult+449*(1.0-mult));
 		glColor4f(0.5, 0.8, 0.5, 1.0);
