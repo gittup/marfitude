@@ -344,6 +344,7 @@ void main_quit(void)
 	for(p=0; p<num_players; p++) {
 		if(ps[p].score.score > highscore) {
 			cfg_set_int("highscore", cursong, ps[p].score.score);
+			highscore = ps[p].score.score;
 		}
 	}
 	for(p=0; p<wam->numCols; p++) {
