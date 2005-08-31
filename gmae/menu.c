@@ -152,8 +152,8 @@ static int DownOne(struct screenMenu *m);
 static int UpOne(struct screenMenu *m);
 static void MenuUp(int);
 static void MenuDown(int);
-static void MenuDec(void);
-static void MenuInc(void);
+static void MenuDec(int);
+static void MenuInc(int);
 static void MenuActivate(const void *);
 static void MenuSelect(void);
 static int valid_music_file(const char *s);
@@ -225,10 +225,10 @@ void button_handler(const void *data)
 			MenuDown(b->shift);
 			break;
 		case B_LEFT:
-			MenuDec();
+			MenuDec(b->shift);
 			break;
 		case B_RIGHT:
-			MenuInc();
+			MenuInc(b->shift);
 			break;
 		case B_MENU:
 			MenuBack(0);
@@ -655,7 +655,7 @@ void MenuUp(int shift)
 	if(play) MPlaySound(snd_tick);
 }
 
-void MenuDec(void)
+void MenuDec(int shift)
 {
 	struct screenMenu *m = &screenMenus[curMenu];
 	struct menuItem *i = &m->items[m->activeMenuItem];
@@ -665,17 +665,25 @@ void MenuDec(void)
 	switch(i->type) {
 		case MENU_SLIDER:
 			s = (struct slider*)i->item;
-			s->val--;
-			if(clip_slider_val(s)) {
-				s->handler();
-				play = 1;
+			if(shift) {
+				if(s->val != s->min) {
+					s->val = s->min;
+					s->handler();
+					play = 1;
+				}
+			} else {
+				s->val--;
+				if(clip_slider_val(s)) {
+					s->handler();
+					play = 1;
+				}
 			}
 			break;
 	}
 	if(play) MPlaySound(snd_tick);
 }
 
-void MenuInc(void)
+void MenuInc(int shift)
 {
 	struct screenMenu *m = &screenMenus[curMenu];
 	struct menuItem *i = &m->items[m->activeMenuItem];
@@ -685,10 +693,18 @@ void MenuInc(void)
 	switch(i->type) {
 		case MENU_SLIDER:
 			s = (struct slider*)i->item;
-			s->val++;
-			if(clip_slider_val(s)) {
-				s->handler();
-				play = 1;
+			if(shift) {
+				if(s->val != s->max) {
+					s->val = s->max;
+					s->handler();
+					play = 1;
+				}
+			} else {
+				s->val++;
+				if(clip_slider_val(s)) {
+					s->handler();
+					play = 1;
+				}
 			}
 			break;
 	}
