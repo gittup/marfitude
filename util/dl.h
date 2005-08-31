@@ -20,7 +20,7 @@
  * A little wrapper for dynamic loading functions for differen OS's
  */
 
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__FreeBSD__)
 # include <dlfcn.h>
 #else
 # if defined(WIN32)
@@ -30,6 +30,19 @@
 #  define dlsym GetProcAddress
 #  define dlerror() NULL
 # else
-#  error "This platform does not have dynamic library support!"
+#   if defined(__APPLE__)
+/* Umm...yeah */
+#     include <CoreFoundation/CoreFoundation.h>
+#     define dlopen(l, a) CFBundleCreate(kCFAllocatorDefault, \
+		CFURLCreateWithFileSystemPath(kCFAllocatorDefault, \
+			CFStringCreateWithCString(kCFAllocatorDefault, l,\
+				kCFStringEncodingASCII), \
+			kCFURLPOSIXPathStyle, true))
+#     define dlclose CFBundleUnloadExecutable
+#     define dlsym(l, s) CFBundleGetFunctionPointerForName(l, CFSTR(s))
+#     define dlerror() strerror(errno)
+#   else
+#     error "This platform does not have dynamic library support!"
+#   endif
 # endif
 #endif
