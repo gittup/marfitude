@@ -33,12 +33,15 @@
 #   if defined(__APPLE__)
 /* Umm...yeah */
 #     include <CoreFoundation/CoreFoundation.h>
-#     define dlopen(l, a) CFBundleCreate(kCFAllocatorDefault, \
+#     define dlopentmp(l, a) CFBundleCreate(kCFAllocatorDefault, \
 		CFURLCreateWithFileSystemPath(kCFAllocatorDefault, \
 			CFStringCreateWithCString(kCFAllocatorDefault, l,\
 				kCFStringEncodingASCII), \
 			kCFURLPOSIXPathStyle, true))
-#     define dlclose CFBundleUnloadExecutable
+#     define dlopen(l, a) (CFBundleLoadExecutable(dlopentmp(l, a)), \
+	dlopentmp(l, a))
+#     define dlclose(l) do {CFBundleUnloadExecutable(l); \
+	CFBundleUnloadExecutable(l); } while(0)
 #     define dlsym(l, s) CFBundleGetFunctionPointerForName(l, CFSTR(s))
 #     define dlerror() strerror(errno)
 #   else
