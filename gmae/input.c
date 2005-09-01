@@ -501,16 +501,18 @@ int cfg_button(struct joykey *key, const char *cfgParam, int player)
 	char *s;
 	char *t;
 	char *bstr = malloc_bstr(player);
+	const char *cfg;
 
-	if(cfg_get(bstr, cfgParam) == NULL) {
+	cfg = cfg_get(bstr, cfgParam, NULL);
+	if(cfg == NULL) {
 		key->type = JK_UNSET;
 		key->button = 0;
 		key->axis = 0;
 		free(bstr);
 		return 1;
 	}
-	s = malloc(sizeof(char) * (strlen(cfg_get(bstr, cfgParam))+1));
-	strcpy(s, cfg_get(bstr, cfgParam));
+	s = malloc(sizeof(char) * (strlen(cfg)+1));
+	strcpy(s, cfg);
 	t = s;
 	key->type = atoi(s);
 	s = next_dot(s);

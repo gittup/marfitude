@@ -23,9 +23,9 @@
 
 void cfg_set(const char *header, const char *option, const char *value);
 void cfg_set_int(const char *header, const char *option, int value);
-char *cfg_copy(const char *header, const char *option);
-char *cfg_get(const char *header, const char *option);
-int cfg_get_int(const char *header, const char *option);
+char *cfg_copy(const char *header, const char *option, const char *unset);
+const char *cfg_get(const char *header, const char *option, const char *unset);
+int cfg_get_int(const char *header, const char *option, int unset);
 int cfg_eq(const char *header, const char *option, const char *string);
 int init_config(void);
 void quit_config(void);

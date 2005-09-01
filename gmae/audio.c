@@ -39,10 +39,11 @@ int init_audio(void)
 	int stereo;
 	int hz;
 	int channels;
+	int buffersize;
 	Uint16 flags;
 
 	printf("Starting audio...\n");
-	if(cfg_get_int("sound", "bits") == 16)
+	if(cfg_get_int("sound", "bits", 16) == 16)
 		flags = AUDIO_S16SYS;
 	else
 		flags = AUDIO_U8;
@@ -52,10 +53,11 @@ int init_audio(void)
 	else
 		stereo = 1;
 
-	hz = cfg_get_int("sound", "hz");
-	channels = cfg_get_int("sound", "channels");
+	hz = cfg_get_int("sound", "hz", 44100);
+	channels = cfg_get_int("sound", "channels", 32);
+	buffersize = cfg_get_int("sound", "buffersize", 512);
 
-	if(Mix_OpenAudio(hz, flags, stereo, cfg_get_int("sound", "buffersize")))
+	if(Mix_OpenAudio(hz, flags, stereo, buffersize))
 	{
 		SDLError("initializing audio");
 		return 1;

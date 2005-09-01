@@ -185,9 +185,9 @@ int init_gl(void)
 	sdlInited = 1;
 	Log(("SDL Initialized\n"));
 
-	screenWidth = cfg_get_int("video", "width");
-	screenHeight = cfg_get_int("video", "height");
-	bpp = cfg_get_int("video", "bpp");
+	screenWidth = cfg_get_int("video", "width", 640);
+	screenHeight = cfg_get_int("video", "height", 480);
+	bpp = cfg_get_int("video", "bpp", 0);
 
 	switch(bpp)
 	{

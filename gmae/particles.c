@@ -127,7 +127,7 @@ int init_particles(void)
 
 	numpTypes = sizeof(particleTypes) / sizeof(struct particleType);
 	printf("Init particles\n");
-	numParticles = cfg_get_int("video", "particles");
+	numParticles = cfg_get_int("video", "particles", 100);
 	curParticle = 0;
 	particles = (struct particle*)calloc(numParticles, sizeof(struct particle));
 	plist = glGenLists(numpTypes);

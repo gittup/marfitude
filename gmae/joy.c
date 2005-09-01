@@ -52,7 +52,7 @@ int joy_ignore_button(int joy, int button)
 	joyButtonCfg[9] = joy % 10 + '0';
 	joyButtonCfg[11] = button / 10 + '0';
 	joyButtonCfg[12] = button % 10 + '0';
-	return cfg_get_int("joystick", joyButtonCfg);
+	return cfg_get_int("joystick", joyButtonCfg, 0);
 }
 
 /** Opens all of the joysticks from SDL */
@@ -60,7 +60,7 @@ void init_joystick(void)
 {
 	int i;
 	const char *name;
-	if(cfg_get_int("joystick", "joystickenable") == 0) return;
+	if(cfg_get_int("joystick", "joystickenable", 1) == 0) return;
 	Log(("Starting joystick...\n"));
 	i = SDL_NumJoysticks();
 	if(i) {

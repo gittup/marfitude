@@ -117,20 +117,29 @@ void cfg_set_int(const char *header, const char *option, int value)
 }
 
 /** Copy the CfgS of header.option into a new string.
+ *
  * @return The value of the configuration option, which must be freed.
+ * @param header The header part
+ * @param option The option part
+ * @param unset What to return when header.option does not exist
  */
-char *cfg_copy(const char *header, const char *option)
+char *cfg_copy(const char *header, const char *option, const char *unset)
 {
 	char *s;
-	char *t;
-	t = cfg_get(header, option);
+	const char *t;
+	t = cfg_get(header, option, unset);
 	s = malloc(strlen(t) + 1);
 	strcpy(s, t);
 	return s;
 }
 
-/** Returns a pointer to the configuration value for the header.option key */
-char *cfg_get(const char *header, const char *option)
+/** Returns a pointer to the configuration value for the header.option key
+ *
+ * @param header The header part
+ * @param option The option part
+ * @param unset What to return when header.option does not exist
+ */
+const char *cfg_get(const char *header, const char *option, const char *unset)
 {
 	int x, y;
 	for(x=0;x<numHeaders;x++) {
@@ -142,23 +151,29 @@ char *cfg_get(const char *header, const char *option)
 			}
 		}
 	}
-	return NULL;
+	return unset;
 }
 
-/** Returns the integer value of the header.option key */
-int cfg_get_int(const char *header, const char *option)
+/** Returns the integer value of the header.option key
+ *
+ * @param header The header part
+ * @param option The option part
+ * @param unset What to return when header.option does not exist
+ */
+int cfg_get_int(const char *header, const char *option, int unset)
 {
-	char *s;
-	s = cfg_get(header, option);
-	if(s == NULL) return 0;
+	const char *s;
+	s = cfg_get(header, option, NULL);
+	if(s == NULL)
+		return unset;
 	return atoi(s);
 }
 
 /** Returns 1 if the value of the configuration @a key is equal to @a string */
 int cfg_eq(const char *header, const char *option, const char *string)
 {
-	char *s;
-	s = cfg_get(header, option);
+	const char *s;
+	s = cfg_get(header, option, NULL);
 	if(s == NULL) return 0;
 	if(strcmp(s, string) == 0) return 1;
 	return 0;

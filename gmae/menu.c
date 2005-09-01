@@ -1037,9 +1037,7 @@ int FightMenuInit(void)
 		CreateText(mainMenu, " http://www.erestar.net/games/marfitude", c, 200, 200 + FONT_HEIGHT * 4);
 	}
 
-	lastFile = cfg_get("main", "song");
-	if(!lastFile)
-		lastFile = "null";
+	lastFile = cfg_get("main", "song", "null");
 	cnt = 0;
 	len = slist_length(fileList);
 	slist_foreach(tmp, fileList) {
@@ -1057,9 +1055,7 @@ int FightMenuInit(void)
 		cnt++;
 	}
 
-	lastFile = cfg_get("main", "scene");
-	if(!lastFile)
-		lastFile = "null";
+	lastFile = cfg_get("main", "scene", "null");
 	cnt = 0;
 	len = slist_length(sceneList);
 	slist_foreach(tmp, sceneList) {
@@ -1128,8 +1124,8 @@ int option_menu_init(void)
 	struct slider *s;
 	struct button *b;
 	int fullscreen;
-	int players = cfg_get_int("main", "players");
-	int difficulty = cfg_get_int("main", "difficulty");
+	int players = cfg_get_int("main", "players", 1);
+	int difficulty = cfg_get_int("main", "difficulty", 1);
 
 	if(!menuActive) RegisterMenuEvents();
 	CreateSlider(mainMenu, "Players", c, 1, 4, 1, players);
