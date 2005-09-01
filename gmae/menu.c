@@ -25,6 +25,7 @@
 
 #include "menu.h"
 #include "main.h"
+#include "audio.h"
 #include "event.h"
 #include "glfunc.h"
 #include "input.h"
@@ -66,6 +67,9 @@
 
 /** Minimum spacing between the name and value (for slider, boolean, etc) */
 #define MENU_SPACING 3
+
+/** Special delta value for slider, causes things to double or halve */
+#define SLIDER_DOUBLE 0
 
 /** @file
  * Draws a bunch of different menus and allows switching between them.
@@ -672,7 +676,10 @@ void MenuDec(int shift)
 					play = 1;
 				}
 			} else {
-				s->val--;
+				if(s->del == SLIDER_DOUBLE)
+					s->val /= 2;
+				else
+					s->val -= s->del;
 				if(clip_slider_val(s)) {
 					s->handler();
 					play = 1;
@@ -700,7 +707,10 @@ void MenuInc(int shift)
 					play = 1;
 				}
 			} else {
-				s->val++;
+				if(s->del == SLIDER_DOUBLE)
+					s->val *= 2;
+				else
+					s->val += s->del;
 				if(clip_slider_val(s)) {
 					s->handler();
 					play = 1;
@@ -1126,6 +1136,8 @@ int option_menu_init(void)
 	int fullscreen;
 	int players = cfg_get_int("main", "players", 1);
 	int difficulty = cfg_get_int("main", "difficulty", 1);
+	struct slider *buffer;
+	int buffersize;
 
 	if(!menuActive) RegisterMenuEvents();
 	CreateSlider(mainMenu, "Players", c, 1, 4, 1, players);
@@ -1139,6 +1151,9 @@ int option_menu_init(void)
 	fullscreen = cfg_eq("video", "fullscreen", "yes");
 	CreateBoolean(mainMenu, "Full screen", c, "On", "Off", fullscreen);
 
+	buffersize = cfg_get_int("sound", "buffersize", 512);
+	buffer = CreateSlider(mainMenu, "Sound buffer [bytes]", c, 128, 8192, SLIDER_DOUBLE, buffersize);
+
 	b = CreateButton(mainMenu, "Back", MenuBack);
 	b->sound_enabled = 0;
 	return 0;
@@ -1147,6 +1162,7 @@ int option_menu_init(void)
 void option_menu_quit(void)
 {
 	struct slider *s;
+	int buffersize;
 
 	s = (struct slider*)mainMenu->items[0].item;
 	cfg_set_int("main", "players", s->val);
@@ -1156,6 +1172,14 @@ void option_menu_quit(void)
 
 	s = (struct slider*)mainMenu->items[2].item;
 	cfg_set("video", "fullscreen", s->val ? "yes" : "no");
+
+	buffersize = cfg_get_int("sound", "buffersize", 512);
+	s = (struct slider*)mainMenu->items[3].item;
+	if(buffersize != s->val) {
+		cfg_set_int("sound", "buffersize", s->val);
+		quit_audio();
+		init_audio();
+	}
 
 	ClearMenuItems(mainMenu);
 }
