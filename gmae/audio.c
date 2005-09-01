@@ -42,6 +42,9 @@ int init_audio(void)
 	int buffersize;
 	Uint16 flags;
 
+	if(audioInited)
+		return 0;
+
 	printf("Starting audio...\n");
 	if(cfg_get_int("sound", "bits", 16) == 16)
 		flags = AUDIO_S16SYS;
@@ -74,4 +77,5 @@ void quit_audio(void)
 	if(!audioInited) return;
 	Mix_CloseAudio();
 	printf("Audio shutdown\n");
+	audioInited = 0;
 }
