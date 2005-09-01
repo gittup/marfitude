@@ -36,6 +36,9 @@
 #include "util/memtest.h"
 #include "util/textprogress.h"
 
+/** The maximum number of tracks to play. */
+#define WAM_MAX_TRACKS 7
+
 /** The magic at the top of the wam. */
 #define WAM_MAGIC "wam-1.0"
 
@@ -578,13 +581,10 @@ void ClearTrack(struct track *t, int chan)
 }
 
 /* sets the sample information in s from channel chan = [0..mod->numchn-1]
- * ignores notes that are too quiet (cutoff set by config file)
  * returns the instrument used, -1 if there is no note
  */
 int SetSample(struct sample *s, int chan)
 {
-	int volThreshold;
-	volThreshold = cfg_get_int("main", "volumethreshold");
 	/* can't use the 'sample' and 'note' values
 	 * from the MP_CONTROL struct in
 	 * mikmod_internals.h since they aren't
@@ -593,17 +593,9 @@ int SetSample(struct sample *s, int chan)
 	 * from MikMod's internal format
 	 */
 	s->vol = mod->control[chan].outvolume;
-	if(s->vol < volThreshold)
-	{
-		s->vol = 0;
-		s->note = 0;
-		s->ins = -1; /* 0 is a valid instrument, -1 is not */
-	}
-	else
-	{
-		s->ins = GetInstrument(mod->control[chan].row, 0);
-		s->note = GetNote(mod->control[chan].row, 0);
-	}
+	s->ins = GetInstrument(mod->control[chan].row, 0);
+	s->note = GetNote(mod->control[chan].row, 0);
+
 	if(!s->note)
 		s->ins = -1;
 	return s->ins;
@@ -650,7 +642,7 @@ struct wam *LoadTrackData(void)
 	lineCount = 0;
 	lineTicker = 0;
 
-	wam->numCols = cfg_get_int("main", "tracks");
+	wam->numCols = WAM_MAX_TRACKS;
 	if(wam->numCols >= mod->numchn) wam->numCols = mod->numchn;
 	if(wam->numCols >= MAX_COLS) wam->numCols = MAX_COLS;
 
