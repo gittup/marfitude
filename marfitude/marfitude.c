@@ -217,10 +217,10 @@ int main_init()
 {
 	int x;
 	int p;
-	char *scene;
+	const char *scene;
 
 	Log(("Load Wam\n"));
-	cursong = cfg_copy("main", "song");
+	cursong = cfg_copy("main", "song", "null");
 
 	wam = load_wam(cursong);
 	if(wam == NULL) {
@@ -237,9 +237,9 @@ int main_init()
 	 */
 	Log(("Module ready\n"));
 
-	difficulty = cfg_get_int("main", "difficulty");
-	num_players = cfg_get_int("main", "players");
-	highscore = cfg_get_int("highscore", cursong);
+	difficulty = cfg_get_int("main", "difficulty", 1);
+	num_players = cfg_get_int("main", "players", 1);
+	highscore = cfg_get_int("highscore", cursong, 0);
 
 	tickCounter = 0;
 	songStarted = 0;
@@ -253,7 +253,7 @@ int main_init()
 
 	curRow = &wam->rowData[Row(0)];
 
-	scene = cfg_get("main", "scene");
+	scene = cfg_get("main", "scene", "scenes/default");
 	if(strcmp(scene, "scenes/default") == 0) {
 		bluenotes_init();
 		explode_init();
