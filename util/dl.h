@@ -33,16 +33,16 @@
 #   if defined(__APPLE__)
 /* Umm...yeah */
 #     include <CoreFoundation/CoreFoundation.h>
+#     define dlstrtmp(s) CFStringCreateWithCString(kCFAllocatorDefault, s,\
+				kCFStringEncodingASCII)
 #     define dlopentmp(l, a) CFBundleCreate(kCFAllocatorDefault, \
 		CFURLCreateWithFileSystemPath(kCFAllocatorDefault, \
-			CFStringCreateWithCString(kCFAllocatorDefault, l,\
-				kCFStringEncodingASCII), \
+			dlstrtmp(l), \
 			kCFURLPOSIXPathStyle, true))
 #     define dlopen(l, a) (CFBundleLoadExecutable(dlopentmp(l, a)), \
 	dlopentmp(l, a))
-#     define dlclose(l) do {CFBundleUnloadExecutable(l); \
-	CFBundleUnloadExecutable(l); } while(0)
-#     define dlsym(l, s) CFBundleGetFunctionPointerForName(l, CFSTR(s))
+#     define dlclose CFBundleUnloadExecutable
+#     define dlsym(l, s) CFBundleGetFunctionPointerForName(l, dlstrtmp(s))
 #     define dlerror() strerror(errno)
 #   else
 #     error "This platform does not have dynamic library support!"
