@@ -218,6 +218,8 @@ int init_gl(void)
 	}
 	Log(("Video mode set: (%i, %i)\n", screenWidth, screenHeight));
 	SDL_WM_SetCaption("Gmae", NULL); /* second arg is icon */
+	SDL_EnableKeyRepeat(0, 0); /* disable key repeating */
+	SDL_ShowCursor(SDL_DISABLE);
 	init_fps();
 	glViewport(0, 0, screenWidth, screenHeight);
 	glEnable(GL_TEXTURE_2D);
@@ -280,14 +282,18 @@ void quit_gl(void)
 	quit_particles();
 	quit_textures();
 	free(pbuf);
+	pbuf = NULL;
+	pbufsize = 0;
 	if(fontInited)
 	{
 		glDeleteLists(fontList, numChars);
 		glDeleteTextures(1, &fontTex);
+		fontInited = 0;
 	}
 	if(sdlInited)
 	{
 		SDL_Quit();
+		sdlInited = 0;
 		printf("OpenGL shutdown\n");
 	}
 }

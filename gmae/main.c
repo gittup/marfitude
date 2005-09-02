@@ -167,8 +167,6 @@ int main(int argc, char **argv)
 
 	init_joystick();
 
-	SDL_EnableKeyRepeat(0, 0); /* disable key repeating */
-	SDL_ShowCursor(SDL_DISABLE);
 	if(configure_joykeys())
 	{
 		switch_scene(NULLSCENE);

@@ -47,7 +47,7 @@ struct tex_entry {
 	char *name;     /**< The name of the texture (set to the filename) */
 };
 
-static struct tex_entry *textures;
+static struct tex_entry *textures = NULL;
 static int texInited = 0;
 static int num_textures = 0;
 
@@ -191,6 +191,9 @@ void quit_textures(void)
 		glDeleteTextures(1, &textures[x].texture);
 	}
 	free(textures);
+	textures = NULL;
+	num_textures = 0;
+	texInited = 0;
 	printf("Textures shutdown\n");
 	return;
 }

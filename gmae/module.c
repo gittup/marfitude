@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "sdl_mixer/SDL_mixer.h"
+#include "sdl_mixer/mikmod/mikmod_internals.h"
 
 #include "module.h"
 #include "cfg.h"
@@ -39,6 +40,7 @@
 MODULE *mod = NULL;
 
 static Mix_Music *modMusic = NULL;
+static void seek_handler(void);
 
 /** Start the mod @a modFile
  * @param modFile Only the coolest files can be modFiles
@@ -81,8 +83,43 @@ int start_module(const char *modFile)
 /** Stop the currently playing mod, if any */
 void stop_module(void)
 {
-	if(!modMusic) return;
+	if(modMusic == NULL) return;
 	Log(("Freeing Mod music\n"));
 	Mix_FreeMusic(modMusic);
+	modMusic = NULL;
 	Log(("Module stopped\n"));
 }
+
+/** Seek the currently played module to the absolute tic value @a tic.
+ *
+ * @param tic The tic to seek to.
+ */
+void seek_module(int tic)
+{
+	int paused;
+	int count = 0;
+	MikMod_player_t old;
+
+	if(modMusic == NULL) return;
+
+	Player_Mute(MUTE_INCLUSIVE, 0, mod->numchn-1);
+	old = MikMod_RegisterPlayer(seek_handler);
+
+	/* Make sure the song is not paused */
+	paused = Player_Paused();
+	if(paused)
+		Player_TogglePause();
+
+	while(count < tic) {
+		Player_HandleTick();
+		count++;
+	}
+
+	/* Return to the previous pause state */
+	if(paused)
+		Player_TogglePause();
+	Player_Unmute(MUTE_INCLUSIVE, 0, mod->numchn-1);
+	MikMod_RegisterPlayer(old);
+}
+
+void seek_handler(void) { /* empty handler */ }

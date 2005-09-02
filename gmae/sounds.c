@@ -138,5 +138,7 @@ void quit_sounds(void)
 		free(sounds[x].name);
 	}
 	free(sounds);
+	sounds = NULL;
+	num_sounds = 0;
 	printf("Sounds shutdown\n");
 }

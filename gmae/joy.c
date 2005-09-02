@@ -89,5 +89,6 @@ void quit_joystick(void)
 	}
 	if(joys) free(joys);
 	joys = NULL;
+	joyInited = 0;
 	Log(("Joystick shutdown\n"));
 }

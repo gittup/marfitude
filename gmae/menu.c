@@ -867,10 +867,9 @@ void MainMenu(void)
 	glTexCoord2f(0.0, 1.0); glVertex2i(0, 256);
 	glEnd();
 	glEnable(GL_LIGHTING);
+	reset_projection();
 
 	DrawMenu(mainMenu);
-
-	reset_projection();
 }
 
 static struct slist *fileList;
@@ -1128,6 +1127,10 @@ void FightMenu(void)
 	DrawPartialMenu(fightSceneSelect, fightSceneSelect->itemStart, fightSceneSelect->itemStart+fightSceneSelect->menuSize);
 }
 
+static struct {
+	int width;
+	int height;
+} video_modes[] = {{640, 480}, {800, 600}};
 int option_menu_init(void)
 {
 	float c[4] = {0.0, 1.0, 1.0, 1.0};
@@ -1151,6 +1154,10 @@ int option_menu_init(void)
 	fullscreen = cfg_eq("video", "fullscreen", "yes");
 	CreateBoolean(mainMenu, "Full screen", c, "On", "Off", fullscreen);
 
+	s = CreateSlider(mainMenu, "Screen size", c, 0, 1, 1, 0);
+	name_slider_item(mainMenu, s, 0, "640x480");
+	name_slider_item(mainMenu, s, 1, "800x600");
+
 	buffersize = cfg_get_int("sound", "buffersize", 512);
 	buffer = CreateSlider(mainMenu, "Sound buffer [bytes]", c, 128, 8192, SLIDER_DOUBLE, buffersize);
 
@@ -1162,6 +1169,7 @@ int option_menu_init(void)
 void option_menu_quit(void)
 {
 	struct slider *s;
+	int width, height;
 	int buffersize;
 
 	s = (struct slider*)mainMenu->items[0].item;
@@ -1171,14 +1179,43 @@ void option_menu_quit(void)
 	cfg_set_int("main", "difficulty", s->val);
 
 	s = (struct slider*)mainMenu->items[2].item;
-	cfg_set("video", "fullscreen", s->val ? "yes" : "no");
+	if(cfg_eq("video", "fullscreen", "yes") ^ s->val) {
+		cfg_set("video", "fullscreen", s->val ? "yes" : "no");
+		quit_gl();
+		init_gl();
+	}
+
+	width = cfg_get_int("video", "width", 640);
+	height = cfg_get_int("video", "height", 480);
+	s = (struct slider*)mainMenu->items[3].item;
+	if(width != video_modes[s->val].width || height != video_modes[s->val].height) {
+		cfg_set_int("video", "width", video_modes[s->val].width);
+		cfg_set_int("video", "height", video_modes[s->val].height);
+
+		quit_sounds();
+		quit_joystick();
+		quit_audio();
+		quit_gl();
+
+		init_gl();
+		init_audio();
+		init_sounds();
+		init_joystick();
+
+		fire_event("sound re-init", NULL);
+		fire_event("gl re-init", NULL);
+	}
 
 	buffersize = cfg_get_int("sound", "buffersize", 512);
-	s = (struct slider*)mainMenu->items[3].item;
+	s = (struct slider*)mainMenu->items[4].item;
 	if(buffersize != s->val) {
 		cfg_set_int("sound", "buffersize", s->val);
+		quit_sounds();
 		quit_audio();
 		init_audio();
+		init_sounds();
+
+		fire_event("sound re-init", NULL);
 	}
 
 	ClearMenuItems(mainMenu);
@@ -1230,6 +1267,8 @@ void ConfigKeyHandler(const void *data)
 	if(set_button(configuring, jk, cur_player)) {
 		ELog(("Error setting configure button %i!\n", configuring));
 	}
+	configuring = -1;
+	deregister_event("key", ConfigKeyHandler);
 	MPlaySound(snd_push);
 	newKeyText->active = 0;
 	input_mode(MENU);
@@ -1262,10 +1301,6 @@ void ConfigMenuQuit(void)
 
 void ConfigMenu(void)
 {
-	if(configuring != -1 && newKeyText->active == 0) {
-		configuring = -1;
-		deregister_event("key", ConfigKeyHandler);
-	}
 	DrawMenu(mainMenu);
 }
 

@@ -26,6 +26,7 @@
 #endif
 
 int start_module(const char *modFile);
+void seek_module(int tic);
 void stop_module(void);
 
 extern MODULE *mod;

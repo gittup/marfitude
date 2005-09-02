@@ -851,6 +851,7 @@ struct wam *CreateWam(const char *modFile)
 	}
 	Log(("Loading track data...\n"));
 	wam = LoadTrackData();
+	stop_module();
 	return wam;
 }
 
