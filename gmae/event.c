@@ -170,7 +170,7 @@ void chk_event(struct event *e)
 		e->handlers = h;
 		num_handlers++;
 	}
-	printf("Event: %18s %12i    %12i\n", e->name, e->fired, num_handlers);
+	printf("Event: %18s %11i      %11i\n", e->name, e->fired, num_handlers);
 }
 
 /** All the struct events are kept around for the life of the program. This
