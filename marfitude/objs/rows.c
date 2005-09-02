@@ -12,15 +12,13 @@
 #define Row(row) (row < 0 ? 0 : (row >= wam->numRows ? wam->numRows - 1: row))
 
 static void draw_rows(const void *data);
+static void gen_list(const void *data);
 
 static GLuint row_texes[MAX_COLS];
 static GLuint row_list;
 
 void rows_init(void)
 {
-	int x;
-	const struct wam *wam = marfitude_get_wam();
-
 	row_texes[0] = texture_num("Slate.png");
 	row_texes[1] = texture_num("Walnut.png");
 	row_texes[2] = texture_num("ElectricBlue.png");
@@ -30,6 +28,26 @@ void rows_init(void)
 	row_texes[6] = texture_num("Slate.png");
 	row_texes[7] = texture_num("ElectricBlue.png");
 
+	register_event("draw opaque", draw_rows);
+	register_event("gl re-init", gen_list);
+	gen_list(NULL);
+}
+
+void rows_exit(void)
+{
+	const struct wam *wam = marfitude_get_wam();
+
+	deregister_event("gl re-init", gen_list);
+	deregister_event("draw opaque", draw_rows);
+	glDeleteLists(row_list, wam->numCols);
+}
+
+void gen_list(const void *data)
+{
+	int x;
+	const struct wam *wam = marfitude_get_wam();
+
+	if(data) {}
 	row_list = glGenLists(wam->numCols);
 	for(x=0;x<wam->numCols;x++) {
 		glNewList(row_list+x, GL_COMPILE); {
@@ -47,15 +65,6 @@ void rows_init(void)
 			} glEnd();
 		} glEndList();
 	}
-	register_event("draw opaque", draw_rows);
-}
-
-void rows_exit(void)
-{
-	const struct wam *wam = marfitude_get_wam();
-
-	deregister_event("draw opaque", draw_rows);
-	glDeleteLists(row_list, wam->numCols);
 }
 
 void draw_rows(const void *data)

@@ -12,6 +12,7 @@
 #include "util/slist.h"
 
 static void draw_notes(const void *);
+static void gen_list(const void *);
 
 static GLuint note;
 static float theta;
@@ -19,9 +20,24 @@ static float theta;
 void greynotes_init(void)
 {
 	register_event("draw opaque", draw_notes);
+	register_event("gl re-init", gen_list);
+
+	gen_list(NULL);
+	theta = 0.0;
+}
+
+void greynotes_exit(void)
+{
+	glDeleteLists(note, 1);
+	deregister_event("gl re-init", gen_list);
+	deregister_event("draw opaque", draw_notes);
+}
+
+void gen_list(const void *data)
+{
+	if(data) {}
 
 	note = glGenLists(1);
-	theta = 0.0;
 
 	glNewList(note, GL_COMPILE); {
 		glBegin(GL_TRIANGLE_FAN); {
@@ -47,12 +63,6 @@ void greynotes_init(void)
 		} glEnd();
 		glPopMatrix();
 	} glEndList();
-}
-
-void greynotes_exit(void)
-{
-	glDeleteLists(note, 1);
-	deregister_event("draw opaque", draw_notes);
 }
 
 void draw_notes(const void *data)

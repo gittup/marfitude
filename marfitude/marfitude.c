@@ -99,6 +99,7 @@ static struct marfitude_note *FindNote(struct slist *list, int tic, int col);
 static int get_clear_column(int start, int skip_lines);
 static void FixVb(int *vb, int *row);
 static void TickHandler(void);
+static void reinitializer(const void *);
 static void CheckMissedNotes(void);
 static void CheckColumn(int row);
 static int NoteListTic(const void *snp, const void *tp);
@@ -232,6 +233,7 @@ int main_init()
 		ELog(("Error: Couldn't start module\n"));
 		return 2;
 	}
+
 	/* module and module data (where to place the notes) are now loaded,
 	 * and the module is paused
 	 */
@@ -329,6 +331,7 @@ int main_init()
 
 	for(x=0;x<=lastRow;x++) fire_event("row", &wam->rowData[x]);
 
+	register_event("sound re-init", reinitializer);
 	register_event("button", button_handler);
 
 	init_timer();
@@ -373,6 +376,7 @@ void main_quit(void)
 	Log(("A\n"));
 	songStarted = 0;
 	deregister_event("button", button_handler);
+	deregister_event("sound re-init", reinitializer);
 	Log(("A\n"));
 	free(notesOnScreen);
 	Log(("A\n"));
@@ -709,6 +713,18 @@ void TickHandler(void)
 	oldHand();
 }
 
+/* Reinitialize the module */
+void reinitializer(const void *data)
+{
+	Log(("Reinit: Start module\n"));
+	if(data) {}
+	if(start_module(cursong)) {
+		ELog(("Error (reinit): Couldn't start module\n"));
+		return;
+	}
+	seek_module(tickCounter);
+}
+
 /* gets either rowIndex or rowIndex+1, depending on which one row is closest
  * based on the time (eg within acceptable error)
  */
@@ -956,7 +972,7 @@ void UpdatePosition(void)
 				songStarted = 1;
 				register_event("menu", menu_handler);
 			} else if(rowIndex == wam->numRows) {
-				fire_event("victory explosion", &local_high);
+				fire_event("victory", &local_high);
 			}
 		}
 		modTime = curRow->time + (curTic - curRow->ticpos) * BpmToSec(curRow->sngspd, curRow->bpm) / curRow->sngspd;
