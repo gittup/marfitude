@@ -277,8 +277,8 @@ int init_config(void)
 
 	if(LoadConfig(cfgFileName)) {
 		if(LoadConfig("init.cfg")) {
-			ELog(("Error: Couldn't load '%s' or init.cfg config files.", cfgFileName));
-			return 1;
+			printf("Unable to load any configuration file. Using defaults.\n");
+			return 0;
 		}
 		else
 		{
