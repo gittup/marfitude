@@ -34,7 +34,7 @@ void draw_scoreboard(const void *data)
 	marfitude_get_pos(&pos);
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 
-	print_gl(20, 0, "Playing: %s", mod->songname);
+	print_gl(50, 0, "Playing: %s", mod->songname);
 	if(pos.row_index == wam->numRows) {
 		print_gl(50, 15, "Song complete!");
 		for(p=0; p<marfitude_num_players(); p++) {
