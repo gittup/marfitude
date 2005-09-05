@@ -170,6 +170,7 @@ int init_particles(void)
 /** Frees the particle engine */
 void quit_particles(void)
 {
+	clear_particles();
 	free(particles);
 	glDeleteLists(plist, sizeof(particleTypes) / sizeof(struct particle));
 	printf("Particles shutdown\n");
