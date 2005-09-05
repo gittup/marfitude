@@ -29,7 +29,7 @@ void rows_init(void)
 	row_texes[7] = texture_num("ElectricBlue.png");
 
 	register_event("draw opaque", draw_rows);
-	register_event("gl re-init", gen_list);
+	register_event("sdl re-init", gen_list);
 	gen_list(NULL);
 }
 
@@ -37,7 +37,7 @@ void rows_exit(void)
 {
 	const struct wam *wam = marfitude_get_wam();
 
-	deregister_event("gl re-init", gen_list);
+	deregister_event("sdl re-init", gen_list);
 	deregister_event("draw opaque", draw_rows);
 	glDeleteLists(row_list, wam->numCols);
 }

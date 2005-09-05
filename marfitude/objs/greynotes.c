@@ -20,7 +20,7 @@ static float theta;
 void greynotes_init(void)
 {
 	register_event("draw opaque", draw_notes);
-	register_event("gl re-init", gen_list);
+	register_event("sdl re-init", gen_list);
 
 	gen_list(NULL);
 	theta = 0.0;
@@ -29,7 +29,7 @@ void greynotes_init(void)
 void greynotes_exit(void)
 {
 	glDeleteLists(note, 1);
-	deregister_event("gl re-init", gen_list);
+	deregister_event("sdl re-init", gen_list);
 	deregister_event("draw opaque", draw_notes);
 }
 
