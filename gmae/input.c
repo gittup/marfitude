@@ -147,7 +147,7 @@ void input_loop(void)
 				action = 0;
 				break;
 			case SDL_JOYAXISMOTION:
-				if(event.jaxis.value == 0) {
+				if(abs(event.jaxis.value) < JOY_MIN_THRESHOLD) {
 					/* Cancel both the left&right or
 					 * up&down keypushes.
 					 */
@@ -158,7 +158,7 @@ void input_loop(void)
 					handle_action(kp, 0);
 				}
 				jk.type = event.jaxis.which;
-				jk.button = (event.jaxis.value>0)?1:-1;
+				jk.button = (event.jaxis.value>=JOY_MIN_THRESHOLD)?1:-1;
 				jk.axis = event.jaxis.axis;
 				special_menu_handler = joy_axis_handler;
 				if(abs(event.jaxis.value) > JOY_MAX_THRESHOLD)
