@@ -37,7 +37,7 @@ typedef int (*CompareFunc)(const void *, const void *);
  * @param l struct slist * - The list head
  */
 #define slist_foreach(t, l) \
-	for((t)=(l); (t)!=NULL; (t)=(t)->next)
+	for((t)=(l); (t)!=0; (t)=(t)->next)
 
 int slist_length(struct slist *l);
 struct slist *slist_append(struct slist *l, void *d);
