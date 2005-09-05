@@ -1147,6 +1147,7 @@ int option_menu_init(void)
 	struct slider *buffer;
 	int width, height;
 	int buffersize;
+	int init_mode = 0;
 	SDL_Rect **modes;
 
 	if(!menuActive) RegisterMenuEvents();
@@ -1162,30 +1163,22 @@ int option_menu_init(void)
 	CreateBoolean(mainMenu, "Full screen", c, "On", "Off", fullscreen);
 
 	modes = SDL_ListModes(NULL, SDL_OPENGL | SDL_FULLSCREEN);
-	if(modes == (SDL_Rect**)0) {
-		ELog(("Error finding the available video modes!\n"));
-		return 1;
-	}
-	if(modes == (SDL_Rect**)-1) {
-		/* Technically this means all resolutions are supported. But
-		 * this is easier :)
+	if(modes == (SDL_Rect**)-1 || modes == (SDL_Rect**)0) {
+		/* Either all resolutions are supported, or we couldn't find
+		 * any resolutions. Pick some sensible defaults, I guess...
 		 */
 		video_modes = malloc(sizeof(struct video_mode) * 2);
-		video_modes[0].width = 640;
-		video_modes[0].height = 480;
-		video_modes[1].width = 800;
-		video_modes[1].height = 600;
+		video_modes[0].width = 800;
+		video_modes[0].height = 600;
+		video_modes[1].width = 640;
+		video_modes[1].height = 480;
+		num_modes = 2;
 	} else {
-		int init_mode = 0;
-
 		for(i=0; modes[i]; i++) {
 			/* Just count the maximum number of modes */
 		}
 		video_modes = malloc(sizeof(struct video_mode) * i);
 		num_modes = 0;
-		width = cfg_get_int("video", "width", 640);
-		height = cfg_get_int("video", "height", 480);
-		printf("WxH from config: %i, %i\n", width, height);
 
 		for(i=0; modes[i]; i++) {
 			/* Count on fall-through to protect the num_modes-1
@@ -1196,28 +1189,30 @@ int option_menu_init(void)
 					video_modes[num_modes-1].height != modes[i]->h) {
 				video_modes[num_modes].width = modes[i]->w;
 				video_modes[num_modes].height = modes[i]->h;
-				if(modes[i]->w == width && modes[i]->h == height) {
-					printf("Found mode: %i, %i [%i]\n", width, height, i);
-					init_mode = num_modes;
-				}
 				num_modes++;
 			}
 		}
+	}
 
-		/* Note there are actually 0..num_modes-1 modes (total of
-		 * num_modes). Also use -1 for the count since the modes
-		 * are retrieved from SDL in order of largest to smallest, but
-		 * I think it makes more sense to have the larger size modes
-		 * to the "right". Magically the -1 makes it work so the list
-		 * doesn't need to be inverted or anything crazy :)
-		 */
-		s = CreateSlider(mainMenu, "Screen size", c, 0, num_modes-1, -1, init_mode);
+	width = cfg_get_int("video", "width", 640);
+	height = cfg_get_int("video", "height", 480);
+	for(i=0; i<num_modes; i++) {
+		if(video_modes[i].width == width && video_modes[i].height == height)
+			init_mode = i;
+	}
 
-		for(i=0; i<num_modes; i++) {
-			char buf[16];
-			sprintf(buf, "%ix%i", video_modes[i].width, video_modes[i].height);
-			name_slider_item(mainMenu, s, i, buf);
-		}
+	/* Note there are actually 0..num_modes-1 modes (total of num_modes).
+	 * Also use -1 for the count since the modes are retrieved from SDL in
+	 * order of largest to smallest, but I think it makes more sense to
+	 * have the larger size modes to the "right". Magically the -1 makes it
+	 * work so the list doesn't need to be inverted or anything crazy :)
+	 */
+	s = CreateSlider(mainMenu, "Screen size", c, 0, num_modes-1, -1, init_mode);
+
+	for(i=0; i<num_modes; i++) {
+		char buf[16];
+		sprintf(buf, "%ix%i", video_modes[i].width, video_modes[i].height);
+		name_slider_item(mainMenu, s, i, buf);
 	}
 
 	buffersize = cfg_get_int("sound", "buffersize", 512);
