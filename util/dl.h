@@ -17,7 +17,7 @@
 */
 
 /** @file
- * A little wrapper for dynamic loading functions for differen OS's
+ * A little wrapper for dynamic loading functions for different OS's
  */
 
 #if defined(__linux__) || defined(__FreeBSD__)
