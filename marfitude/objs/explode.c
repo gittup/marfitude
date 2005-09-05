@@ -11,18 +11,18 @@
 #include "util/myrand.h"
 
 static void explode(const void *);
-static void victory_explode(const void *);
+static void victory(const void *);
 static void explosion_particle(const struct marfitude_pos *p, const float *c);
 
 void explode_init(void)
 {
 	register_event("row explosion", explode);
-	register_event("victory explosion", victory_explode);
+	register_event("victory", victory);
 }
 
 void explode_exit(void)
 {
-	deregister_event("victory explosion", victory_explode);
+	deregister_event("victory", victory);
 	deregister_event("row explosion", explode);
 }
 
@@ -45,7 +45,7 @@ void explode(const void *data)
 	explosion_particle(p, col);
 }
 
-void victory_explode(const void *data)
+void victory(const void *data)
 {
 	int score = *((const int*)data);
 	struct marfitude_pos pos;
