@@ -12,10 +12,8 @@
 #define Row(row) (row < 0 ? 0 : (row >= wam->numRows ? wam->numRows - 1: row))
 
 static void draw_rows(const void *data);
-static void gen_list(const void *data);
 
 static GLuint row_texes[MAX_COLS];
-static GLuint row_list;
 
 void rows_init(void)
 {
@@ -29,42 +27,11 @@ void rows_init(void)
 	row_texes[7] = texture_num("ElectricBlue.png");
 
 	register_event("draw opaque", draw_rows);
-	register_event("sdl re-init", gen_list);
-	gen_list(NULL);
 }
 
 void rows_exit(void)
 {
-	const struct wam *wam = marfitude_get_wam();
-
-	deregister_event("sdl re-init", gen_list);
 	deregister_event("draw opaque", draw_rows);
-	glDeleteLists(row_list, wam->numCols);
-}
-
-void gen_list(const void *data)
-{
-	int x;
-	const struct wam *wam = marfitude_get_wam();
-
-	if(data) {}
-	row_list = glGenLists(wam->numCols);
-	for(x=0;x<wam->numCols;x++) {
-		glNewList(row_list+x, GL_COMPILE); {
-			glColor4f(1.0, 1.0, 1.0, 1.0);
-			glNormal3f(0.0, 1.0, 0.0);
-			glBegin(GL_QUADS); {
-				glTexCoord2f(0.0, (double)x/4.0);
-				glVertex3f(-1.0, 0.0, 0.0);
-				glTexCoord2f(1.0, (double)x/4.0);
-				glVertex3f(1.0, 0.0, 0.0);
-				glTexCoord2f(1.0, (double)(x+1)/4.0);
-				glVertex3f(1.0, 0.0, BLOCK_HEIGHT);
-				glTexCoord2f(0.0, (double)(x+1)/4.0);
-				glVertex3f(-1.0, 0.0, BLOCK_HEIGHT);
-			} glEnd();
-		} glEndList();
-	}
 }
 
 void draw_rows(const void *data)
