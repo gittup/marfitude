@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "SDL.h"
 #include "SDL_opengl.h"
 
 #include "menu.h"
@@ -29,6 +30,7 @@
 #include "event.h"
 #include "glfunc.h"
 #include "input.h"
+#include "joy.h"
 #include "phys.h"
 #include "textures.h"
 #include "scene.h"
@@ -1127,20 +1129,25 @@ void FightMenu(void)
 	DrawPartialMenu(fightSceneSelect, fightSceneSelect->itemStart, fightSceneSelect->itemStart+fightSceneSelect->menuSize);
 }
 
-static struct {
+static struct video_mode {
 	int width;
 	int height;
-} video_modes[] = {{640, 480}, {800, 600}};
+} *video_modes;
+static int num_modes;
+
 int option_menu_init(void)
 {
 	float c[4] = {0.0, 1.0, 1.0, 1.0};
 	struct slider *s;
 	struct button *b;
+	int i;
 	int fullscreen;
 	int players = cfg_get_int("main", "players", 1);
 	int difficulty = cfg_get_int("main", "difficulty", 1);
 	struct slider *buffer;
+	int width, height;
 	int buffersize;
+	SDL_Rect **modes;
 
 	if(!menuActive) RegisterMenuEvents();
 	CreateSlider(mainMenu, "Players", c, 1, 4, 1, players);
@@ -1154,9 +1161,64 @@ int option_menu_init(void)
 	fullscreen = cfg_eq("video", "fullscreen", "yes");
 	CreateBoolean(mainMenu, "Full screen", c, "On", "Off", fullscreen);
 
-	s = CreateSlider(mainMenu, "Screen size", c, 0, 1, 1, 0);
-	name_slider_item(mainMenu, s, 0, "640x480");
-	name_slider_item(mainMenu, s, 1, "800x600");
+	modes = SDL_ListModes(NULL, SDL_OPENGL | SDL_FULLSCREEN);
+	if(modes == (SDL_Rect**)0) {
+		ELog(("Error finding the available video modes!\n"));
+		return 1;
+	}
+	if(modes == (SDL_Rect**)-1) {
+		/* Technically this means all resolutions are supported. But
+		 * this is easier :)
+		 */
+		video_modes = malloc(sizeof(struct video_mode) * 2);
+		video_modes[0].width = 640;
+		video_modes[0].height = 480;
+		video_modes[1].width = 800;
+		video_modes[1].height = 600;
+	} else {
+		int init_mode = 0;
+
+		for(i=0; modes[i]; i++) {
+			/* Just count the maximum number of modes */
+		}
+		video_modes = malloc(sizeof(struct video_mode) * i);
+		num_modes = 0;
+		width = cfg_get_int("video", "width", 640);
+		height = cfg_get_int("video", "height", 480);
+		printf("WxH from config: %i, %i\n", width, height);
+
+		for(i=0; modes[i]; i++) {
+			/* Count on fall-through to protect the num_modes-1
+			 * index.
+			 */
+			if(num_modes == 0 ||
+					video_modes[num_modes-1].width != modes[i]->w ||
+					video_modes[num_modes-1].height != modes[i]->h) {
+				video_modes[num_modes].width = modes[i]->w;
+				video_modes[num_modes].height = modes[i]->h;
+				if(modes[i]->w == width && modes[i]->h == height) {
+					printf("Found mode: %i, %i [%i]\n", width, height, i);
+					init_mode = num_modes;
+				}
+				num_modes++;
+			}
+		}
+
+		/* Note there are actually 0..num_modes-1 modes (total of
+		 * num_modes). Also use -1 for the count since the modes
+		 * are retrieved from SDL in order of largest to smallest, but
+		 * I think it makes more sense to have the larger size modes
+		 * to the "right". Magically the -1 makes it work so the list
+		 * doesn't need to be inverted or anything crazy :)
+		 */
+		s = CreateSlider(mainMenu, "Screen size", c, 0, num_modes-1, -1, init_mode);
+
+		for(i=0; i<num_modes; i++) {
+			char buf[16];
+			sprintf(buf, "%ix%i", video_modes[i].width, video_modes[i].height);
+			name_slider_item(mainMenu, s, i, buf);
+		}
+	}
 
 	buffersize = cfg_get_int("sound", "buffersize", 512);
 	buffer = CreateSlider(mainMenu, "Sound buffer [bytes]", c, 128, 8192, SLIDER_DOUBLE, buffersize);
@@ -1171,6 +1233,8 @@ void option_menu_quit(void)
 	struct slider *s;
 	int width, height;
 	int buffersize;
+	int restart_audio = 0;
+	int restart_video = 0;
 
 	s = (struct slider*)mainMenu->items[0].item;
 	cfg_set_int("main", "players", s->val);
@@ -1181,8 +1245,7 @@ void option_menu_quit(void)
 	s = (struct slider*)mainMenu->items[2].item;
 	if(cfg_eq("video", "fullscreen", "yes") ^ s->val) {
 		cfg_set("video", "fullscreen", s->val ? "yes" : "no");
-		quit_gl();
-		init_gl();
+		restart_video = 1;
 	}
 
 	width = cfg_get_int("video", "width", 640);
@@ -1192,32 +1255,35 @@ void option_menu_quit(void)
 		cfg_set_int("video", "width", video_modes[s->val].width);
 		cfg_set_int("video", "height", video_modes[s->val].height);
 
-		quit_sounds();
-		quit_joystick();
-		quit_audio();
-		quit_gl();
+		restart_video = 1;
 
-		init_gl();
-		init_audio();
-		init_sounds();
-		init_joystick();
-
-		fire_event("sound re-init", NULL);
-		fire_event("gl re-init", NULL);
 	}
 
 	buffersize = cfg_get_int("sound", "buffersize", 512);
 	s = (struct slider*)mainMenu->items[4].item;
 	if(buffersize != s->val) {
 		cfg_set_int("sound", "buffersize", s->val);
+		restart_audio = 1;
+	}
+
+	if(restart_audio || restart_video) {
 		quit_sounds();
 		quit_audio();
+	}
+	if(restart_video) {
+		quit_joystick();
+		quit_gl();
+		init_gl();
+		init_joystick();
+		fire_event("sdl re-init", NULL);
+	}
+	if(restart_audio || restart_video) {
 		init_audio();
 		init_sounds();
-
 		fire_event("sound re-init", NULL);
 	}
 
+	free(video_modes);
 	ClearMenuItems(mainMenu);
 }
 
