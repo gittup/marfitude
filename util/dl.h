@@ -45,7 +45,11 @@
 #     define dlsym(l, s) CFBundleGetFunctionPointerForName(l, dlstrtmp(s))
 #     define dlerror() strerror(errno)
 #   else
-#     error "This platform does not have dynamic library support!"
+#     warning "This platform does not have dynamic library support!"
+#     define dlopen(l, a) 0
+#     define dlclose(l)
+#     define dlsym(l, s) 0
+#     define dlerror() NULL
 #   endif
 # endif
 #endif
