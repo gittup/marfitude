@@ -52,7 +52,6 @@ struct event *get_event(const char *s)
 		e->fired = 0;
 		e->next = events;
 		events = e;
-		printf("Create: %s\n", e->name);
 	}
 	return e;
 }
