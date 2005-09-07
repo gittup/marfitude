@@ -1,5 +1,4 @@
-ifeq ($(ARCH),darwin)
+ARCHES = darwin
 INSTALL_DIR = $(DESTDIR)/MacOS
 INSTALL_LIST = marfey
 EXEC = data
-endif
