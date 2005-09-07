@@ -210,6 +210,8 @@ static void null_handler(void);
 /** Set to 1 if a menu is active, 0 otherwise */
 static int menuActive = 0;
 
+static int menu_player = -1;
+
 static int curMenu;
 static int numScreenMenus = 1;
 static struct screenMenu screenMenus[2];
@@ -223,6 +225,12 @@ static int snd_back;
 void button_handler(const void *data)
 {
 	const struct button_e *b = data;
+
+	if(menu_player == -1)
+		menu_player = b->player;
+	if(menu_player != b->player)
+		return;
+
 	switch(b->button) {
 		case B_UP:
 			MenuUp(b->shift);
@@ -305,10 +313,19 @@ void EQTriangle(int fade)
 void active_color(int item, struct screenMenu *m)
 {
 	if(item == m->activeMenuItem) {
+		const float *c;
+		const float default_c[] = {.75, 0.0, .75, 1.0};
+
+		if(menu_player == -1) {
+			c = default_c;
+		} else {
+			c = get_player_color(menu_player);
+		}
+
 		if(m == &screenMenus[curMenu])
-			glColor3f(1.0, 0.0, 0.0);
+			glColor4fv(c);
 		else
-			glColor3f(0.58, 0.0, 0.0);
+			glColor3f(c[0] / 2.0, c[1] / 2.0, c[2] / 2.0);
 	}
 	else {
 		if(m == &screenMenus[curMenu])
@@ -779,6 +796,7 @@ void ShowMenu(const void *data)
 	if(menuActive) return;
 	if(b->button != B_MENU) return;
 
+	menu_player = b->player;
 	RegisterMenuEvents();
 	MPlaySound(snd_push);
 	m.active = 1;
@@ -815,6 +833,7 @@ int NoMenuInit(void)
 {
 	input_mode(GAME);
 	HideMenu();
+	menu_player = -1;
 	register_event("button", ShowMenu);
 	return 0;
 }
