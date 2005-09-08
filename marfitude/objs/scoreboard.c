@@ -28,6 +28,7 @@ void draw_scoreboard(const void *data)
 	const struct marfitude_player *ps;
 	int highscore = marfitude_get_highscore();
 	int p;
+	int x1, x2, y1, y2;
 
 	if(data) {}
 
@@ -80,32 +81,36 @@ void draw_scoreboard(const void *data)
 	set_ortho_projection();
 	glDisable(GL_TEXTURE_2D);
 
+	x1 = orthox(5);
+	x2 = orthox(15);
+	y1 = orthoy(80);
+	y2 = orthoy(450);
 	glColor4f(0.0, 0.8, 0.5, 1.0);
 	glBegin(GL_QUADS); {
-		glVertex2i(5, 80);
-		glVertex2i(15, 80);
-		glVertex2i(15, 450);
-		glVertex2i(5, 450);
+		glVertex2i(x1, y1);
+		glVertex2i(x2, y1);
+		glVertex2i(x2, y2);
+		glVertex2i(x1, y2);
 	} glEnd();
 
 	glColor4f(0.0, 0.0, 0.0, 1.0);
 	glBegin(GL_QUADS); {
-		glVertex2i(6, 81);
-		glVertex2i(14, 81);
-		glVertex2i(14, 449);
-		glVertex2i(6, 449);
+		glVertex2i(x1+1, y1+1);
+		glVertex2i(x2-1, y1+1);
+		glVertex2i(x2-1, y2-1);
+		glVertex2i(x1+1, y2-1);
 	} glEnd();
 
 	glBegin(GL_QUADS); {
 		float mult = pos.modtime / wam->songLength;
 		glColor4f(0.0, 0.8, 0.5, 1.0);
-		glVertex2i(6, 81*mult+449*(1.0-mult));
+		glVertex2i(x1+1, (y1+1)*mult+(y2-1)*(1.0-mult));
 		glColor4f(0.5, 0.8, 0.5, 1.0);
-		glVertex2i(14, 81*mult+449*(1.0-mult));
+		glVertex2i(x2-1, (y1+1)*mult+(y2-1)*(1.0-mult));
 		glColor4f(0.0, 0.5, 0.0, 1.0);
-		glVertex2i(14, 449);
+		glVertex2i(x2-1, y2-1);
 		glColor4f(0.0, 0.0, 0.0, 1.0);
-		glVertex2i(6, 449);
+		glVertex2i(x1+1, y2-1);
 	} glEnd();
 	glEnable(GL_TEXTURE_2D);
 	reset_projection();
