@@ -232,14 +232,15 @@ int SaveConfig(const char *filename)
 	int x, y;
 	FILE *f;
 
-	if(filename == NULL) return 0;
+	if(filename == NULL)
+		return 1;
 
 	f = fopen(filename, "w");
 	if(f == NULL)
 	{
 		ELog(("Error opening config file for write: %s\n", filename));
 		Error("saving config file");
-		return 0;
+		return 2;
 	}
 
 	Log(("Saving configuration...\n"));
@@ -259,7 +260,7 @@ int SaveConfig(const char *filename)
 	cfg = NULL;
 	fclose(f);
 	Log(("Done\n"));
-	return 1;
+	return 0;
 }
 
 /** Initializes the configuration from a file */
@@ -278,17 +279,13 @@ int init_config(void)
 	if(LoadConfig(cfgFileName)) {
 		if(LoadConfig("init.cfg")) {
 			printf("Unable to load any configuration file. Using defaults.\n");
-			return 0;
+		} else {
+			printf("init.cfg loaded.\n");
 		}
-		else
-		{
-			free(cfgFileName);
-			cfgFileName = malloc(strlen("init.cfg") + 1);
-			strcpy(cfgFileName, "init.cfg");
-		}
+	} else {
+		printf("%s loaded.\n", cfgFileName);
 	}
 
-	printf("%s loaded.\n", cfgFileName);
 
 	cfgInited = 1;
 	return 0;
@@ -301,11 +298,17 @@ void quit_config(void)
 {
 	if(!cfgInited) return;
 
-	if(cfgFileName == NULL) {
-		ELog(("Warning: Configuration not saved since there is no HOME environment variable set.\n"));
+	if(SaveConfig(cfgFileName)) {
+		if(SaveConfig("init.cfg")) {
+			ELog(("Unable to save configuration data."));
+		} else {
+			printf("init.cfg saved.\n");
+		}
 	} else {
-		SaveConfig(cfgFileName);
-		free(cfgFileName);
+		printf("%s saved.\n", cfgFileName);
 	}
+	if(cfgFileName)
+		free(cfgFileName);
+	cfgFileName = NULL;
 	printf("Config shutdown\n");
 }
