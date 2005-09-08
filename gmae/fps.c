@@ -44,8 +44,8 @@ void print_fps(void)
 {
 	set_font_size(.75);
 	glColor4f(0.0, 1.0, 1.0, 1.0);
-	if(fps < 100.0) print_gl(display_width() - 75, 5, "FPS: %2.1f", fps);
-	else print_gl(display_width() - 75, 5, "FPS:%3.1f", fps);
+	if(fps < 100.0) print_gl(640 - 75, 5, "FPS: %2.1f", fps);
+	else print_gl(640 - 75, 5, "FPS:%3.1f", fps);
 	set_font_size(1.0);
 }
 
