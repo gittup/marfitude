@@ -28,9 +28,9 @@
 
 int init_gl(void);
 void quit_gl(void);
+void perspective_projection(double fov, double aspect, double z1, double z2);
 void set_ortho_projection(void);
 void reset_projection(void);
-void error_gl(char *file, int line, char *func);
 void print_gl(int x, int y, const char *msg, ...);
 void set_font_size(float size);
 void update_screen(void);

@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#define __USE_BSD /* For M_PI */
+#include <math.h>
 
 #include "SDL.h"
 #include "SDL_opengl.h"
@@ -81,17 +83,6 @@ int display_width(void)
 int display_height(void)
 {
 	return screenHeight;
-}
-
-/** Prints the gluErrorString error along with the file and line number */
-void error_gl(char *file, int line, char *func)
-{
-	int i = glGetError();
-	if(file || line || func) {} /* Get rid of warnings with no logging */
-	if(i)
-	{
-		ELog(("OpenGL (gl%s) Error in file %s line %i: %s\n", func, file, line, gluErrorString(i)));
-	}
 }
 
 int load_font(void)
@@ -238,7 +229,7 @@ int init_gl(void)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
-	gluPerspective(45.0f,(GLfloat)screenWidth/(GLfloat)screenHeight,0.1f,100.0f);
+	perspective_projection(45.0f,(GLfloat)screenWidth/(GLfloat)screenHeight,0.1f,100.0f);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
@@ -296,6 +287,26 @@ void quit_gl(void)
 		sdlInited = 0;
 		printf("OpenGL shutdown\n");
 	}
+}
+
+/** Make a perspective projection with the given field of view, aspect, and
+ * near and far clip planes.
+ *
+ * @author Originally by James Heggie for gluPerspective replacement.
+ *        Found in: http://nehe.gamedev.net/data/articles/article.asp?article=11
+ * @param fov Field of view (in y degrees)
+ * @param aspect Aspect ratio of the viewport
+ * @param z1 The near clip plane
+ * @param z2 The far clip plane
+ */
+void perspective_projection(double fov, double aspect, double z1, double z2)
+{
+	double height;
+	double width;
+
+	height = tan(fov / 360.0 * M_PI) * z1;
+	width = height * aspect;
+	glFrustum(-width, width, -height, height, z1, z2);
 }
 
 /** Sets an orthographic projection matrix. Be sure to call reset_projection()
