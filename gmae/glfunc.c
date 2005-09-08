@@ -396,6 +396,18 @@ void reset_projection(void)
 	glEnable(GL_LIGHTING);
 }
 
+/** Return the orthographic coordinate based on @a x, where 0 <= @a x < 640 */
+int orthox(int x)
+{
+	return x * screenWidth / 640;
+}
+
+/** Return the orthographic coordinate based on @a y, where 0 <= @a y < 480 */
+int orthoy(int y)
+{
+	return y * screenHeight / 480;
+}
+
 /** Swap buffers and update FPS */
 void update_screen(void)
 {
@@ -412,8 +424,8 @@ void set_font_size(float size)
 }
 
 /** Prints a message to the screen and position x, y.
- * @param x The x location
- * @param y The y location
+ * @param x The x location (assume 640x480 screen)
+ * @param y The y location (assume 640x480 screen)
  * @param msg The message to print, as in printf. The remaining arguments are
  * the parameters for the message.
  */
@@ -444,8 +456,10 @@ void print_gl(int x, int y, const char *msg, ...)
 	glBindTexture(GL_TEXTURE_2D, fontTex);
 	set_ortho_projection();
 	glPushMatrix();
+	x = orthox(x);
+	y = orthoy(y);
 	glTranslated((double)x, (double)y, 0);
-	glScalef(fontSize, fontSize, 1.0);
+	glScalef(fontSize * screenWidth / 640, fontSize * screenHeight / 480, 1.0);
 	glPushAttrib(GL_LIST_BIT);
 	glListBase(fontList-newline);
 	glPushMatrix(); /* save position for newline characters */

@@ -263,10 +263,10 @@ void ShadedBox(int x1, int y1, int x2, int y2, int fade)
 	glDisable(GL_TEXTURE_2D);
 	glBegin(GL_QUADS);
 	{
-		glVertex2i(x1, y1);
-		glVertex2i(x1, y2);
-		glVertex2i(x2, y2);
-		glVertex2i(x2, y1);
+		glVertex2i(orthox(x1), orthoy(y1));
+		glVertex2i(orthox(x1), orthoy(y2));
+		glVertex2i(orthox(x2), orthoy(y2));
+		glVertex2i(orthox(x2), orthoy(y1));
 	} glEnd();
 
 	if(fade)
@@ -275,10 +275,10 @@ void ShadedBox(int x1, int y1, int x2, int y2, int fade)
 		glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_LINE_LOOP);
 	{
-		glVertex2i(x1, y1);
-		glVertex2i(x1, y2);
-		glVertex2i(x2, y2);
-		glVertex2i(x2, y1);
+		glVertex2i(orthox(x1), orthoy(y1));
+		glVertex2i(orthox(x1), orthoy(y2));
+		glVertex2i(orthox(x2), orthoy(y2));
+		glVertex2i(orthox(x2), orthoy(y1));
 	} glEnd();
 	glEnable(GL_TEXTURE_2D);
 	reset_projection();
@@ -394,7 +394,7 @@ void DrawPartialMenu(struct screenMenu *m, int start, int stop)
 	if(m->itemStart)
 	{
 		glPushMatrix();
-			glTranslatef(m->menuX-20, m->menuY, 0.0);
+			glTranslatef(orthox(m->menuX-20), orthoy(m->menuY), 0.0);
 			glScalef(10.0, -10.0, 1.0);
 			EQTriangle(m != &screenMenus[curMenu]);
 		glPopMatrix();
@@ -403,7 +403,7 @@ void DrawPartialMenu(struct screenMenu *m, int start, int stop)
 	{
 		int tmp = m->minY + FONT_HEIGHT * m->menuSize;
 		glPushMatrix();
-			glTranslatef(m->menuX-20, tmp, 0.0);
+			glTranslatef(orthox(m->menuX-20), orthoy(tmp), 0.0);
 			glScalef(10.0, 10.0, 1.0);
 			EQTriangle(m != &screenMenus[curMenu]);
 		glPopMatrix();

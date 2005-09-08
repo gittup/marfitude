@@ -35,6 +35,8 @@ void reset_projection(void);
 void print_gl(int x, int y, const char *msg, ...);
 void set_font_size(float size);
 void update_screen(void);
+int orthox(int);
+int orthoy(int);
 
 int display_width(void);
 int display_height(void);
