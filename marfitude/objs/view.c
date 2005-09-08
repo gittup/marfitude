@@ -5,6 +5,7 @@
 
 #include "gmae/event.h"
 #include "gmae/input.h"
+#include "gmae/glfunc.h"
 #include "gmae/timer.h"
 
 static void set_main_view(const void *);
@@ -23,8 +24,8 @@ void view_exit(void)
 
 void set_main_view(const void *data)
 {
-	float mainPos[3] = {0.0, 3.0, -8.0};
-	float mainView[3] = {0.0, 0.8, 0.0};
+	float eye[3] = {0.0, 3.0, -8.0};
+	float view[3] = {0.0, 0.8, 0.0};
 	double tmp;
 	const struct marfitude_player *ps = marfitude_get_player(0);
 	struct marfitude_pos pos;
@@ -41,13 +42,13 @@ void set_main_view(const void *data)
 	} else {
 		view_focus = tmp;
 	}
-	mainView[2] = TIC_HEIGHT * pos.tic;
-	mainPos[2] = mainView[2] - 8.0;
+	view[2] = TIC_HEIGHT * pos.tic;
+	eye[2] = view[2] - 8.0;
 
 	glLoadIdentity();
-	gluLookAt(      mainPos[0] - view_focus * BLOCK_WIDTH, mainPos[1], mainPos[2],
-			mainView[0] - view_focus * BLOCK_WIDTH, mainView[1], mainView[2],
-			0.0, 1.0, 0.0);
+	look_at(eye[0] - view_focus * BLOCK_WIDTH, eye[1], eye[2],
+		view[0] - view_focus * BLOCK_WIDTH, view[1], view[2],
+		0.0, 1.0, 0.0);
 
 }
 
