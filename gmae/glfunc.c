@@ -36,6 +36,8 @@
 #include "textures.h"
 
 #include "util/memtest.h"
+#include "util/math/matrix.h"
+#include "util/math/vector.h"
 
 /** @file
  * Initializes SDL/OpenGL and sets up default OpenGL parameters.
@@ -287,6 +289,64 @@ void quit_gl(void)
 		sdlInited = 0;
 		printf("OpenGL shutdown\n");
 	}
+}
+
+/** Performs a function similar to gluLookAt. This is pretty much right out of
+ * the gluLookAt man page.
+ *
+ * @param ex The "eye" - X
+ * @param ey The "eye" - Y
+ * @param ez The "eye" - Z
+ * @param cx The reference point - X
+ * @param cy The reference point - Y
+ * @param cz The reference point - Z
+ * @param ux Direction of up - X
+ * @param uy Direction of up - Y
+ * @param uz Direction of up - Z
+ */
+void look_at(double ex, double ey, double ez, double cx, double cy, double cz, double ux, double uy, double uz)
+{
+	union vector f;
+	union vector up;
+	union vector s;
+	union vector u;
+	union matrix M;
+
+	f.p.x = cx - ex;
+	f.p.y = cy - ey;
+	f.p.z = cz - ez;
+	vector_normalize(&f);
+
+	up.p.x = ux;
+	up.p.y = uy;
+	up.p.z = uz;
+	vector_normalize(&up);
+
+	vector_cross(&s, &f, &up);
+	vector_cross(&u, &s, &f);
+
+	M.v[0] = s.v[0];
+	M.v[4] = s.v[1];
+	M.v[8] = s.v[2];
+	M.v[12] = 0;
+
+	M.v[1] = u.v[0];
+	M.v[5] = u.v[1];
+	M.v[9] = u.v[2];
+	M.v[13] = 0;
+
+	M.v[2] = -f.v[0];
+	M.v[6] = -f.v[1];
+	M.v[10] = -f.v[2];
+	M.v[14] = 0;
+
+	M.v[3] = 0;
+	M.v[7] = 0;
+	M.v[11] = 0;
+	M.v[15] = 1;
+
+	glMultMatrixd(M.v);
+	glTranslated(-ex, -ey, -ez);
 }
 
 /** Make a perspective projection with the given field of view, aspect, and
