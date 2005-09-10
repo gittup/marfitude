@@ -94,3 +94,6 @@ struct wam {
 void free_wam(struct wam *wam);
 int write_wam(const char *modFile);
 struct wam *load_wam(const char *modFile);
+int wam_rowindex(const struct wam *wam, int row);
+
+#define wam_row(wam, row) (&(wam)->rowData[wam_rowindex(wam, row)])
