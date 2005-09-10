@@ -63,8 +63,6 @@ static int difficulty = 0;
 
 /** returns 1 if the row is valid, 0 otherwise */
 #define IsValidRow(row) ((row >= 0 && row < wam->numRows) ? 1 : 0)
-/** return a clamped row number */
-#define Row(row) (row < 0 ? 0 : (row >= wam->numRows ? wam->numRows - 1: row))
 /** Find the max of a and b. Usual macro warnings apply */
 #define Max(a, b) ((a) > (b) ? (a) : (b))
 
@@ -253,7 +251,7 @@ int main_init()
 	noteOffset[2] = 0;
 	noteOffset[4] = 1;
 
-	curRow = &wam->rowData[Row(0)];
+	curRow = wam_row(wam, 0);
 
 	scene = cfg_get("main", "scene", "scenes/default");
 	if(strcmp(scene, "scenes/default") == 0) {
@@ -609,16 +607,16 @@ void Press(int button, int player)
 	if(!curp->ap.active) return;
 
 	rowStart = rowIndex;
-	while(rowStart > 0 && curRow->time - wam->rowData[Row(rowStart)].time < MARFITUDE_TIME_ERROR)
+	while(rowStart > 0 && curRow->time - wam_row(wam, rowStart)->time < MARFITUDE_TIME_ERROR)
 		rowStart--;
 
 	rowStop = rowIndex;
-	while(rowStop < wam->numRows && wam->rowData[Row(rowStop)].time - curRow->time < MARFITUDE_TIME_ERROR)
+	while(rowStop < wam->numRows && wam_row(wam, rowStop)->time - curRow->time < MARFITUDE_TIME_ERROR)
 		rowStop++;
 
 	for(i=rowStart;i<=rowStop;i++) {
 		if(i >= 0 && i < wam->numRows) {
-			r = &wam->rowData[Row(i)];
+			r = wam_row(wam, i);
 			/* if we're in the attackpattern limits, and
 			 * if we didn't already play this row, and this row 
 			 * is within our acceptable error, and we hit the
@@ -771,7 +769,7 @@ void ResetAp(void)
 	curp->ap.notesHit = 0;
 	curp->ap.notesTotal = 0;
 
-	start = Row(Max(Max(NearRow(), curp->ap.nextStartRow), ac[curp->channel].cleared));
+	start = wam_rowindex(wam, Max(Max(NearRow(), curp->ap.nextStartRow), ac[curp->channel].cleared));
 	while(start < wam->numRows && (wam->rowData[start].line == 0 || wam->rowData[start].ticpos <= ac[curp->channel].miss))
 		start++;
 	if(start == wam->numRows)
@@ -903,7 +901,7 @@ void UpdateClearedCols(void)
 	struct row *r;
 
 	for(x=0;x<wam->numCols;x++) {
-		r = &wam->rowData[Row(ac[x].minRow)];
+		r = wam_row(wam, ac[x].minRow);
 		/* Yes I realize this is a bunch of magic numbers. Sue me. */
 		ac[x].part += (double)ticDiff * (double)r->bpm / (833.0 * (double)r->sngspd);
 		while(ac[x].part >= 1.0 && ac[x].minRow < ac[x].cleared && ac[x].minRow < wam->numRows) {
@@ -914,8 +912,7 @@ void UpdateClearedCols(void)
 
 			p.modtime = modTime;
 			p.tic = tic;
-			p.row = r;
-			p.row_index = Row(ac[x].minRow);
+			p.row_index = wam_rowindex(wam, ac[x].minRow);
 			p.channel =  x;
 			fire_event("row explosion", &p);
 
@@ -949,6 +946,8 @@ void UpdatePosition(void)
 	}
 
 	while(ticTime >= 2500) {
+		struct row *r;
+
 		ticTime -= 2500;
 		curTic++;
 		curVb++;
@@ -958,7 +957,7 @@ void UpdatePosition(void)
 		if(curVb >= curRow->sngspd) {
 			curVb -= curRow->sngspd;
 			rowIndex++;
-			curRow = &wam->rowData[Row(rowIndex)];
+			curRow = wam_row(wam, rowIndex);
 			for(p=0; p<num_players; p++) {
 				curp = &ps[p];
 				if(curp->ap.active && rowIndex > curp->ap.stopRow) {
@@ -966,7 +965,7 @@ void UpdatePosition(void)
 					ResetCol();
 				}
 			}
-			CheckColumn(Row(rowIndex));
+			CheckColumn(wam_rowindex(wam, rowIndex));
 			if(rowIndex == 0) { /* start the song! */
 				Player_TogglePause();
 				songStarted = 1;
@@ -978,8 +977,9 @@ void UpdatePosition(void)
 		modTime = curRow->time + (curTic - curRow->ticpos) * BpmToSec(curRow->sngspd, curRow->bpm) / curRow->sngspd;
 		UpdateModule();
 
-		if(firstVb >= wam->rowData[Row(firstRow)].sngspd) {
-			firstVb -= wam->rowData[Row(firstRow)].sngspd;
+		r = wam_row(wam, firstRow);
+		if(firstVb >= r->sngspd) {
+			firstVb -= r->sngspd;
 			/* the remove functions check to make sure 
 			 * the row is valid, so it's ok to pass firstRow
 			 */
@@ -989,8 +989,9 @@ void UpdatePosition(void)
 			firstRow++;
 		}
 
-		if(lastVb >= wam->rowData[Row(lastRow)].sngspd) {
-			lastVb -= wam->rowData[Row(lastRow)].sngspd;
+		r = wam_row(wam, lastRow);
+		if(lastVb >= r->sngspd) {
+			lastVb -= r->sngspd;
 			lastRow++;
 			/* the add functions check to make sure the
 			 * row is valid, so it's ok to pass lastRow
@@ -1079,7 +1080,6 @@ void marfitude_get_pos(struct marfitude_pos *p)
 {
 	p->modtime = modTime;
 	p->tic = (double)curTic + partialTic;
-	p->row = curRow;
 	p->row_index = rowIndex;
 	p->channel = curp->channel;
 }

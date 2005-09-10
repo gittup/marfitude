@@ -51,7 +51,6 @@ struct marfitude_score {
 struct marfitude_pos {
 	double modtime;        /**< Time in seconds */
 	double tic;            /**< Current tic position */
-	const struct row *row; /**< Current row */
 	int row_index;         /**< Row index */
 	int channel;           /**< Which channel is currently played */
 };

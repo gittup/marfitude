@@ -9,8 +9,6 @@
 
 #include "util/slist.h"
 
-#define Row(row) (row < 0 ? 0 : (row >= wam->numRows ? wam->numRows - 1: row))
-
 static void draw_rows(const void *data);
 
 static GLuint row_texes[MAX_COLS];
@@ -65,11 +63,14 @@ void draw_rows(const void *data)
 	if(startTic >= stopTic) return;
 	glPushMatrix();
 	for(col=0;col<wam->numCols;col++) {
+		struct row *r;
+
 		start = startTic;
 		stop = stopTic;
 		glBindTexture(GL_TEXTURE_2D, row_texes[col]);
-		if(wam->rowData[Row(ac[col].minRow)].ticpos > start)
-			start = wam->rowData[Row(ac[col].minRow)].ticpos;
+		r = wam_row(wam, ac[col].minRow);
+		if(r->ticpos > start)
+			start = r->ticpos;
 		ps = ac[col].ps ? ac[col].ps->data : NULL;
 		if(ps) {
 			if(col == ps->channel && ps->ap.startTic != -1) {
