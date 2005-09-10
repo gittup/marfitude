@@ -38,8 +38,8 @@ struct mem_block {
  * ... ahh sweet irony
  */
 static struct mem_block *mb = NULL;
-static int numBlocks = 0;
-static int startBlock = 0;
+static int num_blocks = 0;
+static int start_block = 0;
 
 /** Overrides malloc if CONFIG_MEMTEST == 1 */
 void *my_malloc(size_t x, int line, const char *file)
@@ -47,13 +47,13 @@ void *my_malloc(size_t x, int line, const char *file)
 	void *p;
 	p = malloc(x);
 
-	mb = (struct mem_block*)realloc(mb, sizeof(struct mem_block) * (numBlocks+1));
-	mb[numBlocks].size = x;
-	mb[numBlocks].line = line;
-	mb[numBlocks].file = file;
-	mb[numBlocks].ptr = p;
-	mb[numBlocks].active = 1;
-	numBlocks++;
+	mb = (struct mem_block*)realloc(mb, sizeof(struct mem_block) * (num_blocks+1));
+	mb[num_blocks].size = x;
+	mb[num_blocks].line = line;
+	mb[num_blocks].file = file;
+	mb[num_blocks].ptr = p;
+	mb[num_blocks].active = 1;
+	num_blocks++;
 	return p;
 }
 
@@ -61,14 +61,14 @@ void *my_malloc(size_t x, int line, const char *file)
 void my_free(void *p, int line, const char *file)
 {
 	int i;
-	for(i=startBlock;i<numBlocks;i++)
+	for(i=start_block;i<num_blocks;i++)
 	{
 		if(mb[i].ptr == p && mb[i].active)
 		{
 			mb[i].active = 0;
-			if(i == startBlock)
+			if(i == start_block)
 			{
-				while(!mb[startBlock].active && startBlock < numBlocks) startBlock++;
+				while(!mb[start_block].active && start_block < num_blocks) start_block++;
 			}
 			free(p);
 			return;
@@ -81,13 +81,14 @@ void my_free(void *p, int line, const char *file)
 void *my_realloc(void *p, int x, int line, const char *file)
 {
 	int i;
-	if(p == NULL) return my_malloc(x, line, file);
+	if(p == NULL)
+		return my_malloc(x, line, file);
 	if(x == 0)
 	{
 		my_free(p, line, file);
 		return NULL;
 	}
-	for(i=startBlock;i<numBlocks;i++)
+	for(i=start_block; i<num_blocks; i++)
 	{
 		if(mb[i].ptr == p && mb[i].active)
 		{
@@ -107,13 +108,13 @@ void *my_calloc(size_t nm, size_t x, int line, const char *file)
 {
 	void *p;
 	p = calloc(nm, x);
-	mb = (struct mem_block*)realloc(mb, sizeof(struct mem_block) * (numBlocks+1));
-	mb[numBlocks].size = x*nm;
-	mb[numBlocks].line = line;
-	mb[numBlocks].file = file;
-	mb[numBlocks].ptr = p;
-	mb[numBlocks].active = 1;
-	numBlocks++;
+	mb = (struct mem_block*)realloc(mb, sizeof(struct mem_block) * (num_blocks+1));
+	mb[num_blocks].size = x*nm;
+	mb[num_blocks].line = line;
+	mb[num_blocks].file = file;
+	mb[num_blocks].ptr = p;
+	mb[num_blocks].active = 1;
+	num_blocks++;
 	return p;
 }
 
@@ -124,7 +125,7 @@ void *my_calloc(size_t nm, size_t x, int line, const char *file)
 void check_mem_usage(void)
 {
 	int x;
-	for(x=0;x<numBlocks;x++)
+	for(x=0;x<num_blocks;x++)
 	{
 		if(mb[x].active)
 		{
@@ -138,7 +139,7 @@ int query_mem_usage(void)
 {
 	int x;
 	int total = 0;
-	for(x=0;x<numBlocks;x++)
+	for(x=0;x<num_blocks;x++)
 	{
 		if(mb[x].active) total += mb[x].size;
 	}

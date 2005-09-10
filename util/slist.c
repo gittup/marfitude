@@ -188,7 +188,7 @@ struct slist *slist_insert(struct slist *l, void *d)
  * @param c A comparison function.
  * @return The new list
  */
-struct slist *slist_insert_sorted(struct slist *l, void *d, CompareFunc c)
+struct slist *slist_insert_sorted(struct slist *l, void *d, compare_func c)
 {
 	struct slist *ins = next_list();
 	struct slist *head = l;
@@ -240,7 +240,7 @@ struct slist *slist_find(struct slist *l, void *d)
  * @param c A comparison function.
  * @return The list where d == list->data
  */
-struct slist *slist_find_custom(struct slist *l, void *d, CompareFunc c)
+struct slist *slist_find_custom(struct slist *l, void *d, compare_func c)
 {
 	while(l != NULL) {
 		if(!c(l->data, d)) return l;

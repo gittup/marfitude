@@ -27,10 +27,10 @@ struct slist {
 	void *data;         /**< Pointer to whatever data the list holds */
 };
 
-/** A comparison function. CompareFunc(a, b) will return a number less than
+/** A comparison function. compare_func(a, b) will return a number less than
  * zero if a<b, 0 if a==b, and a number greater than zero if a>b
  */
-typedef int (*CompareFunc)(const void *, const void *);
+typedef int (*compare_func)(const void *, const void *);
 
 /** Iterate through elements of the list.
  * @param t struct slist * - The iterator
@@ -44,9 +44,9 @@ struct slist *slist_append(struct slist *l, void *d);
 struct slist *slist_remove(struct slist *l, void *d);
 struct slist *slist_nth(struct slist *l, int n);
 struct slist *slist_insert(struct slist *l, void *d);
-struct slist *slist_insert_sorted(struct slist *l, void *d, CompareFunc c);
+struct slist *slist_insert_sorted(struct slist *l, void *d, compare_func c);
 struct slist *slist_find(struct slist *l, void *d);
-struct slist *slist_find_custom(struct slist *l, void *d, CompareFunc c);
+struct slist *slist_find_custom(struct slist *l, void *d, compare_func c);
 struct slist *slist_next(struct slist *l);
 void slist_free(struct slist *l);
 void slist_usage(void);
