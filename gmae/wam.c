@@ -995,3 +995,16 @@ void free_wam(struct wam *wam)
 	free(wam);
 	Log(("Wam freed\n"));
 }
+
+/** Get a valid row index from the wam. If the row is less than 0, 0 is
+ * returned. If the row is past the last row, the last row index is returned.
+ * Otherwise the input row is returned.
+ */
+int wam_rowindex(const struct wam *wam, int row)
+{
+	if(row < 0)
+		return 0;
+	if(row >= wam->numRows)
+		return wam->numRows - 1;
+	return row;
+}
