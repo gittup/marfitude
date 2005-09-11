@@ -22,7 +22,7 @@ void greynotes_init(void)
 	register_event("draw opaque", draw_notes);
 	register_event("sdl re-init", gen_list);
 
-	gen_list(NULL);
+	gen_list(0);
 	theta = 0.0;
 }
 

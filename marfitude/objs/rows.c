@@ -71,7 +71,7 @@ void draw_rows(const void *data)
 		r = wam_row(wam, ac[col].minRow);
 		if(r->ticpos > start)
 			start = r->ticpos;
-		ps = ac[col].ps ? ac[col].ps->data : NULL;
+		ps = ac[col].ps ? ac[col].ps->data : 0;
 		if(ps) {
 			if(col == ps->channel && ps->ap.startTic != -1) {
 				if(ps->ap.startTic > start)
