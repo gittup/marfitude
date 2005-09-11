@@ -474,15 +474,11 @@ void button_event(int button, int player)
 
 void menu_button_event(int button, int player)
 {
-	if(button >= B_BUTTON1 && button <= B_BUTTON4) {
-		fire_event("enter", &shift[player]);
-	} else {
-		struct button_e b;
-		b.button = button;
-		b.shift = shift[player];
-		b.player = player;
-		fire_event("button", &b);
-	}
+	struct button_e b;
+	b.button = button;
+	b.shift = shift[player];
+	b.player = player;
+	fire_event("button", &b);
 }
 
 /* finds the beginning of the next . number

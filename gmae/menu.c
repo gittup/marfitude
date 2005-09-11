@@ -250,6 +250,12 @@ void button_handler(const void *data)
 		case B_SELECT:
 			MenuSelect();
 			break;
+		case B_BUTTON1:
+		case B_BUTTON2:
+		case B_BUTTON3:
+		case B_BUTTON4:
+			MenuActivate(&b->shift);
+			break;
 		default:
 			break;
 	}
