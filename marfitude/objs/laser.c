@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "SDL_opengl.h"
 
 #include "marfitude.h"
@@ -25,6 +27,9 @@ static double laser_adj(double a, double b, double dt);
 static void draw_laser(struct laser *l);
 static void make_laser(const void *);
 static void draw_lasers(const void *);
+static void create_laser(void *pixels, int pitch);
+static const int width = 32;
+static const int height = 128;
 
 static int laser_tex;
 static int num_lasers;
@@ -32,7 +37,7 @@ static struct laser laser[NUM_LASERS];
 
 void laser_init(void)
 {
-	laser_tex = texture_num("Laser.png");
+	laser_tex = create_texture(width, height, create_laser);
 	num_lasers = 0;
 	register_event("shoot", make_laser);
 	register_event("draw transparent", draw_lasers);
@@ -101,4 +106,29 @@ void draw_lasers(const void *data)
 	for(x=0;x<NUM_LASERS;x++) {
 		draw_laser(&laser[x]);
 	}
+}
+
+void create_laser(void *pixels, int pitch)
+{
+	int x;
+	int y;
+	unsigned char *p;
+
+        for(x=0; x<width; x++) {
+                int tmp;
+                int t2 = abs(width/2 - x);
+                tmp = 255 - t2 * 255 / 15;
+                for(y=0; y<height; y++) {
+                        p = pixels;
+                        p += x * 4;
+                        p += y * pitch;
+                        p[RED] = 255;
+                        p[GREEN] = 255;
+                        p[BLUE] = 255;
+                        if(tmp < 0)
+                                p[ALPHA] = 0;
+                        else
+                                p[ALPHA] = tmp;
+                }
+        }
 }
