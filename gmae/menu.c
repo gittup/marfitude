@@ -782,8 +782,8 @@ void MenuSelect(void)
 void MenuBack(int shift)
 {
 	if(shift) {}
-	MPlaySound(snd_back);
 	switch_menu(activeMenu->back);
+	MPlaySound(snd_back);
 }
 
 void RegisterMenuEvents(void)
