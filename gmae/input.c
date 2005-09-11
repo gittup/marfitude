@@ -79,6 +79,7 @@ static void joy_axis_handler(struct joykey *);
 static void null_handler(struct joykey *);
 static void button_event(int button, int player);
 static void menu_button_event(int button, int player);
+static void deactive(const void *);
 
 static int cur_mode = MENU;
 static struct joykey buttons[MAX_PLAYERS][B_LAST];
@@ -103,10 +104,23 @@ static float pc[MAX_PLAYERS][4] = {
 };
 
 /** Clear out the SDL_Event queue */
-void clear_input(void)
+void init_input(void)
 {
 	SDL_Event event;
 	while(SDL_PollEvent(&event)) {}
+	register_event("sdl re-init", deactive);
+}
+
+/** Frees up the memory used by the input module */
+void quit_input(void)
+{
+	struct slist *t;
+
+	slist_foreach(t, keys) {
+		free(t->data);
+	}
+	slist_free(keys);
+	deregister_event("sdl re-init", deactive);
 }
 
 /** Handle all SDL input, and fire appropriate events. */
@@ -615,13 +629,14 @@ void null_handler(struct joykey *jk)
 	if(jk) {}
 }
 
-/** Frees up the memory used by the input module */
-void quit_input(void)
+/* Set all keys to be inactive when sdl reinitializes. */
+void deactive(const void *data)
 {
-	struct slist *t;
+	const struct slist *t;
 
+	if(data) {}
 	slist_foreach(t, keys) {
-		free(t->data);
+		struct keypush *kp = t->data;
+		kp->active = 0;
 	}
-	slist_free(keys);
 }

@@ -63,7 +63,8 @@ enum event_mode {
 	GAME  /**< GAME mode is based solely on the config file */
 };
 
-void clear_input(void);
+void init_input(void);
+void quit_input(void);
 void input_loop(void);
 void set_key_repeat(int button, int repeatable);
 void input_mode(enum event_mode mode);
@@ -71,7 +72,6 @@ int configure_joykeys(void);
 char *joykey_name(int button, int player);
 const float *get_player_color(int player);
 int set_button(int b, const struct joykey *jk, int player);
-void quit_input(void);
 
 /** The maximum number of players supported */
 #define MAX_PLAYERS 4

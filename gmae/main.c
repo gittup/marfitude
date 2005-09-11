@@ -69,8 +69,8 @@ void shutdown(void)
 	quit_joystick();
 	quit_gl();
 	quit_audio();
-	quit_events();
 	quit_input();
+	quit_events();
 	quit_slist();
 	quit_fft();
 	quit_config();
@@ -193,7 +193,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	clear_input();
+	init_input();
 
 	srand(time(NULL));
 	while(!quit)
