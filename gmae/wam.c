@@ -75,56 +75,56 @@ struct sample {
  * pattern.
  */
 struct track {
-	struct sample *samples;	/**< list of samples. Size numSamples, valid
-				 * length trklen
-				 */
+	struct sample *samples; /**< list of samples. Size numSamples, valid
+	                         * length trklen
+	                         */
 	int trklen;             /**< Length of the sample data above. This
-				 * is actually the same for all tracks.
-				 */
+	                         * is actually the same for all tracks.
+	                         */
 	int numSamples;         /**< The size of the samples array */
-	int *notes;		/**< some temporary space to find the best
-				 * tracks in a pattern
-				 */
-	int interest;		/**< how "interesting" this track is :) */
-	int singleIns;		/**< if there is only one instrument, this is
-				 * set to correspond to that instrument.
-				 * if there are multiple instruments or the 
-				 * track is blank, this is -1
-				 */
-	int isEmpty;		/**< set if this track has no notes */
-	int *channels;		/**< length mod->numchn, reflects which channels
-				 * have been merged
-				 */
-	int numChannels;	/**< valid channels in list above.  Starts out
-				 * as 1 then grows as tracks are merged
-				 */
-	int lastCol;		/**< last column this track was placed in */
+	int *notes;             /**< some temporary space to find the best
+	                         * tracks in a pattern
+	                         */
+	int interest;           /**< how "interesting" this track is :) */
+	int singleIns;          /**< if there is only one instrument, this is
+	                         * set to correspond to that instrument.
+	                         * if there are multiple instruments or the 
+	                         * track is blank, this is -1
+	                         */
+	int is_empty;           /**< set if this track has no notes */
+	int *channels;          /**< length mod->numchn, reflects which channels
+	                         * have been merged
+	                         */
+	int numChannels;        /**< valid channels in list above.  Starts out
+	                         * as 1 then grows as tracks are merged
+	                         */
+	int lastCol;            /**< last column this track was placed in */
 };
 
-static struct wam *LoadTrackData(void);
-static char *BaseFileName(const char *file);
-static char *Mod2Wam(const char *modFile);
-static int GetNote(UBYTE *trk, UWORD row);
-static int GetInstrument(UBYTE *trk, UWORD row);
-static void Handler(void);
+static struct wam *load_track_data(void);
+static char *base_file_name(const char *file);
+static char *mod_to_wam(const char *file);
+static int get_note(UBYTE *trk, UWORD row);
+static int get_instrument(UBYTE *trk, UWORD row);
+static void handler(void);
 static void calculate_difficulty(struct track *t, struct wam *wam, int row);
-static void CombineSingleInsTracks(struct track *t1, struct track *t2);
-static int TracksIntersect(struct track *t1, struct track *t2);
-static int NextPos(int pos, int movinup, Uint32 note, Uint32 *mem);
-static int GenTrackData(struct track *t, int pos);
-static int BestTrack(struct track *t);
-static void SetColumn(struct column *col, struct track *trk, struct wam *wam, int colnum, int patnum, int startRow);
-static int EmptyCol(struct column *cols, int numCols, struct column **retptr);
-static void UpdateRowData(struct track *t, struct wam *wam, int startRow, int patnum);
-static void ClearTrack(struct track *t, int chan);
-static int SetSample(struct sample *s, int chan);
-static void WriteCol(int fno, struct column *col);
-static int SaveWam(struct wam *wam, const char *wamFile);
-static void ReadCol(int fno, struct column *col);
-static struct wam *ReadWam(const char *wamFile);
-static struct wam *CreateWam(const char *modFile);
+static void combine_single_ins_tracks(struct track *t1, struct track *t2);
+static int tracks_intersect(struct track *t1, struct track *t2);
+static int next_pos(int pos, int movinup, Uint32 note, Uint32 *mem);
+static int gen_track_data(struct track *t, int pos);
+static int best_track(struct track *t);
+static void set_column(struct column *col, struct track *trk, struct wam *wam, int colnum, int patnum, int startRow);
+static int empty_col(struct column *cols, int num_cols, struct column **retptr);
+static void update_row_data(struct track *t, struct wam *wam, int startRow, int patnum);
+static void clear_track(struct track *t, int chan);
+static int set_sample(struct sample *s, int chan);
+static void write_col(int fno, struct column *col);
+static int save_wam(struct wam *wam, const char *wam_file);
+static void read_col(int fno, struct column *col);
+static struct wam *read_wam(const char *wam_file);
+static struct wam *create_wam(const char *file);
 
-char *BaseFileName(const char *file)
+char *base_file_name(const char *file)
 {
 	int x;
 	int start = 0;
@@ -141,13 +141,13 @@ char *BaseFileName(const char *file)
 	return ret;
 }
 
-char *Mod2Wam(const char *modFile)
+char *mod_to_wam(const char *file)
 {
 	char *s;
 	char *base;
 	int len;
 
-	base = BaseFileName(modFile);
+	base = base_file_name(file);
 	Log(("BASE: %s\n", base));
 	len = strlen(base);
 	s = (char*)calloc(sizeof(char), len+9);	/* 9 = "wam/"+".wam\0" */
@@ -160,7 +160,7 @@ char *Mod2Wam(const char *modFile)
 	return s;
 }
 
-int GetNote(UBYTE *trk, UWORD row)
+int get_note(UBYTE *trk, UWORD row)
 {
 	UBYTE c, note;
 	UBYTE *rowPtr = UniFindRow(trk, row);
@@ -181,7 +181,7 @@ int GetNote(UBYTE *trk, UWORD row)
 	return 0;
 }
 
-int GetInstrument(UBYTE *trk, UWORD row)
+int get_instrument(UBYTE *trk, UWORD row)
 {
 	UBYTE c, instrument;
 	UBYTE *rowPtr = UniFindRow(trk, row);
@@ -210,7 +210,7 @@ int GetInstrument(UBYTE *trk, UWORD row)
 	return 0;
 }
 
-void Handler(void)
+void handler(void)
 {
 	/* This is the tick handler for when we load the song initially.
 	 * Since we don't want the song to play while we load it,
@@ -218,12 +218,12 @@ void Handler(void)
 	 */
 }
 
-/* copy t2 over t1, and then void t2 by setting isEmpty to 1 and
+/* copy t2 over t1, and then void t2 by setting is_empty to 1 and
  * clearing its channels
  * t1 becomes the intersection of t1 and t2, with notes averaged
  * volumes are copied, unaveraged
  */
-void CombineSingleInsTracks(struct track *t1, struct track *t2)
+void combine_single_ins_tracks(struct track *t1, struct track *t2)
 {
 	int x;
 	/* keep the singleIns field up-to-date */
@@ -258,14 +258,14 @@ void CombineSingleInsTracks(struct track *t1, struct track *t2)
 			}
 		}
 	}
-	t2->isEmpty = 1;
+	t2->is_empty = 1;
 	t2->numChannels = 0;
 }
 
 /* if both t1 and t2 have a note in the same row, they 'intersect'
  * and a 1 is returned. otherwise, 0
  */
-int TracksIntersect(struct track *t1, struct track *t2)
+int tracks_intersect(struct track *t1, struct track *t2)
 {
 	int x;
 	for(x=0;x<t1->trklen;x++)
@@ -279,7 +279,7 @@ int TracksIntersect(struct track *t1, struct track *t2)
  * unless of course note is in mem, in which case pos in mem[pos]==note
  * is returned
  */
-int NextPos(int pos, int movinup, Uint32 note, Uint32 *mem)
+int next_pos(int pos, int movinup, Uint32 note, Uint32 *mem)
 {
 	int x;
 	for(x=1;x<=MAX_NOTE;x<<=1)
@@ -293,7 +293,7 @@ int NextPos(int pos, int movinup, Uint32 note, Uint32 *mem)
 	return pos>>1;
 }
 
-int GenTrackData(struct track *t, int pos)
+int gen_track_data(struct track *t, int pos)
 {
 	int x;
 	int mishaps = 0;
@@ -322,7 +322,7 @@ int GenTrackData(struct track *t, int pos)
 					}
 					else
 					{
-						pos = NextPos(pos, 1, *newnote, mem);
+						pos = next_pos(pos, 1, *newnote, mem);
 					}
 				}
 				else if(*newnote < *oldnote)
@@ -333,7 +333,7 @@ int GenTrackData(struct track *t, int pos)
 					}
 					else
 					{
-						pos = NextPos(pos, 0, *newnote, mem);
+						pos = next_pos(pos, 0, *newnote, mem);
 					}
 				}
 				/* no else, position is constant if the
@@ -350,14 +350,14 @@ int GenTrackData(struct track *t, int pos)
 	return mishaps;
 }
 
-int BestTrack(struct track *t)
+int best_track(struct track *t)
 {
 	int x;
 	int bestTrack = -1;
 	int bestInterest = 0;
 	for(x=0;x<mod->numchn;x++)
 	{
-		if(t[x].isEmpty) continue;
+		if(t[x].is_empty) continue;
 		if(bestTrack == -1 || bestInterest < t[x].interest)
 		{
 			bestTrack = x;
@@ -367,26 +367,26 @@ int BestTrack(struct track *t)
 	return bestTrack;
 }
 
-void SetColumn(struct column *col, struct track *trk, struct wam *wam, int colnum, int patnum, int startRow)
+void set_column(struct column *col, struct track *trk, struct wam *wam, int colnum, int patnum, int startRow)
 {
 	int y;
-	trk->isEmpty = 2;
+	trk->is_empty = 2;
 	trk->lastCol = colnum;
 	col->numchn = trk->numChannels;
 	col->chan = malloc(sizeof(int) * col->numchn);
 	memcpy(col->chan, trk->channels, sizeof(int) * col->numchn);
 	for(y=0;y<trk->trklen;y++)
 	{
-		wam->rowData[startRow+y].notes[colnum] = trk->notes[y];
-		wam->rowData[startRow+y].difficulty[colnum] = trk->samples[y].difficulty;
-		wam->rowData[startRow+y].patnum = patnum;
+		wam->row_data[startRow+y].notes[colnum] = trk->notes[y];
+		wam->row_data[startRow+y].difficulty[colnum] = trk->samples[y].difficulty;
+		wam->row_data[startRow+y].patnum = patnum;
 	}
 }
 
-int EmptyCol(struct column *cols, int numCols, struct column **retptr)
+int empty_col(struct column *cols, int num_cols, struct column **retptr)
 {
 	int x;
-	for(x=0;x<numCols;x++)
+	for(x=0;x<num_cols;x++)
 	{
 		if(cols[x].chan == NULL)
 		{
@@ -408,7 +408,7 @@ void calculate_difficulty(struct track *t, struct wam *wam, int row)
 
 	for(x=0; x<t->trklen; x++) {
 		if(t->samples[x].ins >= 0) {
-			double time = wam->rowData[row+x].time;
+			double time = wam->row_data[row+x].time;
 			double sor;
 
 			sor = (double)count + (double)difficulty;
@@ -443,7 +443,7 @@ void calculate_difficulty(struct track *t, struct wam *wam, int row)
 	}
 }
 
-void UpdateRowData(struct track *t, struct wam *wam, int startRow, int patnum)
+void update_row_data(struct track *t, struct wam *wam, int startRow, int patnum)
 {
 	int x, y;
 	int bestStart, bestCount, tmpCount;
@@ -460,13 +460,13 @@ void UpdateRowData(struct track *t, struct wam *wam, int startRow, int patnum)
 	 */
 	for(x=0;x<mod->numchn-1;x++)
 	{
-		if(t[x].isEmpty || t[x].singleIns == -1) continue;
+		if(t[x].is_empty || t[x].singleIns == -1) continue;
 		for(y=x+1;y<mod->numchn;y++)
 		{
-			if(t[y].isEmpty) continue;
-			if(t[x].singleIns == t[y].singleIns && !TracksIntersect(&t[x], &t[y]))
+			if(t[y].is_empty) continue;
+			if(t[x].singleIns == t[y].singleIns && !tracks_intersect(&t[x], &t[y]))
 			{
-				CombineSingleInsTracks(&t[x], &t[y]);
+				combine_single_ins_tracks(&t[x], &t[y]);
 			}
 		}
 	}
@@ -479,7 +479,7 @@ void UpdateRowData(struct track *t, struct wam *wam, int startRow, int patnum)
 		bestCount = t->trklen;
 		for(y=1;y<=MAX_NOTE;y*=2)
 		{
-			tmpCount = GenTrackData(&t[x], y);
+			tmpCount = gen_track_data(&t[x], y);
 			if(!bestStart || tmpCount < bestCount)
 			{
 				bestStart = y;
@@ -489,19 +489,19 @@ void UpdateRowData(struct track *t, struct wam *wam, int startRow, int patnum)
 		/* if the best data is already in memory, no need to
 		 * generate it again, so save a little time :)
 		 */
-		if(bestStart != MAX_NOTE) GenTrackData(&t[x], bestStart);
+		if(bestStart != MAX_NOTE) gen_track_data(&t[x], bestStart);
 	}
 
 	/* get a list of the best tracks
-	 * mark them empty as we go through, BestTrack picks up the best
+	 * mark them empty as we go through, best_track picks up the best
 	 * "non-empty" track
 	 */
 	Log(("A\n"));
-	for(x=0;x<wam->numCols;x++)
+	for(x=0;x<wam->num_cols;x++)
 	{
-		bestTrks[x] = BestTrack(t);
+		bestTrks[x] = best_track(t);
 		Log(("Best: %i, Old: %i\n", bestTrks[x], t[x].lastCol));
-		if(bestTrks[x] != -1) t[bestTrks[x]].isEmpty = 1;
+		if(bestTrks[x] != -1) t[bestTrks[x]].is_empty = 1;
 		col = &pat->columns[x];
 		col->numchn = 0;
 		col->chan = NULL;
@@ -510,7 +510,7 @@ void UpdateRowData(struct track *t, struct wam *wam, int startRow, int patnum)
 
 	/* place all the best tracks that can be placed in their previous slots
 	 */
-	for(x=0;x<wam->numCols;x++)
+	for(x=0;x<wam->num_cols;x++)
 	{
 		if(bestTrks[x] == -1) continue;
 		trk = &t[bestTrks[x]];
@@ -520,30 +520,30 @@ void UpdateRowData(struct track *t, struct wam *wam, int startRow, int patnum)
 			if(col->chan == NULL)
 			{
 				Log(("Replace: %i\n", trk->lastCol));
-				SetColumn(col, trk, wam, trk->lastCol, patnum, startRow);
+				set_column(col, trk, wam, trk->lastCol, patnum, startRow);
 			}
 		}
 	}
 	Log(("C\n"));
 
 	/* now place all the tracks that didn't fit, or weren't in previously */
-	for(x=0;x<wam->numCols;x++)
+	for(x=0;x<wam->num_cols;x++)
 	{
 		if(bestTrks[x] == -1) continue;
 		trk = &t[bestTrks[x]];
-		if(trk->isEmpty != 2)
+		if(trk->is_empty != 2)
 		{
-			y = EmptyCol(pat->columns, wam->numCols, &col);
+			y = empty_col(pat->columns, wam->num_cols, &col);
 			Log(("Place: %i\n", y));
 			if(y == -1)
 			{
 				ELog(("ERROR: No empty column!\n"));
 			}
-			SetColumn(col, trk, wam, y, patnum, startRow);
+			set_column(col, trk, wam, y, patnum, startRow);
 		}
 	}
 	/* set empty rowdata for unused columns */
-	for(x=0;x<wam->numCols;x++)
+	for(x=0;x<wam->num_cols;x++)
 	{
 		col = &pat->columns[x];
 		if(col->chan == NULL)
@@ -551,8 +551,8 @@ void UpdateRowData(struct track *t, struct wam *wam, int startRow, int patnum)
 			Log(("Empty: %i\n", x));
 			for(y=0;y<t->trklen;y++)
 			{
-				wam->rowData[startRow+y].notes[x] = 0;
-				wam->rowData[startRow+y].patnum = patnum;
+				wam->row_data[startRow+y].notes[x] = 0;
+				wam->row_data[startRow+y].patnum = patnum;
 			}
 		}
 	}
@@ -562,7 +562,7 @@ void UpdateRowData(struct track *t, struct wam *wam, int startRow, int patnum)
 	col->chan = NULL;
 	for(x=0;x<mod->numchn;x++)
 	{
-		if(t[x].isEmpty) continue;
+		if(t[x].is_empty) continue;
 		col->chan = (int*)realloc(col->chan, sizeof(int) * (col->numchn + t[x].numChannels));
 		memcpy(&(col->chan[col->numchn]), t[x].channels, sizeof(int) * t[x].numChannels);
 		col->numchn += t[x].numChannels;
@@ -570,11 +570,11 @@ void UpdateRowData(struct track *t, struct wam *wam, int startRow, int patnum)
 }
 
 /* resets default values in the Track struct for channel chan */
-void ClearTrack(struct track *t, int chan)
+void clear_track(struct track *t, int chan)
 {
 	t->channels[0] = chan;
 	t->numChannels = 1;
-	t->isEmpty = 1;
+	t->is_empty = 1;
 	t->singleIns = -1;
 	t->interest = 0;
 	t->trklen = 0;
@@ -583,7 +583,7 @@ void ClearTrack(struct track *t, int chan)
 /* sets the sample information in s from channel chan = [0..mod->numchn-1]
  * returns the instrument used, -1 if there is no note
  */
-int SetSample(struct sample *s, int chan)
+int set_sample(struct sample *s, int chan)
 {
 	/* can't use the 'sample' and 'note' values
 	 * from the MP_CONTROL struct in
@@ -593,8 +593,8 @@ int SetSample(struct sample *s, int chan)
 	 * from MikMod's internal format
 	 */
 	s->vol = mod->control[chan].outvolume;
-	s->ins = GetInstrument(mod->control[chan].row, 0);
-	s->note = GetNote(mod->control[chan].row, 0);
+	s->ins = get_instrument(mod->control[chan].row, 0);
+	s->note = get_note(mod->control[chan].row, 0);
 
 	if(!s->note)
 		s->ins = -1;
@@ -602,7 +602,7 @@ int SetSample(struct sample *s, int chan)
 }
 
 /* returns a new WAM structure containing all data necessary for the game */
-struct wam *LoadTrackData(void)
+struct wam *load_track_data(void)
 {
 	int x, oldSngPos, lineCount;
 	int lineTicker;
@@ -632,19 +632,19 @@ struct wam *LoadTrackData(void)
 		tracks[x].samples = malloc(sizeof(struct sample) * tracks[x].numSamples);
 		tracks[x].notes = malloc(sizeof(int) * tracks[x].numSamples);
 		tracks[x].channels = malloc(sizeof(int) * mod->numchn);
-		ClearTrack(&tracks[x], x);
+		clear_track(&tracks[x], x);
 		tracks[x].lastCol = -1;
 	}
 
 	Player_Mute(MUTE_INCLUSIVE, 0, mod->numchn-1);
-	oldHand = MikMod_RegisterPlayer(Handler);
+	oldHand = MikMod_RegisterPlayer(handler);
 	oldSngPos = -1;
 	lineCount = 0;
 	lineTicker = 0;
 
-	wam->numCols = WAM_MAX_TRACKS;
-	if(wam->numCols >= mod->numchn) wam->numCols = mod->numchn;
-	if(wam->numCols >= MAX_COLS) wam->numCols = MAX_COLS;
+	wam->num_cols = WAM_MAX_TRACKS;
+	if(wam->num_cols >= mod->numchn) wam->num_cols = mod->numchn;
+	if(wam->num_cols >= MAX_COLS) wam->num_cols = MAX_COLS;
 
 	Player_TogglePause(); /* start the mod again so we can read in data */
 	Log(("Starting row loop\n"));
@@ -653,7 +653,7 @@ struct wam *LoadTrackData(void)
 	{
 		if(!mod->vbtick)
 		{
-			if(wam->numRows >= rowsAlloced)
+			if(wam->num_rows >= rowsAlloced)
 			{
 				if(rowsAlloced == 0)
 				{
@@ -663,7 +663,7 @@ struct wam *LoadTrackData(void)
 				{
 					rowsAlloced <<= 2;
 				}
-				wam->rowData = (struct row*)realloc(wam->rowData, sizeof(struct row) * rowsAlloced);
+				wam->row_data = (struct row*)realloc(wam->row_data, sizeof(struct row) * rowsAlloced);
 			}
 
 			/* only designate one place the start of a
@@ -672,7 +672,7 @@ struct wam *LoadTrackData(void)
 			 */
 			if(!mod->patpos && mod->sngpos != oldSngPos)
 			{
-				wam->rowData[wam->numRows].line = 2;
+				wam->row_data[wam->num_rows].line = 2;
 				oldSngPos = mod->sngpos;
 				lineCount = 0;
 				lineTicker = 0;
@@ -690,37 +690,37 @@ struct wam *LoadTrackData(void)
 						/* extra -1 since we're holding
 						 * onto a note
 						 */
-						wam->rowData[wam->numRows-x-1].ticgrp = grpCount;
+						wam->row_data[wam->num_rows-x-1].ticgrp = grpCount;
 					}
 					numgrps = 0;
 					grpCount = 0;
 
-					wam->patterns = (struct pattern*)realloc(wam->patterns, sizeof(struct pattern) * (wam->numPats+1));
-					UpdateRowData(tracks, wam, startRow, wam->numPats);
+					wam->patterns = (struct pattern*)realloc(wam->patterns, sizeof(struct pattern) * (wam->num_pats+1));
+					update_row_data(tracks, wam, startRow, wam->num_pats);
 					update_progress(mod->sngpos, mod->numpos);
-					wam->numPats++;
-					startRow = wam->numRows;
+					wam->num_pats++;
+					startRow = wam->num_rows;
 					for(x=0;x<mod->numchn;x++)
 					{
-						ClearTrack(&tracks[x], x);
+						clear_track(&tracks[x], x);
 					}
 				}
 			}
 			else if(lineTicker >= 20 && (lineCount&3) == 0) {
-				wam->rowData[wam->numRows].line = 1;
+				wam->row_data[wam->num_rows].line = 1;
 				lineCount = 0;
 				lineTicker = 0;
 			}
-			else wam->rowData[wam->numRows].line = 0;
+			else wam->row_data[wam->num_rows].line = 0;
 
-			Log(("Sng: %i Pat: %i row: %i, alloc: %i\n", mod->sngpos, mod->patpos, wam->numRows, rowsAlloced));
-			wam->rowData[wam->numRows].bpm = mod->bpm;
-			wam->rowData[wam->numRows].sngspd = mod->sngspd;
-			wam->rowData[wam->numRows].ticpos = tickCount;
-			wam->rowData[wam->numRows].ticprt = grpCount;
-			wam->rowData[wam->numRows].patpos = mod->patpos;
-			wam->rowData[wam->numRows].sngpos = mod->sngpos;
-			wam->rowData[wam->numRows].time = time;
+			Log(("Sng: %i Pat: %i row: %i, alloc: %i\n", mod->sngpos, mod->patpos, wam->num_rows, rowsAlloced));
+			wam->row_data[wam->num_rows].bpm = mod->bpm;
+			wam->row_data[wam->num_rows].sngspd = mod->sngspd;
+			wam->row_data[wam->num_rows].ticpos = tickCount;
+			wam->row_data[wam->num_rows].ticprt = grpCount;
+			wam->row_data[wam->num_rows].patpos = mod->patpos;
+			wam->row_data[wam->num_rows].sngpos = mod->sngpos;
+			wam->row_data[wam->num_rows].time = time;
 			tickCount += mod->sngspd;
 			grpCount += mod->sngspd;
 			time += BpmToSec(mod->sngspd, mod->bpm);
@@ -735,7 +735,7 @@ struct wam *LoadTrackData(void)
 				Log(("A: %i\n", grpCount));
 				for(x=0;x<numgrps;x++)
 				{
-					wam->rowData[wam->numRows-x].ticgrp = grpCount;
+					wam->row_data[wam->num_rows-x].ticgrp = grpCount;
 				}
 				numgrps = 0;
 				grpCount = 0;
@@ -745,22 +745,22 @@ struct wam *LoadTrackData(void)
 
 			for(x=0;x<mod->numchn;x++)
 			{
-				ins = SetSample(tracks[x].samples+tracks[x].trklen, x);
+				ins = set_sample(tracks[x].samples+tracks[x].trklen, x);
 				/* some confusing logic ahead :)
-				 * basically it clears the isEmpty var
+				 * basically it clears the is_empty var
 				 * if an instrument is used, and ensures that
 				 * singleIns is set to the single instrument
 				 * used if there is only one instrument.  If
 				 * more than one is used or the track is empty,
-				 * it is set to -1 (ClearTrack() sets it to
+				 * it is set to -1 (clear_track() sets it to
 				 * -1 when to start, and is not modified when
 				 * it's empty)
 				 */
 				if(ins != -1)
 				{
-					if(tracks[x].isEmpty)
+					if(tracks[x].is_empty)
 					{
-						tracks[x].isEmpty = 0;
+						tracks[x].is_empty = 0;
 						tracks[x].singleIns = ins;
 					}
 					else
@@ -778,17 +778,17 @@ struct wam *LoadTrackData(void)
 					tracks[x].notes = (int*)realloc(tracks[x].notes, sizeof(int) * tracks[x].numSamples);
 				}
 			}
-			wam->numRows++;
+			wam->num_rows++;
 		}
 		Player_HandleTick();
-		wam->numTics++;
+		wam->num_tics++;
 	}
-	wam->patterns = (struct pattern*)realloc(wam->patterns, sizeof(struct pattern) * (wam->numPats+1));
-	UpdateRowData(tracks, wam, startRow, wam->numPats);
+	wam->patterns = (struct pattern*)realloc(wam->patterns, sizeof(struct pattern) * (wam->num_pats+1));
+	update_row_data(tracks, wam, startRow, wam->num_pats);
 	update_progress(mod->sngpos, mod->numpos);
 	end_progress_meter();
-	wam->numPats++;
-	wam->songLength = time;
+	wam->num_pats++;
+	wam->song_length = time;
 	Log(("Row loop done\n"));
 
 	oldHand = MikMod_RegisterPlayer(oldHand);
@@ -803,59 +803,59 @@ struct wam *LoadTrackData(void)
 	return wam;
 }
 
-void WriteCol(int fno, struct column *col)
+void write_col(int fno, struct column *col)
 {
 	write(fno, &col->numchn, sizeof(int));
 	write(fno, col->chan, sizeof(int) * col->numchn);
 }
 
-int SaveWam(struct wam *wam, const char *wamFile)
+int save_wam(struct wam *wam, const char *wam_file)
 {
 	int x;
 	int y;
 	int fno;
-	fno = open(wamFile, O_CREAT | O_WRONLY | O_BINARY, 0644);
+	fno = open(wam_file, O_CREAT | O_WRONLY | O_BINARY, 0644);
 	if(fno == -1)
 	{
-		ELog(("Error opening '%s'\n", wamFile));
+		ELog(("Error opening '%s'\n", wam_file));
 		Error("Opening Wam for write.");
 		return 0;
 	}
 	write(fno, WAM_MAGIC, WAM_MAGIC_LEN);
-	write(fno, &wam->numCols, sizeof(int));
-	write(fno, &wam->numTics, sizeof(int));
-	write(fno, &wam->numPats, sizeof(int));
-	write(fno, &wam->numRows, sizeof(int));
-	write(fno, &wam->songLength, sizeof(double));
-	for(x=0;x<wam->numPats;x++)
+	write(fno, &wam->num_cols, sizeof(int));
+	write(fno, &wam->num_tics, sizeof(int));
+	write(fno, &wam->num_pats, sizeof(int));
+	write(fno, &wam->num_rows, sizeof(int));
+	write(fno, &wam->song_length, sizeof(double));
+	for(x=0;x<wam->num_pats;x++)
 	{
-		for(y=0;y<wam->numCols;y++)
+		for(y=0;y<wam->num_cols;y++)
 		{
-			WriteCol(fno, &wam->patterns[x].columns[y]);
+			write_col(fno, &wam->patterns[x].columns[y]);
 		}
-		WriteCol(fno, &wam->patterns[x].unplayed);
+		write_col(fno, &wam->patterns[x].unplayed);
 	}
-	write(fno, wam->rowData, sizeof(struct row) * wam->numRows);
+	write(fno, wam->row_data, sizeof(struct row) * wam->num_rows);
 	close(fno);
 	return 1;
 }
 
-struct wam *CreateWam(const char *modFile)
+struct wam *create_wam(const char *file)
 {
 	struct wam *wam;
 
-	if(start_module(modFile))
+	if(start_module(file))
 	{
 		ELog(("Error: Couldn't start module.\n"));
 		return NULL;
 	}
 	Log(("Loading track data...\n"));
-	wam = LoadTrackData();
+	wam = load_track_data();
 	stop_module();
 	return wam;
 }
 
-void ReadCol(int fno, struct column *col)
+void read_col(int fno, struct column *col)
 {
 	read(fno, &col->numchn, sizeof(int));
 	if(col->numchn)
@@ -869,34 +869,34 @@ void ReadCol(int fno, struct column *col)
 	}
 }
 
-/** Loads the @a modFile and creates and writes the appropriate WamFile
- * @param modFile filename of the mod
+/** Loads the @a file and creates and writes the appropriate WamFile
+ * @param file filename of the mod
  * @returns 1 if successful, 0 on failure
  */
-int write_wam(const char *modFile)
+int write_wam(const char *file)
 {
 	struct wam *wam;
-	char *wamFile;
+	char *wam_file;
 
-	wam = CreateWam(modFile);
+	wam = create_wam(file);
 	if(wam == NULL) {
 		ELog(("Error: Couldn't create wam file.\n"));
 		return 0;
 	}
 
-	wamFile = Mod2Wam(modFile);
-	Log(("Write MOD: %s\nWAM: %s\n", modFile, wamFile));
-	if(!SaveWam(wam, wamFile)) {
+	wam_file = mod_to_wam(file);
+	Log(("Write MOD: %s\nWAM: %s\n", file, wam_file));
+	if(!save_wam(wam, wam_file)) {
 		ELog(("Error: Couldn't save wam. Make sure the wam/ directory in the data directory: '%s' is writeable\n", MARFDATADIR));
-		free(wamFile);
+		free(wam_file);
 		return 0;
 	}
 
-	free(wamFile);
+	free(wam_file);
 	return 1;
 }
 
-struct wam *ReadWam(const char *wamFile)
+struct wam *read_wam(const char *wam_file)
 {
 	int x;
 	int y;
@@ -904,7 +904,7 @@ struct wam *ReadWam(const char *wamFile)
 	char magic[WAM_MAGIC_LEN];
 	struct wam *wam;
 
-	fno = open(wamFile, O_RDONLY | O_BINARY);
+	fno = open(wam_file, O_RDONLY | O_BINARY);
 	if(fno == -1)
 		return NULL;
 	read(fno, magic, WAM_MAGIC_LEN);
@@ -914,64 +914,64 @@ struct wam *ReadWam(const char *wamFile)
 	}
 	Log(("Loading wam\n"));
 	wam = malloc(sizeof(struct wam));
-	read(fno, &wam->numCols, sizeof(int));
-	read(fno, &wam->numTics, sizeof(int));
-	read(fno, &wam->numPats, sizeof(int));
-	read(fno, &wam->numRows, sizeof(int));
-	read(fno, &wam->songLength, sizeof(double));
-	Log(("Main info read: %i cols, %i tics, %i pats, %i rows\n", wam->numCols, wam->numTics, wam->numPats, wam->numRows));
-	wam->patterns = malloc(sizeof(struct pattern) * wam->numPats);
-	wam->rowData = malloc(sizeof(struct row) * wam->numRows);
-	for(x=0;x<wam->numPats;x++)
+	read(fno, &wam->num_cols, sizeof(int));
+	read(fno, &wam->num_tics, sizeof(int));
+	read(fno, &wam->num_pats, sizeof(int));
+	read(fno, &wam->num_rows, sizeof(int));
+	read(fno, &wam->song_length, sizeof(double));
+	Log(("Main info read: %i cols, %i tics, %i pats, %i rows\n", wam->num_cols, wam->num_tics, wam->num_pats, wam->num_rows));
+	wam->patterns = malloc(sizeof(struct pattern) * wam->num_pats);
+	wam->row_data = malloc(sizeof(struct row) * wam->num_rows);
+	for(x=0;x<wam->num_pats;x++)
 	{
-		for(y=0;y<wam->numCols;y++)
+		for(y=0;y<wam->num_cols;y++)
 		{
-			ReadCol(fno, &wam->patterns[x].columns[y]);
+			read_col(fno, &wam->patterns[x].columns[y]);
 		}
-		ReadCol(fno, &wam->patterns[x].unplayed);
+		read_col(fno, &wam->patterns[x].unplayed);
 	}
 	Log(("Patterns read\n"));
-	read(fno, wam->rowData, sizeof(struct row) * wam->numRows);
+	read(fno, wam->row_data, sizeof(struct row) * wam->num_rows);
 	Log(("Rows read\n"));
 	close(fno);
 
 	return wam;
 }
 
-/** Loads the wam related to the @a modFile and returns it.  Must be freed
+/** Loads the wam related to the @a file and returns it.  Must be freed
  * later by free_wam
- * @param modFile The filename of the mod
+ * @param file The filename of the mod
  * @return The wam for the mod file
  */
-struct wam *load_wam(const char *modFile)
+struct wam *load_wam(const char *file)
 {
 	struct wam *wam;
-	char *wamFile;
+	char *wam_file;
 
-	wamFile = Mod2Wam(modFile);
-	Log(("Load MOD: %s\nWAM: %s\n", modFile, wamFile));
+	wam_file = mod_to_wam(file);
+	Log(("Load MOD: %s\nWAM: %s\n", file, wam_file));
 
 	/* the first time we try to load the file we create it
 	 * if it doesn't exist
 	 */
-	wam = ReadWam(wamFile);
+	wam = read_wam(wam_file);
 	if(wam == NULL) {
 		/* If we couldn't read the wam, create one in memory and try
 		 * to save it. Failure to save is not an error, since we can
 		 * just recreate the wam next time (it will just be slower)
 		 */
-		wam = CreateWam(modFile);
+		wam = create_wam(file);
 		if(wam == NULL) {
 			ELog(("Error: Couldn't create wam file\n"));
-			free(wamFile);
+			free(wam_file);
 			return 0;
 		}
-		if(!SaveWam(wam, wamFile)) {
+		if(!save_wam(wam, wam_file)) {
 			ELog(("Error: Couldn't save wam. Make sure the wam/ directory in the data directory: '%s' is writeable\n", MARFDATADIR));
 		}
 	}
 
-	free(wamFile);
+	free(wam_file);
 	return wam;
 }
 
@@ -980,9 +980,9 @@ void free_wam(struct wam *wam)
 {
 	int x, y;
 	Log(("Freeing Wam\n"));
-	for(x=0;x<wam->numPats;x++)
+	for(x=0;x<wam->num_pats;x++)
 	{
-		for(y=0;y<wam->numCols;y++)
+		for(y=0;y<wam->num_cols;y++)
 		{
 			if(wam->patterns[x].columns[y].numchn)
 				free(wam->patterns[x].columns[y].chan);
@@ -991,7 +991,7 @@ void free_wam(struct wam *wam)
 			free(wam->patterns[x].unplayed.chan);
 	}
 	free(wam->patterns);
-	free(wam->rowData);
+	free(wam->row_data);
 	free(wam);
 	Log(("Wam freed\n"));
 }
@@ -1004,7 +1004,7 @@ int wam_rowindex(const struct wam *wam, int row)
 {
 	if(row < 0)
 		return 0;
-	if(row >= wam->numRows)
-		return wam->numRows - 1;
+	if(row >= wam->num_rows)
+		return wam->num_rows - 1;
 	return row;
 }

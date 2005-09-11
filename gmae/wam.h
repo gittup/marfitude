@@ -48,7 +48,7 @@ struct column {
  * be played at multiple song positions)
  */
 struct pattern {
-	struct column columns[MAX_COLS]; /**< numCols columns */
+	struct column columns[MAX_COLS]; /**< num_cols columns */
 	struct column unplayed;          /**< contains all the channels not
 	                                  * represented by the other columns
 					  */
@@ -80,20 +80,20 @@ struct row {
  * all the note data necessary to figure out how to play the song.
  */
 struct wam {
-	int numCols;                /**< number of columns in the song,
-				     * <= mod->numchn
-				     */
-	int numTics;                /**< number of ticks in the song */
-	int numPats;                /**< number of patterns */
-	int numRows;                /**< number of rows */
-	double songLength;          /**< length of the song, in seconds */
-	struct pattern *patterns;   /**< numPats Patterns */
-	struct row *rowData;        /**< numRows Rows */
+	int num_cols;                /**< number of columns in the song,
+				      * <= mod->numchn
+				      */
+	int num_tics;                /**< number of ticks in the song */
+	int num_pats;                /**< number of patterns */
+	int num_rows;                /**< number of rows */
+	double song_length;          /**< length of the song, in seconds */
+	struct pattern *patterns;    /**< num_pats Patterns */
+	struct row *row_data;        /**< num_rows Rows */
 };
 
 void free_wam(struct wam *wam);
-int write_wam(const char *modFile);
-struct wam *load_wam(const char *modFile);
+int write_wam(const char *file);
+struct wam *load_wam(const char *file);
 int wam_rowindex(const struct wam *wam, int row);
 
-#define wam_row(wam, row) (&(wam)->rowData[wam_rowindex(wam, row)])
+#define wam_row(wam, row) (&(wam)->row_data[wam_rowindex(wam, row)])
