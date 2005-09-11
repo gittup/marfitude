@@ -174,7 +174,6 @@ static void option_menu_quit(void);
 static void option_menu(void);
 static void MenuBack(int);
 static void RegisterMenuEvents(void);
-static void ShowMenu(const void *);
 static void HideMenu(void);
 static int NullMenuInit(void);
 static void NullMenuQuit(void);
@@ -794,15 +793,13 @@ void RegisterMenuEvents(void)
 	register_event("enter", MenuActivate);
 }
 
-void ShowMenu(const void *data)
+void show_menu(int player)
 {
 	struct menu_e m;
-	const struct button_e *b = data;
 
 	if(menuActive) return;
-	if(b->button != B_MENU) return;
 
-	menu_player = b->player;
+	menu_player = player;
 	RegisterMenuEvents();
 	MPlaySound(snd_push);
 	m.active = 1;
@@ -840,13 +837,11 @@ int NoMenuInit(void)
 	input_mode(GAME);
 	HideMenu();
 	menu_player = -1;
-	register_event("button", ShowMenu);
 	return 0;
 }
 
 void NoMenuQuit(void)
 {
-	deregister_event("button", ShowMenu);
 }
 
 void NoMenu(void)
@@ -1167,7 +1162,6 @@ int option_menu_init(void)
 	struct button *b;
 	int i;
 	int fullscreen;
-	int players = cfg_get_int("main", "players", 1);
 	int difficulty = cfg_get_int("main", "difficulty", 1);
 	struct slider *buffer;
 	int width, height;
@@ -1176,7 +1170,6 @@ int option_menu_init(void)
 	SDL_Rect **modes;
 
 	if(!menuActive) RegisterMenuEvents();
-	CreateSlider(mainMenu, "Players", c, 1, 4, 1, players);
 
 	s = CreateSlider(mainMenu, "Difficulty", c, 0, 3, 1, difficulty);
 	name_slider_item(mainMenu, s, 0, "Muffins & Lollipops");
@@ -1250,27 +1243,27 @@ int option_menu_init(void)
 
 void option_menu_quit(void)
 {
+	int i = 0;
 	struct slider *s;
 	int width, height;
 	int buffersize;
 	int restart_audio = 0;
 	int restart_video = 0;
 
-	s = (struct slider*)mainMenu->items[0].item;
-	cfg_set_int("main", "players", s->val);
-
-	s = (struct slider*)mainMenu->items[1].item;
+	s = (struct slider*)mainMenu->items[i].item;
 	cfg_set_int("main", "difficulty", s->val);
+	i++;
 
-	s = (struct slider*)mainMenu->items[2].item;
+	s = (struct slider*)mainMenu->items[i].item;
 	if(cfg_eq("video", "fullscreen", "yes") ^ s->val) {
 		cfg_set("video", "fullscreen", s->val ? "yes" : "no");
 		restart_video = 1;
 	}
+	i++;
 
 	width = cfg_get_int("video", "width", 640);
 	height = cfg_get_int("video", "height", 480);
-	s = (struct slider*)mainMenu->items[3].item;
+	s = (struct slider*)mainMenu->items[i].item;
 	if(width != video_modes[s->val].width || height != video_modes[s->val].height) {
 		cfg_set_int("video", "width", video_modes[s->val].width);
 		cfg_set_int("video", "height", video_modes[s->val].height);
@@ -1278,13 +1271,15 @@ void option_menu_quit(void)
 		restart_video = 1;
 
 	}
+	i++;
 
 	buffersize = cfg_get_int("sound", "buffersize", 512);
-	s = (struct slider*)mainMenu->items[4].item;
+	s = (struct slider*)mainMenu->items[i].item;
 	if(buffersize != s->val) {
 		cfg_set_int("sound", "buffersize", s->val);
 		restart_audio = 1;
 	}
+	i++;
 
 	if(restart_audio || restart_video) {
 		quit_sounds();

@@ -32,6 +32,7 @@ struct menu {
 const struct menu *active_menu(void);
 int is_menu_active(void);
 int switch_menu(int menu);
+void show_menu(int player);
 
 /** Data for the "menu" event */
 struct menu_e {
