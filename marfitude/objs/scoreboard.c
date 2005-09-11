@@ -29,15 +29,18 @@ void draw_scoreboard(const void *data)
 	int highscore = marfitude_get_highscore();
 	int p;
 	int x1, x2, y1, y2;
+	int difficulty;
 
 	if(data) {}
 
 	marfitude_get_pos(&pos);
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 
+	difficulty = marfitude_get_difficulty();
+
 	print_gl(50, 0, "Playing: %s", mod->songname);
 	if(pos.row_index == wam->num_rows) {
-		print_gl(50, 15, "Song complete!");
+		print_gl(50, 45, "Song complete!");
 		for(p=0; p<marfitude_num_players(); p++) {
 			ps = marfitude_get_player(p);
 			if(ps->score.score > highscore) {
@@ -46,11 +49,11 @@ void draw_scoreboard(const void *data)
 		}
 	} else if(pos.row_index < 0) {
 		int timeLeft = (int)(- BpmToSec(wam->row_data[0].sngspd, wam->row_data[0].bpm) * (double)pos.row_index);
-		if(timeLeft > 0) print_gl(50, 15, "%i...", timeLeft);
-		else print_gl(50, 15, "GO!!");
+		if(timeLeft > 0) print_gl(50, 45, "%i...", timeLeft);
+		else print_gl(50, 45, "GO!!");
 	}
-	print_gl(50, 30, "Speed: %2i/%i at %i\n", mod->vbtick, mod->sngspd, mod->bpm);
-	glColor4f(1.0, 1.0, 1.0, 1.0);
+	print_gl(50, 15, "Difficulty: %i", difficulty);
+	print_gl(50, 30, "Speed: %2i/%i at %i", mod->vbtick, mod->sngspd, mod->bpm);
 	if(highscore) {
 		print_gl(300, 15, "Highscore: %i", highscore);
 	}
