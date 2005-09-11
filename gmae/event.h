@@ -29,16 +29,14 @@ typedef void (*event_handler)(const void *);
 /** A list of event structures */
 struct event_handler {
 	event_handler handler;       /**< The function to call on an event */
-	int registered;              /**< 1 if this handler is registered */
-	struct event_handler *next;  /**< Next handler in the list */
+	int ref_count;               /**< Number of references to the handler */
 };
 
 /** An event - relates a name to a set of event handlers */
 struct event {
-	char *name;                     /**< The name of the event */
-	int fired;                      /**< Number of times its been fired */
-	struct event_handler *handlers; /**< The first handler in the list */
-	struct event *next;             /**< Next event in the list */
+	char *name;             /**< The name of the event */
+	int fired;              /**< Number of times its been fired */
+	struct slist *handlers; /**< The list of event handlers */
 };
 
 void fire_event(const char *event, const void *data);

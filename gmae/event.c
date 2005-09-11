@@ -35,7 +35,7 @@
 static struct event *find_event(const char *);
 static void chk_event(struct event *e);
 
-static struct event *events = NULL;
+static struct slist *events = NULL;
 
 /** Returns the struct event if one exists for @a s, or creates a new
  * struct event and returns that. Can be used with handle_event() as a
@@ -50,8 +50,7 @@ struct event *get_event(const char *s)
 		e->name = string_copy(s);
 		e->handlers = NULL;
 		e->fired = 0;
-		e->next = events;
-		events = e;
+		events = slist_insert(events, e);
 	}
 	return e;
 }
@@ -60,14 +59,14 @@ struct event *get_event(const char *s)
 struct event *find_event(const char *s)
 {
 	struct event *e;
-	e = events;
-	while(e != NULL) {
+	struct slist *t;
+	slist_foreach(t, events) {
+		e = t->data;
 		if(strcmp(s, e->name) == 0) {
 			return e;
 		}
-		e = e->next;
 	}
-	return e;
+	return NULL;
 }
 
 /** Fires the event named @a event, passing the event-specific @a data */
@@ -90,16 +89,26 @@ void handle_event(struct event *e, const void *data)
 	struct slist *t;
 
 	e->fired++;
-	h = e->handlers;
-	while(h != NULL) {
-		if(h->registered)
-			tmp = slist_insert(tmp, h);
-		h = h->next;
+	slist_foreach(t, e->handlers) {
+		h = t->data;
+		tmp = slist_insert(tmp, h);
+		h->ref_count++;
 	}
 
 	slist_foreach(t, tmp) {
 		h = t->data;
-		h->handler(data);
+		/* Fire if there's more than just the ref_count we added above.
+		 * This means the event is still registered, since the count
+		 * is only decremented on deregister.
+		 */
+		if(h->ref_count > 1) {
+			h->handler(data);
+		}
+		h->ref_count--;
+		if(h->ref_count == 0) {
+			e->handlers = slist_remove(e->handlers, h);
+			free(h);
+		}
 	}
 	slist_free(tmp);
 }
@@ -118,22 +127,16 @@ void register_event(const char *event, event_handler handler)
 	struct event_handler *h;
 
 	e = get_event(event);
-	h = e->handlers;
-	while(h != NULL && h->registered)
-		h = h->next;
-
-	if(h == NULL) {
-		h = malloc(sizeof(struct event_handler));
-		h->next = e->handlers;
-		e->handlers = h;
-	}
+	h = malloc(sizeof(struct event_handler));
+	e->handlers = slist_insert(e->handlers, h);
 	h->handler = handler;
-	h->registered = 1;
+	h->ref_count = 1;
 }
 
 /** Deregisters the @a handler from the event named @a event. */
 void deregister_event(const char *event, event_handler handler)
 {
+	struct slist *t;
 	struct event *e;
 	struct event_handler *h;
 
@@ -142,34 +145,32 @@ void deregister_event(const char *event, event_handler handler)
 		ELog(("Error: %s not available for deregister.\n", event));
 		return;
 	}
-	h = e->handlers;
-	while(h != NULL) {
+	slist_foreach(t, e->handlers) {
+		h = t->data;
 		if(h->handler == handler) {
-			h->registered = 0;
-			break;
+			h->ref_count--;
+			if(h->ref_count == 0) {
+				e->handlers = slist_remove(e->handlers, h);
+				free(h);
+			}
+			return;
 		}
-		h = h->next;
 	}
-	if(h == NULL)
-		ELog(("Error: %s not available for deregister.\n", event));
+	ELog(("Error: %s not available for deregister.\n", event));
 }
 
 void chk_event(struct event *e)
 {
+	struct slist *t;
 	struct event_handler *h;
-	int num_handlers = 0;
 
-	h = e->handlers;
-	while(h != NULL) {
-		if(h->registered) {
-			printf("Event \"%s\" is still registered.\n", e->name);
-		}
-		h = h->next;
-		free(e->handlers);
-		e->handlers = h;
-		num_handlers++;
+	slist_foreach(t, e->handlers) {
+		h = t->data;
+		printf("Event \"%s\" is still registered.\n", e->name);
+		free(h);
 	}
-	printf("Event: %18s %11i      %11i\n", e->name, e->fired, num_handlers);
+	slist_free(e->handlers);
+	printf("Event: %18s %11i\n", e->name, e->fired);
 }
 
 /** All the struct events are kept around for the life of the program. This
@@ -177,15 +178,16 @@ void chk_event(struct event *e)
  */
 void quit_events(void)
 {
-	struct event *e = events;
+	struct slist *t;
+	struct event *e;
 
-	printf("       --- Free Event --- Times Fired --- Max Handlers ---\n");
-	/* Free the first event in the list */
-	while(e != NULL) {
+	printf("       --- Free Event --- Times Fired ---\n");
+	slist_foreach(t, events) {
+		e = t->data;
 		chk_event(e);
 		free(e->name);
 		free(e);
-		e = events->next;
-		events = e;
 	}
+	slist_free(events);
+	events = NULL;
 }
