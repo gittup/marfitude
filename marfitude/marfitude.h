@@ -106,6 +106,7 @@ const struct marfitude_score *marfitude_get_score(int player);
 int marfitude_get_highscore(void);
 int marfitude_get_local_highscore(void);
 int marfitude_num_players(void);
+int marfitude_get_difficulty(void);
 const struct slist *marfitude_get_notes(void);
 const struct slist *marfitude_get_hitnotes(void);
 const struct marfitude_attack_col *marfitude_get_ac(void);

@@ -238,7 +238,15 @@ int main_init()
 	Log(("Module ready\n"));
 
 	difficulty = cfg_get_int("main", "difficulty", 1);
+	if(difficulty < 0)
+		difficulty = 0;
+	if(difficulty > 3)
+		difficulty = 3;
 	num_players = cfg_get_int("main", "players", 1);
+	if(num_players < 1)
+		num_players = 1;
+	if(num_players > 4)
+		num_players = 4;
 	highscore = cfg_get_int("highscore", cursong, 0);
 
 	tickCounter = 0;
@@ -1041,6 +1049,12 @@ int marfitude_get_local_highscore(void)
 int marfitude_num_players(void)
 {
 	return num_players;
+}
+
+/** Gets the current difficulty */
+int marfitude_get_difficulty(void)
+{
+	return difficulty;
 }
 
 /** Returns a slist of the notes to play */
