@@ -25,6 +25,7 @@
 #include "SDL_image.h"
 
 #include "textures.h"
+#include "event.h"
 #include "glfunc.h"
 #include "log.h"
 #include "sdlfatalerror.h"
@@ -32,6 +33,7 @@
 #include "util/memtest.h"
 #include "util/textprogress.h"
 #include "util/flist.h"
+#include "util/slist.h"
 #include "util/strfunc.h"
 
 /** The directory where .png files are located */
@@ -48,16 +50,28 @@
  */
 
 /** Maps a filename to an OpenGL texture */
-struct tex_entry {
+struct png_tex_entry {
 	GLuint texture; /**< The texture number assigned by glGenTextures */
 	char *name;     /**< The name of the texture (set to the filename) */
 };
 
-static struct tex_entry *textures = NULL;
-static int texInited = 0;
-static int num_textures = 0;
+struct tex_entry {
+	int *tex;   /**< A pointer to the texture handle */
+	int width;  /**< The width of the texture (power of 2!) */
+	int height; /**< The height of the texture (power of 2!) */
+	void (*draw)(void *, int); /**< The draw function. Arguments are the
+				    * pixel data and the pitch in bytes.
+				    */
+};
 
+static void recreate_textures(const void *);
 static int valid_png_file(const char *s);
+static void create_texture_internal(struct tex_entry *entry);
+
+static struct png_tex_entry *textures = NULL;
+static struct slist *texlist = NULL;
+static int tex_inited = 0;
+static int num_textures = 0;
 
 int valid_png_file(const char *s)
 {
@@ -75,33 +89,54 @@ int valid_png_file(const char *s)
  * @a draw is called with the pixels and the line pitch in bytes. The @a draw
  * function should write to the pixels data, assuming it points to a buffer
  * of @a width x @a height in size, and has 32 bits per pixel (includes
- * alpha channel).
+ * alpha channel). The integer @a tex is filled with the OpenGL texture number
+ * (for use in glBindTexture).
+ *
+ * When SDL is reinitialized, create_texture will be called again automatically
+ * with all textures that have been previously initialized. Thus it is possible
+ * that the value of @a tex will change after SDL re-initializes. Also note
+ * that this means that the @a draw function can be called more than once
+ * during the program execution.
+ *
+ * @param tex A pointer to the texture number, to be filled by this function.
  * @param width The width of the texture (must be power of 2)
  * @param height The height of the texture (must be power of 2)
  * @param draw The function to draw the texture. The first argument is the
- *             buffer to draw to, the second argument is the pitch.
- * @return The OpenGL texture number from glGenTextures. You should call
- *         glDeleteTextures on it when you're done.
+ *             buffer to draw to, the second argument is the pitch (in bytes).
  */
-GLuint create_texture(int width, int height, void (*draw)(void *, int))
+void create_texture(int *tex, int width, int height, void (*draw)(void *, int))
+{
+	struct tex_entry *entry;
+
+	entry = malloc(sizeof(struct tex_entry));
+	entry->tex = tex;
+	entry->width = width;
+	entry->height = height;
+	entry->draw = draw;
+	texlist = slist_insert(texlist, entry);
+	create_texture_internal(entry);
+}
+
+void create_texture_internal(struct tex_entry *entry)
 {
 	SDL_Surface *s;
-	GLuint tex;
+	GLuint gtex;
 
-	s = SDL_CreateRGBSurface(0, width, height, 32, MASKS);
+	s = SDL_CreateRGBSurface(0, entry->width, entry->height, 32, MASKS);
 	if(!s) {
 		ELog(("ERROR: Couldn't create SDL Surface!\n"));
-		return 0;
+		*(entry->tex) = 0;
+		return;
 	}
-	draw(s->pixels, s->pitch);
-	glGenTextures(1, &tex);
-	glBindTexture(GL_TEXTURE_2D, tex);
+	entry->draw(s->pixels, s->pitch);
+	glGenTextures(1, &gtex);
+	glBindTexture(GL_TEXTURE_2D, gtex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, 4, s->w, s->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, s->pixels);
 
 	SDL_FreeSurface(s);
-	return tex;
+	*(entry->tex) = (int)gtex;
 }
 
 /** Loads the texture @a filename and returns the OpenGL texture number
@@ -171,9 +206,11 @@ int init_textures(void)
 	struct flist f;
 	SDL_Surface *s;
 
+	register_event("sdl re-init", recreate_textures);
+
 	flist_foreach(&f, TEXDIR) {
 		if(valid_png_file(f.filename)) {
-			textures = (struct tex_entry*)realloc(textures, sizeof(struct tex_entry) * (num_textures+1));
+			textures = (struct png_tex_entry*)realloc(textures, sizeof(struct png_tex_entry) * (num_textures+1));
 			textures[num_textures].name = malloc(strlen(f.filename) + 1);
 			strcpy(textures[num_textures].name, f.filename);
 			glGenTextures(1, &textures[num_textures].texture);
@@ -182,7 +219,7 @@ int init_textures(void)
 	}
 
 	/* This just means the memory is allocated */
-	texInited = 1;
+	tex_inited = 1;
 
 	progress_meter("Loading textures");
 	for(x=0;x<num_textures;x++) {
@@ -224,7 +261,10 @@ int init_textures(void)
 void quit_textures(void)
 {
 	int x;
-	if(!texInited) return;
+	if(!tex_inited) return;
+
+	deregister_event("sdl re-init", recreate_textures);
+
 	for(x=0;x<num_textures;x++) {
 		free(textures[x].name);
 		glDeleteTextures(1, &textures[x].texture);
@@ -232,7 +272,17 @@ void quit_textures(void)
 	free(textures);
 	textures = NULL;
 	num_textures = 0;
-	texInited = 0;
+	tex_inited = 0;
 	printf("Textures shutdown\n");
 	return;
+}
+
+void recreate_textures(const void *data)
+{
+	struct slist *t;
+
+	if(data) {}
+	slist_foreach(t, texlist) {
+		create_texture_internal(t->data);
+	}
 }
