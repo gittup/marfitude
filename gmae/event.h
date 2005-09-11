@@ -19,9 +19,6 @@
 
 /** @file
  * Handles event registration/firing.
- *
- * This file also provides a mechanism to register with named events and fire
- * them.
  */
 
 /** All functions that will be registered for events must be of this type.
