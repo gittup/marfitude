@@ -66,7 +66,6 @@ void draw_target(void)
 void draw_targets(const void *data)
 {
 	int x;
-	int p;
 	int z;
 	const struct marfitude_player *ps;
 	const struct marfitude_attack_col *ac = marfitude_get_ac();
@@ -75,10 +74,9 @@ void draw_targets(const void *data)
 	if(data) {}
 	marfitude_get_pos(&pos);
 
-	for(p=0; p<marfitude_num_players(); p++) {
+	marfitude_foreach_player(ps) {
 		struct slist *t;
 
-		ps = marfitude_get_player(p);
 		z = 0;
 		slist_foreach(t, ac[ps->channel].ps) {
 			if(t->data == ps)
@@ -96,15 +94,15 @@ void draw_targets(const void *data)
 				n = 2;
 			if(x == 1)
 				n = 1;
-			glBindTexture(GL_TEXTURE_2D, target_tex[p]);
+			glBindTexture(GL_TEXTURE_2D, target_tex[ps->num]);
 			glColor4f(1.0, 1.0, 1.0, 1.0);
 			draw_target();
 
-			if(flare[p][n] > 0.0) {
+			if(flare[ps->num][n] > 0.0) {
 				glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 				glBindTexture(GL_TEXTURE_2D, light_tex);
 				glDisable(GL_DEPTH_TEST);
-				glColor4f(1.0, 1.0, 1.0, flare[p][n]);
+				glColor4f(1.0, 1.0, 1.0, flare[ps->num][n]);
 				draw_target();
 				draw_target();
 				glEnable(GL_DEPTH_TEST);
@@ -116,11 +114,11 @@ void draw_targets(const void *data)
 		glPopMatrix();
 	}
 
-	for(p=0; p<marfitude_num_players(); p++) {
+	marfitude_foreach_player(ps) {
 		for(x=0; x<MAX_NOTE+1; x++) {
-			flare[p][x] -= timeDiff * 7.0;
-			if(flare[p][x] < 0.0)
-				flare[p][x] = 0.0;
+			flare[ps->num][x] -= timeDiff * 7.0;
+			if(flare[ps->num][x] < 0.0)
+				flare[ps->num][x] = 0.0;
 		}
 	}
 }

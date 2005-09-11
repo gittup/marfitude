@@ -52,20 +52,17 @@ void victory(const void *data)
 	const struct wam *wam = marfitude_get_wam();
 	const struct marfitude_player *ps;
 	int num = 0;
-	int p;
 	int x;
 
-	for(p=0; p<marfitude_num_players(); p++) {
-		ps = marfitude_get_player(p);
+	marfitude_foreach_player(ps) {
 		if(ps->score.score == score)
 			num++;
 	}
 
-	for(p=0; p<marfitude_num_players(); p++) {
-		ps = marfitude_get_player(p);
+	marfitude_foreach_player(ps) {
 		if(ps->score.score == score) {
 			for(x=0; x<48 / num; x++) {
-				const float *c = get_player_color(p);
+				const float *c = get_player_color(ps->num);
 				pos.tic = wam->row_data[wam->num_rows - 1].ticpos;
 				pos.channel = x % wam->num_cols;
 				explosion_particle(&pos, c);

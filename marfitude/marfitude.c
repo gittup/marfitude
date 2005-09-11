@@ -66,6 +66,11 @@ static int difficulty = 0;
 /** Find the max of a and b. Usual macro warnings apply */
 #define Max(a, b) ((a) > (b) ? (a) : (b))
 
+/** Iterate through each player, for internal marfitude use. Essentially a
+ * non-const version of marfitude_foreach_player.
+ */
+#define foreach_player(ps) for(ps=get_player(NULL); ps != NULL; ps=get_player(ps))
+
 static int curTic; /* tick counter from 0 - total ticks in the song */
 static int firstVb, curVb, lastVb;     /* tick counters for the three rows */
 static int firstRow, rowIndex, lastRow;  /* first row on screen, current row
@@ -94,6 +99,7 @@ static void UpdateClearedCols(void);
 static void UpdatePosition(void);
 static int NearRow(void);
 static struct marfitude_note *FindNote(struct slist *list, int tic, int col);
+static struct marfitude_player *get_player(struct marfitude_player *player);
 static int get_clear_column(int start, int skip_lines);
 static void FixVb(int *vb, int *row);
 static void TickHandler(void);
@@ -117,7 +123,7 @@ static int local_high; /* Current high score */
 
 static struct marfitude_player ps[MAX_PLAYERS]; /* Array of players */
 static struct marfitude_player *curp; /* The current player */
-int num_players;
+static int num_players;
 
 static void *plugin = NULL;
 static int *noteOffset;
@@ -205,6 +211,14 @@ void button_handler(const void *data)
 				Press(lastkeypressed[p][1], p);
 			}
 			break;
+		case B_MENU:
+			if(ps[p].active == 1) {
+				show_menu(p);
+			} else {
+				ps[p].active = 1;
+				num_players++;
+			}
+			break;
 		case B_UP:
 		case B_DOWN:
 		default:
@@ -242,11 +256,7 @@ int main_init()
 		difficulty = 0;
 	if(difficulty > 3)
 		difficulty = 3;
-	num_players = cfg_get_int("main", "players", 1);
-	if(num_players < 1)
-		num_players = 1;
-	if(num_players > 4)
-		num_players = 4;
+	num_players = 1;
 	highscore = cfg_get_int("highscore", cursong, 0);
 
 	tickCounter = 0;
@@ -324,16 +334,19 @@ int main_init()
 	for(x=0;x<=lastRow;x++) AddNotes(x);
 
 	local_high = 0;
-	for(p=0; p<num_players; p++) {
+	for(p=0; p<MAX_PLAYERS; p++) {
 		curp = &ps[p];
 		curp->score.score = 0;
 		curp->score.multiplier = 1;
 		curp->channel = p % wam->num_rows;
 		curp->old_chan = curp->channel;
+		curp->active = 0;
+		curp->num = p;
 		curp->ap.nextStartRow = -1;
 		MoveBack();
 		ResetAp();
 	}
+	ps[0].active = 1;
 
 	for(x=0;x<=lastRow;x++) fire_event("row", &wam->row_data[x]);
 
@@ -347,17 +360,18 @@ int main_init()
 
 void main_quit(void)
 {
-	int p;
+	int i;
+	struct marfitude_player *p;
 
 	Log(("Main Scene quit\n"));
-	for(p=0; p<num_players; p++) {
-		if(ps[p].score.score > highscore) {
-			cfg_set_int("highscore", cursong, ps[p].score.score);
-			highscore = ps[p].score.score;
+	foreach_player(p) {
+		if(p->score.score > highscore) {
+			cfg_set_int("highscore", cursong, p->score.score);
+			highscore = p->score.score;
 		}
 	}
-	for(p=0; p<wam->num_cols; p++) {
-		slist_free(ac[p].ps);
+	for(i=0; i<wam->num_cols; i++) {
+		slist_free(ac[i].ps);
 	}
 	if(plugin == NULL) {
 		view_exit();
@@ -768,7 +782,7 @@ void ResetAp(void)
 	int end;
 	int apLines = 0;
 
-	for(p=0; p<num_players; p++)
+	for(p=0; p<MAX_PLAYERS; p++)
 		ps[p].ap.active = 0;
 	for(p=0; p<wam->num_cols; p++)
 		if(ac[p].ps)
@@ -829,16 +843,14 @@ void CheckMissedNotes(void)
 {
 	struct marfitude_note *sn;
 	struct slist *list;
-	int p;
 
 	list = notesList;
 	while(list) {
 		sn = (struct marfitude_note*)list->data;
 		if(modTime - sn->time > MARFITUDE_TIME_ERROR && sn->tic > ac[sn->col].miss) {
 			ac[sn->col].miss = sn->tic;
-			for(p=0; p<num_players; p++) {
-				curp = &ps[p];
-				if(ac[sn->col].ps && ac[sn->col].ps->data == &ps[p]) {
+			foreach_player(curp) {
+				if(ac[sn->col].ps && ac[sn->col].ps->data == curp) {
 					if(sn->col == curp->channel && sn->tic >= curp->ap.startTic && sn->tic < curp->ap.stopTic) {
 						if(curp->ap.notesHit > 0) {
 							curp->score.multiplier = 1;
@@ -931,10 +943,27 @@ void UpdateClearedCols(void)
 	}
 }
 
+struct marfitude_player *get_player(struct marfitude_player *player)
+{
+	int i = 0;
+	if(player != NULL) {
+		for(i=0; i<MAX_PLAYERS; i++) {
+			if(player == &ps[i]) {
+				i++;
+				break;
+			}
+		}
+	}
+	for(; i<MAX_PLAYERS; i++) {
+		if(ps[i].active)
+			return &ps[i];
+	}
+	return NULL;
+}
+
 void UpdatePosition(void)
 {
 	int tmpAdj;
-	int p;
 
 	/* calculate the amount of ticTime elapsed
 	 * every 2500 ticTime is one tick
@@ -966,8 +995,7 @@ void UpdatePosition(void)
 			curVb -= curRow->sngspd;
 			rowIndex++;
 			curRow = wam_row(wam, rowIndex);
-			for(p=0; p<num_players; p++) {
-				curp = &ps[p];
+			foreach_player(curp) {
 				if(curp->ap.active && rowIndex > curp->ap.stopRow) {
 					MoveBack();
 					ResetCol();
@@ -1083,10 +1111,25 @@ const struct marfitude_attack_pat *marfitude_get_ap(int player)
 	return &ps[player].ap;
 }
 
-/** Gets the player @a player */
-const struct marfitude_player *marfitude_get_player(int player)
+/** Gets the next player. If @a player is NULL, gets the first player.
+ * If @a player is the last player, then returns NULL.
+ */
+const struct marfitude_player *marfitude_get_player(const struct marfitude_player *player)
 {
-	return &ps[player];
+	int i = 0;
+	if(player != NULL) {
+		for(i=0; i<MAX_PLAYERS; i++) {
+			if(player == &ps[i]) {
+				i++;
+				break;
+			}
+		}
+	}
+	for(; i<MAX_PLAYERS; i++) {
+		if(ps[i].active)
+			return &ps[i];
+	}
+	return NULL;
 }
 
 /** Gets the current module time in seconds */

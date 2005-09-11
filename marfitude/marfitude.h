@@ -96,8 +96,10 @@ struct marfitude_attack_pat {
 struct marfitude_player {
 	struct marfitude_score score;
 	struct marfitude_attack_pat ap;
+	int active;
 	int channel;
 	int old_chan;
+	int num;
 };
 
 const struct wam *marfitude_get_wam(void);
@@ -111,5 +113,7 @@ const struct slist *marfitude_get_notes(void);
 const struct slist *marfitude_get_hitnotes(void);
 const struct marfitude_attack_col *marfitude_get_ac(void);
 const struct marfitude_attack_pat *marfitude_get_ap(int player);
-const struct marfitude_player *marfitude_get_player(int player);
+const struct marfitude_player *marfitude_get_player(const struct marfitude_player *);
 void marfitude_get_pos(struct marfitude_pos *);
+
+#define marfitude_foreach_player(ps) for(ps=marfitude_get_player(NULL); ps != NULL; ps=marfitude_get_player(ps))

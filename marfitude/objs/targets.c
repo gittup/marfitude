@@ -28,18 +28,16 @@ void targets_exit(void)
 void draw_targets(const void *data)
 {
 	int x;
-	int p;
 	const struct marfitude_player *ps;
 	struct marfitude_pos pos;
 
 	if(data) {}
 	marfitude_get_pos(&pos);
 
-	for(p=0; p<marfitude_num_players(); p++) {
-		ps = marfitude_get_player(p);
+	marfitude_foreach_player(ps) {
 		glPushMatrix();
 		glTranslated((double)ps->channel * -BLOCK_WIDTH, 0.0, TIC_HEIGHT * pos.tic);
-		glBindTexture(GL_TEXTURE_2D, target_tex[p]);
+		glBindTexture(GL_TEXTURE_2D, target_tex[ps->num]);
 		glTranslated(-NOTE_WIDTH, 0.0, 0.0);
 		glColor4f(1.0, 1.0, 1.0, 1.0);
 		glNormal3f(0.0, 1.0, 0.0);

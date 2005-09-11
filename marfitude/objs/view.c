@@ -27,11 +27,16 @@ void set_main_view(const void *data)
 	float eye[3] = {0.0, 3.0, -8.0};
 	float view[3] = {0.0, 0.8, 0.0};
 	double tmp;
-	const struct marfitude_player *ps = marfitude_get_player(0);
+	const struct marfitude_player *ps;
 	struct marfitude_pos pos;
 
 	if(data) {}
 	marfitude_get_pos(&pos);
+
+	/* Get the first active player */
+	marfitude_foreach_player(ps) {
+		break;
+	}
 
 	/* Make sure the view focus update doesn't go past channel focus.
 	 * It should be a smooth transition and stop when it gets there.

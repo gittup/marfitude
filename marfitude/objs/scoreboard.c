@@ -27,7 +27,6 @@ void draw_scoreboard(const void *data)
 	const struct wam *wam = marfitude_get_wam();
 	const struct marfitude_player *ps;
 	int highscore = marfitude_get_highscore();
-	int p;
 	int x1, x2, y1, y2;
 	int difficulty;
 
@@ -41,8 +40,7 @@ void draw_scoreboard(const void *data)
 	print_gl(50, 0, "Playing: %s", mod->songname);
 	if(pos.row_index == wam->num_rows) {
 		print_gl(50, 45, "Song complete!");
-		for(p=0; p<marfitude_num_players(); p++) {
-			ps = marfitude_get_player(p);
+		marfitude_foreach_player(ps) {
 			if(ps->score.score > highscore) {
 				print_gl(display_width() / 2 - 85, 120, "New High Score!!!");
 			}
@@ -64,11 +62,10 @@ void draw_scoreboard(const void *data)
 	print_gl(300, 45, "Multiplier:");
 	print_gl(300, 60, "Hits:");
 
-	for(p=0; p<marfitude_num_players(); p++) {
-		int space = p * 6 * FONT_WIDTH;
-		ps = marfitude_get_player(p);
+	marfitude_foreach_player(ps) {
+		int space = ps->num * 6 * FONT_WIDTH;
 
-		glColor4fv(get_player_color(p));
+		glColor4fv(get_player_color(ps->num));
 		print_gl(420 + space, 45, "%i\n", ps->score.multiplier);
 		print_gl(420 + space, 60, "%i/%i\n", ps->ap.notesHit, ps->ap.notesTotal);
 
