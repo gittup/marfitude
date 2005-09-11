@@ -6,6 +6,7 @@
  * texture not in the main images directory can be loaded with load_texture.
  */
 
+GLuint create_texture(int width, int height, void (*draw)(void *, int));
 GLuint load_texture(const char *filename);
 GLuint texture_num(const char *name);
 int init_textures(void);

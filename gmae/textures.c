@@ -37,6 +37,12 @@
 /** The directory where .png files are located */
 #define TEXDIR "images/"
 
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+#define MASKS 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff
+#else
+#define MASKS 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000
+#endif
+
 /** @file
  * Loads and provides access to all png files in the images/ directory
  */
@@ -65,10 +71,43 @@ int valid_png_file(const char *s)
 	return 1;
 }
 
+/** Create an OpenGL texture with dimensions @a width x @a height. The function
+ * @a draw is called with the pixels and the line pitch in bytes. The @a draw
+ * function should write to the pixels data, assuming it points to a buffer
+ * of @a width x @a height in size, and has 32 bits per pixel (includes
+ * alpha channel).
+ * @param width The width of the texture (must be power of 2)
+ * @param height The height of the texture (must be power of 2)
+ * @param draw The function to draw the texture. The first argument is the
+ *             buffer to draw to, the second argument is the pitch.
+ * @return The OpenGL texture number from glGenTextures. You should call
+ *         glDeleteTextures on it when you're done.
+ */
+GLuint create_texture(int width, int height, void (*draw)(void *, int))
+{
+	SDL_Surface *s;
+	GLuint tex;
+
+	s = SDL_CreateRGBSurface(0, width, height, 32, MASKS);
+	if(!s) {
+		ELog(("ERROR: Couldn't create SDL Surface!\n"));
+		return 0;
+	}
+	draw(s->pixels, s->pitch);
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, 4, s->w, s->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, s->pixels);
+
+	SDL_FreeSurface(s);
+	return tex;
+}
+
 /** Loads the texture @a filename and returns the OpenGL texture number
  * @param filename The name of the file
  * @return The OpenGL texture number from glGenTextures. You should call
- * glDeleteTextures on it when you're done.
+ *         glDeleteTextures on it when you're done.
  */
 GLuint load_texture(const char *filename)
 {
@@ -77,17 +116,17 @@ GLuint load_texture(const char *filename)
 	SDL_Surface *s;
 
 	s = IMG_Load(filename);
-	if(!s)
-	{
+	if(!s) {
 		SDLError("opening texture");
 		return 0;
 	}
+
 	glGenTextures(1, &tex);
 	glBindTexture(GL_TEXTURE_2D, tex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	switch(s->format->BytesPerPixel)
-	{
+
+	switch(s->format->BytesPerPixel) {
 		case 3:
 			format = GL_RGB;
 			break;
