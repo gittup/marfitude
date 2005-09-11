@@ -55,7 +55,7 @@ void create_line(const void *data)
 		lines[stop_line].p1.x = 1.0;
 		lines[stop_line].p1.y = 0.0;
 		lines[stop_line].p1.z = TIC_HEIGHT * (double)r->ticpos;
-		lines[stop_line].p2.x = 1.0 - 2.0 * wam->numCols;
+		lines[stop_line].p2.x = 1.0 - 2.0 * wam->num_cols;
 		lines[stop_line].p2.y = 0.005;
 		lines[stop_line].p2.z = TIC_HEIGHT * (double)r->ticpos;
 		lines[stop_line].row = r;

@@ -54,7 +54,7 @@ void set_main_view(const void *data)
 	marfitude_get_pos(&pos);
 	wam = marfitude_get_wam();
 
-	view_focus = (double)wam->numCols / 2.0 - 0.5;
+	view_focus = (double)wam->num_cols / 2.0 - 0.5;
 	view[2] = TIC_HEIGHT * pos.tic;
 	eye[2] = view[2] - 12.0;
 

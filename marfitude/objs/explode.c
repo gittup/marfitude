@@ -66,8 +66,8 @@ void victory(const void *data)
 		if(ps->score.score == score) {
 			for(x=0; x<48 / num; x++) {
 				const float *c = get_player_color(p);
-				pos.tic = wam->rowData[wam->numRows - 1].ticpos;
-				pos.channel = x % wam->numCols;
+				pos.tic = wam->row_data[wam->num_rows - 1].ticpos;
+				pos.channel = x % wam->num_cols;
 				explosion_particle(&pos, c);
 			}
 		}

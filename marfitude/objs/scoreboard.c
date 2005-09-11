@@ -36,7 +36,7 @@ void draw_scoreboard(const void *data)
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 
 	print_gl(50, 0, "Playing: %s", mod->songname);
-	if(pos.row_index == wam->numRows) {
+	if(pos.row_index == wam->num_rows) {
 		print_gl(50, 15, "Song complete!");
 		for(p=0; p<marfitude_num_players(); p++) {
 			ps = marfitude_get_player(p);
@@ -45,7 +45,7 @@ void draw_scoreboard(const void *data)
 			}
 		}
 	} else if(pos.row_index < 0) {
-		int timeLeft = (int)(- BpmToSec(wam->rowData[0].sngspd, wam->rowData[0].bpm) * (double)pos.row_index);
+		int timeLeft = (int)(- BpmToSec(wam->row_data[0].sngspd, wam->row_data[0].bpm) * (double)pos.row_index);
 		if(timeLeft > 0) print_gl(50, 15, "%i...", timeLeft);
 		else print_gl(50, 15, "GO!!");
 	}
@@ -55,7 +55,7 @@ void draw_scoreboard(const void *data)
 		print_gl(300, 15, "Highscore: %i", highscore);
 	}
 
-	print_gl(0, 65, "%.2f/%.2f\n", pos.modtime, wam->songLength);
+	print_gl(0, 65, "%.2f/%.2f\n", pos.modtime, wam->song_length);
 
 	print_gl(300, 30, "Score:");
 	print_gl(300, 45, "Multiplier:");
@@ -102,7 +102,7 @@ void draw_scoreboard(const void *data)
 	} glEnd();
 
 	glBegin(GL_QUADS); {
-		float mult = pos.modtime / wam->songLength;
+		float mult = pos.modtime / wam->song_length;
 		glColor4f(0.0, 0.8, 0.5, 1.0);
 		glVertex2i(x1+1, (y1+1)*mult+(y2-1)*(1.0-mult));
 		glColor4f(0.5, 0.8, 0.5, 1.0);

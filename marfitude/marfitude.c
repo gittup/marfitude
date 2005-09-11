@@ -62,7 +62,7 @@ static struct wam *wam; /* note file */
 static int difficulty = 0;
 
 /** returns 1 if the row is valid, 0 otherwise */
-#define IsValidRow(row) ((row >= 0 && row < wam->numRows) ? 1 : 0)
+#define IsValidRow(row) ((row >= 0 && row < wam->num_rows) ? 1 : 0)
 /** Find the max of a and b. Usual macro warnings apply */
 #define Max(a, b) ((a) > (b) ? (a) : (b))
 
@@ -110,7 +110,7 @@ static struct marfitude_note *notesOnScreen; /* little ring buffer of notes */
 static struct slist *unusedList;	/* unused notes */
 static struct slist *notesList;	/* notes on the screen, not hit */
 static struct slist *hitList;	/* notes on the screen, hit */
-static int numNotes;	/* max number of notes on screen (wam->numCols * NUM_TICKS) */
+static int numNotes;	/* max number of notes on screen (wam->num_cols * NUM_TICKS) */
 static char *cursong;
 static int highscore; /* Previous high score */
 static int local_high; /* Current high score */
@@ -272,13 +272,13 @@ int main_init()
 
 	ticTime = 0;
 
-	for(x=0;x<wam->numCols;x++) {
+	for(x=0;x<wam->num_cols;x++) {
 		int y;
 		ac[x].part = 0.0;
 		ac[x].cleared = 0;
 		for(y=0; y<LINES_PER_AP*(x / num_players); y++) {
 			ac[x].cleared++;
-			while(ac[x].cleared < wam->numRows && wam->rowData[ac[x].cleared].line == 0)
+			while(ac[x].cleared < wam->num_rows && wam->row_data[ac[x].cleared].line == 0)
 				ac[x].cleared++;
 		}
 		ac[x].minRow = ac[x].cleared;
@@ -291,20 +291,20 @@ int main_init()
 	 * doesn't need to be exact, we just need some time for
 	 * the player to get ready
 	 */
-	curTic = (int)(-3500.0 * (double)wam->rowData[0].bpm / 2500.0);
+	curTic = (int)(-3500.0 * (double)wam->row_data[0].bpm / 2500.0);
 	/* set the tic positions of where we can see and where we're looking */
 	firstVb = curTic - NEGATIVE_TICKS;
 	curVb = curTic;
 	lastVb = curTic + POSITIVE_TICKS;
 	/* convert tic values to rows, now the ticks are all within */
-	/* [0 .. wam->rowData[xRow].sngspd - 1] */
+	/* [0 .. wam->row_data[xRow].sngspd - 1] */
 	FixVb(&firstVb, &firstRow);
 	FixVb(&curVb, &rowIndex);
 	FixVb(&lastVb, &lastRow);
 
 	partialTic = 0.0;
 
-	numNotes = wam->numCols * NUM_TICKS;
+	numNotes = wam->num_cols * NUM_TICKS;
 	notesOnScreen = malloc(sizeof(struct marfitude_note) * numNotes);
 	unusedList = NULL;
 	notesList = NULL;
@@ -320,14 +320,14 @@ int main_init()
 		curp = &ps[p];
 		curp->score.score = 0;
 		curp->score.multiplier = 1;
-		curp->channel = p % wam->numRows;
+		curp->channel = p % wam->num_rows;
 		curp->old_chan = curp->channel;
 		curp->ap.nextStartRow = -1;
 		MoveBack();
 		ResetAp();
 	}
 
-	for(x=0;x<=lastRow;x++) fire_event("row", &wam->rowData[x]);
+	for(x=0;x<=lastRow;x++) fire_event("row", &wam->row_data[x]);
 
 	register_event("sound re-init", reinitializer);
 	register_event("button", button_handler);
@@ -348,7 +348,7 @@ void main_quit(void)
 			highscore = ps[p].score.score;
 		}
 	}
-	for(p=0; p<wam->numCols; p++) {
+	for(p=0; p<wam->num_cols; p++) {
 		slist_free(ac[p].ps);
 	}
 	if(plugin == NULL) {
@@ -403,7 +403,7 @@ void main_scene(void)
 	set_key_repeat(B_BUTTON3, 0);
 	set_key_repeat(B_BUTTON4, 0);
 
-	if(rowIndex != wam->numRows) UpdatePosition();
+	if(rowIndex != wam->num_rows) UpdatePosition();
 	update_objs(timeDiff);
 	curp = &ps[0];
 
@@ -431,9 +431,9 @@ void main_scene(void)
 
 void ChannelUp(int shift)
 {
-	if(curp->channel + 1 < wam->numCols) {
+	if(curp->channel + 1 < wam->num_cols) {
 		if(shift)
-			curp->channel = wam->numCols - 1;
+			curp->channel = wam->num_cols - 1;
 		else
 			curp->channel++;
 		if(curp->ap.notesHit > 0) curp->score.multiplier = 1;
@@ -477,7 +477,7 @@ void Setmute(struct column *c, int mute)
 void UpdateModule(void)
 {
 	int x;
-	for(x=0;x<wam->numCols;x++) {
+	for(x=0;x<wam->num_cols;x++) {
 		if(ac[x].cleared || ac[x].hit > ac[x].miss)
 			Setmute(ColumnFromNum(x), UNMUTE);
 		else
@@ -488,8 +488,8 @@ void UpdateModule(void)
 
 int is_note(int row, int col)
 {
-	if(wam->rowData[row].notes[col] &&
-			wam->rowData[row].difficulty[col] <= difficulty)
+	if(wam->row_data[row].notes[col] &&
+			wam->row_data[row].difficulty[col] <= difficulty)
 		return 1;
 	return 0;
 }
@@ -499,9 +499,9 @@ void AddNotes(int row)
 	int x;
 	int tic;
 	struct marfitude_note *sn;
-	if(row < 0 || row >= wam->numRows) return;
-	tic = wam->rowData[row].ticpos;
-	for(x=0;x<wam->numCols;x++) {
+	if(row < 0 || row >= wam->num_rows) return;
+	tic = wam->row_data[row].ticpos;
+	for(x=0;x<wam->num_cols;x++) {
 		if(is_note(row, x)) {
 			sn = unusedList->data;
 			if(row < ac[x].minRow) {
@@ -512,13 +512,13 @@ void AddNotes(int row)
 				sn->ins = __LINE__;
 			}
 			unusedList = slist_remove(unusedList, sn);
-			sn->pos.x = -x * BLOCK_WIDTH - NOTE_WIDTH * (double)noteOffset[(int)wam->rowData[row].notes[x]];
+			sn->pos.x = -x * BLOCK_WIDTH - NOTE_WIDTH * (double)noteOffset[(int)wam->row_data[row].notes[x]];
 			sn->pos.y = 0.0;
-			sn->pos.z = TIC_HEIGHT * (double)wam->rowData[row].ticpos;
+			sn->pos.z = TIC_HEIGHT * (double)wam->row_data[row].ticpos;
 			sn->tic = tic;
-			sn->time = wam->rowData[row].time;
+			sn->time = wam->row_data[row].time;
 			sn->col = x;
-			sn->difficulty = wam->rowData[row].difficulty[x];
+			sn->difficulty = wam->row_data[row].difficulty[x];
 		}
 	}
 }
@@ -539,8 +539,8 @@ struct slist *RemoveList(struct slist *list, int tic)
 void RemoveNotes(int row)
 {
 	int tic;
-	if(row < 0 || row >= wam->numRows) return;
-	tic = wam->rowData[row].ticpos;
+	if(row < 0 || row >= wam->num_rows) return;
+	tic = wam->row_data[row].ticpos;
 	Log(("RM\n"));
 	notesList = RemoveList(notesList, tic);
 	Log(("RMHit: %i\n", hitList));
@@ -568,24 +568,24 @@ int get_clear_column(int start, int skip_lines)
 	int lines = 0;
 	int tmp;
 
-	while(start < wam->numRows && skip_lines > 0) {
-		if(wam->rowData[start].line != 0)
+	while(start < wam->num_rows && skip_lines > 0) {
+		if(wam->row_data[start].line != 0)
 			skip_lines--;
 		start++;
 	}
 	/* clear to a line break */
-	while(start < wam->numRows && wam->rowData[start].line == 0)
+	while(start < wam->num_rows && wam->row_data[start].line == 0)
 		start++;
 	tmp = start;
-	while(tmp < wam->numRows && lines < LINES_PER_AP) {
-		if(wam->rowData[tmp].line != 0)
+	while(tmp < wam->num_rows && lines < LINES_PER_AP) {
+		if(wam->row_data[tmp].line != 0)
 			lines++;
 		tmp++;
 	}
 
 	/* Not enough space to start a new AP, set to the end of the song */
 	if(lines < LINES_PER_AP)
-		start = wam->numRows;
+		start = wam->num_rows;
 	return start;
 }
 
@@ -611,11 +611,11 @@ void Press(int button, int player)
 		rowStart--;
 
 	rowStop = rowIndex;
-	while(rowStop < wam->numRows && wam_row(wam, rowStop)->time - curRow->time < MARFITUDE_TIME_ERROR)
+	while(rowStop < wam->num_rows && wam_row(wam, rowStop)->time - curRow->time < MARFITUDE_TIME_ERROR)
 		rowStop++;
 
 	for(i=rowStart;i<=rowStop;i++) {
-		if(i >= 0 && i < wam->numRows) {
+		if(i >= 0 && i < wam->num_rows) {
 			r = wam_row(wam, i);
 			/* if we're in the attackpattern limits, and
 			 * if we didn't already play this row, and this row 
@@ -651,7 +651,7 @@ void Press(int button, int player)
 				curp->ap.notesHit++;
 				if(curp->ap.notesHit == curp->ap.notesTotal) {
 					curp->ap.nextStartRow = curp->ap.stopRow;
-					ac[curp->channel].cleared = get_clear_column(curp->ap.stopRow, LINES_PER_AP * wam->numCols / num_players);
+					ac[curp->channel].cleared = get_clear_column(curp->ap.stopRow, LINES_PER_AP * wam->num_cols / num_players);
 					ac[curp->channel].minRow = rowIndex;
 					ac[curp->channel].part = 0.0;
 					curp->score.score += curp->ap.notesHit * curp->score.multiplier;
@@ -686,15 +686,15 @@ void FixVb(int *vb, int *row)
 {
 	*row = 0;
 	while(1) {
-		if(*row < 0 && *vb >= wam->rowData[0].sngspd) {
+		if(*row < 0 && *vb >= wam->row_data[0].sngspd) {
 			(*row)++;
-			*vb -= wam->rowData[0].sngspd;
-		} else if(*row >= 0 && *vb >= wam->rowData[*row].sngspd) {
+			*vb -= wam->row_data[0].sngspd;
+		} else if(*row >= 0 && *vb >= wam->row_data[*row].sngspd) {
 			(*row)++;
-			*vb -= wam->rowData[*row].sngspd;
+			*vb -= wam->row_data[*row].sngspd;
 		} else if(*vb < 0) {
 			(*row)--;
-			*vb += wam->rowData[0].sngspd;
+			*vb += wam->row_data[0].sngspd;
 		}
 		else break;
 	}
@@ -762,7 +762,7 @@ void ResetAp(void)
 
 	for(p=0; p<num_players; p++)
 		ps[p].ap.active = 0;
-	for(p=0; p<wam->numCols; p++)
+	for(p=0; p<wam->num_cols; p++)
 		if(ac[p].ps)
 			((struct marfitude_player*)ac[p].ps->data)->ap.active = 1;
 
@@ -770,30 +770,30 @@ void ResetAp(void)
 	curp->ap.notesTotal = 0;
 
 	start = wam_rowindex(wam, Max(Max(NearRow(), curp->ap.nextStartRow), ac[curp->channel].cleared));
-	while(start < wam->numRows && (wam->rowData[start].line == 0 || wam->rowData[start].ticpos <= ac[curp->channel].miss))
+	while(start < wam->num_rows && (wam->row_data[start].line == 0 || wam->row_data[start].ticpos <= ac[curp->channel].miss))
 		start++;
-	if(start == wam->numRows)
-		start = wam->numRows - 1;
+	if(start == wam->num_rows)
+		start = wam->num_rows - 1;
 	end = start;
 
 	/* Make sure there are at least LINES_PER_AP lines in the AP */
-	while(apLines < LINES_PER_AP && end < wam->numRows) {
+	while(apLines < LINES_PER_AP && end < wam->num_rows) {
 		/* don't count the note on the last row, since that will
 		 * be the beginning of the next "AttackPattern"
 		 */
 		if(is_note(end, curp->channel)) curp->ap.notesTotal++;
 		end++;
-		if(wam->rowData[end].line != 0) apLines++;
+		if(wam->row_data[end].line != 0) apLines++;
 	}
 
 	/* Make sure there is at least one note in the AP */
-	while(curp->ap.notesTotal == 0 && end < wam->numRows) {
+	while(curp->ap.notesTotal == 0 && end < wam->num_rows) {
 		if(is_note(end, curp->channel)) curp->ap.notesTotal++;
 		end++;
 	}
 
 	/* Make sure the AP ends on a line */
-	while(wam->rowData[end].line == 0 && end < wam->numRows) {
+	while(wam->row_data[end].line == 0 && end < wam->num_rows) {
 		if(is_note(end, curp->channel)) curp->ap.notesTotal++;
 		end++;
 	}
@@ -807,12 +807,12 @@ void ResetAp(void)
 		curp->ap.active = 0;
 		return;
 	}
-	if(end == wam->numRows)
-		end = wam->numRows - 1;
+	if(end == wam->num_rows)
+		end = wam->num_rows - 1;
 	Log(("StarT: %i, End: %i\n", start, end));
-	curp->ap.startTic = wam->rowData[start].ticpos;
-	curp->ap.stopTic = wam->rowData[end].ticpos;
-	curp->ap.lastTic = wam->rowData[start].ticpos - 1;
+	curp->ap.startTic = wam->row_data[start].ticpos;
+	curp->ap.stopTic = wam->row_data[end].ticpos;
+	curp->ap.lastTic = wam->row_data[start].ticpos - 1;
 	curp->ap.stopRow = end;
 	return;
 }
@@ -849,7 +849,7 @@ void CheckMissedNotes(void)
 void CheckColumn(int row)
 {
 	int x;
-	for(x=0;x<wam->numCols;x++) {
+	for(x=0;x<wam->num_cols;x++) {
 		if(ac[x].cleared == row) ac[x].cleared = 0;
 	}
 }
@@ -900,11 +900,11 @@ void UpdateClearedCols(void)
 	int tic;
 	struct row *r;
 
-	for(x=0;x<wam->numCols;x++) {
+	for(x=0;x<wam->num_cols;x++) {
 		r = wam_row(wam, ac[x].minRow);
 		/* Yes I realize this is a bunch of magic numbers. Sue me. */
 		ac[x].part += (double)ticDiff * (double)r->bpm / (833.0 * (double)r->sngspd);
-		while(ac[x].part >= 1.0 && ac[x].minRow < ac[x].cleared && ac[x].minRow < wam->numRows) {
+		while(ac[x].part >= 1.0 && ac[x].minRow < ac[x].cleared && ac[x].minRow < wam->num_rows) {
 			struct marfitude_pos p;
 
 			tic = r->ticpos;
@@ -970,7 +970,7 @@ void UpdatePosition(void)
 				Player_TogglePause();
 				songStarted = 1;
 				register_event("menu", menu_handler);
-			} else if(rowIndex == wam->numRows) {
+			} else if(rowIndex == wam->num_rows) {
 				fire_event("victory", &local_high);
 			}
 		}
@@ -984,8 +984,8 @@ void UpdatePosition(void)
 			 * the row is valid, so it's ok to pass firstRow
 			 */
 			RemoveNotes(firstRow);
-			if(firstRow >= 0 && firstRow < wam->numRows)
-				fire_event("de-row", &wam->rowData[firstRow]);
+			if(firstRow >= 0 && firstRow < wam->num_rows)
+				fire_event("de-row", &wam->row_data[firstRow]);
 			firstRow++;
 		}
 
@@ -997,8 +997,8 @@ void UpdatePosition(void)
 			 * row is valid, so it's ok to pass lastRow
 			 */
 			AddNotes(lastRow);
-			if(lastRow >= 0 && lastRow < wam->numRows)
-				fire_event("row", &wam->rowData[lastRow]);
+			if(lastRow >= 0 && lastRow < wam->num_rows)
+				fire_event("row", &wam->row_data[lastRow]);
 		}
 	}
 	UpdateClearedCols();
@@ -1055,7 +1055,7 @@ const struct slist *marfitude_get_hitnotes(void)
 	return hitList;
 }
 
-/** Returns an array of attack columns. Size is MAX_COLS, only wam->numCols
+/** Returns an array of attack columns. Size is MAX_COLS, only wam->num_cols
  * are populated with stuff.
  */
 const struct marfitude_attack_col *marfitude_get_ac(void)

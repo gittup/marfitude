@@ -50,19 +50,19 @@ void draw_rows(const void *data)
 	 * notes currently being played at position 0.
 	 * At the beginning of the song, we start drawing instead from 
 	 * 0 to +POSITIVE_TICKS, and at the end of the song we draw from
-	 * -NEGATIVE_TICKS to wam->numTics.  Of course, if the song is less than
+	 * -NEGATIVE_TICKS to wam->num_tics.  Of course, if the song is less than
 	 * NEGATIVE_TICKS + POSITIVE_TICKS long, some other combinations will
 	 * arise :)
 	 */
 	startTic = pos.tic - NEGATIVE_TICKS >= 0 ?
 		((double)pos.tic - NEGATIVE_TICKS) : 0.0;
-	stopTic = pos.tic < wam->numTics - POSITIVE_TICKS ?
+	stopTic = pos.tic < wam->num_tics - POSITIVE_TICKS ?
 		(double)pos.tic + POSITIVE_TICKS :
-		(double)wam->numTics;
+		(double)wam->num_tics;
 
 	if(startTic >= stopTic) return;
 	glPushMatrix();
-	for(col=0;col<wam->numCols;col++) {
+	for(col=0;col<wam->num_cols;col++) {
 		struct row *r;
 
 		start = startTic;
