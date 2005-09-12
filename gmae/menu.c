@@ -31,7 +31,6 @@
 #include "glfunc.h"
 #include "input.h"
 #include "joy.h"
-#include "phys.h"
 #include "textures.h"
 #include "scene.h"
 #include "sounds.h"
@@ -44,6 +43,10 @@
 #include "util/myrand.h"
 #include "util/slist.h"
 #include "util/strfunc.h"
+
+#include "marfitude/marfitude.h" /* Until some of the menu stuff is moved to
+				  * marfitude.
+				  */
 
 /** A slider menu item. Can select between a range of values. */
 #define MENU_SLIDER 0
@@ -181,7 +184,8 @@ static void NullMenu(void);
 static int NoMenuInit(void);
 static void NoMenuQuit(void);
 static void NoMenu(void);
-static void Retry(int);
+static void retry(int);
+static void leave(int);
 static int MainMenuInit(void);
 static void MainMenuQuit(void);
 static void MainMenu(void);
@@ -848,7 +852,7 @@ void NoMenu(void)
 {
 }
 
-void Retry(int shift)
+void retry(int shift)
 {
 	if(shift) {}
 	switch_menu(NOMENU);
@@ -857,12 +861,27 @@ void Retry(int shift)
 	Log(("Retry Scene Switched\n"));
 }
 
+void leave(int shift)
+{
+	const struct marfitude_player *ps;
+	if(shift) {}
+	fire_event("leave", &menu_player);
+	ps = marfitude_get_player(NULL);
+	if(ps != NULL) {
+		menu_player = ps->num;
+	}
+}
+
 int MainMenuInit(void)
 {
 	if(!menuActive) RegisterMenuEvents();
 	input_mode(MENU);
 	CreateButtonParam(mainMenu, "Fight", switch_menu, FIGHTMENU, 0);
-	if(is_scene_active(MAINSCENE)) CreateButton(mainMenu, "Retry", Retry);
+	if(is_scene_active(MAINSCENE)) {
+		CreateButton(mainMenu, "Retry", retry);
+		if(marfitude_num_players() > 1)
+			CreateButton(mainMenu, "Leave", leave);
+	}
 	CreateButtonParam(mainMenu, "Configure", switch_menu, CONFIGMENU, 0);
 	CreateButtonParam(mainMenu, "Options", switch_menu, OPTIONMENU, 0);
 	CreateButtonParam(mainMenu, "Quit", switch_menu, QUITMENU, 0);
