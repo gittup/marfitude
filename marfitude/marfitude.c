@@ -449,10 +449,6 @@ void main_scene(void)
 
 	fire_event("set view", NULL);
 
-	set_ortho_projection();
-	fire_event("draw ortho", NULL);
-	reset_projection();
-
 	fire_event("draw opaque", NULL);
 
 	glDisable(GL_LIGHTING);
@@ -465,6 +461,10 @@ void main_scene(void)
 
 	glDepthMask(GL_TRUE);
 	glEnable(GL_LIGHTING);
+
+	set_ortho_projection();
+	fire_event("draw ortho", NULL);
+	reset_projection();
 
 	Log(("endMainScene\n"));
 }
