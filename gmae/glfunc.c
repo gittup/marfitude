@@ -382,6 +382,7 @@ void set_ortho_projection(void)
 	glPushMatrix(); /* popped in reset_projection() */
 	glLoadIdentity();
 	glDisable(GL_LIGHTING);
+	glDepthMask(GL_FALSE);
 }
 
 /** Resets the projection and modelview matrix. This balances out the
@@ -389,6 +390,7 @@ void set_ortho_projection(void)
  */
 void reset_projection(void)
 {
+	glDepthMask(GL_TRUE);
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
