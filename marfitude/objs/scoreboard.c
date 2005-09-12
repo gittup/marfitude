@@ -13,12 +13,12 @@ static void draw_scoreboard(const void *);
 
 void scoreboard_init(void)
 {
-	register_event("draw opaque", draw_scoreboard);
+	register_event("draw ortho", draw_scoreboard);
 }
 
 void scoreboard_exit(void)
 {
-	deregister_event("draw opaque", draw_scoreboard);
+	deregister_event("draw ortho", draw_scoreboard);
 }
 
 void draw_scoreboard(const void *data)
@@ -78,7 +78,6 @@ void draw_scoreboard(const void *data)
 		print_gl(420 + space - FONT_WIDTH * 5, 30, "%6i\n", ps->score.score);
 	}
 
-	set_ortho_projection();
 	glDisable(GL_TEXTURE_2D);
 
 	x1 = orthox(5);
@@ -113,6 +112,5 @@ void draw_scoreboard(const void *data)
 		glVertex2i(x1+1, y2-1);
 	} glEnd();
 	glEnable(GL_TEXTURE_2D);
-	reset_projection();
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 }
