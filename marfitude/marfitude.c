@@ -110,6 +110,7 @@ static int NoteListTic(const void *snp, const void *tp);
 static int SortByTic(const void *a, const void *b);
 static void menu_handler(const void *data);
 static void button_handler(const void *data);
+static void leaver(const void *data);
 
 static struct marfitude_attack_col ac[MAX_COLS];
 static struct marfitude_note *notesOnScreen; /* little ring buffer of notes */
@@ -121,9 +122,14 @@ static char *cursong;
 static int highscore; /* Previous high score */
 static int local_high; /* Current high score */
 
-static struct marfitude_player ps[MAX_PLAYERS]; /* Array of players */
+/* Array of players. Default player 1 to active. Yeah, kinda ugly. */
+static struct marfitude_player ps[MAX_PLAYERS] = {
+	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, 1, 0, 0, 0},
+	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 0, 1},
+	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 0, 2},
+	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 0, 3}
+};
 static struct marfitude_player *curp; /* The current player */
-static int num_players;
 
 static void *plugin = NULL;
 static int *noteOffset;
@@ -153,10 +159,18 @@ void button_handler(const void *data)
 	const struct button_e *b = data;
 	int p;
 
-	if(is_menu_active()) return;
-
 	curp = &ps[b->player];
 	p = b->player;
+
+	/* Activate the player if they're not yet in the game */
+	if(b->button == B_MENU && curp->active == 0) {
+		curp->active = 1;
+		MoveBack();
+		ResetAp();
+		return;
+	}
+
+	if(is_menu_active()) return;
 
 	switch(b->button) {
 		case B_RIGHT:
@@ -212,18 +226,20 @@ void button_handler(const void *data)
 			}
 			break;
 		case B_MENU:
-			if(ps[p].active == 1) {
-				show_menu(p);
-			} else {
-				ps[p].active = 1;
-				num_players++;
-			}
+			show_menu(p);
 			break;
 		case B_UP:
 		case B_DOWN:
 		default:
 			break;
 	}
+}
+
+void leaver(const void *data)
+{
+	int p = *((const int*)data);
+	ps[p].active = 0;
+	ac[ps[p].channel].ps = slist_remove(ac[ps[p].channel].ps, &ps[p]);
 }
 
 int main_init()
@@ -256,7 +272,6 @@ int main_init()
 		difficulty = 0;
 	if(difficulty > 3)
 		difficulty = 3;
-	num_players = 1;
 	highscore = cfg_get_int("highscore", cursong, 0);
 
 	tickCounter = 0;
@@ -294,7 +309,7 @@ int main_init()
 		int y;
 		ac[x].part = 0.0;
 		ac[x].cleared = 0;
-		for(y=0; y<LINES_PER_AP*(x / num_players); y++) {
+		for(y=0; y<LINES_PER_AP*(x / marfitude_num_players()); y++) {
 			ac[x].cleared++;
 			while(ac[x].cleared < wam->num_rows && wam->row_data[ac[x].cleared].line == 0)
 				ac[x].cleared++;
@@ -334,24 +349,26 @@ int main_init()
 	for(x=0;x<=lastRow;x++) AddNotes(x);
 
 	local_high = 0;
+	x = 0;
 	for(p=0; p<MAX_PLAYERS; p++) {
 		curp = &ps[p];
 		curp->score.score = 0;
 		curp->score.multiplier = 1;
-		curp->channel = p % wam->num_rows;
+		curp->channel = x % wam->num_rows;
 		curp->old_chan = curp->channel;
-		curp->active = 0;
-		curp->num = p;
 		curp->ap.nextStartRow = -1;
-		MoveBack();
-		ResetAp();
+		if(curp->active) {
+			x++;
+			MoveBack();
+			ResetAp();
+		}
 	}
-	ps[0].active = 1;
 
 	for(x=0;x<=lastRow;x++) fire_event("row", &wam->row_data[x]);
 
 	register_event("sound re-init", reinitializer);
 	register_event("button", button_handler);
+	register_event("leave", leaver);
 
 	init_timer();
 	Log(("Lists created\n"));
@@ -395,6 +412,7 @@ void main_quit(void)
 	}
 	Log(("A\n"));
 	songStarted = 0;
+	deregister_event("leave", leaver);
 	deregister_event("button", button_handler);
 	deregister_event("sound re-init", reinitializer);
 	Log(("A\n"));
@@ -673,7 +691,7 @@ void Press(int button, int player)
 				curp->ap.notesHit++;
 				if(curp->ap.notesHit == curp->ap.notesTotal) {
 					curp->ap.nextStartRow = curp->ap.stopRow;
-					ac[curp->channel].cleared = get_clear_column(curp->ap.stopRow, LINES_PER_AP * wam->num_cols / num_players);
+					ac[curp->channel].cleared = get_clear_column(curp->ap.stopRow, LINES_PER_AP * wam->num_cols / marfitude_num_players());
 					ac[curp->channel].minRow = rowIndex;
 					ac[curp->channel].part = 0.0;
 					curp->score.score += curp->ap.notesHit * curp->score.multiplier;
@@ -1076,7 +1094,13 @@ int marfitude_get_local_highscore(void)
 /** Gets the number of active players */
 int marfitude_num_players(void)
 {
-	return num_players;
+	int i;
+	int x = 0;
+	for(i=0; i<MAX_PLAYERS; i++) {
+		if(ps[i].active)
+			x++;
+	}
+	return x;
 }
 
 /** Gets the current difficulty */
