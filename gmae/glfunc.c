@@ -145,11 +145,84 @@ int load_font(void)
 	return 1;
 }
 
+#include <sys/time.h>
+SDL_Surface *generate_icon(void);
+SDL_Surface *generate_icon(void)
+{
+	int width = 128;
+	int height = 128;
+	int x;
+	int y;
+	unsigned int *p;
+	float light0[4] = {1.0, -1.0, 0.0, 0.0};
+	float light0amb[4] = {0.15, 0.15, 0.15, 1.0};
+	float light0dif[4] = {0.7, 0.7, 0.7, 1.0};
+	SDL_Surface *img;
+
+	glViewport(0, 0, width, height);
+	glEnable(GL_LIGHTING);
+	glLightfv(GL_LIGHT0, GL_POSITION, light0);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, light0amb);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, light0dif);
+	glEnable(GL_LIGHT0);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	perspective_projection(45.0f,(GLfloat)width/(GLfloat)height,0.1,100.0);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	glRotatef(-37.0, 1.0, 0.0, 0.0);
+	glTranslatef(0.02, 0.4, -0.58);
+
+	glRotatef(70.0, 0.0, 1.0, 0.0);
+	glBegin(GL_TRIANGLE_FAN); {
+		glNormal3f( 0.0, -1.0, 0.0);
+		glVertex3f( 0.0, -0.15, 0.0);
+
+		glNormal3f( 0.2, -0.5, 0.0);
+		glVertex3f( 0.2, 0.0, 0.2);
+		glVertex3f( 0.2, 0.0, -0.2);
+
+		glNormal3f( 0.0, -0.5, -0.2);
+		glVertex3f( 0.2, 0.0, -0.2);
+		glVertex3f(-0.2, 0.0, -0.2); 
+
+		glNormal3f(-0.2, -0.5, 0.0);
+		glVertex3f(-0.2, 0.0, -0.2);
+		glVertex3f(-0.2, 0.0, 0.2);
+
+		glNormal3f(0.0, -0.5, 0.2);
+		glVertex3f(-0.2, 0.0, 0.2);
+		glVertex3f(0.2, 0.0, 0.2);
+
+	} glEnd();
+
+	img = SDL_CreateRGBSurface(0, width, height, 32, MASKS);
+	glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, img->pixels);
+
+	/* Make the black pixels' alpha = 0 */
+	p = img->pixels;
+	for(y=0; y<height; y++) {
+		for(x=0; x<width; x++) {
+			if((*p & 0x00ffffff) == 0) {
+				*p = 0;
+			}
+			p++;
+		}
+	}
+
+	return img;
+}
+
 void set_icon(void)
 {
 	SDL_Surface *icon;
 
-	icon = IMG_Load("icon.png");
+	icon = generate_icon();
 	if(icon) {
 		SDL_WM_SetIcon(icon, NULL);
 		SDL_FreeSurface(icon);
@@ -162,9 +235,6 @@ int init_gl(void)
 	Uint32 flags = SDL_OPENGL;
 	SDL_Surface *screen;
 	int bpp;
-	float ambientLight[4] = {0.7, 0.7, 0.7, 0.7};
-	float diffuseLight[4] = {1.0, 1.0, 1.0, 1.0};
-	float blackLight[4] = {0.0, 0.0, 0.0, 1.0};
 	float light0[4] = {0.0, 1.0, 0.0, 0.0};
 	float light0amb[4] = {0.3, 0.3, 0.3, 1.0};
 	float light0dif[4] = {0.4, 0.4, 0.4, 1.0};
@@ -214,24 +284,27 @@ int init_gl(void)
 	SDL_EnableKeyRepeat(0, 0); /* disable key repeating */
 	SDL_ShowCursor(SDL_DISABLE);
 	init_fps();
-	glViewport(0, 0, screenWidth, screenHeight);
-	glEnable(GL_TEXTURE_2D);
+
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClearDepth(1.0);
 	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_DEPTH_TEST);
-	glShadeModel(GL_SMOOTH);
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
-	glMaterialfv(GL_FRONT, GL_EMISSION, blackLight);
 
+	set_icon();
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	glViewport(0, 0, screenWidth, screenHeight);
+
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-
 	perspective_projection(45.0f,(GLfloat)screenWidth/(GLfloat)screenHeight,0.1f,100.0f);
+
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
@@ -240,14 +313,10 @@ int init_gl(void)
 	glLightfv(GL_LIGHT0, GL_AMBIENT, light0amb);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, light0dif);
 	glEnable(GL_LIGHT0);
-	glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLight);
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuseLight);
-	glEnable(GL_LIGHT1);
 
 	if(!load_font())
 		return 3;
 
-	set_icon();
 	fontInited = 1;
 
 	pbufsize = 128;
