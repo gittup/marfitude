@@ -17,10 +17,10 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#define _BSD_SOURCE /* vsnprintf*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#define __USE_BSD /* For M_PI */
 #include <math.h>
 
 #include "SDL.h"
@@ -42,10 +42,6 @@
 /** @file
  * Initializes SDL/OpenGL and sets up default OpenGL parameters.
  */
-
-#ifdef __STRICT_ANSI__
-extern int vsnprintf(char *buf, size_t size, const char *fmt, va_list args);
-#endif
 
 static int load_font(void);
 static void set_icon(void);
@@ -433,7 +429,8 @@ void perspective_projection(double fov, double aspect, double z1, double z2)
 	double height;
 	double width;
 
-	height = tan(fov / 360.0 * M_PI) * z1;
+	/* atan(1.0) * 4.0 = pi */
+	height = tan(fov / 360.0 * atan(1.0) * 4.0) * z1;
 	width = height * aspect;
 	glFrustum(-width, width, -height, height, z1, z2);
 }
