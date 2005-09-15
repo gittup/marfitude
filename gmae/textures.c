@@ -39,12 +39,6 @@
 /** The directory where .png files are located */
 #define TEXDIR "images/"
 
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-#define MASKS 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff
-#else
-#define MASKS 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000
-#endif
-
 /** @file
  * Loads and provides access to all png files in the images/ directory
  */
