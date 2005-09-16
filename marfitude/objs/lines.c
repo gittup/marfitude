@@ -15,10 +15,10 @@ static void draw_line(int l);
 
 /** Some data for a line that goes across the row */
 struct line {
-	struct vector p1;       /**< One end of the line */
-	struct vector p2;       /**< The other end of the line */
-	int color;              /**< 2 for blue, one for gray, of course! */
-	const struct row *row;  /**< What row this line is on */
+	union vector p1;       /**< One end of the line */
+	union vector p2;       /**< The other end of the line */
+	int color;             /**< 2 for blue, one for gray, of course! */
+	const struct row *row; /**< What row this line is on */
 };
 
 static struct line *lines;
@@ -52,12 +52,12 @@ void create_line(const void *data)
 	const struct wam *wam = marfitude_get_wam();
 
 	if(r->line) {
-		lines[stop_line].p1.x = 1.0;
-		lines[stop_line].p1.y = 0.0;
-		lines[stop_line].p1.z = TIC_HEIGHT * (double)r->ticpos;
-		lines[stop_line].p2.x = 1.0 - 2.0 * wam->num_cols;
-		lines[stop_line].p2.y = 0.005;
-		lines[stop_line].p2.z = TIC_HEIGHT * (double)r->ticpos;
+		lines[stop_line].p1.v[0] = 1.0;
+		lines[stop_line].p1.v[1] = 0.0;
+		lines[stop_line].p1.v[2] = TIC_HEIGHT * (double)r->ticpos;
+		lines[stop_line].p2.v[0] = 1.0 - 2.0 * wam->num_cols;
+		lines[stop_line].p2.v[1] = 0.005;
+		lines[stop_line].p2.v[2] = TIC_HEIGHT * (double)r->ticpos;
 		lines[stop_line].row = r;
 		lines[stop_line].color = r->line;
 		stop_line++;
@@ -80,8 +80,8 @@ void draw_line(int l)
 {
 	if(lines[l].color == 2) glColor4f(0.0, 0.0, 1.0, .7);
 	else glColor4f(0.8, 0.8, 0.8, .3);
-	glVertex3f( lines[l].p1.x, lines[l].p1.y, lines[l].p1.z);
-	glVertex3f( lines[l].p2.x, lines[l].p2.y, lines[l].p2.z);
+	glVertex3dv(lines[l].p1.v);
+	glVertex3dv(lines[l].p2.v);
 }
 
 void draw_lines(const void *data)

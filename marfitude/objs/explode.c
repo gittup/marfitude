@@ -6,6 +6,7 @@
 #include "gmae/event.h"
 #include "gmae/input.h"
 #include "gmae/particles.h"
+#include "gmae/phys.h"
 #include "gmae/wam.h"
 
 #include "util/myrand.h"
@@ -76,13 +77,13 @@ void explosion_particle(const struct marfitude_pos *p, const float *c)
 	struct obj *o;
 
 	o = new_obj();
-	o->pos.x = -p->channel * 2.0;
-	o->pos.z = TIC_HEIGHT * p->tic;
-	o->vel.x = rand_float() - 0.5;
-	o->vel.y = 2.0 + rand_float();
-	o->vel.z = 13.0 + rand_float();
+	o->pos.v[0] = -p->channel * 2.0;
+	o->pos.v[2] = TIC_HEIGHT * p->tic;
+	o->vel.v[0] = rand_float() - 0.5;
+	o->vel.v[1] = 2.0 + rand_float();
+	o->vel.v[2] = 13.0 + rand_float();
 	o->rotvel = rand_float() * 720.0 - 360.0;
-	o->acc.y = -3.98;
+	o->acc.v[1] = -3.98;
 
 	create_particle(o, c, P_StarBurst, 1.0);
 }

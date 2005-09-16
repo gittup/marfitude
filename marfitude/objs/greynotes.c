@@ -87,9 +87,9 @@ void draw_notes(const void *data)
 		int mat = fabs(sn->time - p.modtime) <= MARFITUDE_TIME_ERROR;
 
 		glPushMatrix();
-		glTranslated(   sn->pos.x,
-				sn->pos.y,
-				sn->pos.z+0.3);
+		glTranslated(   sn->pos.v[0],
+				sn->pos.v[1],
+				sn->pos.v[2]+0.3);
 		if(mat)
 			glColor4f(1.0, 0.4, 0.4, 1.0);
 		else

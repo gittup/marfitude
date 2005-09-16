@@ -36,9 +36,9 @@ void draw_notes(const void *data)
 		struct marfitude_note *sn = t->data;
 
 		glPushMatrix();
-		glTranslated(   sn->pos.x,
-				sn->pos.y,
-				sn->pos.z+0.3);
+		glTranslated(   sn->pos.v[0],
+				sn->pos.v[1],
+				sn->pos.v[2]+0.3);
 		glGetFloatv(GL_MODELVIEW_MATRIX, mat);
 		for(i=0;i<3;i++)
 			for(j=0;j<3;j++)

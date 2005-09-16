@@ -17,7 +17,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include "gmae/phys.h"
+#include "util/math/vector.h"
 
 /** @file
  * Provide access to marfitude's phatty boom beat-matching capabilities.
@@ -57,14 +57,14 @@ struct marfitude_pos {
 
 /** A note on the screen */
 struct marfitude_note {
-	struct vector pos; /**< The coordinates of where to draw the note */
-	int tic;           /**< The mod tic this note is on */
-	double time;       /**< The time this note is on */
-	int col;           /**< The column the note is in */
-	int difficulty;    /**< The difficulty of this note */
-	int ins;           /**< DEBUG - the line in the src where this note was
-			    * added
-			    */
+	union vector pos; /**< The coordinates of where to draw the note */
+	int tic;          /**< The mod tic this note is on */
+	double time;      /**< The time this note is on */
+	int col;          /**< The column the note is in */
+	int difficulty;   /**< The difficulty of this note */
+	int ins;          /**< DEBUG - the line in the src where this note was
+			   * added
+			   */
 };
 
 /** Keep track of clearing information for each column */

@@ -43,6 +43,7 @@
 #include "gmae/menu.h"
 #include "gmae/module.h"
 #include "gmae/particles.h"
+#include "gmae/phys.h"
 #include "gmae/textures.h"
 #include "gmae/timer.h"
 #include "gmae/wam.h"
@@ -286,23 +287,6 @@ int main_init()
 
 	curRow = wam_row(wam, 0);
 
-	scene = cfg_get("main", "scene", "scenes/default");
-	if(strcmp(scene, "scenes/default") == 0) {
-		bluenotes_init();
-		explode_init();
-		fireball_init();
-		greynotes_init();
-		laser_init();
-		lines_init();
-		rows_init();
-		scoreboard_init();
-		targets_init();
-		view_init();
-		plugin = NULL;
-	} else {
-		plugin = load_plugin(scene);
-	}
-
 	ticTime = 0;
 
 	for(x=0;x<wam->num_cols;x++) {
@@ -364,11 +348,28 @@ int main_init()
 		}
 	}
 
-	for(x=0;x<=lastRow;x++) fire_event("row", &wam->row_data[x]);
-
 	register_event("sound re-init", reinitializer);
 	register_event("button", button_handler);
 	register_event("leave", leaver);
+
+	scene = cfg_get("main", "scene", "scenes/default");
+	if(strcmp(scene, "scenes/default") == 0) {
+		bluenotes_init();
+		explode_init();
+		fireball_init();
+		greynotes_init();
+		laser_init();
+		lines_init();
+		rows_init();
+		scoreboard_init();
+		targets_init();
+		view_init();
+		plugin = NULL;
+	} else {
+		plugin = load_plugin(scene);
+	}
+
+	for(x=0;x<=lastRow;x++) fire_event("row", &wam->row_data[x]);
 
 	init_timer();
 	Log(("Lists created\n"));
@@ -552,9 +553,9 @@ void AddNotes(int row)
 				sn->ins = __LINE__;
 			}
 			unusedList = slist_remove(unusedList, sn);
-			sn->pos.x = -x * BLOCK_WIDTH - NOTE_WIDTH * (double)noteOffset[(int)wam->row_data[row].notes[x]];
-			sn->pos.y = 0.0;
-			sn->pos.z = TIC_HEIGHT * (double)wam->row_data[row].ticpos;
+			sn->pos.v[0] = -x * BLOCK_WIDTH - NOTE_WIDTH * (double)noteOffset[(int)wam->row_data[row].notes[x]];
+			sn->pos.v[1] = 0.0;
+			sn->pos.v[2] = TIC_HEIGHT * (double)wam->row_data[row].ticpos;
 			sn->tic = tic;
 			sn->time = wam->row_data[row].time;
 			sn->col = x;
