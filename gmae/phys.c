@@ -40,7 +40,7 @@ struct obj *new_obj(void)
 {
 	struct obj *o;
 	o = (struct obj*)calloc(1, sizeof(struct obj));
-	o->axis.z = 1.0;
+	o->axis.v[2] = 1.0;
 	o->mass = 1.0;
 	objs = slist_append(objs, (void *)o);
 	return o;
@@ -67,19 +67,19 @@ void update_objs(double dt)
 		struct obj *o = t->data;
 		double tmpx, tmpy, tmpz, tmpr;
 
-		tmpx = o->acc.x * dt;
-		tmpy = o->acc.y * dt;
-		tmpz = o->acc.z * dt;
+		tmpx = o->acc.v[0] * dt;
+		tmpy = o->acc.v[1] * dt;
+		tmpz = o->acc.v[2] * dt;
 		tmpr = o->rotacc * dt;
 
-		o->pos.x += o->vel.x * dt + tmpx * dt / 2.0;
-		o->pos.y += o->vel.y * dt + tmpy * dt / 2.0;
-		o->pos.z += o->vel.z * dt + tmpz * dt / 2.0;
+		o->pos.v[0] += o->vel.v[0] * dt + tmpx * dt / 2.0;
+		o->pos.v[1] += o->vel.v[1] * dt + tmpy * dt / 2.0;
+		o->pos.v[2] += o->vel.v[2] * dt + tmpz * dt / 2.0;
 		o->theta += o->rotvel * dt + tmpr * dt / 2.0;
 
-		o->vel.x += tmpx;
-		o->vel.y += tmpy;
-		o->vel.z += tmpz;
+		o->vel.v[0] += tmpx;
+		o->vel.v[1] += tmpy;
+		o->vel.v[2] += tmpz;
 		o->rotvel += tmpr;
 	}
 }

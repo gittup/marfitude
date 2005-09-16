@@ -36,6 +36,7 @@
 #include "sounds.h"
 #include "cfg.h"
 #include "log.h"
+#include "phys.h"
 
 #include "util/memtest.h"
 #include "util/fatalerror.h"

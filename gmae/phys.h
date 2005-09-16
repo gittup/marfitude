@@ -21,6 +21,8 @@
  * Adds some mechanics (velocity/acceleration, etc) to objects
  */
 
+#include "util/math/vector.h"
+
 /** The red byte in a color vector */
 #define RED 0
 /** The green byte in a color vector */
@@ -30,20 +32,13 @@
 /** The alpha byte in a color vector */
 #define ALPHA 3
 
-/** A vector structure */
-struct vector {
-	double x; /**< The x parameter */
-	double y; /**< The y parameter */
-	double z; /**< The z parameter */
-};
-
 /** An object structre */
 struct obj {
-	struct vector pos;  /**< position of object */
-	struct vector vel;  /**< velocity of object */
-	struct vector acc;  /**< acceleration of object */
+	union vector pos;   /**< position of object */
+	union vector vel;   /**< velocity of object */
+	union vector acc;   /**< acceleration of object */
 	/* need jerk for camera movement? */
-	struct vector axis; /**< axis of rotation */
+	union vector axis;  /**< axis of rotation */
 	double theta;       /**< amount of rotation */
 	double rotvel;      /**< rotation velocity */
 	double rotacc;      /**< rotation acceleration */

@@ -185,7 +185,7 @@ void DrawParticle(struct particle *p)
 
 	pt = &particleTypes[p->type];
 	glPushMatrix();
-	glTranslated(p->o->pos.x, p->o->pos.y, p->o->pos.z);
+	glTranslated(p->o->pos.v[0], p->o->pos.v[1], p->o->pos.v[2]);
 	if(pt->billboard)
 	{
 		glGetFloatv(GL_MODELVIEW_MATRIX, mat);
@@ -197,7 +197,7 @@ void DrawParticle(struct particle *p)
 			}
 		glLoadMatrixf(mat);
 	}
-	glRotatef(p->o->theta, p->o->axis.x, p->o->axis.y, p->o->axis.z);
+	glRotatef(p->o->theta, p->o->axis.v[0], p->o->axis.v[1], p->o->axis.v[2]);
 	if(pt->type == PT_POINT)
 		glPointSize(p->size);
 	else

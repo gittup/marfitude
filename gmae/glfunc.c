@@ -377,14 +377,14 @@ void look_at(double ex, double ey, double ez, double cx, double cy, double cz, d
 	union vector u;
 	union matrix M;
 
-	f.p.x = cx - ex;
-	f.p.y = cy - ey;
-	f.p.z = cz - ez;
+	f.v[0] = cx - ex;
+	f.v[1] = cy - ey;
+	f.v[2] = cz - ez;
 	vector_normalize(&f);
 
-	up.p.x = ux;
-	up.p.y = uy;
-	up.p.z = uz;
+	up.v[0] = ux;
+	up.v[1] = uy;
+	up.v[2] = uz;
 	vector_normalize(&up);
 
 	vector_cross(&s, &f, &up);
