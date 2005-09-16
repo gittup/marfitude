@@ -45,7 +45,7 @@ void vector_cross(union vector *c, const union vector *v1, const union vector *v
  */
 double vector_mag(const union vector *v)
 {
-	return sqrt(v->p.x*v->p.x + v->p.y*v->p.y + v->p.z*v->p.z);
+	return sqrt(v->v[0]*v->v[0] + v->v[1]*v->v[1] + v->v[2]*v->v[2]);
 }
 
 /** Divide each element in vector @a v by the magnitude of @a v. If the vector
