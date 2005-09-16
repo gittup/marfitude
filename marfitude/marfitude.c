@@ -839,7 +839,7 @@ void ResetAp(void)
 		end++;
 	}
 
-	if(apLines < LINES_PER_AP) {
+	if(curp->ap.notesTotal == 0) {
 		/* at the end of the song we can't find a valid pattern to do */
 		curp->ap.startTic = -1;
 		curp->ap.stopTic = -1;
