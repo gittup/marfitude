@@ -46,7 +46,7 @@ void draw_rows(const void *data)
 	marfitude_get_pos(&pos);
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glEnable(GL_POLYGON_OFFSET_FILL);
-	glPolygonOffset(1.0, 0.0);
+	glPolygonOffset(5.0, 0.0);
 
 	/* usually we draw from -NEGATIVE_TICKS to +POSITIVE_TICKS, with the
 	 * notes currently being played at position 0.
