@@ -232,8 +232,10 @@ int init_gl(void)
 	SDL_Surface *screen;
 	int bpp;
 	float light0[4] = {0.0, 1.0, 0.0, 0.0};
-	float light0amb[4] = {0.3, 0.3, 0.3, 1.0};
+	float light0amb[4] = {1.0, 1.0, 1.0, 1.0};
 	float light0dif[4] = {0.4, 0.4, 0.4, 1.0};
+	float ambient_light[4] = {0.0, 0.0, 0.0, 0.0};
+	float diffuse_light[4] = {1.0, 1.0, 1.0, 1.0};
 
 	printf("Starting video...\n");
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_TIMER) < 0)
@@ -309,6 +311,10 @@ int init_gl(void)
 	glLightfv(GL_LIGHT0, GL_AMBIENT, light0amb);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, light0dif);
 	glEnable(GL_LIGHT0);
+	glLightfv(GL_LIGHT1, GL_AMBIENT, ambient_light);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse_light);
+	glEnable(GL_LIGHT1);
+
 
 	if(!load_font())
 		return 3;
