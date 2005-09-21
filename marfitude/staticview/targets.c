@@ -52,14 +52,10 @@ void update_shot(const void *data)
 void draw_target(void)
 {
 	glBegin(GL_QUADS); {
-		glTexCoord2f(0.0, 0.0);
-		glVertex3f(-0.25, 0.01, -0.25);
-		glTexCoord2f(1.0, 0.0);
-		glVertex3f(0.25, 0.01, -0.25);
-		glTexCoord2f(1.0, 1.0);
-		glVertex3f(0.25, 0.01, 0.25);
-		glTexCoord2f(0.0, 1.0);
-		glVertex3f(-0.25, 0.01, 0.25);
+		glTexCoord2f(0.0, 0.0); glVertex3f(-0.25, 0.0, -0.25);
+		glTexCoord2f(1.0, 0.0); glVertex3f(0.25, 0.0, -0.25);
+		glTexCoord2f(1.0, 1.0); glVertex3f(0.25, 0.0, 0.25);
+		glTexCoord2f(0.0, 1.0); glVertex3f(-0.25, 0.0, 0.25);
 	} glEnd();
 }
 
