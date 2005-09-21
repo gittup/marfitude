@@ -17,9 +17,6 @@ static float fireball[4];
 
 void fireball_init(void)
 {
-	float ambientLight[4] = {0.7, 0.7, 0.7, 0.7};
-	float diffuseLight[4] = {1.0, 1.0, 1.0, 1.0};
-
 	fireball_tex = texture_num("Fireball.png");
 	fireball[0] = 0.0;
 	fireball[1] = 0.5;
@@ -27,9 +24,6 @@ void fireball_init(void)
 	fireball[3] = 1.0;
 
 	register_event("draw transparent", fireball_draw);
-	glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLight);
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuseLight);
-	glEnable(GL_LIGHT1);
 }
 
 void fireball_exit(void)
