@@ -45,6 +45,8 @@ void draw_rows(const void *data)
 	if(data) {}
 	marfitude_get_pos(&pos);
 	glColor4f(1.0, 1.0, 1.0, 1.0);
+	glEnable(GL_POLYGON_OFFSET_FILL);
+	glPolygonOffset(1.0, 0.0);
 
 	/* usually we draw from -NEGATIVE_TICKS to +POSITIVE_TICKS, with the
 	 * notes currently being played at position 0.
@@ -88,16 +90,17 @@ void draw_rows(const void *data)
 		stop *= TIC_HEIGHT;
 		glBegin(GL_QUADS); {
 			glTexCoord2f(0.0, start/ 4.0);
-			glVertex3f(-1.0, -0.01, start);
+			glVertex3f(-1.0, 0.0, start);
 			glTexCoord2f(1.0, start / 4.0);
-			glVertex3f(1.0, -0.01, start);
+			glVertex3f(1.0, 0.0, start);
 			glTexCoord2f(1.0, stop / 4.0);
-			glVertex3f(1.0, -0.01, stop);
+			glVertex3f(1.0, 0.0, stop);
 			glTexCoord2f(0.0, stop / 4.0);
-			glVertex3f(-1.0, -0.01, stop);
+			glVertex3f(-1.0, 0.0, stop);
 		} glEnd();
 
 		glTranslated(-BLOCK_WIDTH, 0, 0);
 	}
 	glPopMatrix();
+	glDisable(GL_POLYGON_OFFSET_FILL);
 }

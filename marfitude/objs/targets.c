@@ -44,13 +44,13 @@ void draw_targets(const void *data)
 		for(x=-1;x<=1;x++) {
 			glBegin(GL_QUADS); {
 				glTexCoord2f(0.0, 0.0);
-				glVertex3f(-0.25, 0.01, -0.25);
+				glVertex3f(-0.25, 0.0, -0.25);
 				glTexCoord2f(1.0, 0.0);
-				glVertex3f(0.25, 0.01, -0.25);
+				glVertex3f(0.25, 0.0, -0.25);
 				glTexCoord2f(1.0, 1.0);
-				glVertex3f(0.25, 0.01, 0.25);
+				glVertex3f(0.25, 0.0, 0.25);
 				glTexCoord2f(0.0, 1.0);
-				glVertex3f(-0.25, 0.01, 0.25);
+				glVertex3f(-0.25, 0.0, 0.25);
 			} glEnd();
 			glTranslated(NOTE_WIDTH, 0.0, 0.0);
 		}
