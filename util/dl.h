@@ -28,7 +28,7 @@
 #  define dlopen(l, a) LoadLibrary(l)
 #  define dlclose FreeLibrary
 #  define dlsym GetProcAddress
-#  define dlerror() NULL
+#  define dlerror() 0
 # else
 #   if defined(__APPLE__)
 /* Umm...yeah */
@@ -49,7 +49,7 @@
 #     define dlopen(l, a) 0
 #     define dlclose(l)
 #     define dlsym(l, s) 0
-#     define dlerror() NULL
+#     define dlerror() 0
 #   endif
 # endif
 #endif
