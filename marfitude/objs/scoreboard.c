@@ -42,7 +42,7 @@ void draw_scoreboard(const void *data)
 		print_gl(50, 45, "Song complete!");
 		marfitude_foreach_player(ps) {
 			if(ps->score.score > highscore) {
-				print_gl(display_width() / 2 - 85, 120, "New High Score!!!");
+				print_gl(640 / 2 - 85, 120, "New High Score!!!");
 			}
 		}
 	} else if(pos.row_index < 0) {
