@@ -116,4 +116,4 @@ const struct marfitude_attack_pat *marfitude_get_ap(int player);
 const struct marfitude_player *marfitude_get_player(const struct marfitude_player *);
 void marfitude_get_pos(struct marfitude_pos *);
 
-#define marfitude_foreach_player(ps) for(ps=marfitude_get_player(NULL); ps != NULL; ps=marfitude_get_player(ps))
+#define marfitude_foreach_player(ps) for(ps=marfitude_get_player(0); ps != 0; ps=marfitude_get_player(ps))
