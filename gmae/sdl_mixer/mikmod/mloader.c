@@ -532,6 +532,11 @@ MODULE* Player_Load(const CHAR* filename,int maxchan,BOOL curious)
 	FILE *fp;
 	MODULE *mf=NULL;
 
+	/* The end of this song is really really annoying, so disable curious
+	 * mode. But other than that the song is cool.
+	 */
+	if(strcmp(filename, "music/concerto.s3m") == 0)
+		curious = 0;
 	if((fp=_mm_fopen(filename,"rb"))) {
 		mf=Player_LoadFP(fp,maxchan,curious);
 		fclose(fp);
