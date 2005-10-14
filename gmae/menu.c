@@ -932,7 +932,6 @@ void FightActivate(int shift)
 	song = cat_str(MUSICDIR, (char*)slist_nth(fileList, mainMenu->activeMenuItem)->data);
 	scene = cat_str(SCENEDIR, (char*)slist_nth(sceneList, fightSceneSelect->activeMenuItem)->data);
 
-	printf("Activating %i, %i\n", mainMenu->activeMenuItem, fightSceneSelect->activeMenuItem);
 	cfg_set("main", "song", song);
 	cfg_set("main", "scene", scene);
 	free(song);
