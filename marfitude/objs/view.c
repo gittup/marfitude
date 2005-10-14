@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include "SDL_opengl.h"
 
 #include "marfitude.h"
@@ -42,7 +44,8 @@ void set_main_view(const void *data)
 	 * It should be a smooth transition and stop when it gets there.
 	 */
 	tmp = view_focus + ((double)ps->channel - view_focus) * timeDiff * 8.0;
-	if( (ps->channel < view_focus) != (ps->channel < tmp) ) {
+	if( (ps->channel < view_focus) != (ps->channel < tmp) ||
+			fabs(ps->channel - view_focus) < 0.003 ) {
 		view_focus = (double)ps->channel;
 	} else {
 		view_focus = tmp;
