@@ -24,6 +24,7 @@
 #include "cmp.h"
 #include "sdl_mixer/mikmod/sample_callback.h"
 #include "sdl_mixer/mikmod/mikmod.h"
+#include "util/math/pi.h"
 
 /** @file
  * Because all awesome programs need an FFT library
@@ -126,7 +127,6 @@ void internal_init(int len, int flags)
 	int x;
 	int j;
 	int log_len;
-	double pi;
 
 	if(flags & DMODE_16BITS)
 		len /= 2;
@@ -147,7 +147,6 @@ void internal_init(int len, int flags)
 	my_fft.max = pow(2.0, (flags & DMODE_16BITS) ? 16 : 8) * len;
 	/* Does mono/stereo affect my_fft.max? Probably, but...by how MUCH!? */
 
-	pi = 4.0 * atan(1.0);
 	weights = malloc(sizeof(struct cmp) * len * log_len);
 	x = 2;
 	for(j=0;j<log_len;j++)
