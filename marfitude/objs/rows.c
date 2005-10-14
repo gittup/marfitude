@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include "SDL_opengl.h"
 
 #include "marfitude.h"
@@ -8,17 +10,21 @@
 #include "gmae/wam.h"
 
 #include "util/slist.h"
+#include "util/math/pi.h"
 
 static void draw_rows(const void *data);
+static void create_row(void *pixels, int pitch);
 
-static GLuint row_texes[MAX_COLS];
+static int row_texes[MAX_COLS];
+static const int width = 128;
+static const int height = 128;
 
 void rows_init(void)
 {
 	row_texes[0] = texture_num("Slate.png");
 	row_texes[1] = texture_num("Walnut.png");
 	row_texes[2] = texture_num("ElectricBlue.png");
-	row_texes[3] = texture_num("Clovers.png");
+	create_texture(&row_texes[3], width, height, create_row);
 	row_texes[4] = texture_num("Lava.png");
 	row_texes[5] = texture_num("Parque3.png");
 	row_texes[6] = texture_num("Slate.png");
@@ -103,4 +109,49 @@ void draw_rows(const void *data)
 	}
 	glPopMatrix();
 	glDisable(GL_POLYGON_OFFSET_FILL);
+}
+
+static double eq1(double x);
+
+double eq1(double x)
+{
+	return sin(2.0 * x * pi / (double)width);
+}
+
+void create_row(void *pixels, int pitch)
+{
+	int x;
+	int y;
+	unsigned char *p;
+	unsigned char *q;
+
+	q = pixels;
+	for(y=0; y<height; y++) {
+		p = q;
+		for(x=0; x<width; x++) {
+			double t;
+			double u;
+			double v;
+
+			t = (eq1(x) + 1) * height/2 - y;
+			u = (eq1(x) + 1) * height/2 + height - y;
+			t = t*t;
+			u = u*u;
+			if(t < u)
+				v = t;
+			else
+				v = u;
+			u = (eq1(x) + 1) * height/2 - height - y;
+			u = u*u;
+			if(u < v)
+				v = u;
+
+			p[0] = 0;
+			p[1] = 0;
+			p[2] = 255 - (v * 255 / height);
+			p[3] = 255;
+			p += 4;
+		}
+		q += pitch;
+	}
 }
