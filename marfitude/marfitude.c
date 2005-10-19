@@ -848,11 +848,12 @@ void ResetAp(void)
 		curp->ap.active = 0;
 		return;
 	}
-	if(end == wam->num_rows)
-		end = wam->num_rows - 1;
 	Log(("StarT: %i, End: %i\n", start, end));
+	if(end == wam->num_rows)
+		curp->ap.stopTic = wam->num_tics;
+	else
+		curp->ap.stopTic = wam->row_data[end].ticpos;
 	curp->ap.startTic = wam->row_data[start].ticpos;
-	curp->ap.stopTic = wam->row_data[end].ticpos;
 	curp->ap.lastTic = wam->row_data[start].ticpos - 1;
 	curp->ap.stopRow = end;
 	return;
