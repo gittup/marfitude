@@ -232,7 +232,6 @@ void button_handler(const void *data)
 			show_menu(p);
 			break;
 		case B_UP:
-			ticTime += 20000;
 		case B_DOWN:
 		default:
 			break;
@@ -279,7 +278,7 @@ int main_init()
 	highscore = cfg_get_int("highscore", cursong, 0);
 
 	tickCounter = 0;
-	timerCounter = -audio_delay();
+	timerCounter = 0.0;
 	songStarted = 0;
 	modTime = -5.0;
 	oldHand = MikMod_RegisterPlayer(TickHandler);
@@ -1002,14 +1001,16 @@ void UpdatePosition(void)
 	 */
 	if(songStarted) {
 		int tmpAdj;
+		double tdiff;
 
+		tdiff = timerCounter - modTime - audio_delay();
 		/* If the current modtime is not in between the timer counter
 		 * and the timer at the next tic, then make some adjustments.
 		 */
-		if(modTime < timerCounter) {
-			tmpAdj = (int)((timerCounter - modTime) * 2048.0);
-		} else if(modTime > timerCounter + 2.5 / curRow->bpm) {
-			tmpAdj = (int)((timerCounter + 2.5 / curRow->bpm - modTime) * 2048.0);
+		if(tdiff > 0.0) {
+			tmpAdj = (int)(tdiff * 1024.0);
+		} else if(tdiff < -2.5 / curRow->bpm) {
+			tmpAdj = (int)((tdiff + 2.5 / curRow->bpm) * 1024.0);
 		} else {
 			tmpAdj = 0;
 		}
