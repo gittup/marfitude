@@ -30,16 +30,16 @@
  */
 
 static int audioInited = 0;
+static int hz;
+static int buffersize;
 
 /** Initializes SDL_Mixer
  * @return 0 on success, 1 on failure
  */
 int init_audio(void)
 {
-	int stereo;
-	int hz;
 	int channels;
-	int buffersize;
+	int stereo;
 	Uint16 flags;
 
 	if(audioInited)
@@ -78,4 +78,12 @@ void quit_audio(void)
 	Mix_CloseAudio();
 	printf("Audio shutdown\n");
 	audioInited = 0;
+}
+
+/** Find the delay caused by the audio buffer in seconds. */
+double audio_delay(void)
+{
+	if(!audioInited)
+		return 0.0;
+	return (double)buffersize / (double)hz;
 }

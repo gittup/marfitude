@@ -23,3 +23,4 @@
 
 int init_audio(void);
 void quit_audio(void);
+double audio_delay(void);
