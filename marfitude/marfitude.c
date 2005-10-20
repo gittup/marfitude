@@ -34,6 +34,7 @@
 
 #include "SDL_opengl.h"
 
+#include "gmae/audio.h"
 #include "gmae/cfg.h"
 #include "gmae/event.h"
 #include "gmae/glfunc.h"
@@ -136,6 +137,7 @@ static void *plugin = NULL;
 static int *noteOffset;
 static MikMod_player_t oldHand;
 static int tickCounter;
+static double timerCounter;
 static int songStarted;	/* this is set once we get to the first row, and the
 			 * song is unpaused
 			 */
@@ -230,6 +232,7 @@ void button_handler(const void *data)
 			show_menu(p);
 			break;
 		case B_UP:
+			ticTime += 20000;
 		case B_DOWN:
 		default:
 			break;
@@ -276,6 +279,7 @@ int main_init()
 	highscore = cfg_get_int("highscore", cursong, 0);
 
 	tickCounter = 0;
+	timerCounter = -audio_delay();
 	songStarted = 0;
 	modTime = -5.0;
 	oldHand = MikMod_RegisterPlayer(TickHandler);
@@ -747,7 +751,10 @@ void FixVb(int *vb, int *row)
 void TickHandler(void)
 {
 	if(songStarted) {
-		if(!Player_Paused()) tickCounter++;
+		if(!Player_Paused()) {
+			tickCounter++;
+			timerCounter += 2.5 / curRow->bpm;
+		}
 	}
 	oldHand();
 }
@@ -983,8 +990,6 @@ struct marfitude_player *get_player(struct marfitude_player *player)
 
 void UpdatePosition(void)
 {
-	int tmpAdj;
-
 	/* calculate the amount of ticTime elapsed
 	 * every 2500 ticTime is one tick
 	 */
@@ -996,8 +1001,25 @@ void UpdatePosition(void)
 	 * right ourselves.
 	 */
 	if(songStarted) {
-		tmpAdj = (tickCounter - curTic) << 5;
-		Log(("Adj: %i\n", (tickCounter-curTic) << 5));
+		int tmpAdj;
+
+		/* If the current modtime is not in between the timer counter
+		 * and the timer at the next tic, then make some adjustments.
+		 */
+		if(modTime < timerCounter) {
+			tmpAdj = (int)((timerCounter - modTime) * 2048.0);
+		} else if(modTime > timerCounter + 2.5 / curRow->bpm) {
+			tmpAdj = (int)((timerCounter + 2.5 / curRow->bpm - modTime) * 2048.0);
+		} else {
+			tmpAdj = 0;
+		}
+		Log(("Adj: %i\n", tmpAdj));
+
+		/* Make sure we don't actually go back rows, as that would
+		 * be massively confusing (for my code, not necessarily the
+		 * player). If we get too far ahead of the song somehow, the
+		 * game will just pause until it catches up.
+		 */
 		if((signed)ticTime + tmpAdj < 0) ticTime = 0;
 		else ticTime += tmpAdj;
 	}
@@ -1022,15 +1044,17 @@ void UpdatePosition(void)
 				}
 			}
 			CheckColumn(wam_rowindex(wam, rowIndex));
-			if(rowIndex == 0) { /* start the song! */
-				Player_TogglePause();
-				songStarted = 1;
-				register_event("menu", menu_handler);
-			} else if(rowIndex == wam->num_rows) {
+			if(rowIndex == wam->num_rows) {
 				fire_event("victory", &local_high);
 			}
 		}
 		modTime = curRow->time + (curTic - curRow->ticpos) * BpmToSec(curRow->sngspd, curRow->bpm) / curRow->sngspd;
+		if(!songStarted && modTime + audio_delay() >= 0.0) {
+			/* start the song! */
+			Player_TogglePause();
+			songStarted = 1;
+			register_event("menu", menu_handler);
+		}
 		UpdateModule();
 
 		r = wam_row(wam, firstRow);
