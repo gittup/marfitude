@@ -30,16 +30,17 @@
  */
 
 static int audioInited = 0;
-static int hz;
-static int buffersize;
+static double delay;
 
 /** Initializes SDL_Mixer
  * @return 0 on success, 1 on failure
  */
 int init_audio(void)
 {
-	int channels;
 	int stereo;
+	int hz;
+	int channels;
+	int buffersize;
 	Uint16 flags;
 
 	if(audioInited)
@@ -59,6 +60,7 @@ int init_audio(void)
 	hz = cfg_get_int("sound", "hz", 44100);
 	channels = cfg_get_int("sound", "channels", 32);
 	buffersize = cfg_get_int("sound", "buffersize", 512);
+	delay = (double)buffersize / (double)hz;
 
 	if(Mix_OpenAudio(hz, flags, stereo, buffersize))
 	{
@@ -85,5 +87,5 @@ double audio_delay(void)
 {
 	if(!audioInited)
 		return 0.0;
-	return (double)buffersize / (double)hz;
+	return delay;
 }
