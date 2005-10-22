@@ -53,9 +53,12 @@ struct tex_entry {
 	int *tex;   /**< A pointer to the texture handle */
 	int width;  /**< The width of the texture (power of 2!) */
 	int height; /**< The height of the texture (power of 2!) */
-	void (*draw)(void *, int); /**< The draw function. Arguments are the
-				    * pixel data and the pitch in bytes.
-				    */
+	const char *name; /**< The name of the texture */
+	void (*draw)(unsigned char *, int, int); /**< The draw function.
+						  * Arguments are the pixel
+						  * to write to and the x & y
+						  * coordinates.
+						  */
 };
 
 static void recreate_textures(const void *);
@@ -80,10 +83,9 @@ int valid_png_file(const char *s)
 }
 
 /** Create an OpenGL texture with dimensions @a width x @a height. The function
- * @a draw is called with the pixels and the line pitch in bytes. The @a draw
- * function should write to the pixels data, assuming it points to a buffer
- * of @a width x @a height in size, and has 32 bits per pixel (includes
- * alpha channel). The integer @a tex is filled with the OpenGL texture number
+ * @a draw is called with the pixel to write to for the given x and y values.
+ * The pixel is 32 bits, assumed 0 is red, 1 is green, 2 is blue, and 3 is
+ * alpha. The integer @a tex is filled with the OpenGL texture number
  * (for use in glBindTexture).
  *
  * When SDL is reinitialized, create_texture will be called again automatically
@@ -92,17 +94,19 @@ int valid_png_file(const char *s)
  * that this means that the @a draw function can be called more than once
  * during the program execution.
  *
+ * @param name The name of the texture.
  * @param tex A pointer to the texture number, to be filled by this function.
  * @param width The width of the texture (must be power of 2)
  * @param height The height of the texture (must be power of 2)
- * @param draw The function to draw the texture. The first argument is the
- *             buffer to draw to, the second argument is the pitch (in bytes).
+ * @param draw The function to draw the texture. Takes a pixel (four
+ *             unsigned characters), and x & y coordinates.
  */
-void create_texture(int *tex, int width, int height, void (*draw)(void *, int))
+void create_texture(const char *name, int *tex, int width, int height, void (*draw)(unsigned char *, int, int))
 {
 	struct tex_entry *entry;
 
 	entry = malloc(sizeof(struct tex_entry));
+	entry->name = name;
 	entry->tex = tex;
 	entry->width = width;
 	entry->height = height;
@@ -113,6 +117,10 @@ void create_texture(int *tex, int width, int height, void (*draw)(void *, int))
 
 void create_texture_internal(struct tex_entry *entry)
 {
+	int x;
+	int y;
+	unsigned char *p;
+	unsigned char *q;
 	SDL_Surface *s;
 	GLuint gtex;
 
@@ -122,7 +130,20 @@ void create_texture_internal(struct tex_entry *entry)
 		*(entry->tex) = 0;
 		return;
 	}
-	entry->draw(s->pixels, s->pitch);
+
+	printf("Generate '%s'", entry->name);
+	progress_meter("");
+	q = s->pixels;
+	for(y=0; y<entry->height; y++) {
+		p = q;
+		for(x=0; x<entry->width; x++) {
+			entry->draw(p, x, y);
+			p += 4;
+		}
+		q += s->pitch;
+		update_progress(y+1, entry->height);
+	}
+	end_progress_meter();
 	glGenTextures(1, &gtex);
 	glBindTexture(GL_TEXTURE_2D, gtex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
