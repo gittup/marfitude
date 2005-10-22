@@ -38,6 +38,10 @@ void rows_init(void)
 void rows_exit(void)
 {
 	deregister_event("draw opaque", draw_rows);
+	delete_texture(&row_texes[3]);
+	delete_texture(&row_texes[2]);
+	delete_texture(&row_texes[1]);
+	delete_texture(&row_texes[0]);
 }
 
 void draw_rows(const void *data)

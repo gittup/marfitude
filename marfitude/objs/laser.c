@@ -50,6 +50,7 @@ void laser_exit(void)
 {
 	deregister_event("draw transparent", draw_lasers);
 	deregister_event("shoot", make_laser);
+	delete_texture(&laser_tex);
 }
 
 void make_laser(const void *data)
