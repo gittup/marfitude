@@ -30,7 +30,7 @@ static double laser_adj(double a, double b, double dt);
 static void draw_laser(struct laser *l);
 static void make_laser(const void *);
 static void draw_lasers(const void *);
-static void create_laser(void *pixels, int pitch);
+static void create_laser(unsigned char *p, int x, int y);
 static const int width = 32;
 static const int height = 128;
 
@@ -40,7 +40,7 @@ static struct laser laser[NUM_LASERS];
 
 void laser_init(void)
 {
-	create_texture(&laser_tex, width, height, create_laser);
+	create_texture("laser", &laser_tex, width, height, create_laser);
 	num_lasers = 0;
 	register_event("shoot", make_laser);
 	register_event("draw transparent", draw_lasers);
@@ -111,27 +111,19 @@ void draw_lasers(const void *data)
 	}
 }
 
-void create_laser(void *pixels, int pitch)
+void create_laser(unsigned char *p, int x, int y)
 {
-	int x;
-	int y;
-	unsigned char *p;
+	int tmp;
+	int t2 = abs(width/2 - x);
 
-        for(x=0; x<width; x++) {
-                int tmp;
-                int t2 = abs(width/2 - x);
-                tmp = 255 - t2 * 255 / 15;
-                for(y=0; y<height; y++) {
-                        p = pixels;
-                        p += x * 4;
-                        p += y * pitch;
-                        p[RED] = 255;
-                        p[GREEN] = 255;
-                        p[BLUE] = 255;
-                        if(tmp < 0)
-                                p[ALPHA] = 0;
-                        else
-                                p[ALPHA] = tmp;
-                }
-        }
+	if(y) {}
+
+	tmp = 255 - t2 * 255 / 15;
+	p[RED] = 255;
+	p[GREEN] = 255;
+	p[BLUE] = 255;
+	if(tmp < 0)
+		p[ALPHA] = 0;
+	else
+		p[ALPHA] = tmp;
 }
