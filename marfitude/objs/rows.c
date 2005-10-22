@@ -24,10 +24,10 @@ static const int height = 128;
 
 void rows_init(void)
 {
-	create_texture(&row_texes[0], width, height, create_row0);
-	create_texture(&row_texes[1], width, height, create_row1);
-	create_texture(&row_texes[2], width, height, create_row2);
-	create_texture(&row_texes[3], width, height, create_row3);
+	create_texture("row 0", &row_texes[0], width, height, create_row0);
+	create_texture("row 1", &row_texes[1], width, height, create_row1);
+	create_texture("row 2", &row_texes[2], width, height, create_row2);
+	create_texture("row 3", &row_texes[3], width, height, create_row3);
 	row_texes[4] = texture_num("Walnut.png");
 	row_texes[5] = texture_num("Parque3.png");
 	row_texes[6] = texture_num("Slate.png");
