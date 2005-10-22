@@ -13,7 +13,10 @@
 #include "util/math/pi.h"
 
 static void draw_rows(const void *data);
-static void create_row(void *pixels, int pitch);
+static void create_row0(unsigned char *p, int x, int y);
+static void create_row1(unsigned char *p, int x, int y);
+static void create_row2(unsigned char *p, int x, int y);
+static void create_row3(unsigned char *p, int x, int y);
 
 static int row_texes[MAX_COLS];
 static const int width = 128;
@@ -21,14 +24,13 @@ static const int height = 128;
 
 void rows_init(void)
 {
-	row_texes[0] = texture_num("Slate.png");
-	row_texes[1] = texture_num("Walnut.png");
-	row_texes[2] = texture_num("ElectricBlue.png");
-	create_texture(&row_texes[3], width, height, create_row);
-	row_texes[4] = texture_num("Lava.png");
+	create_texture(&row_texes[0], width, height, create_row0);
+	create_texture(&row_texes[1], width, height, create_row1);
+	create_texture(&row_texes[2], width, height, create_row2);
+	create_texture(&row_texes[3], width, height, create_row3);
+	row_texes[4] = texture_num("Walnut.png");
 	row_texes[5] = texture_num("Parque3.png");
 	row_texes[6] = texture_num("Slate.png");
-	row_texes[7] = texture_num("ElectricBlue.png");
 
 	register_event("draw opaque", draw_rows);
 }
@@ -112,46 +114,130 @@ void draw_rows(const void *data)
 }
 
 static double eq1(double x);
+static double eq2(double x);
+static double eq3(double x, double y);
+static double eq4(double x);
 
 double eq1(double x)
 {
 	return sin(2.0 * x * pi / (double)width);
 }
 
-void create_row(void *pixels, int pitch)
+double eq2(double x)
 {
-	int x;
-	int y;
-	unsigned char *p;
-	unsigned char *q;
+	return sin(2.0 * x * pi / (double)width) + sin(4.0 * x * pi / (double)width);
+}
 
-	q = pixels;
-	for(y=0; y<height; y++) {
-		p = q;
-		for(x=0; x<width; x++) {
-			double t;
-			double u;
-			double v;
+double eq3(double x, double y)
+{
+	return sin(2.0 * x * pi / (double)width) + cos(2.0 * y * pi / (double)width);
+}
 
-			t = (eq1(x) + 1) * height/2 - y;
-			u = (eq1(x) + 1) * height/2 + height - y;
-			t = t*t;
-			u = u*u;
-			if(t < u)
-				v = t;
-			else
-				v = u;
-			u = (eq1(x) + 1) * height/2 - height - y;
-			u = u*u;
-			if(u < v)
-				v = u;
+double eq4(double x)
+{
+	return (x > width / 2) ?
+		(x - width / 2) * sin(6.0 * x * pi / (double)width) / width :
+		(width / 2 - x) * sin(6.0 * x * pi / (double)width) / width;
+}
 
-			p[0] = 0;
-			p[1] = 0;
-			p[2] = 255 - (v * 255 / height);
-			p[3] = 255;
-			p += 4;
-		}
-		q += pitch;
-	}
+void create_row0(unsigned char *p, int x, int y)
+{
+	double t;
+	double u;
+	double v;
+
+	t = (eq1(y) + 1) * height/2 - x;
+	u = (eq1(y) + 1) * height/2 + height - x;
+	t = sqrt(t*t);
+	u = sqrt(u*u);
+	if(t < u)
+		v = t;
+	else
+		v = u;
+	u = (eq1(y) + 1) * height/2 - height - x;
+	u = sqrt(u*u);
+	if(u < v)
+		v = u;
+
+	p[0] = 0;
+	p[1] = 0;
+	p[2] = 168 - (v * 128 / height);
+	p[3] = 255;
+}
+
+void create_row1(unsigned char *p, int x, int y)
+{
+	double t;
+	double u;
+	double v;
+
+	t = (eq2(x) + 1) * height/2 - y;
+	u = (eq2(x) + 1) * height/2 + height - y;
+	t = sqrt(t*t);
+	u = sqrt(u*u);
+	if(t < u)
+		v = t;
+	else
+		v = u;
+	u = (eq2(x) + 1) * height/2 - height - y;
+	u = sqrt(u*u);
+	if(u < v)
+		v = u;
+
+	p[0] = 168 - (v * 128 / height);
+	p[1] = 0;
+	p[2] = 0;
+	p[3] = 255;
+}
+
+void create_row2(unsigned char *p, int x, int y)
+{
+	double t;
+	double u;
+	double v;
+
+	t = (eq3(x, y) + 1) * height/2 - y;
+	u = (eq3(x, y) + 1) * height/2 + height - y;
+	t = sqrt(t*t);
+	u = sqrt(u*u);
+	if(t < u)
+		v = t;
+	else
+		v = u;
+	u = (eq3(x, y) + 1) * height/2 - height - y;
+	u = sqrt(u*u);
+	if(u < v)
+		v = u;
+
+	p[0] = 128 - (v * 255 / height) / 3;
+	p[1] = p[0];
+	p[2] = 0;
+	p[3] = 255;
+	p += 4;
+}
+
+void create_row3(unsigned char *p, int x, int y)
+{
+	double t;
+	double u;
+	double v;
+
+	t = (eq4(y) + 1) * height/2 - x;
+	u = (eq4(y) + 1) * height/2 + height - x;
+	t = sqrt(t*t);
+	u = sqrt(u*u);
+	if(t < u)
+		v = t;
+	else
+		v = u;
+	u = (eq4(y) + 1) * height/2 - height - x;
+	u = sqrt(u*u);
+	if(u < v)
+		v = u;
+
+	p[0] = 0;
+	p[1] = 128 - (v * 255 / height) / 2;
+	p[2] = 0;
+	p[3] = 255;
+	p += 4;
 }
