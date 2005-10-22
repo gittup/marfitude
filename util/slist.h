@@ -39,29 +39,14 @@ typedef int (*compare_func)(const void *, const void *);
 #define slist_foreach(t, l) \
 	for((t)=(l); (t)!=0; (t)=(t)->next)
 
-struct slist *slist_append(struct slist *l, void *d)
-	__attribute__((warn_unused_result));
-
-struct slist *slist_remove(struct slist *l, void *d)
-	__attribute__((warn_unused_result));
-
-struct slist *slist_nth(struct slist *l, int n)
-	__attribute__((warn_unused_result));
-
-struct slist *slist_insert(struct slist *l, void *d)
-	__attribute__((warn_unused_result));
-
-struct slist *slist_insert_sorted(struct slist *l, void *d, compare_func c)
-	__attribute__((warn_unused_result));
-
-struct slist *slist_find(struct slist *l, void *d)
-	__attribute__((warn_unused_result));
-
-struct slist *slist_find_custom(struct slist *l, void *d, compare_func c)
-	__attribute__((warn_unused_result));
-
-struct slist *slist_next(struct slist *l)
-	__attribute__((warn_unused_result));
+struct slist *slist_append(struct slist *l, void *d) ATTRIBUTE_UNUSED_RESULT;
+struct slist *slist_remove(struct slist *l, void *d) ATTRIBUTE_UNUSED_RESULT;
+struct slist *slist_nth(struct slist *l, int n) ATTRIBUTE_UNUSED_RESULT;
+struct slist *slist_insert(struct slist *l, void *d) ATTRIBUTE_UNUSED_RESULT;
+struct slist *slist_insert_sorted(struct slist *l, void *d, compare_func c) ATTRIBUTE_UNUSED_RESULT;
+struct slist *slist_find(struct slist *l, void *d) ATTRIBUTE_UNUSED_RESULT;
+struct slist *slist_find_custom(struct slist *l, void *d, compare_func c) ATTRIBUTE_UNUSED_RESULT;
+struct slist *slist_next(struct slist *l) ATTRIBUTE_UNUSED_RESULT;
 
 int slist_length(struct slist *l);
 void slist_free(struct slist *l);
