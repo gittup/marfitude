@@ -7,6 +7,7 @@
  */
 
 void create_texture(const char *name, int *tex, int width, int height, void (*draw)(unsigned char *, int, int));
+void delete_texture(int *tex);
 GLuint load_texture(const char *filename);
 GLuint texture_num(const char *name);
 int init_textures(void);

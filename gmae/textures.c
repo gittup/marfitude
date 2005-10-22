@@ -115,6 +115,23 @@ void create_texture(const char *name, int *tex, int width, int height, void (*dr
 	create_texture_internal(entry);
 }
 
+/** Delete a previously created texture.
+ *
+ * @param tex The tex parameter that was passed in to create_texture.
+ */
+void delete_texture(int *tex)
+{
+	struct slist *t;
+
+	slist_foreach(t, texlist) {
+		struct tex_entry *entry = t->data;
+		if(entry->tex == tex) {
+			texlist = slist_remove(texlist, entry);
+			break;
+		}
+	}
+}
+
 void create_texture_internal(struct tex_entry *entry)
 {
 	int x;
