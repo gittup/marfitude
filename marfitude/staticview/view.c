@@ -7,6 +7,7 @@
 #include "objs/lines.h"
 #include "objs/rows.h"
 #include "objs/scoreboard.h"
+#include "objs/targets.h"
 #include "view.h"
 
 #include "gmae/event.h"
@@ -28,6 +29,7 @@ void static_view_init(void)
 	lines_init();
 	rows_init();
 	scoreboard_init();
+	targets_init();
 	register_event("set view", set_main_view);
 	view_focus = 0.0;
 }
@@ -35,6 +37,7 @@ void static_view_init(void)
 void static_view_exit(void)
 {
 	deregister_event("set view", set_main_view);
+	targets_exit();
 	scoreboard_exit();
 	rows_exit();
 	lines_exit();
