@@ -53,7 +53,7 @@ struct tex_entry {
 	int *tex;   /**< A pointer to the texture handle */
 	int width;  /**< The width of the texture (power of 2!) */
 	int height; /**< The height of the texture (power of 2!) */
-	const char *name; /**< The name of the texture */
+	SDL_Surface *surface; /**< The surface that was drawn. */
 	void (*draw)(unsigned char *, int, int); /**< The draw function.
 						  * Arguments are the pixel
 						  * to write to and the x & y
@@ -69,6 +69,7 @@ static struct png_tex_entry *textures = NULL;
 static struct slist *texlist = NULL;
 static int tex_inited = 0;
 static int num_textures = 0;
+static int created_textures = 0;
 
 int valid_png_file(const char *s)
 {
@@ -94,25 +95,46 @@ int valid_png_file(const char *s)
  * that this means that the @a draw function can be called more than once
  * during the program execution.
  *
- * @param name The name of the texture.
  * @param tex A pointer to the texture number, to be filled by this function.
  * @param width The width of the texture (must be power of 2)
  * @param height The height of the texture (must be power of 2)
  * @param draw The function to draw the texture. Takes a pixel (four
  *             unsigned characters), and x & y coordinates.
  */
-void create_texture(const char *name, int *tex, int width, int height, void (*draw)(unsigned char *, int, int))
+void create_texture(int *tex, int width, int height, void (*draw)(unsigned char *, int, int))
 {
+	int x;
+	int y;
+	unsigned char *p;
+	unsigned char *q;
 	struct tex_entry *entry;
 
 	entry = malloc(sizeof(struct tex_entry));
-	entry->name = name;
 	entry->tex = tex;
 	entry->width = width;
 	entry->height = height;
 	entry->draw = draw;
+
+	entry->surface = SDL_CreateRGBSurface(0, entry->width, entry->height, 32, MASKS);
+	if(!entry->surface) {
+		ELog(("ERROR: Couldn't create SDL Surface!\n"));
+		*(entry->tex) = 0;
+		return;
+	}
+
+	q = entry->surface->pixels;
+	for(y=0; y<entry->height; y++) {
+		p = q;
+		for(x=0; x<entry->width; x++) {
+			entry->draw(p, x, y);
+			p += 4;
+		}
+		q += entry->surface->pitch;
+	}
+
 	texlist = slist_insert(texlist, entry);
 	create_texture_internal(entry);
+	created_textures++;
 }
 
 /** Delete a previously created texture.
@@ -127,47 +149,23 @@ void delete_texture(int *tex)
 		struct tex_entry *entry = t->data;
 		if(entry->tex == tex) {
 			texlist = slist_remove(texlist, entry);
+			SDL_FreeSurface(entry->surface);
 			break;
 		}
 	}
+	created_textures--;
 }
 
 void create_texture_internal(struct tex_entry *entry)
 {
-	int x;
-	int y;
-	unsigned char *p;
-	unsigned char *q;
-	SDL_Surface *s;
 	GLuint gtex;
 
-	s = SDL_CreateRGBSurface(0, entry->width, entry->height, 32, MASKS);
-	if(!s) {
-		ELog(("ERROR: Couldn't create SDL Surface!\n"));
-		*(entry->tex) = 0;
-		return;
-	}
-
-	printf("Generate '%s'", entry->name);
-	progress_meter("");
-	q = s->pixels;
-	for(y=0; y<entry->height; y++) {
-		p = q;
-		for(x=0; x<entry->width; x++) {
-			entry->draw(p, x, y);
-			p += 4;
-		}
-		q += s->pitch;
-		update_progress(y+1, entry->height);
-	}
-	end_progress_meter();
 	glGenTextures(1, &gtex);
 	glBindTexture(GL_TEXTURE_2D, gtex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, 4, s->w, s->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, s->pixels);
+	glTexImage2D(GL_TEXTURE_2D, 0, 4, entry->width, entry->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, entry->surface->pixels);
 
-	SDL_FreeSurface(s);
 	*(entry->tex) = (int)gtex;
 }
 
@@ -305,6 +303,9 @@ void quit_textures(void)
 	textures = NULL;
 	num_textures = 0;
 	tex_inited = 0;
+	if(created_textures) {
+		ELog(("\nERROR: There are still %i textures that were not deleted!\n", created_textures));
+	}
 	printf("Textures shutdown\n");
 	return;
 }
