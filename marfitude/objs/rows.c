@@ -143,7 +143,7 @@ double eq0(double x)
 
 double eq1(double x)
 {
-	return (s(x, 6.0) + 0.5 * s(x, 12.0) + s(x, 4.5)) / 2.5;
+	return (s(x, 6.0) + 0.5 * s(x, 12.0) + s(x, 3.0)) / 2.5;
 }
 
 double eq2(double x)
@@ -217,7 +217,7 @@ void create_row0(unsigned char *p, int x, int y)
 
 void create_row1(unsigned char *p, int x, int y)
 {
-	p[0] = 168 - (f(x, y, eq1) * 128 / height);
+	p[0] = 158 - (f(x, y, eq1) * 118 / height);
 	p[1] = 0;
 	p[2] = 0;
 	p[3] = 255;
