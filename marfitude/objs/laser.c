@@ -40,7 +40,7 @@ static struct laser laser[NUM_LASERS];
 
 void laser_init(void)
 {
-	create_texture("laser", &laser_tex, width, height, create_laser);
+	create_texture(&laser_tex, width, height, create_laser);
 	num_lasers = 0;
 	register_event("shoot", make_laser);
 	register_event("draw transparent", draw_lasers);
