@@ -45,7 +45,9 @@ void update_shot(const void *data)
 {
 	const struct button_e *b = data;
 
-	flare[b->player][b->button] = 1.0;
+	flare[b->player][b->button] += 0.5;
+	if(flare[b->player][b->button] > 1.0)
+		flare[b->player][b->button] = 1.0;
 }
 
 void draw_target(void)
@@ -111,7 +113,7 @@ void draw_targets(const void *data)
 
 	marfitude_foreach_player(ps) {
 		for(x=0; x<MAX_NOTE+1; x++) {
-			flare[ps->num][x] -= timeDiff * 7.0;
+			flare[ps->num][x] -= timeDiff * 3.3;
 			if(flare[ps->num][x] < 0.0)
 				flare[ps->num][x] = 0.0;
 		}
