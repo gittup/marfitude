@@ -1185,6 +1185,7 @@ int option_menu_init(void)
 	struct slider *buffer;
 	int width, height;
 	int buffersize;
+	int stereo;
 	int init_mode = 0;
 	SDL_Rect **modes;
 
@@ -1255,6 +1256,9 @@ int option_menu_init(void)
 	buffersize = cfg_get_int("sound", "buffersize", 512);
 	buffer = CreateSlider(mainMenu, "Sound buffer [bytes]", c, 128, 8192, SLIDER_DOUBLE, buffersize);
 
+	stereo = cfg_eq("sound", "stereo", "yes");
+	CreateBoolean(mainMenu, "Stereo sound", c, "On", "Off", stereo);
+
 	b = CreateButton(mainMenu, "Back", MenuBack);
 	b->sound_enabled = 0;
 	return 0;
@@ -1296,6 +1300,13 @@ void option_menu_quit(void)
 	s = (struct slider*)mainMenu->items[i].item;
 	if(buffersize != s->val) {
 		cfg_set_int("sound", "buffersize", s->val);
+		restart_audio = 1;
+	}
+	i++;
+
+	s = (struct slider*)mainMenu->items[i].item;
+	if(cfg_eq("sound", "stereo", "yes") ^ s->val) {
+		cfg_set("sound", "stereo", s->val ? "yes" : "no");
 		restart_audio = 1;
 	}
 	i++;
