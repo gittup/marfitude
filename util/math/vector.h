@@ -37,5 +37,6 @@ union vector {
 void vector_cross(union vector *c, const union vector *v1, const union vector *v2);
 double vector_mag(const union vector *v);
 int vector_normalize(union vector *v);
+void vector_transition(union vector *src, const union vector *dest, double t, double clip);
 
 #endif

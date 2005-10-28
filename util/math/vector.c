@@ -25,6 +25,8 @@
  * Provides some vector math functions
  */
 
+static double trans(double x, double y, double t, double clip);
+
 /** Set @a c = @a v1 X @a v2
  *
  * @param c The output matrix
@@ -69,4 +71,43 @@ int vector_normalize(union vector *v)
 	if(vector_mag(v) < 0.9)
 		return 0;
 	return 1;
+}
+
+/** Transition the vector @a src towards the vector @a dest by a scaling factor
+ * of @a t. Each component of @a is set by the following equation:
+ * @code
+ *  src = src + (dest - src) * t
+ * @endcode
+ *
+ * The only exceptions are that @a src never goes past @a dest, and @src will
+ * be set to @a dest if the difference is less than @a clip. (The clipping is
+ * done per vector component).
+ *
+ * @param src The source vector. It is written with the new vector.
+ * @param dest The destination vector.
+ * @param t The scaling factor.
+ * @param clip The clipping factor.
+ */
+void vector_transition(union vector *src, const union vector *dest, double t, double clip)
+{
+	src->v[0] = trans(src->v[0], dest->v[0], t, clip);
+	src->v[1] = trans(src->v[1], dest->v[1], t, clip);
+	src->v[2] = trans(src->v[2], dest->v[2], t, clip);
+	src->v[3] = trans(src->v[3], dest->v[3], t, clip);
+}
+
+double trans(double x, double y, double t, double clip)
+{
+	double tmp;
+
+	/* Too close, return the destination */
+	if(fabs(y - x) < clip)
+		return y;
+
+	tmp = x + (y - x) * t;
+
+	/* If we went too far, just return the destination */
+	if( (y < x) != (y < tmp) )
+		return y;
+	return tmp;
 }
