@@ -871,6 +871,7 @@ void leave(int shift)
 	if(ps != NULL) {
 		menu_player = ps->num;
 	}
+	switch_menu(MAINMENU);
 }
 
 int MainMenuInit(void)
