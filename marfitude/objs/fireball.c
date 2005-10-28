@@ -40,13 +40,15 @@ void fireball_draw(const void *data)
 	float bounceTime;
 
 	if(data) {}
+	if(marfitude_num_players() != 1)
+		return;
 	marfitude_get_pos(&p);
 
 	wam = marfitude_get_wam();
 	row = wam_row(wam, p.row_index);
 	bounceTime = 2.0 * 3.1415 * ((double)row->ticprt + p.tic - (double)row->ticpos) / (double)row->ticgrp;
 	sintmp = sin(bounceTime);
-	fireball[0] = -BLOCK_WIDTH * get_view_focus() + cos(bounceTime);
+	fireball[0] = get_view_focus() + cos(bounceTime);
 	fireball[1] = 1.0 + sintmp * sintmp;
 	fireball[2] = TIC_HEIGHT * p.tic;
 	glLightfv(GL_LIGHT1, GL_POSITION, fireball);

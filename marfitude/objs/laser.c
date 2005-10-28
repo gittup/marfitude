@@ -60,6 +60,8 @@ void make_laser(const void *data)
 	struct marfitude_pos p;
 	const float *fireball = fireball_get_pos();
 
+	if(marfitude_num_players() != 1)
+		return;
 	marfitude_get_pos(&p);
 
 	/* p1 is set to the light position */
