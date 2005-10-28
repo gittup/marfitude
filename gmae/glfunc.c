@@ -37,6 +37,7 @@
 
 #include "util/memtest.h"
 #include "util/math/matrix.h"
+#include "util/math/pi.h"
 #include "util/math/vector.h"
 
 /** @file
@@ -435,8 +436,7 @@ void perspective_projection(double fov, double aspect, double z1, double z2)
 	double height;
 	double width;
 
-	/* atan(1.0) * 4.0 = pi */
-	height = tan(fov / 360.0 * atan(1.0) * 4.0) * z1;
+	height = tan(fov / 360.0 * pi) * z1;
 	width = height * aspect;
 	glFrustum(-width, width, -height, height, z1, z2);
 }
