@@ -7,6 +7,7 @@
 #include "gmae/input.h"
 #include "gmae/particles.h"
 #include "gmae/phys.h"
+#include "gmae/textures.h"
 #include "gmae/wam.h"
 
 #include "util/myrand.h"
