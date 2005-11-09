@@ -23,15 +23,6 @@
 
 #include "util/math/vector.h"
 
-/** The red byte in a color vector */
-#define RED 0
-/** The green byte in a color vector */
-#define GREEN 1
-/** The blue byte in a color vector */
-#define BLUE 2
-/** The alpha byte in a color vector */
-#define ALPHA 3
-
 /** An object structre */
 struct obj {
 	union vector pos;   /**< position of object */
