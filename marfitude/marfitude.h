@@ -78,6 +78,7 @@ struct marfitude_attack_col {
 			   */
 	int hit;	  /**< equals the tic of the last hit note */
 	int miss;	  /**< equals the tic of the last missed note */
+	int player;       /**< The player who last cleared this AC */
 	struct slist *ps; /**< The players on this AC */
 };
 

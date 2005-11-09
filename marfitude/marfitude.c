@@ -292,6 +292,11 @@ int main_init()
 
 	ticTime = 0;
 
+	if(marfitude_get_player(NULL) == NULL) {
+		p = 0;
+	} else {
+		p = marfitude_get_player(NULL)->num;
+	}
 	for(x=0;x<wam->num_cols;x++) {
 		int y;
 		ac[x].part = 0.0;
@@ -304,6 +309,7 @@ int main_init()
 		ac[x].minRow = ac[x].cleared;
 		ac[x].hit = -1;
 		ac[x].miss = -2;
+		ac[x].player = p;
 		ac[x].ps = NULL;
 	}
 
@@ -698,6 +704,7 @@ void Press(int button, int player)
 					ac[curp->channel].cleared = get_clear_column(curp->ap.stopRow, LINES_PER_AP * wam->num_cols / marfitude_num_players());
 					ac[curp->channel].minRow = rowIndex;
 					ac[curp->channel].part = 0.0;
+					ac[curp->channel].player = curp->num;
 					curp->score.score += curp->ap.notesHit * curp->score.multiplier;
 					if(curp->score.score > local_high)
 						local_high = curp->score.score;
@@ -819,8 +826,7 @@ void ResetAp(void)
 	start = wam_rowindex(wam, Max(Max(NearRow(), curp->ap.nextStartRow), ac[curp->channel].cleared));
 	while(start < wam->num_rows && (wam->row_data[start].line == 0 || wam->row_data[start].ticpos <= ac[curp->channel].miss))
 		start++;
-	if(start == wam->num_rows)
-		start = wam->num_rows - 1;
+
 	end = start;
 
 	/* Make sure there are at least LINES_PER_AP lines in the AP */
