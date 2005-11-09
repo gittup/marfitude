@@ -69,7 +69,6 @@ static struct png_tex_entry *textures = NULL;
 static struct slist *texlist = NULL;
 static int tex_inited = 0;
 static int num_textures = 0;
-static int created_textures = 0;
 
 int valid_png_file(const char *s)
 {
@@ -134,7 +133,6 @@ void create_texture(int *tex, int width, int height, void (*draw)(unsigned char 
 
 	texlist = slist_insert(texlist, entry);
 	create_texture_internal(entry);
-	created_textures++;
 }
 
 /** Delete a previously created texture.
@@ -153,7 +151,6 @@ void delete_texture(int *tex)
 			break;
 		}
 	}
-	created_textures--;
 }
 
 void create_texture_internal(struct tex_entry *entry)
@@ -303,9 +300,12 @@ void quit_textures(void)
 	textures = NULL;
 	num_textures = 0;
 	tex_inited = 0;
-	if(created_textures) {
-		ELog(("\nERROR: There are still %i textures that were not deleted!\n", created_textures));
+	/* Commented out temporarily, since this gets called when the video
+	 * mode changes (and the textures wouldn't have been freed then)
+	if(slist_length(texlist)) {
+		ELog(("\nERROR: There are still %i textures that were not deleted!\n", slist_length(texlist)));
 	}
+	 */
 	printf("Textures shutdown\n");
 	return;
 }
