@@ -34,7 +34,6 @@ void rows_init(void)
 	create_texture(&row_texes[4], width, height, create_row4);
 	create_texture(&row_texes[5], width, height, create_row5);
 	create_texture(&row_texes[6], width, height, create_row6);
-
 	register_event("draw opaque", draw_rows);
 }
 
@@ -225,7 +224,7 @@ void create_row1(unsigned char *p, int x, int y)
 
 void create_row2(unsigned char *p, int x, int y)
 {
-	p[0] = 128 - (f(x, y, eq2) * 58 / height);
+	p[0] = 118 - (f(x, y, eq2) * 58 / height);
 	p[1] = p[0];
 	p[2] = 0;
 	p[3] = 255;
@@ -250,7 +249,7 @@ void create_row4(unsigned char *p, int x, int y)
 void create_row5(unsigned char *p, int x, int y)
 {
 	p[0] = 0;
-	p[1] = 128 - (f(x, y, eq5) * 78 / height);
+	p[1] = 118 - (f(x, y, eq5) * 78 / height);
 	p[2] = p[1];
 	p[3] = 255;
 }
