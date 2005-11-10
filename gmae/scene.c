@@ -63,8 +63,8 @@ int switch_scene(int scene)
 {
 	if(scene < 0 || scene >= NUMSCENES) return 0;
 	Log(("Switching scene: %i\n", scene));
-	if(activeScene) activeScene->QuitScene();
-	if(scenes[scene].InitScene()) {
+	if(activeScene) activeScene->quit();
+	if(scenes[scene].init()) {
 		activeScene = &(scenes[NULLSCENE]);
 		ELog(("Scene switch failed\n"));
 		return 1;

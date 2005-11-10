@@ -23,10 +23,10 @@
 
 /** Contains data to display a menu */
 struct menu {
-	int (*InitMenu)(void);  /**< Pointer to the init function */
-	void (*QuitMenu)(void); /**< pointer to the quit function */
-	void (*Render)(void);   /**< Pointer to the runtime function */
-	int back;               /**< Refers to the 'previous' menu */
+	int (*init)(void);    /**< Pointer to the init function */
+	void (*quit)(void);   /**< pointer to the quit function */
+	void (*render)(void); /**< Pointer to the runtime function */
+	int back;             /**< Refers to the 'previous' menu */
 };
 
 const struct menu *active_menu(void);

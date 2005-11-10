@@ -23,9 +23,9 @@
 
 /** Contains functions to display a scene */
 struct scene {
-	int (*InitScene)(void);  /**< Pointer to the init function */
-	void (*QuitScene)(void); /**< Pointer to the quit function */
-	void (*Render)(void);    /**< Pointer to the runtime function */
+	int (*init)(void);    /**< Pointer to the init function */
+	void (*quit)(void);   /**< Pointer to the quit function */
+	void (*render)(void); /**< Pointer to the runtime function */
 };
 
 const struct scene *active_scene(void);

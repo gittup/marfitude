@@ -1500,7 +1500,7 @@ int switch_menu(int n)
 	snd_back = sound_num("spnray02.wav");
 
 	Log(("Switching Menu: %i\n", n));
-	if(activeMenu) activeMenu->QuitMenu();
+	if(activeMenu) activeMenu->quit();
 	else NullMenuQuit(); /* called for the first menu switch */
 
 	mainMenu->BoundsCheck = MenuWrap;
@@ -1514,7 +1514,7 @@ int switch_menu(int n)
 	mainMenu->menuSize = -1;
 	numScreenMenus = 1;
 	curMenu = 0;
-	if(menus[n].InitMenu())
+	if(menus[n].init())
 	{
 		activeMenu = &(menus[NULLMENU]);
 		Log(("Menu switch failed\n"));
