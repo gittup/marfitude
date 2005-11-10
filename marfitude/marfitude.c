@@ -694,6 +694,7 @@ void Press(int button, int player)
 					}
 					break;
 				}
+				fire_event("note shot", sn);
 				notesList = slist_remove(notesList, (void *)sn);
 				unusedList = slist_append(unusedList, (void *)sn);
 				sn->ins = __LINE__;
@@ -931,6 +932,7 @@ void MoveHitNotes(int tic, int col)
 		sn = (struct marfitude_note*)tmp->data;
 
 		if(sn->tic == tic && sn->col == col) {
+			fire_event("note explosion", sn);
 			hitList = slist_insert_sorted(hitList, sn, SortByTic);
 			holder = slist_append(holder, sn);
 			sn->ins = __LINE__;
