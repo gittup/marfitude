@@ -83,6 +83,7 @@ int main(int argc, char **argv)
 	char c;
 	char *convertSong = NULL;
 
+	srand(time(NULL));
 	/* parse all the command line options
 	 * this is pretty much verbatim from the GNU help page
 	 */
@@ -195,7 +196,6 @@ int main(int argc, char **argv)
 
 	init_input();
 
-	srand(time(NULL));
 	while(!quit)
 	{
 		Log(("input loop\n"));
@@ -203,9 +203,9 @@ int main(int argc, char **argv)
 		Log(("update_timer\n"));
 		update_timer();
 		Log(("Scene Render\n"));
-		active_scene()->Render();
+		active_scene()->render();
 		Log(("Menu Render\n"));
-		active_menu()->Render();
+		active_menu()->render();
 		Log(("Update Screen\n"));
 		update_screen();
 		Log(("Next loop\n"));
