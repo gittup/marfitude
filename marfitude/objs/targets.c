@@ -23,7 +23,7 @@ void targets_init(void)
 {
 	int p, i;
 
-	for(p=0; p<marfitude_num_players(); p++)
+	for(p=0; p<MAX_PLAYERS; p++)
 		for(i=0; i<MAX_NOTE+1; i++)
 			flare[p][i] = 0.0;
 	target_tex[0] = texture_num("Target-1.png");
