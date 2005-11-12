@@ -1,0 +1,134 @@
+#include <math.h>
+
+#include "SDL_opengl.h"
+
+#include "marfitude.h"
+
+#include "gmae/event.h"
+#include "gmae/particles.h"
+#include "gmae/textures.h"
+
+#include "util/slist.h"
+
+static void bigstars_init(void) __attribute__((constructor));
+static void bigstars_exit(void) __attribute__((destructor));
+static void draw_stars(const void *);
+static void createstar0(unsigned char *p, int x, int y);
+static void createstar1(unsigned char *p, int x, int y);
+static void createstar(unsigned char *p, int x, int y, int rad);
+static double distance(int x1, int y1, int x2, int y2);
+static const int width = 128;
+static const int height = 128;
+static int stars[2];
+
+void bigstars_init(void)
+{
+	create_texture(&stars[0], width, height, createstar0);
+	create_texture(&stars[1], width, height, createstar1);
+	register_event("draw transparent", draw_stars);
+}
+
+void bigstars_exit(void)
+{
+	deregister_event("draw transparent", draw_stars);
+	delete_texture(&stars[1]);
+	delete_texture(&stars[0]);
+}
+
+double distance(int x1, int y1, int x2, int y2)
+{
+	return sqrt((double)((x2-x1) * (x2-x1) + (y2-y1) * (y2-y1)));
+}
+
+void createstar0(unsigned char *p, int x, int y)
+{
+	createstar(p, x, y, 64);
+}
+
+void createstar1(unsigned char *p, int x, int y)
+{
+	createstar(p, x, y, 82);
+}
+
+
+void createstar(unsigned char *p, int x, int y, int rad)
+{
+	int u;
+	int v;
+	int cx;
+	int cy;
+	double var;
+
+	u = width / 2 - x;
+	v = height / 2 - y;
+
+	p[RED] = 255;
+	p[GREEN] = 255;
+	p[BLUE] = 255;
+
+	if(u == 0 && v == 0) {
+		p[ALPHA] = 255;
+		return;
+	}
+
+	if(u > 0)
+		cx = width / 2;
+	else
+		cx = -width / 2;
+	if(v > 0)
+		cy = height / 2;
+	else
+		cy = -height / 2;
+
+	var = distance(u, v, cx, cy);
+	if(var < rad)
+		p[ALPHA] = 0;
+	else
+		p[ALPHA] = (var - rad) * 255 / (90 - rad);
+}
+
+void draw_stars(const void *data)
+{
+	const struct slist *t;
+	struct marfitude_pos p;
+
+	if(data) {}
+	marfitude_get_pos(&p);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+	slist_foreach(t, marfitude_get_hitnotes()) {
+		int i;
+		int j;
+		float mat[16];
+		struct marfitude_note *sn = t->data;
+
+		glPushMatrix();
+		glTranslated(   sn->pos.v[0],
+				sn->pos.v[1],
+				sn->pos.v[2]+0.3);
+		glGetFloatv(GL_MODELVIEW_MATRIX, mat);
+		for(i=0;i<3;i++)
+			for(j=0;j<3;j++)
+			{
+				if(i == j) mat[i+j*4] = 1.0;
+				else mat[i+j*4] = 0.0;
+			}
+		glLoadMatrixf(mat);
+
+		glColor4f(1.0, 1.0, 1.0, 1.0);
+		if(sn->tic - p.tic <= 0)
+			glBindTexture(GL_TEXTURE_2D, stars[0]);
+		else
+			glBindTexture(GL_TEXTURE_2D, stars[1]);
+
+		glBegin(GL_QUADS); {
+			glTexCoord2f(0.0, 0.0); glVertex3f(-0.5, -0.5, 0.0);
+			glTexCoord2f(1.0, 0.0); glVertex3f(0.5, -0.5, 0.0);
+			glTexCoord2f(1.0, 1.0); glVertex3f(0.5, 0.5, 0.0);
+			glTexCoord2f(0.0, 1.0); glVertex3f(-0.5, 0.5, 0.0);
+		} glEnd();
+
+		glPopMatrix();
+	}
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
