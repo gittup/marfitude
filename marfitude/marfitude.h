@@ -86,6 +86,7 @@ struct marfitude_attack_col {
 struct marfitude_attack_pat {
 	int startTic;     /**< first tic that we need to play */
 	int stopTic;      /**< last tic that we need to play */
+	int startRow;     /**< corresponding row to startTic */
 	int stopRow;      /**< corresponding row to stopTic */
 	int nextStartRow; /**< which row the game is cleared to. */
 	int lastTic;      /**< last note played is in lastTic */
@@ -94,13 +95,15 @@ struct marfitude_attack_pat {
 	int active;       /**< 1 means we can play, 0 means we're waiting */
 };
 
+/** This is all the information that is specific to a particular player in
+ * the game.
+ */
 struct marfitude_player {
-	struct marfitude_score score;
-	struct marfitude_attack_pat ap;
-	int active;
-	int channel;
-	int old_chan;
-	int num;
+	struct marfitude_score score;   /**< The player's score info */
+	struct marfitude_attack_pat ap; /**< The player's attack pattern info */
+	int active;                     /**< 1 = in the game, 0 not in */
+	int channel;                    /**< Which channel they're in */
+	int num;                        /**< The player's unique ID 0-3 */
 };
 
 const struct wam *marfitude_get_wam(void);
@@ -116,5 +119,7 @@ const struct marfitude_attack_col *marfitude_get_ac(void);
 const struct marfitude_attack_pat *marfitude_get_ap(int player);
 const struct marfitude_player *marfitude_get_player(const struct marfitude_player *);
 void marfitude_get_pos(struct marfitude_pos *);
+int marfitude_get_note(int row, int col);
+void marfitude_get_notepos(union vector *dest, int row, int col);
 
 #define marfitude_foreach_player(ps) for(ps=marfitude_get_player(0); ps != 0; ps=marfitude_get_player(ps))

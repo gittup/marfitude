@@ -90,7 +90,6 @@ static void ChannelDown(int);
 static struct column *ColumnFromNum(int col);
 static void Setmute(struct column *c, int mute);
 static void UpdateModule(void);
-static int is_note(int row, int col);
 static void AddNotes(int row);
 static struct slist *RemoveList(struct slist *list, int tic);
 static void RemoveNotes(int row);
@@ -126,10 +125,10 @@ static int local_high; /* Current high score */
 
 /* Array of players. Default player 1 to active. Yeah, kinda ugly. */
 static struct marfitude_player ps[MAX_PLAYERS] = {
-	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, 1, 0, 0, 0},
-	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 0, 1},
-	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 0, 2},
-	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 0, 3}
+	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 1, 0, 0},
+	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 1},
+	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 2},
+	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 3}
 };
 static struct marfitude_player *curp; /* The current player */
 
@@ -341,22 +340,6 @@ int main_init()
 	}
 	for(x=0;x<=lastRow;x++) AddNotes(x);
 
-	local_high = 0;
-	x = 0;
-	for(p=0; p<MAX_PLAYERS; p++) {
-		curp = &ps[p];
-		curp->score.score = 0;
-		curp->score.multiplier = 1;
-		curp->channel = x % wam->num_rows;
-		curp->old_chan = curp->channel;
-		curp->ap.nextStartRow = -1;
-		if(curp->active) {
-			x++;
-			MoveBack();
-			ResetAp();
-		}
-	}
-
 	register_event("sound re-init", reinitializer);
 	register_event("button", button_handler);
 	register_event("leave", leaver);
@@ -376,6 +359,21 @@ int main_init()
 		plugin = NULL;
 	} else {
 		plugin = load_plugin(scene);
+	}
+
+	local_high = 0;
+	x = 0;
+	for(p=0; p<MAX_PLAYERS; p++) {
+		curp = &ps[p];
+		curp->score.score = 0;
+		curp->score.multiplier = 1;
+		curp->channel = x % wam->num_rows;
+		curp->ap.nextStartRow = -1;
+		if(curp->active) {
+			x++;
+			MoveBack();
+			ResetAp();
+		}
 	}
 
 	for(x=0;x<=lastRow;x++) fire_event("row", &wam->row_data[x]);
@@ -465,6 +463,11 @@ void main_scene(void)
 	glDepthMask(GL_FALSE);
 	fire_event("draw transparent", NULL);
 
+	/* Hehe, this should help when I screw it up again in the future :) */
+	if(glIsEnabled(GL_LIGHTING)) {
+		ELog(("Someone left the lights on in transparency mode!\n"));
+	}
+
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 	draw_particles();
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -482,12 +485,13 @@ void main_scene(void)
 void ChannelUp(int shift)
 {
 	if(curp->channel + 1 < wam->num_cols) {
+		ac[curp->channel].ps = slist_remove(ac[curp->channel].ps, curp);
 		if(shift)
 			curp->channel = wam->num_cols - 1;
 		else
 			curp->channel++;
+		ac[curp->channel].ps = slist_append(ac[curp->channel].ps, curp);
 		if(curp->ap.notesHit > 0) curp->score.multiplier = 1;
-		MoveBack();
 		ResetAp();
 		if(ac[curp->channel].ps && ac[curp->channel].ps->data == curp)
 			ac[curp->channel].hit = curp->ap.startTic - 1;
@@ -497,12 +501,13 @@ void ChannelUp(int shift)
 void ChannelDown(int shift)
 {
 	if(curp->channel != 0) {
+		ac[curp->channel].ps = slist_remove(ac[curp->channel].ps, curp);
 		if(shift)
 			curp->channel = 0;
 		else
 			curp->channel--;
 		if(curp->ap.notesHit > 0) curp->score.multiplier = 1;
-		MoveBack();
+		ac[curp->channel].ps = slist_append(ac[curp->channel].ps, curp);
 		ResetAp();
 		if(ac[curp->channel].ps && ac[curp->channel].ps->data == curp)
 			ac[curp->channel].hit = curp->ap.startTic - 1;
@@ -536,14 +541,6 @@ void UpdateModule(void)
 	Setmute(&wam->patterns[curRow->patnum].unplayed, UNMUTE);
 }
 
-int is_note(int row, int col)
-{
-	if(wam->row_data[row].notes[col] &&
-			wam->row_data[row].difficulty[col] <= difficulty)
-		return 1;
-	return 0;
-}
-
 void AddNotes(int row)
 {
 	int x;
@@ -552,7 +549,7 @@ void AddNotes(int row)
 	if(row < 0 || row >= wam->num_rows) return;
 	tic = wam->row_data[row].ticpos;
 	for(x=0;x<wam->num_cols;x++) {
-		if(is_note(row, x)) {
+		if(marfitude_get_note(row, x)) {
 			sn = unusedList->data;
 			if(row < ac[x].minRow) {
 				hitList = slist_append(hitList, sn);
@@ -562,9 +559,7 @@ void AddNotes(int row)
 				sn->ins = __LINE__;
 			}
 			unusedList = slist_remove(unusedList, sn);
-			sn->pos.v[0] = -x * BLOCK_WIDTH - NOTE_WIDTH * (double)noteOffset[(int)wam->row_data[row].notes[x]];
-			sn->pos.v[1] = 0.0;
-			sn->pos.v[2] = TIC_HEIGHT * (double)wam->row_data[row].ticpos;
+			marfitude_get_notepos(&sn->pos, row, x);
 			sn->tic = tic;
 			sn->time = wam->row_data[row].time;
 			sn->col = x;
@@ -790,9 +785,11 @@ int NearRow(void)
 
 void MoveBack(void)
 {
-	ac[curp->old_chan].ps = slist_remove(ac[curp->old_chan].ps, curp);
+	/* Remove from the list and append to the end, so curp is at the back
+	 * of the queue.
+	 */
+	ac[curp->channel].ps = slist_remove(ac[curp->channel].ps, curp);
 	ac[curp->channel].ps = slist_append(ac[curp->channel].ps, curp);
-	curp->old_chan = curp->channel;
 }
 
 void ResetCol(void)
@@ -835,20 +832,23 @@ void ResetAp(void)
 		/* don't count the note on the last row, since that will
 		 * be the beginning of the next "AttackPattern"
 		 */
-		if(is_note(end, curp->channel)) curp->ap.notesTotal++;
+		if(marfitude_get_note(end, curp->channel))
+			curp->ap.notesTotal++;
 		end++;
 		if(wam->row_data[end].line != 0) apLines++;
 	}
 
 	/* Make sure there is at least one note in the AP */
 	while(curp->ap.notesTotal == 0 && end < wam->num_rows) {
-		if(is_note(end, curp->channel)) curp->ap.notesTotal++;
+		if(marfitude_get_note(end, curp->channel))
+			curp->ap.notesTotal++;
 		end++;
 	}
 
 	/* Make sure the AP ends on a line */
 	while(wam->row_data[end].line == 0 && end < wam->num_rows) {
-		if(is_note(end, curp->channel)) curp->ap.notesTotal++;
+		if(marfitude_get_note(end, curp->channel))
+			curp->ap.notesTotal++;
 		end++;
 	}
 
@@ -857,18 +857,21 @@ void ResetAp(void)
 		curp->ap.startTic = -1;
 		curp->ap.stopTic = -1;
 		curp->ap.lastTic = -1;
+		curp->ap.startRow = -1;
 		curp->ap.stopRow = -1;
 		curp->ap.active = 0;
-		return;
+	} else {
+		Log(("StarT: %i, End: %i\n", start, end));
+		if(end == wam->num_rows)
+			curp->ap.stopTic = wam->num_tics;
+		else
+			curp->ap.stopTic = wam->row_data[end].ticpos;
+		curp->ap.startTic = wam->row_data[start].ticpos;
+		curp->ap.lastTic = wam->row_data[start].ticpos - 1;
+		curp->ap.startRow = start;
+		curp->ap.stopRow = end;
 	}
-	Log(("StarT: %i, End: %i\n", start, end));
-	if(end == wam->num_rows)
-		curp->ap.stopTic = wam->num_tics;
-	else
-		curp->ap.stopTic = wam->row_data[end].ticpos;
-	curp->ap.startTic = wam->row_data[start].ticpos;
-	curp->ap.lastTic = wam->row_data[start].ticpos - 1;
-	curp->ap.stopRow = end;
+	fire_event("reset AP", curp);
 	return;
 }
 
@@ -1191,11 +1194,34 @@ const struct marfitude_player *marfitude_get_player(const struct marfitude_playe
 	return NULL;
 }
 
-/** Gets the current module time in seconds */
+/** Gets the current module position information, and store it in @a p */
 void marfitude_get_pos(struct marfitude_pos *p)
 {
 	p->modtime = modTime;
 	p->tic = (double)curTic + partialTic;
 	p->row_index = rowIndex;
 	p->channel = curp->channel;
+}
+
+/** Gets the note at the specified @a row, @a col. If there is no note, 0 is
+ * returned. Otherwise, 1, 2, or 4 is returned depending on what the note is.
+ */
+int marfitude_get_note(int row, int col)
+{
+	if(wam->row_data[row].notes[col] &&
+			wam->row_data[row].difficulty[col] <= difficulty)
+		return wam->row_data[row].notes[col];
+	return 0;
+}
+
+/** Fill the destination vector @a dest with the coordinates of the note at
+ * @a row, @a col. If there is no note at that position, @a dest is unmodified.
+ * You should probably make sure there is a note there first by using
+ * marfitude_get_note();
+ */
+void marfitude_get_notepos(union vector *dest, int row, int col)
+{
+	dest->v[0] = -col * BLOCK_WIDTH - NOTE_WIDTH * (double)noteOffset[(int)wam->row_data[row].notes[col]];
+	dest->v[1] = 0.0;
+	dest->v[2] = TIC_HEIGHT * (double)wam->row_data[row].ticpos;
 }
