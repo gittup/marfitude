@@ -59,12 +59,12 @@ void fireball_draw(const void *data)
 	glBegin(GL_QUADS); {
 		glTexCoord2f(0.0, 0.0);
 		glVertex3f(fireball[0]-.5, fireball[1]-.5, fireball[2]);
-		glTexCoord2f(1.0, 0.0);
-		glVertex3f(fireball[0]+.5, fireball[1]-.5, fireball[2]);
-		glTexCoord2f(1.0, 1.0);
-		glVertex3f(fireball[0]+.5, fireball[1]+.5, fireball[2]);
 		glTexCoord2f(0.0, 1.0);
 		glVertex3f(fireball[0]-.5, fireball[1]+.5, fireball[2]);
+		glTexCoord2f(1.0, 1.0);
+		glVertex3f(fireball[0]+.5, fireball[1]+.5, fireball[2]);
+		glTexCoord2f(1.0, 0.0);
+		glVertex3f(fireball[0]+.5, fireball[1]-.5, fireball[2]);
 	} glEnd();
 }
 
