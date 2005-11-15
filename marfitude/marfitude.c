@@ -1102,6 +1102,26 @@ void UpdatePosition(void)
 			AddNotes(lastRow);
 			if(lastRow >= 0 && lastRow < wam->num_rows)
 				fire_event("row", &wam->row_data[lastRow]);
+			if(lastRow == wam->num_rows) {
+				struct row lastrow;
+				struct row *row = wam_row(wam, wam->num_rows);
+				int x;
+				lastrow.bpm = row->bpm;
+				lastrow.sngspd = row->sngspd;
+				lastrow.patpos = wam->num_pats;
+				lastrow.sngpos = row->sngpos;
+				lastrow.ticpos = wam->num_tics;
+				lastrow.ticprt = 0;
+				lastrow.ticgrp = row->sngspd;
+				lastrow.line = 2;
+				lastrow.patnum = row->patnum;
+				lastrow.time = wam->song_length;
+				for(x=0; x<MAX_COLS; x++) {
+					lastrow.notes[x] = 0;
+					lastrow.difficulty[x] = 0;
+				}
+				fire_event("row", &lastrow);
+			}
 		}
 	}
 	UpdateClearedCols();
