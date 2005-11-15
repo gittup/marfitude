@@ -84,8 +84,15 @@ struct marfitude_attack_col {
 
 /** Keep track of information needed for the column that is being played */
 struct marfitude_attack_pat {
+	int realStartTic; /**< The "real" start. Any space between the "real"
+			   * start and the start has no effect on the game.
+			   * Resetting the AP between realStart and start will
+			   * keep the same start/stop, and only update
+			   * realStart.
+			   */
 	int startTic;     /**< first tic that we need to play */
 	int stopTic;      /**< last tic that we need to play */
+	int realStartRow; /**< corresponding row to realStartTic */
 	int startRow;     /**< corresponding row to startTic */
 	int stopRow;      /**< corresponding row to stopTic */
 	int nextStartRow; /**< which row the game is cleared to. */

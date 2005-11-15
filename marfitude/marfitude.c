@@ -125,10 +125,10 @@ static int local_high; /* Current high score */
 
 /* Array of players. Default player 1 to active. Yeah, kinda ugly. */
 static struct marfitude_player ps[MAX_PLAYERS] = {
-	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 1, 0, 0},
-	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 1},
-	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 2},
-	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 3}
+	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 1, 0, 0},
+	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 1},
+	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 2},
+	{{0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 3}
 };
 static struct marfitude_player *curp; /* The current player */
 
@@ -808,6 +808,7 @@ void ResetCol(void)
 void ResetAp(void)
 {
 	int p;
+	int realStart;
 	int start;
 	int end;
 	int apLines = 0;
@@ -825,6 +826,7 @@ void ResetAp(void)
 	while(start < wam->num_rows && (wam->row_data[start].line == 0 || wam->row_data[start].ticpos <= ac[curp->channel].miss))
 		start++;
 
+	realStart = start;
 	end = start;
 
 	/* Make sure there are at least LINES_PER_AP lines in the AP */
@@ -842,6 +844,7 @@ void ResetAp(void)
 	while(curp->ap.notesTotal == 0 && end < wam->num_rows) {
 		if(marfitude_get_note(end, curp->channel))
 			curp->ap.notesTotal++;
+		start++;
 		end++;
 	}
 
@@ -850,6 +853,13 @@ void ResetAp(void)
 		if(marfitude_get_note(end, curp->channel))
 			curp->ap.notesTotal++;
 		end++;
+	}
+
+	/* Make sure the AP starts on a line. This only happens if the start
+	 * gets moved up when searching for at least one note in the AP.
+	 */
+	while(wam->row_data[start].line == 0 && start < wam->num_rows) {
+		start++;
 	}
 
 	if(curp->ap.notesTotal == 0) {
@@ -866,6 +876,7 @@ void ResetAp(void)
 			curp->ap.stopTic = wam->num_tics;
 		else
 			curp->ap.stopTic = wam->row_data[end].ticpos;
+		curp->ap.realStartTic = wam->row_data[realStart].ticpos;
 		curp->ap.startTic = wam->row_data[start].ticpos;
 		curp->ap.lastTic = wam->row_data[start].ticpos - 1;
 		curp->ap.startRow = start;
