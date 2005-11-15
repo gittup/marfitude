@@ -60,36 +60,32 @@ void create_path(const void *data)
 	l->color = pc;
 	col = p->channel;
 
-	/* The +1 is to make sure there is enough for when there is only 1
-	 * note, since we add another point then.
+	/* The +1 is because we may add a point at the first row of the AP
+	 * if there isn't one there already.
 	 */
 	if(p->ap.notesTotal + 1 > l->num_pts) {
 		l->num_pts = p->ap.notesTotal + 1;
 		l->pts = realloc(l->pts, sizeof(union vector) * l->num_pts);
 	}
 
-	l->pts_used = p->ap.notesTotal;
+	l->pts_used = p->ap.notesTotal + 1;
+	l->pts[0].v[0] = -col * BLOCK_WIDTH;
+	l->pts[0].v[1] = 0.0;
+	l->pts[0].v[2] = p->ap.startTic * TIC_HEIGHT;
 
-	pcount = 0;
+	pcount = 1;
 	for(row = p->ap.startRow; row < p->ap.stopRow; row++) {
 		int note = marfitude_get_note(row, col);
 		if(note) {
 			marfitude_get_notepos(&l->pts[pcount], row, col);
 			pcount++;
+			if(row == p->ap.startRow) {
+				/* Override the fake point */
+				marfitude_get_notepos(&l->pts[0], row, col);
+			}
 			if(pcount == l->pts_used)
 				break;
 		}
-	}
-
-	if(l->pts_used == 1) {
-		struct marfitude_pos pos;
-
-		marfitude_get_pos(&pos);
-		/* Create a second point where the player is to make a line. */
-		l->pts[1].v[0] = -col * BLOCK_WIDTH;
-		l->pts[1].v[1] = 0.0;
-		l->pts[1].v[2] = pos.tic * TIC_HEIGHT;
-		l->pts_used = 2;
 	}
 }
 
@@ -105,10 +101,12 @@ void draw_paths(const void *data)
 		if(ps->ap.active) {
 			l = &lines[ps->num];
 
-			glColor4f(l->color[0], l->color[1], l->color[2], 0.75);
 			glDisable(GL_TEXTURE_2D);
 			glBegin(GL_LINE_STRIP); {
-				for(x=0; x<l->pts_used; x++) {
+				glColor4f(l->color[0], l->color[1], l->color[2], 0.30);
+				glVertex3dv(l->pts[0].v);
+				glColor4f(l->color[0], l->color[1], l->color[2], 0.75);
+				for(x=1; x<l->pts_used; x++) {
 					glVertex3dv(l->pts[x].v);
 				}
 			} glEnd();
