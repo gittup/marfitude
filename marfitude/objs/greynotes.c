@@ -83,17 +83,28 @@ void draw_notes(const void *data)
 	} glEndList();
 
 	slist_foreach(t, marfitude_get_notes()) {
+		int active;
+		struct slist *ps;
 		struct marfitude_note *sn = t->data;
 		int mat = fabs(sn->time - p.modtime) <= MARFITUDE_TIME_ERROR;
+
+		ps = marfitude_get_ac()[sn->col].ps;
+		if(ps) {
+			struct marfitude_player *player = ps->data;
+			active = sn->tic < player->ap.startTic ||
+				sn->tic >= player->ap.stopTic;
+		} else {
+			active = 0;
+		}
 
 		glPushMatrix();
 		glTranslated(   sn->pos.v[0],
 				sn->pos.v[1],
 				sn->pos.v[2]+0.3);
 		if(mat)
-			glColor4f(1.0, 0.4, 0.4, 1.0);
+			glColor4f(1.0, 0.4, 0.4, 1.0 - 0.4 * active);
 		else
-			glColor4f(0.4, 0.4, 0.4, 1.0);
+			glColor4f(0.4, 0.4, 0.4, 1.0 - 0.4 * active);
 		Log(("Dn\n"));
 		glCallList(rotnoteList);
 	}

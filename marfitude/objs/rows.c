@@ -52,7 +52,7 @@ void rows_exit(void)
 void draw_rows(const void *data)
 {
 	int col;
-	double start, stop;
+	double realstart, start, stop;
 	double startTic, stopTic;
 	struct marfitude_pos pos;
 	const struct wam *wam = marfitude_get_wam();
@@ -84,15 +84,20 @@ void draw_rows(const void *data)
 	for(col=0;col<wam->num_cols;col++) {
 		struct row *r;
 
+		realstart = startTic;
 		start = startTic;
 		stop = stopTic;
 		glBindTexture(GL_TEXTURE_2D, row_texes[col]);
 		r = wam_row(wam, ac[col].minRow);
-		if(r->ticpos > start)
+		if(r->ticpos > start) {
+			realstart = r->ticpos;
 			start = r->ticpos;
+		}
 		ps = ac[col].ps ? ac[col].ps->data : 0;
 		if(ps) {
 			if(col == ps->channel && ps->ap.startTic != -1) {
+				if(ps->ap.realStartTic > realstart)
+					realstart = ps->ap.realStartTic;
 				if(ps->ap.startTic > start)
 					start = ps->ap.startTic;
 				if(ps->ap.stopTic < stop)
@@ -103,17 +108,32 @@ void draw_rows(const void *data)
 			glTranslated(-BLOCK_WIDTH, 0, 0);
 			continue;
 		}
+		realstart *= TIC_HEIGHT;
 		start *= TIC_HEIGHT;
 		stop *= TIC_HEIGHT;
+		if(realstart != start) {
+			glColor4f(1.0, 1.0, 1.0, 0.7);
+			glBegin(GL_QUADS); {
+				glTexCoord2f(0.0, realstart/ 4.0);
+				glVertex3f(-1.0, 0.0, realstart);
+				glTexCoord2f(0.0, start / 4.0);
+				glVertex3f(-1.0, 0.0, start);
+				glTexCoord2f(1.0, start / 4.0);
+				glVertex3f(1.0, 0.0, start);
+				glTexCoord2f(1.0, realstart / 4.0);
+				glVertex3f(1.0, 0.0, realstart);
+			} glEnd();
+			glColor4f(1.0, 1.0, 1.0, 1.0);
+		}
 		glBegin(GL_QUADS); {
 			glTexCoord2f(0.0, start/ 4.0);
 			glVertex3f(-1.0, 0.0, start);
-			glTexCoord2f(1.0, start / 4.0);
-			glVertex3f(1.0, 0.0, start);
-			glTexCoord2f(1.0, stop / 4.0);
-			glVertex3f(1.0, 0.0, stop);
 			glTexCoord2f(0.0, stop / 4.0);
 			glVertex3f(-1.0, 0.0, stop);
+			glTexCoord2f(1.0, stop / 4.0);
+			glVertex3f(1.0, 0.0, stop);
+			glTexCoord2f(1.0, start / 4.0);
+			glVertex3f(1.0, 0.0, start);
 		} glEnd();
 
 		glTranslated(-BLOCK_WIDTH, 0, 0);
