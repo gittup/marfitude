@@ -87,7 +87,12 @@ void draw_line(int l)
 void draw_lines(const void *data)
 {
 	int x;
+	const struct wam *wam = marfitude_get_wam();
+	struct marfitude_pos pos;
+
 	if(data) {}
+
+	marfitude_get_pos(&pos);
 
 	glDisable(GL_TEXTURE_2D);
 	glNormal3f(0.0, 1.0, 0.0);
@@ -101,6 +106,25 @@ void draw_lines(const void *data)
 			draw_line(x);
 		for(x=0;x<stop_line;x++)
 			draw_line(x);
+	}
+
+	glColor4f(0.8, 0.8, 0.8, 0.3);
+	for(x=0; x<=wam->num_cols; x++) {
+		double min;
+		double max;
+
+		min = pos.tic - NEGATIVE_TICKS;
+		max = pos.tic + POSITIVE_TICKS;
+		if(min < 0.0)
+			min = 0.0;
+		if(max > wam->num_tics)
+			max = wam->num_tics;
+
+		min *= TIC_HEIGHT;
+		max *= TIC_HEIGHT;
+
+		glVertex3f(1.0 - 2.0 * x, 0.0, min);
+		glVertex3f(1.0 - 2.0 * x, 0.0, max);
 	}
 	glEnd();
 	glEnable(GL_TEXTURE_2D);
