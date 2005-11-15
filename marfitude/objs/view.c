@@ -18,8 +18,8 @@ static double board_middle(void);
 static union vector eye;
 static union vector view;
 
-#define MULTI_Y_EYE 10.0
-#define MULTI_Z_EYE -8.0
+#define MULTI_Y_EYE 7.0
+#define MULTI_Z_EYE -14.0
 #define MULTI_Y_VIEW 2.8
 #define MULTI_Z_VIEW 0.0
 
