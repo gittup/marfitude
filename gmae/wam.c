@@ -40,7 +40,7 @@
 #define WAM_MAX_TRACKS 7
 
 /** The magic at the top of the wam. */
-#define WAM_MAGIC "wam-1.0"
+#define WAM_MAGIC "wam-1.1"
 
 /** Length of the magic wam string. */
 #define WAM_MAGIC_LEN (sizeof(WAM_MAGIC) / sizeof(WAM_MAGIC[0]))
@@ -112,6 +112,7 @@ static void combine_single_ins_tracks(struct track *t1, struct track *t2);
 static int tracks_intersect(struct track *t1, struct track *t2);
 static int next_pos(int pos, int movinup, Uint32 note, Uint32 *mem);
 static int gen_track_data(struct track *t, int pos);
+static void check_notes_unused(struct track *t);
 static int best_track(struct track *t);
 static void set_column(struct column *col, struct track *trk, struct wam *wam, int colnum, int patnum, int startRow);
 static int empty_col(struct column *cols, int num_cols, struct column **retptr);
@@ -443,6 +444,71 @@ void calculate_difficulty(struct track *t, struct wam *wam, int row)
 	}
 }
 
+/* Check if there's only one or two note positions used in the track, where
+ * those one or two positions should be.
+ */
+void check_notes_unused(struct track *t)
+{
+	int x;
+	int used[5] = {0};
+	int samples = 0;
+
+	/* Find out which note positions are used. We only care about
+	 * 1, 2, and 4.
+	 */
+	for(x=0; x<t->trklen; x++) {
+		used[t->notes[x]] = 1;
+		if(t->notes[x]) {
+			/* Use the instrument of the notes as the seemingly
+			 * random yet well-defined arbitrator of which tracks
+			 * the two notes will go in to.
+			 */
+			samples += t->samples[x].ins;
+		}
+	}
+
+	/* There are three choices,
+	 * 1 note: left, middle, and right
+	 * 2 notes: left-middle, middle-right, and left-right.
+	 * We can use 0, 1, and 2 for these choices.
+	 */
+	samples = samples % 3;
+
+	/* Default case of 0: use left-middle, or left which it already is. */
+	if(!samples)
+		return;
+
+	/* Only one track, determine where it goes... */
+	if(used[1] + used[2] + used[4] == 1) {
+		for(x=0; x<t->trklen; x++) {
+			if(t->notes[x]) {
+				if(samples == 1) /* Middle */
+					t->notes[x] = 2;
+				else /* (samples == 2) Right */
+					t->notes[x] = 4;
+			}
+		}
+	}
+
+	/* Only two tracks, determine where they go... */
+	if(used[1] + used[2] + used[4] == 2) {
+		for(x=0; x<t->trklen; x++) {
+			/* Always move the middle note to the right, since
+			 * the only cases yet to be taken care of are
+			 * middle-right and left-right.
+			 */
+			if(t->notes[x] == 2)
+				t->notes[x] = 4;
+
+			/* Move the left note to the middle if we're in the
+			 * middle-right case (1)
+			 */
+			if(t->notes[x] == 1 && samples == 1)
+				t->notes[x] = 2;
+		}
+	}
+}
+
 void update_row_data(struct track *t, struct wam *wam, int startRow, int patnum)
 {
 	int x, y;
@@ -490,6 +556,7 @@ void update_row_data(struct track *t, struct wam *wam, int startRow, int patnum)
 		 * generate it again, so save a little time :)
 		 */
 		if(bestStart != MAX_NOTE) gen_track_data(&t[x], bestStart);
+		check_notes_unused(&t[x]);
 	}
 
 	/* get a list of the best tracks
