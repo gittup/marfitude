@@ -8,6 +8,7 @@
 #include "gmae/event.h"
 #include "gmae/log.h"
 #include "gmae/timer.h"
+#include "gmae/wam.h"
 
 #include "util/slist.h"
 
@@ -86,9 +87,16 @@ void draw_notes(const void *data)
 		int active;
 		struct slist *ps;
 		struct marfitude_note *sn = t->data;
+		const struct wam *wam = marfitude_get_wam();
+		const struct marfitude_attack_col *col;
 		int mat = fabs(sn->time - p.modtime) <= MARFITUDE_TIME_ERROR;
 
-		ps = marfitude_get_ac()[sn->col].ps;
+		col = &marfitude_get_ac()[sn->col];
+
+		/* Fade the note if a player is playing the column and the note
+		 * is not in their AP.
+		 */
+		ps = col->ps;
 		if(ps) {
 			struct marfitude_player *player = ps->data;
 			active = sn->tic < player->ap.startTic ||
@@ -96,6 +104,10 @@ void draw_notes(const void *data)
 		} else {
 			active = 0;
 		}
+
+		/* If the row is being cleared, fade the note then too */
+		if(sn->tic < wam_row(wam, col->cleared)->ticpos)
+			active = 1;
 
 		glPushMatrix();
 		glTranslated(   sn->pos.v[0],
