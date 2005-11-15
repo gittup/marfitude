@@ -126,15 +126,15 @@ int load_font(void)
 				glTexCoord2f(	(3+(double)x*16.0)/256.0,
 						(1+(double)y*16.0)/256.0);
 						glVertex2i(0, 0);
-				glTexCoord2f(	(3+(double)x*16.0 + 16.0)/256.0,
-						(1+(double)y*16.0)/256.0);
-						glVertex2i(16, 0);
-				glTexCoord2f(	(3+(double)x*16.0 + 16.0)/256.0,
-						(1+(double)y*16.0 + 16.0)/256.0);
-						glVertex2i(16, 16);
 				glTexCoord2f(	(3+(double)x*16.0)/256.0,
 						(1+(double)y*16.0 + 16.0)/256.0);
 						glVertex2i(0, 16);
+				glTexCoord2f(	(3+(double)x*16.0 + 16.0)/256.0,
+						(1+(double)y*16.0 + 16.0)/256.0);
+						glVertex2i(16, 16);
+				glTexCoord2f(	(3+(double)x*16.0 + 16.0)/256.0,
+						(1+(double)y*16.0)/256.0);
+						glVertex2i(16, 0);
 			} glEnd();
 			glTranslated(FONT_WIDTH, 0, 0);
 		} glEndList();
@@ -289,6 +289,7 @@ int init_gl(void)
 	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_COLOR_MATERIAL);
+	glEnable(GL_CULL_FACE);
 	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 
 	set_icon();
