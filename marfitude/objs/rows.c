@@ -104,7 +104,7 @@ void draw_rows(const void *data)
 					stop = ps->ap.stopTic;
 			}
 		}
-		if(start >= stop) {
+		if(realstart >= stop) {
 			glTranslated(-BLOCK_WIDTH, 0, 0);
 			continue;
 		}
