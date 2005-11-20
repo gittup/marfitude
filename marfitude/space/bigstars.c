@@ -5,6 +5,7 @@
 #include "marfitude.h"
 
 #include "gmae/event.h"
+#include "gmae/glfunc.h"
 #include "gmae/particles.h"
 #include "gmae/textures.h"
 
@@ -97,23 +98,13 @@ void draw_stars(const void *data)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
 	slist_foreach(t, marfitude_get_hitnotes()) {
-		int i;
-		int j;
-		float mat[16];
 		struct marfitude_note *sn = t->data;
 
 		glPushMatrix();
 		glTranslated(   sn->pos.v[0],
 				sn->pos.v[1],
 				sn->pos.v[2]+0.3);
-		glGetFloatv(GL_MODELVIEW_MATRIX, mat);
-		for(i=0;i<3;i++)
-			for(j=0;j<3;j++)
-			{
-				if(i == j) mat[i+j*4] = 1.0;
-				else mat[i+j*4] = 0.0;
-			}
-		glLoadMatrixf(mat);
+		setup_billboard();
 
 		glColor4f(1.0, 1.0, 1.0, 1.0);
 		if(sn->tic - p.tic <= 0)
