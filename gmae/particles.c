@@ -25,6 +25,7 @@
 #include "particles.h"
 #include "cfg.h"
 #include "log.h"
+#include "glfunc.h"
 #include "phys.h"
 #include "textures.h"
 #include "timer.h"
@@ -179,8 +180,6 @@ void quit_particles(void)
 
 void DrawParticle(struct particle *p)
 {
-	float mat[16];
-	int i, j;
 	struct particleType *pt;
 
 	pt = &particleTypes[p->type];
@@ -188,14 +187,7 @@ void DrawParticle(struct particle *p)
 	glTranslated(p->o->pos.v[0], p->o->pos.v[1], p->o->pos.v[2]);
 	if(pt->billboard)
 	{
-		glGetFloatv(GL_MODELVIEW_MATRIX, mat);
-		for(i=0;i<3;i++)
-			for(j=0;j<3;j++)
-			{
-				if(i == j) mat[i+j*4] = 1.0;
-				else mat[i+j*4] = 0.0;
-			}
-		glLoadMatrixf(mat);
+		setup_billboard();
 	}
 	glRotatef(p->o->theta, p->o->axis.v[0], p->o->axis.v[1], p->o->axis.v[2]);
 	if(pt->type == PT_POINT)

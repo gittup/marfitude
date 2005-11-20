@@ -29,6 +29,7 @@
 int init_gl(void);
 void quit_gl(void);
 void look_at(double ex, double ey, double ez, double cx, double cy, double cz, double ux, double uy, double uz);
+void setup_billboard(void);
 void perspective_projection(double fov, double aspect, double z1, double z2);
 void set_ortho_projection(void);
 void reset_projection(void);
