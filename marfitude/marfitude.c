@@ -395,6 +395,10 @@ void main_quit(void)
 			highscore = p->score.score;
 		}
 	}
+
+	Log(("A\n"));
+	clear_particles();
+
 	for(i=0; i<wam->num_cols; i++) {
 		slist_free(ac[i].ps);
 	}
@@ -427,8 +431,6 @@ void main_quit(void)
 	free(notesOnScreen);
 	Log(("A\n"));
 	free(noteOffset);
-	Log(("A\n"));
-	clear_particles();
 	Log(("A\n"));
 	check_objs();
 	Log(("A\n"));
@@ -719,6 +721,7 @@ void Press(int button, int player)
 	if(!noteHit && curRow->ticpos >= curp->ap.startTic && curRow->ticpos < curp->ap.stopTic) {
 		/* oops, we missed! */
 		if(curp->ap.notesHit > 0) {
+			fire_event("borked", curp);
 			curp->score.multiplier = 1;
 			MoveBack();
 		}
@@ -978,11 +981,13 @@ void UpdateClearedCols(void)
 			tic = r->ticpos;
 			MoveHitNotes(tic, x);
 
-			p.modtime = modTime;
-			p.tic = tic;
-			p.row_index = wam_rowindex(wam, ac[x].minRow);
-			p.channel =  x;
-			fire_event("row explosion", &p);
+			if(tic < curTic + POSITIVE_TICKS) {
+				p.modtime = modTime;
+				p.tic = tic;
+				p.row_index = wam_rowindex(wam, ac[x].minRow);
+				p.channel =  x;
+				fire_event("row explosion", &p);
+			}
 
 			ac[x].part -= 1.0;
 			ac[x].minRow++;
