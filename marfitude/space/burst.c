@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "SDL_opengl.h"
 
 #include "marfitude.h"
@@ -11,12 +13,20 @@
 
 #include "util/myrand.h"
 
+struct burst {
+	struct obj o;
+	union vector origin;
+	float c[4];
+};
+
 static void burst_init(void) __attribute__((constructor));
 static void burst_exit(void) __attribute__((destructor));
 static void row_burst(const void *);
 static void note_burst(const void *);
 static void victory(const void *);
 static void burst_particle(const struct marfitude_pos *p, const float *c);
+static void draw_particle(const void *);
+static void free_particle(void *);
 
 void burst_init(void)
 {
@@ -93,14 +103,43 @@ void victory(const void *data)
 
 void burst_particle(const struct marfitude_pos *p, const float *c)
 {
-	struct obj *o;
+	struct burst *b;
 
-	o = new_obj();
-	o->pos.v[0] = -p->channel * 2.0;
-	o->pos.v[2] = TIC_HEIGHT * p->tic;
-	o->vel.v[0] = 9.0 * (rand_float() - 0.5);
-	o->vel.v[1] = 9.0 * (rand_float() - 0.5);
-	o->vel.v[2] = 9.0 * (rand_float() - 0.5);
+	b = malloc(sizeof(struct burst));
+	new_obj(&b->o);
 
-	create_particle(o, c, P_Point, 1.0);
+	b->o.pos.v[0] = -p->channel * 2.0;
+	b->o.pos.v[2] = TIC_HEIGHT * p->tic;
+	b->o.vel.v[0] = 9.0 * (rand_float() - 0.5);
+	b->o.vel.v[1] = 9.0 * (rand_float() - 0.5);
+	b->o.vel.v[2] = 9.0 * (rand_float() - 0.5);
+	b->c[0] = c[0];
+	b->c[1] = c[1];
+	b->c[2] = c[2];
+	b->c[3] = c[3];
+
+	create_particle(b, draw_particle, free_particle);
+}
+
+void draw_particle(const void *data)
+{
+	const struct burst *b = data;
+
+	glPushMatrix();
+	glTranslated(b->o.pos.v[0], b->o.pos.v[1], b->o.pos.v[2]);
+	glColor4fv(b->c);
+	glDisable(GL_TEXTURE_2D);
+	glBegin(GL_POINTS); {
+		glVertex3f(0.0, 0.0, 0.0);
+	} glEnd();
+	glEnable(GL_TEXTURE_2D);
+	glPopMatrix();
+}
+
+void free_particle(void *data)
+{
+	struct burst *b = data;
+
+	delete_obj(&b->o);
+	free(b);
 }

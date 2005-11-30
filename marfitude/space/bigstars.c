@@ -6,7 +6,6 @@
 
 #include "gmae/event.h"
 #include "gmae/glfunc.h"
-#include "gmae/particles.h"
 #include "gmae/textures.h"
 
 #include "util/slist.h"
