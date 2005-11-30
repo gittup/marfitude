@@ -36,135 +36,30 @@
  * Creates and draws particles
  */
 
-static void GenPoint(void);
-static void GenLine(void);
-static void GenTQuad(GLuint tex);
-static void Gen2TQuad(GLuint tex1, GLuint tex2);
-static void DrawParticle(struct particle *p);
+/** Describes a single particle */
+struct particle {
+	void *data;                 /**< User data to draw the particle */
+	void (*draw)(const void *); /**< The user draw function */
+	void (*del)(void *);        /**< The user delete function */
+	int active;    /**< 1 = drawn, 0 not drawn */
+	float life;    /**< TTL in seconds */
+};
 
-static GLuint plist;
+static void draw_particle(struct particle *p);
+
 static int particlesInited = 0;
 static int numParticles;
 static int curParticle;
 static struct particle *particles;
-static struct particleType particleTypes[] = {
-	{PT_POINT, 0, 0, 0},
-	{PT_LINE, 0, 0, 0},
-	{PT_TQUAD, 1, "BlueNova.png", 0},
-	{PT_TQUAD, 1, "BlueStar.png", 0},
-	{PT_TQUAD, 1, "Fireball.png", 0},
-	{PT_2TQUAD, 1, "StarBurst.png", "StarCenter.png"},
-	{PT_2TQUAD, 1, "SunBurst.png", "SunCenter.png"}
-};
-
-void GenPoint(void)
-{
-	glDisable(GL_TEXTURE_2D);
-	glBegin(GL_POINTS);
-	{
-		glVertex3f(0.0, 0.0, 0.0);
-	} glEnd();
-	glEnable(GL_TEXTURE_2D);
-	glPopMatrix();
-}
-
-void GenLine(void)
-{
-	glDisable(GL_TEXTURE_2D);
-	glBegin(GL_LINES);
-	{
-		glVertex3f(0.0, 0.5, 0.0);
-		glVertex3f(0.0, -0.5, 0.0);
-	} glEnd();
-	glEnable(GL_TEXTURE_2D);
-	glPopMatrix();
-}
-
-void GenTQuad(GLuint tex)
-{
-	glBindTexture(GL_TEXTURE_2D, tex);
-	glBegin(GL_QUADS);
-	{
-		glTexCoord2f(0.0, 0.0); glVertex3f(-0.5, -0.5, 0.0);
-		glTexCoord2f(1.0, 0.0); glVertex3f(0.5, -0.5, 0.0);
-		glTexCoord2f(1.0, 1.0); glVertex3f(0.5, 0.5, 0.0);
-		glTexCoord2f(0.0, 1.0); glVertex3f(-0.5, 0.5, 0.0);
-	} glEnd();
-
-	glPopMatrix();
-}
-
-void Gen2TQuad(GLuint tex1, GLuint tex2)
-{
-	glBindTexture(GL_TEXTURE_2D, tex1);
-	glBegin(GL_QUADS);
-	{
-		glTexCoord2f(0.0, 0.0); glVertex3f(-0.5, -0.5, 0.0);
-		glTexCoord2f(1.0, 0.0); glVertex3f(0.5, -0.5, 0.0);
-		glTexCoord2f(1.0, 1.0); glVertex3f(0.5, 0.5, 0.0);
-		glTexCoord2f(0.0, 1.0); glVertex3f(-0.5, 0.5, 0.0);
-	} glEnd();
-
-	glBindTexture(GL_TEXTURE_2D, tex2);
-	glColor4f(1.0, 1.0, 1.0, 1.0);
-	glBegin(GL_QUADS);
-	{
-		glTexCoord2f(0.0, 0.0); glVertex3f(-0.5, -0.5, 0.0);
-		glTexCoord2f(1.0, 0.0); glVertex3f(0.5, -0.5, 0.0);
-		glTexCoord2f(1.0, 1.0); glVertex3f(0.5, 0.5, 0.0);
-		glTexCoord2f(0.0, 1.0); glVertex3f(-0.5, 0.5, 0.0);
-	} glEnd();
-
-	glPopMatrix();
-}
 
 /** Allocates all memory for the particle engine */
 int init_particles(void)
 {
-	int x;
-	int numpTypes;
-	int t1, t2;
-	struct particleType *pt;
-
-	numpTypes = sizeof(particleTypes) / sizeof(struct particleType);
 	printf("Init particles\n");
 	numParticles = cfg_get_int("video", "particles", 100);
 	curParticle = 0;
 	particles = (struct particle*)calloc(numParticles, sizeof(struct particle));
-	plist = glGenLists(numpTypes);
 	particlesInited = 1;
-	for(x=0;x<numpTypes;x++)
-	{
-		pt = &particleTypes[x];
-
-		/* these are defined at runtime, so we set the true texture
-		 * values now
-		 */
-		t1 = texture_num(pt->tex1);
-		t2 = texture_num(pt->tex2);
-
-		glNewList(plist+x, GL_COMPILE);
-		switch(pt->type)
-		{
-			case PT_POINT:
-				GenPoint();
-				break;
-			case PT_LINE:
-				GenLine();
-				break;
-			case PT_TLINE:
-			case PT_TQUAD:
-				GenTQuad(t1);
-				break;
-			case PT_2TQUAD:
-				Gen2TQuad(t1, t2);
-				break;
-			default:
-				ELog(("Error: Invalid particle type\n"));
-				return 0;
-		}
-		glEndList();
-	}
 	return 1;
 }
 
@@ -173,34 +68,18 @@ void quit_particles(void)
 {
 	clear_particles();
 	free(particles);
-	glDeleteLists(plist, sizeof(particleTypes) / sizeof(struct particle));
 	printf("Particles shutdown\n");
 	return;
 }
 
-void DrawParticle(struct particle *p)
+void draw_particle(struct particle *p)
 {
-	struct particleType *pt;
+	p->draw(p->data);
 
-	pt = &particleTypes[p->type];
-	glPushMatrix();
-	glTranslated(p->o->pos.v[0], p->o->pos.v[1], p->o->pos.v[2]);
-	if(pt->billboard)
-	{
-		setup_billboard();
-	}
-	glRotatef(p->o->theta, p->o->axis.v[0], p->o->axis.v[1], p->o->axis.v[2]);
-	if(pt->type == PT_POINT)
-		glPointSize(p->size);
-	else
-		glScalef(p->size, p->size, p->size);
-	glColor4fv(p->col);
-	glCallList(plist+p->type);
 	p->life -= timeDiff;
-	if(p->life < 0.0)
-	{
+	if(p->life < 0.0) {
 	       	p->active = 0;
-		delete_obj(p->o);
+		p->del(p->data);
 	}
 }
 
@@ -211,47 +90,37 @@ void draw_particles(void)
 	Log(("Draw Particles()\n"));
 	for(x=0;x<numParticles;x++)
 	{
-		if(particles[x].active) DrawParticle(&particles[x]);
+		if(particles[x].active)
+			draw_particle(&particles[x]);
 	}
 	Log(("Draw Particles done\n"));
 }
 
-/** Draws all particles that pass the testing function @a p */
-void draw_particles_test(PTestFunc p)
-{
-	int x;
-	Log(("draw_particles_test()\n"));
-	for(x=0;x<numParticles;x++)
-	{
-		if(particles[x].active && p(&particles[x])) DrawParticle(&particles[x]);
-	}
-	Log(("draw_particles_test() done\n"));
-}
-
 /** Create a particle using the object definition @a o.
- * @param o The physics object that allows this particle to move
- * @param col The color of the particle
- * @param type Which particle to draw
- * @param size How big the particle is (somewhat dependent on the type)
+ * @param data The user data to pass to the draw function.
+ * @param draw The user's draw function. Will get the data passed in.
  */
-void create_particle(struct obj *o, const float col[4], int type, float size)
+void create_particle(void *data, void (*draw)(const void *), void (*del)(void *))
 {
 	struct particle *p;
+
 	Log(("Create Particle()\n"));
 	if(numParticles <= 0) return;
+
 	p = &particles[curParticle];
-	if(p->active) delete_obj(p->o);
-	p->o = o;
-	p->col[0] = col[0];
-	p->col[1] = col[1];
-	p->col[2] = col[2];
-	p->col[3] = col[3];
-	p->type = type;
-	p->size = size;
+	if(p->active)
+		p->del(p->data);
+
+	p->data = data;
+	p->draw = draw;
+	p->del = del;
 	p->active = 1;
 	p->life = 3.00;
+
 	curParticle++;
-	if(curParticle >= numParticles) curParticle = 0;
+	if(curParticle >= numParticles)
+		curParticle = 0;
+
 	Log(("Create Particle done\n"));
 }
 
@@ -260,19 +129,11 @@ void clear_particles(void)
 {
 	int x;
 	Log(("clear_particles()\n"));
-	for(x=0;x<numParticles;x++)
-	{
-		if(particles[x].active)
-		{
+	for(x=0;x<numParticles;x++) {
+		if(particles[x].active) {
 			particles[x].active = 0;
-			delete_obj(particles[x].o);
+			particles[x].del(particles[x].data);
 		}
 	}
 	Log(("clear_particles done\n"));
-}
-
-/** Gets the particle texture associated with particle type @a p */
-GLuint particle(enum particleTypes p)
-{
-	return plist+p;
 }
