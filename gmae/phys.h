@@ -36,7 +36,7 @@ struct obj {
 	float mass;         /**< object's mass */
 };
 
-struct obj *new_obj(void);
+void new_obj(struct obj *o);
 void delete_obj(struct obj *o);
 void update_objs(double dt);
 void check_objs(void);

@@ -36,14 +36,25 @@ static struct slist *objs = NULL;
  * 1.0
  * @return A pointer to an object structure
  */
-struct obj *new_obj(void)
+void new_obj(struct obj *o)
 {
-	struct obj *o;
-	o = (struct obj*)calloc(1, sizeof(struct obj));
+	o->pos.v[0] = 0.0;
+	o->pos.v[1] = 0.0;
+	o->pos.v[2] = 0.0;
+	o->vel.v[0] = 0.0;
+	o->vel.v[1] = 0.0;
+	o->vel.v[2] = 0.0;
+	o->acc.v[0] = 0.0;
+	o->acc.v[1] = 0.0;
+	o->acc.v[2] = 0.0;
+	o->axis.v[0] = 0.0;
+	o->axis.v[1] = 0.0;
 	o->axis.v[2] = 1.0;
+	o->theta = 0.0;
+	o->rotvel = 0.0;
+	o->rotacc = 0.0;
 	o->mass = 1.0;
 	objs = slist_append(objs, (void *)o);
-	return o;
 }
 
 /** Deletes the object structure @a o
@@ -51,7 +62,6 @@ struct obj *new_obj(void)
  */
 void delete_obj(struct obj *o)
 {
-	free(o);
 	objs = slist_remove(objs, (void *)o);
 }
 
