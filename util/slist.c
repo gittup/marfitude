@@ -94,7 +94,7 @@ struct slist *next_list(void)
  * @param l The list
  * @return The number of list elements in @a l
  */
-int slist_length(struct slist *l)
+int slist_length(const struct slist *l)
 {
 	int len = 0;
 	while(l != NULL) {

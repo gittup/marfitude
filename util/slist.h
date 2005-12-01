@@ -48,7 +48,7 @@ struct slist *slist_find(struct slist *l, void *d) ATTRIBUTE_UNUSED_RESULT;
 struct slist *slist_find_custom(struct slist *l, void *d, compare_func c) ATTRIBUTE_UNUSED_RESULT;
 struct slist *slist_next(struct slist *l) ATTRIBUTE_UNUSED_RESULT;
 
-int slist_length(struct slist *l);
+int slist_length(const struct slist *l);
 void slist_free(struct slist *l);
 void slist_usage(void);
 void quit_slist(void);
