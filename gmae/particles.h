@@ -24,5 +24,5 @@
 int init_particles(void);
 void quit_particles(void);
 void draw_particles(void);
-void create_particle(void *data, void (*draw)(const void *), void (*del)(void *));
+void create_particle(void *data, void (*draw)(const void *, float), void (*del)(void *));
 void clear_particles(void);

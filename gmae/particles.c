@@ -32,20 +32,20 @@
 
 #include "util/memtest.h"
 
+#define MAX_LIFE 3.0
+
 /** @file
  * Creates and draws particles
  */
 
 /** Describes a single particle */
 struct particle {
-	void *data;                 /**< User data to draw the particle */
-	void (*draw)(const void *); /**< The user draw function */
-	void (*del)(void *);        /**< The user delete function */
-	int active;    /**< 1 = drawn, 0 not drawn */
-	float life;    /**< TTL in seconds */
+	void *data; /**< User data to draw the particle */
+	void (*draw)(const void *, float); /**< The user draw function */
+	void (*del)(void *); /**< The user delete function */
+	int active; /**< 1 = drawn, 0 not drawn */
+	float life; /**< TTL in seconds */
 };
-
-static void draw_particle(struct particle *p);
 
 static int particlesInited = 0;
 static int numParticles;
@@ -72,17 +72,6 @@ void quit_particles(void)
 	return;
 }
 
-void draw_particle(struct particle *p)
-{
-	p->draw(p->data);
-
-	p->life -= timeDiff;
-	if(p->life < 0.0) {
-	       	p->active = 0;
-		p->del(p->data);
-	}
-}
-
 /** Draws all of the active particles */
 void draw_particles(void)
 {
@@ -90,8 +79,16 @@ void draw_particles(void)
 	Log(("Draw Particles()\n"));
 	for(x=0;x<numParticles;x++)
 	{
-		if(particles[x].active)
-			draw_particle(&particles[x]);
+		struct particle *p = &particles[x];
+		if(p->active) {
+			p->draw(p->data, p->life / MAX_LIFE);
+
+			p->life -= timeDiff;
+			if(p->life <= 0.0) {
+				p->active = 0;
+				p->del(p->data);
+			}
+		}
 	}
 	Log(("Draw Particles done\n"));
 }
@@ -100,7 +97,7 @@ void draw_particles(void)
  * @param data The user data to pass to the draw function.
  * @param draw The user's draw function. Will get the data passed in.
  */
-void create_particle(void *data, void (*draw)(const void *), void (*del)(void *))
+void create_particle(void *data, void (*draw)(const void *, float), void (*del)(void *))
 {
 	struct particle *p;
 
@@ -115,7 +112,7 @@ void create_particle(void *data, void (*draw)(const void *), void (*del)(void *)
 	p->draw = draw;
 	p->del = del;
 	p->active = 1;
-	p->life = 3.00;
+	p->life = MAX_LIFE;
 
 	curParticle++;
 	if(curParticle >= numParticles)
