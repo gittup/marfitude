@@ -56,11 +56,11 @@ static struct particle *particles;
 int init_particles(void)
 {
 	printf("Init particles\n");
-	numParticles = cfg_get_int("video", "particles", 100);
+	numParticles = cfg_get_int("video", "particles", 128);
 	curParticle = 0;
 	particles = (struct particle*)calloc(numParticles, sizeof(struct particle));
 	particlesInited = 1;
-	return 1;
+	return 0;
 }
 
 /** Frees the particle engine */

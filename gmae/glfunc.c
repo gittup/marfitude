@@ -333,7 +333,7 @@ int init_gl(void)
 		return 4;
 	}
 
-	if(!init_particles())
+	if(init_particles())
 	{
 		ELog(("ERROR: Couldn't load particles!\n"));
 		return 5;
