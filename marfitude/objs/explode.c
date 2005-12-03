@@ -14,6 +14,7 @@
 #include "gmae/wam.h"
 
 #include "util/myrand.h"
+#include "util/slist.h"
 
 struct explode {
 	struct obj o;
@@ -23,7 +24,7 @@ struct explode {
 static void explode(const void *);
 static void victory(const void *);
 static void explosion_particle(const struct marfitude_pos *p, const float *c);
-static void draw_particle(const void *);
+static void draw_particle(const void *, float);
 static void free_particle(void *data);
 
 static int tex1;
@@ -64,26 +65,23 @@ void explode(const void *data)
 
 void victory(const void *data)
 {
-	int score = *((const int*)data);
+	const struct slist *list = data;
+	const struct slist *t;
 	struct marfitude_pos pos;
 	const struct wam *wam = marfitude_get_wam();
 	const struct marfitude_player *ps;
 	int num = 0;
 	int x;
 
-	marfitude_foreach_player(ps) {
-		if(ps->score.score == score)
-			num++;
-	}
+	num = slist_length(list);
 
-	marfitude_foreach_player(ps) {
-		if(ps->score.score == score) {
-			for(x=0; x<48 / num; x++) {
-				const float *c = get_player_color(ps->num);
-				pos.tic = wam->row_data[wam->num_rows - 1].ticpos;
-				pos.channel = x % wam->num_cols;
-				explosion_particle(&pos, c);
-			}
+	slist_foreach(t, list) {
+		ps = t->data;
+		for(x=0; x<48 / num; x++) {
+			const float *c = get_player_color(ps->num);
+			pos.tic = wam_row(wam, wam->num_rows)->ticpos;
+			pos.channel = x % wam->num_cols;
+			explosion_particle(&pos, c);
 		}
 	}
 }
@@ -110,9 +108,11 @@ void explosion_particle(const struct marfitude_pos *p, const float *c)
 	create_particle(e, draw_particle, free_particle);
 }
 
-void draw_particle(const void *data)
+void draw_particle(const void *data, float life)
 {
 	const struct explode *e = data;
+
+	if(life) {}
 
 	glPushMatrix();
 	glTranslated(e->o.pos.v[0], e->o.pos.v[1], e->o.pos.v[2]);
