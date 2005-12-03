@@ -59,7 +59,7 @@ void set_main_view(const void *data)
 
 	if(marfitude_num_players() == 1) {
 		/* Get the active player */
-		ps = marfitude_get_player(NULL);
+		ps = marfitude_get_player(0);
 
 		dest.v[0] = -(double)ps->channel * BLOCK_WIDTH;
 		dest.v[1] = 3.0;

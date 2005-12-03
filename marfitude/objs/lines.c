@@ -70,7 +70,7 @@ void remove_line(const void *data)
 	const struct row *r = data;
 
 	while(lines[start_line].row == r) {
-		lines[start_line].row = NULL;
+		lines[start_line].row = 0;
 		start_line++;
 		if(start_line == num_lines) start_line = 0;
 	}
