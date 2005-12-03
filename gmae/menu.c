@@ -36,6 +36,7 @@
 #include "sounds.h"
 #include "cfg.h"
 #include "log.h"
+#include "particles.h"
 #include "phys.h"
 
 #include "util/memtest.h"
@@ -1183,11 +1184,11 @@ int option_menu_init(void)
 	int i;
 	int fullscreen;
 	int difficulty = cfg_get_int("main", "difficulty", 1);
-	struct slider *buffer;
 	int width, height;
 	int buffersize;
 	int stereo;
 	int init_mode = 0;
+	int particles;
 	SDL_Rect **modes;
 
 	if(!menuActive) RegisterMenuEvents();
@@ -1255,7 +1256,10 @@ int option_menu_init(void)
 	}
 
 	buffersize = cfg_get_int("sound", "buffersize", 512);
-	buffer = CreateSlider(mainMenu, "Sound buffer [bytes]", c, 128, 8192, SLIDER_DOUBLE, buffersize);
+	CreateSlider(mainMenu, "Sound buffer [bytes]", c, 128, 8192, SLIDER_DOUBLE, buffersize);
+
+	particles = cfg_get_int("video", "particles", 128);
+	CreateSlider(mainMenu, "Particles", c, 32, 8192, SLIDER_DOUBLE, particles);
 
 	stereo = cfg_eq("sound", "stereo", "yes");
 	CreateBoolean(mainMenu, "Stereo sound", c, "On", "Off", stereo);
@@ -1271,8 +1275,10 @@ void option_menu_quit(void)
 	struct slider *s;
 	int width, height;
 	int buffersize;
+	int particles;
 	int restart_audio = 0;
 	int restart_video = 0;
+	int restart_particles = 0;
 
 	s = (struct slider*)mainMenu->items[i].item;
 	cfg_set_int("main", "difficulty", s->val);
@@ -1305,6 +1311,14 @@ void option_menu_quit(void)
 	}
 	i++;
 
+	particles = cfg_get_int("video", "particles", 128);
+	s = (struct slider*)mainMenu->items[i].item;
+	if(particles != s->val) {
+		cfg_set_int("video", "particles", s->val);
+		restart_particles = 1;
+	}
+	i++;
+
 	s = (struct slider*)mainMenu->items[i].item;
 	if(cfg_eq("sound", "stereo", "yes") ^ s->val) {
 		cfg_set("sound", "stereo", s->val ? "yes" : "no");
@@ -1327,6 +1341,14 @@ void option_menu_quit(void)
 		init_audio();
 		init_sounds();
 		fire_event("sound re-init", NULL);
+	}
+
+	/* Particles are restarted by the video anyway, so only do this
+	 * if necessary.
+	 */
+	if(restart_particles && !restart_video) {
+		quit_particles();
+		init_particles();
 	}
 
 	free(video_modes);
