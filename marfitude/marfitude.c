@@ -1073,7 +1073,14 @@ void UpdatePosition(void)
 			}
 			CheckColumn(wam_rowindex(wam, rowIndex));
 			if(rowIndex == wam->num_rows) {
-				fire_event("victory", &local_high);
+				struct slist *list = NULL;
+				struct marfitude_player *p;
+
+				foreach_player(p) {
+					if(p->score.score == local_high)
+						list = slist_insert(list, p);
+				}
+				fire_event("victory", list);
 			}
 		}
 		modTime = curRow->time + (curTic - curRow->ticpos) * BpmToSec(curRow->sngspd, curRow->bpm) / curRow->sngspd;
