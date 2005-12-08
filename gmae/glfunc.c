@@ -17,7 +17,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#define _BSD_SOURCE /* vsnprintf*/
+#define _ISOC99_SOURCE /* vsnprintf*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
