@@ -1,3 +1,0 @@
-INSTALL_DIR = $(DATADIR)
-INSTALL_LIST = init.cfg
-EXEC = data
