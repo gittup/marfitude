@@ -183,6 +183,7 @@ static void HideMenu(void);
 static int NullMenuInit(void);
 static void NullMenuQuit(void);
 static void NullMenu(void);
+static void no_button_handler(const void *data);
 static int NoMenuInit(void);
 static void NoMenuQuit(void);
 static void NoMenu(void);
@@ -838,16 +839,26 @@ void NullMenu(void)
 {
 }
 
+void no_button_handler(const void *data)
+{
+	const struct button_e *b = data;
+	if(b->button == B_MENU) {
+		show_menu(b->player);
+	}
+}
+
 int NoMenuInit(void)
 {
 	input_mode(GAME);
 	HideMenu();
 	menu_player = -1;
+	register_event("button", no_button_handler);
 	return 0;
 }
 
 void NoMenuQuit(void)
 {
+	deregister_event("button", no_button_handler);
 }
 
 void NoMenu(void)
