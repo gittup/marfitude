@@ -72,11 +72,9 @@ int start_module(const char *modFile)
 
 	mod->loop = 0; /* don't want to keep looping forever! */
 
-	if(cfg_eq("sound", "interpolation", "yes"))
-		md_mode |= DMODE_INTERP;
-	else
-		md_mode &= !DMODE_INTERP;
-	Log(("interp mode set\n"));
+	/* Always set interpolation. */
+	md_mode |= DMODE_INTERP;
+
 	return 0;
 }
 
