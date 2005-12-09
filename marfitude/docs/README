@@ -8,15 +8,12 @@ That is all.)
 Options:
 main -
 	song - the last song played
-	volumethreshold - notes must be above this volume to be used (default 0)
-	tracks - number of tracks to play (default 7)
+	scene - the last scene played
 video -
 	width - screen width
 	height - screen height
 	bpp - bits per pixel - set to 32/24/16, or 0 for current
 	fullscreen - yes makes it fullscreen (default no)
-	lighting - would enable/disable lighting, if i let it :)
-	textures - would enable/disable textures, if i let it :)
 	particles - max # of particles (default 128)
 sound -
 	hz - frequency (default 44100)
@@ -25,7 +22,6 @@ sound -
 		smaller buffer = sound may click
 		(default 512)
 	channels - number of sound channels to use (default 32)
-	interpolation - use interp. to make mods sound better (default yes)
 joystick -
 	joystickenable - set to 1 to enable joysticks (default 1)
 	ignorejsXXbYY - set to 1 to ignore button YY on joystick XX
