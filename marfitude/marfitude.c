@@ -477,6 +477,10 @@ void main_scene(void)
 
 	set_ortho_projection();
 	fire_event("draw ortho", NULL);
+	/* Hehe, you'd think I would learn... */
+	if(glIsEnabled(GL_LIGHTING)) {
+		ELog(("Someone left the lights on in ortho mode!\n"));
+	}
 	reset_projection();
 
 	Log(("endMainScene\n"));
