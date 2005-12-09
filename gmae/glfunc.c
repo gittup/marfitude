@@ -182,20 +182,20 @@ SDL_Surface *generate_icon(void)
 		glVertex3f( 0.0, -0.15, 0.0);
 
 		glNormal3f( 0.2, -0.5, 0.0);
-		glVertex3f( 0.2, 0.0, 0.2);
 		glVertex3f( 0.2, 0.0, -0.2);
+		glVertex3f( 0.2, 0.0, 0.2);
 
 		glNormal3f( 0.0, -0.5, -0.2);
-		glVertex3f( 0.2, 0.0, -0.2);
 		glVertex3f(-0.2, 0.0, -0.2); 
+		glVertex3f( 0.2, 0.0, -0.2);
 
 		glNormal3f(-0.2, -0.5, 0.0);
-		glVertex3f(-0.2, 0.0, -0.2);
 		glVertex3f(-0.2, 0.0, 0.2);
+		glVertex3f(-0.2, 0.0, -0.2);
 
 		glNormal3f(0.0, -0.5, 0.2);
-		glVertex3f(-0.2, 0.0, 0.2);
 		glVertex3f(0.2, 0.0, 0.2);
+		glVertex3f(-0.2, 0.0, 0.2);
 
 	} glEnd();
 
