@@ -27,13 +27,8 @@ static void explosion_particle(const struct marfitude_pos *p, const float *c);
 static void draw_particle(const void *, float);
 static void free_particle(void *data);
 
-static int tex1;
-static int tex2;
-
 void explode_init(void)
 {
-	tex1 = texture_num("StarBurst.png");
-	tex2 = texture_num("StarCenter.png");
 	register_event("row explosion", explode);
 	register_event("victory", victory);
 }
@@ -121,7 +116,7 @@ void draw_particle(const void *data, float life)
 
 	glColor4fv(e->c);
 
-	glBindTexture(GL_TEXTURE_2D, tex1);
+	glBindTexture(GL_TEXTURE_2D, texture_num("StarBurst.png"));
 	glBegin(GL_QUADS); {
 		glTexCoord2f(0.0, 0.0); glVertex3f(-0.5, -0.5, 0.0);
 		glTexCoord2f(1.0, 0.0); glVertex3f(0.5, -0.5, 0.0);
@@ -129,7 +124,7 @@ void draw_particle(const void *data, float life)
 		glTexCoord2f(0.0, 1.0); glVertex3f(-0.5, 0.5, 0.0);
 	} glEnd();
 
-	glBindTexture(GL_TEXTURE_2D, tex2);
+	glBindTexture(GL_TEXTURE_2D, texture_num("StarCenter.png"));
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_QUADS); {
 		glTexCoord2f(0.0, 0.0); glVertex3f(-0.5, -0.5, 0.0);

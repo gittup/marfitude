@@ -10,12 +10,10 @@
 #include "util/slist.h"
 
 static void draw_notes(const void *);
-static int tex;
 
 void bluenotes_init(void)
 {
 	register_event("draw transparent", draw_notes);
-	tex = texture_num("BlueNova.png");
 }
 
 void bluenotes_exit(void)
@@ -45,7 +43,7 @@ void draw_notes(const void *data)
 			glColor4f(1.0, 1.0, 1.0, 1.0);
 		else
 			glColor4f(0.5, 0.5, 0.5, 1.0);
-		glBindTexture(GL_TEXTURE_2D, tex);
+		glBindTexture(GL_TEXTURE_2D, texture_num("BlueNova.png"));
 		glBegin(GL_QUADS); {
 			glTexCoord2f(0.0, 0.0); glVertex3f(-0.5, -0.5, 0.0);
 			glTexCoord2f(1.0, 0.0); glVertex3f(0.5, -0.5, 0.0);

@@ -12,12 +12,10 @@
 
 static void fireball_draw(const void *);
 
-static int fireball_tex;
 static float fireball[4];
 
 void fireball_init(void)
 {
-	fireball_tex = texture_num("Fireball.png");
 	fireball[0] = 0.0;
 	fireball[1] = 0.5;
 	fireball[2] = 0.0;
@@ -53,7 +51,7 @@ void fireball_draw(const void *data)
 	fireball[2] = TIC_HEIGHT * p.tic;
 	glLightfv(GL_LIGHT1, GL_POSITION, fireball);
 
-	glBindTexture(GL_TEXTURE_2D, fireball_tex);
+	glBindTexture(GL_TEXTURE_2D, texture_num("Fireball.png"));
 	glNormal3f(0.0, 1.0, 0.0);
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_QUADS); {

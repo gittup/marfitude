@@ -15,8 +15,6 @@ static void draw_target(void);
 static void draw_targets(const void *);
 static void update_shot(const void *data);
 
-static int target_tex[MAX_PLAYERS];
-static int light_tex;
 static float flare[MAX_PLAYERS][MAX_NOTE+1];
 
 void targets_init(void)
@@ -26,11 +24,6 @@ void targets_init(void)
 	for(p=0; p<MAX_PLAYERS; p++)
 		for(i=0; i<MAX_NOTE+1; i++)
 			flare[p][i] = 0.0;
-	target_tex[0] = texture_num("Target-1.png");
-	target_tex[1] = texture_num("Target-2.png");
-	target_tex[2] = texture_num("Target-3.png");
-	target_tex[3] = texture_num("Target-4.png");
-	light_tex = texture_num("Target-light.png");
 	register_event("draw transparent", draw_targets);
 	register_event("shoot", update_shot);
 }
@@ -64,12 +57,20 @@ void draw_targets(const void *data)
 {
 	int x;
 	int z;
+	int target_tex[MAX_PLAYERS];
+	int light_tex;
 	const struct marfitude_player *ps;
 	const struct marfitude_attack_col *ac = marfitude_get_ac();
 	struct marfitude_pos pos;
 
 	if(data) {}
 	marfitude_get_pos(&pos);
+
+	target_tex[0] = texture_num("Target-1.png");
+	target_tex[1] = texture_num("Target-2.png");
+	target_tex[2] = texture_num("Target-3.png");
+	target_tex[3] = texture_num("Target-4.png");
+	light_tex = texture_num("Target-light.png");
 
 	marfitude_foreach_player(ps) {
 		struct slist *t;
