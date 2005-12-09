@@ -39,7 +39,6 @@ void draw_stars(const void *data)
 
 	if(data) {}
 
-	glDisable(GL_LIGHTING);
 	glDisable(GL_TEXTURE_2D);
 	glBegin(GL_POINTS); {
 		for(x=0; x<NUM_STARS; x++) {
@@ -56,5 +55,4 @@ void draw_stars(const void *data)
 		}
 	} glEnd();
 	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_LIGHTING);
 }
