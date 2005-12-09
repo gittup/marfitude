@@ -24,7 +24,14 @@ void quit_textures(void);
 
 /** Masks for SDL_CreateRGBSurface */
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-#define MASKS 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff
+#define RMASK 0xff000000
+#define GMASK 0x00ff0000
+#define BMASK 0x0000ff00
+#define AMASK 0x000000ff
 #else
-#define MASKS 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000
+#define RMASK 0x000000ff
+#define GMASK 0x0000ff00
+#define BMASK 0x00ff0000
+#define AMASK 0xff000000
 #endif
+#define MASKS RMASK, GMASK, BMASK, AMASK

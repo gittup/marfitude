@@ -206,7 +206,7 @@ SDL_Surface *generate_icon(void)
 	p = img->pixels;
 	for(y=0; y<height; y++) {
 		for(x=0; x<width; x++) {
-			if((*p & 0x00ffffff) == 0) {
+			if((*p & (RMASK|GMASK|BMASK)) == 0) {
 				*p = 0;
 			}
 			p++;
