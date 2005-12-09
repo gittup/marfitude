@@ -46,6 +46,8 @@
 
 static int load_font(void);
 static void set_icon(void);
+static void quit_video(void);
+static int init_video(void);
 
 /** number of fonts stored in the Font.png file (assumed 16 characters wide) */
 #define FONT_SIZE 96
@@ -230,15 +232,6 @@ void set_icon(void)
 /** Loads the font, and sets up the OpenGL parameters to some nice defaults */
 int init_gl(void)
 {
-	Uint32 flags = SDL_OPENGL;
-	SDL_Surface *screen;
-	int bpp;
-	float light0[4] = {0.0, 1.0, 0.0, 0.0};
-	float light0amb[4] = {1.0, 1.0, 1.0, 1.0};
-	float light0dif[4] = {0.4, 0.4, 0.4, 1.0};
-	float ambient_light[4] = {0.0, 0.0, 0.0, 0.0};
-	float diffuse_light[4] = {1.0, 1.0, 1.0, 1.0};
-
 	printf("Starting video...\n");
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_TIMER) < 0)
 	{
@@ -247,6 +240,48 @@ int init_gl(void)
 	}
 	sdlInited = 1;
 	Log(("SDL Initialized\n"));
+
+	return init_video();
+}
+
+/** Shuts down OpenGL */
+void quit_gl(void)
+{
+	if(!sdlInited || !fontInited) return;
+	quit_video();
+	if(sdlInited)
+	{
+		SDL_Quit();
+		sdlInited = 0;
+		printf("OpenGL shutdown\n");
+	}
+}
+
+void quit_video(void)
+{
+	quit_particles();
+	quit_textures();
+	free(pbuf);
+	pbuf = NULL;
+	pbufsize = 0;
+	if(fontInited)
+	{
+		glDeleteLists(fontList, numChars);
+		glDeleteTextures(1, &fontTex);
+		fontInited = 0;
+	}
+}
+
+int init_video(void)
+{
+	Uint32 flags = SDL_OPENGL;
+	SDL_Surface *screen;
+	int bpp;
+	float light0[4] = {0.0, 1.0, 0.0, 0.0};
+	float light0amb[4] = {1.0, 1.0, 1.0, 1.0};
+	float light0dif[4] = {0.4, 0.4, 0.4, 1.0};
+	float ambient_light[4] = {0.0, 0.0, 0.0, 0.0};
+	float diffuse_light[4] = {1.0, 1.0, 1.0, 1.0};
 
 	screenWidth = cfg_get_int("video", "width", 640);
 	screenHeight = cfg_get_int("video", "height", 480);
@@ -318,7 +353,6 @@ int init_gl(void)
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse_light);
 	glEnable(GL_LIGHT1);
 
-
 	if(!load_font())
 		return 3;
 
@@ -338,31 +372,13 @@ int init_gl(void)
 		ELog(("ERROR: Couldn't load particles!\n"));
 		return 5;
 	}
-
 	return 0;
 }
 
-/** Shuts down OpenGL */
-void quit_gl(void)
+void reinit_video(void)
 {
-	if(!sdlInited || !fontInited) return;
-	quit_particles();
-	quit_textures();
-	free(pbuf);
-	pbuf = NULL;
-	pbufsize = 0;
-	if(fontInited)
-	{
-		glDeleteLists(fontList, numChars);
-		glDeleteTextures(1, &fontTex);
-		fontInited = 0;
-	}
-	if(sdlInited)
-	{
-		SDL_Quit();
-		sdlInited = 0;
-		printf("OpenGL shutdown\n");
-	}
+	quit_video();
+	init_video();
 }
 
 /** Performs a function similar to gluLookAt. This is pretty much right out of

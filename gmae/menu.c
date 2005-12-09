@@ -1343,8 +1343,7 @@ void option_menu_quit(void)
 	}
 	if(restart_video) {
 		quit_joystick();
-		quit_gl();
-		init_gl();
+		reinit_video();
 		init_joystick();
 		fire_event("sdl re-init", NULL);
 	}
