@@ -114,7 +114,7 @@ void draw_rows(const void *data)
 		if(realstart != start) {
 			glColor4f(1.0, 1.0, 1.0, 0.7);
 			glBegin(GL_QUADS); {
-				glTexCoord2f(0.0, realstart/ 4.0);
+				glTexCoord2f(0.0, realstart / 4.0);
 				glVertex3f(-1.0, 0.0, realstart);
 				glTexCoord2f(0.0, start / 4.0);
 				glVertex3f(-1.0, 0.0, start);
@@ -126,7 +126,7 @@ void draw_rows(const void *data)
 			glColor4f(1.0, 1.0, 1.0, 1.0);
 		}
 		glBegin(GL_QUADS); {
-			glTexCoord2f(0.0, start/ 4.0);
+			glTexCoord2f(0.0, start / 4.0);
 			glVertex3f(-1.0, 0.0, start);
 			glTexCoord2f(0.0, stop / 4.0);
 			glVertex3f(-1.0, 0.0, stop);
