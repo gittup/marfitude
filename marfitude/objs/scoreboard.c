@@ -102,13 +102,13 @@ void draw_scoreboard(const void *data)
 
 	glBegin(GL_QUADS); {
 		float mult = pos.modtime / wam->song_length;
-		glColor4f(0.0, 0.8, 0.5, 1.0);
+		glColor4f(0.7, 1.0, 0.7, 1.0);
 		glVertex2i(x1+1, (y1+1)*mult+(y2-1)*(1.0-mult));
 		glColor4f(0.0, 0.0, 0.0, 1.0);
 		glVertex2i(x1+1, y2-1);
 		glColor4f(0.0, 0.5, 0.0, 1.0);
 		glVertex2i(x2-1, y2-1);
-		glColor4f(0.5, 0.8, 0.5, 1.0);
+		glColor4f(0.7, 1.0, 0.7, 1.0);
 		glVertex2i(x2-1, (y1+1)*mult+(y2-1)*(1.0-mult));
 	} glEnd();
 	glEnable(GL_TEXTURE_2D);
