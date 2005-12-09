@@ -16,7 +16,7 @@ static void draw_stars(const void *);
 static void createstar0(unsigned char *p, int x, int y);
 static void createstar1(unsigned char *p, int x, int y);
 static void createstar(unsigned char *p, int x, int y, int rad);
-static double distance(int x1, int y1, int x2, int y2);
+static double distance(int xa, int ya, int xb, int yb);
 static const int width = 128;
 static const int height = 128;
 static int stars[2];
@@ -35,9 +35,9 @@ void bigstars_exit(void)
 	delete_texture(&stars[0]);
 }
 
-double distance(int x1, int y1, int x2, int y2)
+double distance(int xa, int ya, int xb, int yb)
 {
-	return sqrt((double)((x2-x1) * (x2-x1) + (y2-y1) * (y2-y1)));
+	return sqrt((double)((xb-xa) * (xb-xa) + (yb-ya) * (yb-ya)));
 }
 
 void createstar0(unsigned char *p, int x, int y)
