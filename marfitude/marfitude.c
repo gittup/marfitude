@@ -238,8 +238,16 @@ void button_handler(const void *data)
 void leaver(const void *data)
 {
 	int p = *((const int*)data);
+	int chan = ps[p].channel;
+	struct marfitude_player *next_in_line;
+
 	ps[p].active = 0;
-	ac[ps[p].channel].ps = slist_remove(ac[ps[p].channel].ps, &ps[p]);
+	next_in_line = ac[chan].ps->data;
+	ac[chan].ps = slist_remove(ac[chan].ps, &ps[p]);
+	if(next_in_line != ac[chan].ps->data) {
+		curp = next_in_line;
+		ResetAp();
+	}
 }
 
 int main_init()
