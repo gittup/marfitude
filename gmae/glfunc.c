@@ -450,20 +450,28 @@ void perspective_projection(double fov, double aspect, double z1, double z2)
 	glFrustum(-width, width, -height, height, z1, z2);
 }
 
+/** This is a super crappy counter to make sure we don't set ortho more
+ * than once. Otherwise when we reset it once it undoes all of the ortho
+ * modes, which sucks. This should probably be fixed in a better way though.
+ */
+static int orthod = 0;
 /** Sets an orthographic projection matrix. Be sure to call reset_projection()
  * afterward.
  */
 void set_ortho_projection(void)
 {
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix(); /* popped in reset_projection() */
-	glLoadIdentity();
-	glOrtho(0, screenWidth, screenHeight, 0, 0, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix(); /* popped in reset_projection() */
-	glLoadIdentity();
-	glDisable(GL_LIGHTING);
-	glDepthMask(GL_FALSE);
+	if(!orthod) {
+		glMatrixMode(GL_PROJECTION);
+		glPushMatrix(); /* popped in reset_projection() */
+		glLoadIdentity();
+		glOrtho(0, screenWidth, screenHeight, 0, 0, 1);
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix(); /* popped in reset_projection() */
+		glLoadIdentity();
+		glDisable(GL_LIGHTING);
+		glDepthMask(GL_FALSE);
+	}
+	orthod++;
 }
 
 /** Resets the projection and modelview matrix. This balances out the
@@ -471,12 +479,15 @@ void set_ortho_projection(void)
  */
 void reset_projection(void)
 {
-	glDepthMask(GL_TRUE);
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
-	glEnable(GL_LIGHTING);
+	orthod--;
+	if(!orthod) {
+		glDepthMask(GL_TRUE);
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+		glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
+		glEnable(GL_LIGHTING);
+	}
 }
 
 /** Return the orthographic coordinate based on @a x, where 0 <= @a x < 640 */
