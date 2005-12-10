@@ -179,6 +179,7 @@ SDL_Surface *generate_icon(void)
 	glTranslatef(0.02, 0.4, -0.58);
 
 	glRotatef(70.0, 0.0, 1.0, 0.0);
+	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_TRIANGLE_FAN); {
 		glNormal3f( 0.0, -1.0, 0.0);
 		glVertex3f( 0.0, -0.15, 0.0);
@@ -198,7 +199,6 @@ SDL_Surface *generate_icon(void)
 		glNormal3f(0.0, -0.5, 0.2);
 		glVertex3f(0.2, 0.0, 0.2);
 		glVertex3f(-0.2, 0.0, 0.2);
-
 	} glEnd();
 
 	img = SDL_CreateRGBSurface(0, width, height, 32, MASKS);
