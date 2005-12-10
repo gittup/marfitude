@@ -297,11 +297,6 @@ int main_init()
 
 	ticTime = 0;
 
-	if(marfitude_get_player(NULL) == NULL) {
-		p = 0;
-	} else {
-		p = marfitude_get_player(NULL)->num;
-	}
 	for(x=0;x<wam->num_cols;x++) {
 		int y;
 		ac[x].part = 0.0;
@@ -314,7 +309,7 @@ int main_init()
 		ac[x].minRow = ac[x].cleared;
 		ac[x].hit = -1;
 		ac[x].miss = -2;
-		ac[x].player = p;
+		ac[x].player = MAX_PLAYERS;
 		ac[x].ps = NULL;
 	}
 
