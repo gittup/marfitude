@@ -96,11 +96,13 @@ static const char *cfgMsg[B_LAST] = {	"up",
 					"shift",
 					"menu"};
 
-static float pc[MAX_PLAYERS][4] = {
+/* The +1 is to allow a non-player color (the last element) */
+static float pc[MAX_PLAYERS+1][4] = {
 	{0.6, 0.6, 1.0, 1.0},
 	{1.0, 0.3, 0.3, 1.0},
 	{1.0, 1.0, 0.0, 1.0},
-	{0.0, 1.0, 0.0, 1.0}
+	{0.0, 1.0, 0.0, 1.0},
+	{1.0, 0.0, 1.0, 1.0}
 };
 
 /** Clear out the SDL_Event queue */
@@ -341,7 +343,8 @@ int set_button(int b, const struct joykey *jk, int player)
 
 /** Gets the @a player's colors in a float array.
  *
- * @param player The player (0 .. MAX_PLAYERS-1)
+ * @param player The player (0 .. MAX_PLAYERS). A value of MAX_PLAYERS is
+ *               a fake player.
  * @return The RGBA colors
  */
 const float *get_player_color(int player)
