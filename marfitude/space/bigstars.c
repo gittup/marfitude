@@ -6,6 +6,7 @@
 
 #include "gmae/event.h"
 #include "gmae/glfunc.h"
+#include "gmae/input.h"
 #include "gmae/textures.h"
 
 #include "util/slist.h"
@@ -91,6 +92,7 @@ void draw_stars(const void *data)
 {
 	const struct slist *t;
 	struct marfitude_pos p;
+	const float *c;
 
 	if(data) {}
 	marfitude_get_pos(&p);
@@ -105,7 +107,8 @@ void draw_stars(const void *data)
 				sn->pos.v[2]+0.3);
 		setup_billboard();
 
-		glColor4f(1.0, 1.0, 1.0, 1.0);
+		c = get_player_color(marfitude_get_ac()[sn->col].player);
+		glColor4fv(c);
 		if(sn->tic - p.tic <= 0)
 			glBindTexture(GL_TEXTURE_2D, stars[0]);
 		else
