@@ -173,6 +173,7 @@ void button_handler(const void *data)
 		return;
 	}
 
+	if(curp->active == 0) return;
 	if(is_menu_active()) return;
 
 	switch(b->button) {
@@ -655,8 +656,6 @@ void Press(int button, int player)
 	b.player = player;
 	b.shift = 0;
 	fire_event("shoot", &b);
-
-	if(!curp->ap.active) return;
 
 	rowStart = rowIndex;
 	while(rowStart > 0 && curRow->time - wam_row(wam, rowStart)->time < MARFITUDE_TIME_ERROR)
