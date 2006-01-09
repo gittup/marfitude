@@ -51,7 +51,7 @@ void draw_scoreboard(const void *data)
 		else print_gl(50, 45, "GO!!");
 	}
 	print_gl(50, 15, "Difficulty: %i", difficulty);
-	print_gl(50, 30, "Speed: %2i/%i at %i", mod->vbtick, mod->sngspd, mod->bpm);
+	print_gl(50, 30, "Speed: %2i/%-2i at %i", mod->vbtick, mod->sngspd, mod->bpm);
 	if(highscore) {
 		print_gl(300, 15, "Highscore: %i", highscore);
 	}
