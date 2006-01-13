@@ -1,14 +1,16 @@
+fix start of bathtub.it
+remove empty tracks (dr0ids0f.mod)
+remove empty space at the end of a song (basket.s3m)
+buffer size calculation was incorrect on JAM's bsd box (large buffer not synced)
+fix macosx dep rule for .so files (they keep getting installed)
+remove duplicate libraries from compilation line
+
 multiple buttons for single action
 mk GRAPH=1 install fails to generate graph and leaves dep.dot around
 allow user to enter initials
 keep track of multiple high scores (eg. top 5)
 
 change list foreach?
-remove blank end patterns
-recursive search for best track representation?
-
-only allow adjacent channels to to mixed
-	startchan, endchan - instead of *channels
 
 check and fix physics stuff
 	multiply timer stuff in timer.c - eg 1/2*t*t for acceleration
@@ -18,19 +20,10 @@ cannona.it stops playing after row 24
 
 play music while switching song?
 
-draw transparent objects after opaque ones - use readonly depth buf
-	- disable blending during opaque objects for speed??
-
-clean up glinit
-
 add in cfg for mods - allow naming of tracks?
 
-speed limit signs when the speed changes ?
-
 more video options - eg texture enable/disable, lightning, etc etc
-sort transparent objects to render them properly (or cheat) (or leave as is)
 Add 3d font?
-compress sounds with zlib?
-check mem usage?
 midi support?
+JAMp3 plugin?
 writing a gmae :)
