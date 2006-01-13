@@ -46,7 +46,9 @@ struct button_e {
  * Also functions as the data for the "key" event.
  */
 struct joykey {
-	int type;    /**< -1 for keybd, -2 for mouse, 0-n for joysticks */
+	int type;    /**< -1 for keybd, -2 for mouse, -3 unset,
+		      * 0-n for joysticks
+		      */
 	int button;  /**< keysym.sym for keybd, mouse button for mouse,
 		      * button # for joystick button
 		      * 1 if axis>0, -1 if axis<0
@@ -71,7 +73,9 @@ void input_mode(enum event_mode mode);
 int configure_joykeys(void);
 char *joykey_name(int button, int player);
 const float *get_player_color(int player);
+int unset_button(int b, int player);
 int set_button(int b, const struct joykey *jk, int player);
+int joykey_keybd_equal(const struct joykey *jk, int key);
 
 /** The maximum number of players supported */
 #define MAX_PLAYERS 4

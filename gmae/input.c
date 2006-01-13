@@ -68,6 +68,7 @@ static struct keypush *get_keypush(const struct joykey *jk, void (*)(struct joyk
 static char *malloc_bstr(int player);
 static int set_shift(const struct joykey *jk);
 static int fire_joykey(const struct joykey *jk);
+static int forbidden_button(const struct joykey *jk);
 static void reset_key_repeats(void);
 static char *next_dot(char *s);
 static int cfg_button(struct joykey *key, const char *cfgParam, int player);
@@ -78,7 +79,6 @@ static void joy_button_handler(struct joykey *);
 static void joy_axis_handler(struct joykey *);
 static void null_handler(struct joykey *);
 static void button_event(int button, int player);
-static void menu_button_event(int button, int player);
 static void deactive(const void *);
 
 static int cur_mode = MENU;
@@ -317,6 +317,12 @@ char *joykey_name(int button, int player)
 	return s;
 }
 
+int unset_button(int b, int player)
+{
+	struct joykey jk = {JK_UNSET, JK_UNSET, JK_UNSET};
+	return set_button(b, &jk, player);
+}
+
 /** Set the game button @a b to be set to the joykey structure @a jk
  *
  * @retval 0 Success
@@ -338,6 +344,21 @@ int set_button(int b, const struct joykey *jk, int player)
 	buttons[player][b].button = jk->button;
 	buttons[player][b].axis = jk->axis;
 	free(bstr);
+	return 0;
+}
+
+/** Checks if @a jk is a keyboard joykey, and if its button is equal to the
+ * input @a key.
+ *
+ * @retval 1 if they are equal
+ * @retval 0 if they are not equal
+ */
+int joykey_keybd_equal(const struct joykey *jk, int key)
+{
+	if(jk->type == JK_KEYBOARD &&
+			jk->button == key &&
+			jk->axis == JK_BUTTON)
+		return 1;
 	return 0;
 }
 
@@ -381,7 +402,11 @@ void handle_action(struct keypush *kp, int action)
 		}
 	}
 
-	if(fire && fire_joykey(&kp->key))
+	/* If we're supposed to fire, and the joykey doesn't fire anything
+	 * on it's on, and we're in the menu, then use the special menu
+	 * handler to give default button settings.
+	 */
+	if(fire && fire_joykey(&kp->key) && cur_mode == MENU)
 		kp->handler(&kp->key);
 }
 
@@ -441,6 +466,7 @@ int fire_joykey(const struct joykey *jk)
 {
 	int x;
 	int p;
+	int rc = 1;
 
 	/* This if statement is weird: the shift key is only set if it's
 	 * in MENU or GAME mode. So that's why the second if part doesn't
@@ -448,25 +474,41 @@ int fire_joykey(const struct joykey *jk)
 	 */
 	if(cur_mode == KEY) {
 		fire_event("key", jk);
+		rc = 0;
 	} else if(set_shift(jk)) {
+		rc = 0;
 		/* shift is already set by set_shift */
-	} else if(cur_mode == MENU) {
-		int fired = 0;
+	} else if((cur_mode == MENU && !forbidden_button(jk))
+		  || cur_mode == GAME) {
+
+		if(jk->button == SDLK_ESCAPE) {
+			button_event(B_MENU, MAX_PLAYERS);
+			return 0;
+		}
 
 		for(p=0; p<MAX_PLAYERS; p++)
 			for(x=0; x<B_LAST; x++)
 				if(joykey_equal(&buttons[p][x], jk)) {
-					menu_button_event(x, p);
-					fired = 1;
-				}
-		if(!fired)
-			return 1;
-	} else if(cur_mode == GAME) {
-		for(p=0; p<MAX_PLAYERS; p++)
-			for(x=0; x<B_LAST; x++)
-				if(joykey_equal(&buttons[p][x], jk))
 					button_event(x, p);
+					rc = 0;
+				}
 	}
+	return rc;
+}
+
+/* Returns 1 if this joykey is forbidden to be overridden in the menu (as in,
+ * it can be set by the user, but the user setting doesn't take effect in the
+ * menu). Return 0 othersize.
+ */
+int forbidden_button(const struct joykey *jk)
+{
+	if((jk->type == JK_KEYBOARD && jk->axis == JK_BUTTON) &&
+	   (jk->button == SDLK_UP ||
+	    jk->button == SDLK_DOWN ||
+	    jk->button == SDLK_LEFT ||
+	    jk->button == SDLK_RIGHT ||
+	    jk->button == SDLK_RETURN))
+		return 1;
 	return 0;
 }
 
@@ -481,15 +523,6 @@ void reset_key_repeats(void)
 }
 
 void button_event(int button, int player)
-{
-	struct button_e b;
-	b.button = button;
-	b.shift = shift[player];
-	b.player = player;
-	fire_event("button", &b);
-}
-
-void menu_button_event(int button, int player)
 {
 	struct button_e b;
 	b.button = button;
@@ -553,33 +586,32 @@ int cfg_button(struct joykey *key, const char *cfgParam, int player)
 
 int joykey_equal(const struct joykey *a, const struct joykey *b)
 {
-	if(a->type == b->type && a->button == b->button && a->axis == b->axis)
+	if(a->type == b->type &&
+	   a->button == b->button &&
+	   a->axis == b->axis)
 		return 1;
 	return 0;
 }
 
 void key_handler(struct joykey *jk)
 {
-	if(jk->button == SDLK_ESCAPE)
-		button_event(B_MENU, 0);
-
-	else if(jk->button == SDLK_UP)
-		button_event(B_UP, 0);
+	if(jk->button == SDLK_UP)
+		button_event(B_UP, MAX_PLAYERS);
 
 	else if(jk->button == SDLK_DOWN)
-		button_event(B_DOWN, 0);
+		button_event(B_DOWN, MAX_PLAYERS);
 
 	else if(jk->button == SDLK_RIGHT)
-		button_event(B_RIGHT, 0);
+		button_event(B_RIGHT, MAX_PLAYERS);
 
 	else if(jk->button == SDLK_LEFT)
-		button_event(B_LEFT, 0);
+		button_event(B_LEFT, MAX_PLAYERS);
 
 	else if(jk->button == SDLK_RETURN)
 		fire_event("enter", &shift[0]);
 
 	else if (jk->button == SDLK_TAB)
-		button_event(B_SELECT, 0);
+		button_event(B_SELECT, MAX_PLAYERS);
 
 	else if(jk->button == SDLK_PAGEUP)
 		fire_event("pageup", NULL);
@@ -616,14 +648,14 @@ void joy_axis_handler(struct joykey *jk)
 	 */
 	if(jk->axis & 1) {
 		if(jk->button == 1)
-			button_event(B_DOWN, 0);
+			button_event(B_DOWN, MAX_PLAYERS);
 		if(jk->button == -1)
-			button_event(B_UP, 0);
+			button_event(B_UP, MAX_PLAYERS);
 	} else {
 		if(jk->button == 1)
-			button_event(B_RIGHT, 0);
+			button_event(B_RIGHT, MAX_PLAYERS);
 		if(jk->button == -1)
-			button_event(B_LEFT, 0);
+			button_event(B_LEFT, MAX_PLAYERS);
 	}
 }
 

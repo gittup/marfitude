@@ -216,7 +216,7 @@ static void null_handler(void);
 /** Set to 1 if a menu is active, 0 otherwise */
 static int menuActive = 0;
 
-static int menu_player = -1;
+static int menu_player = MAX_PLAYERS;
 
 static int curMenu;
 static int numScreenMenus = 1;
@@ -227,14 +227,19 @@ static int cur_player = 0;
 static int snd_tick;
 static int snd_push;
 static int snd_back;
+static int snd_err;
 
 void button_handler(const void *data)
 {
 	const struct button_e *b = data;
 
-	if(menu_player == -1)
+	/* If someone presses a set key, they get control of the menu over the
+	 * other players. However, the default keys set to MAX_PLAYERS are
+	 * always available.
+	 */
+	if(menu_player == MAX_PLAYERS)
 		menu_player = b->player;
-	if(menu_player != b->player)
+	if(menu_player != b->player && b->player != MAX_PLAYERS)
 		return;
 
 	switch(b->button) {
@@ -325,14 +330,7 @@ void EQTriangle(int fade)
 void active_color(int item, struct screenMenu *m)
 {
 	if(item == m->activeMenuItem) {
-		const float *c;
-		const float default_c[] = {.75, 0.0, .75, 1.0};
-
-		if(menu_player == -1) {
-			c = default_c;
-		} else {
-			c = get_player_color(menu_player);
-		}
+		const float *c = get_player_color(menu_player);
 
 		if(m == &screenMenus[curMenu])
 			glColor4fv(c);
@@ -851,7 +849,7 @@ int NoMenuInit(void)
 {
 	input_mode(GAME);
 	HideMenu();
-	menu_player = -1;
+	menu_player = MAX_PLAYERS;
 	register_event("button", no_button_handler);
 	return 0;
 }
@@ -877,7 +875,11 @@ void retry(int shift)
 void leave(int shift)
 {
 	const struct marfitude_player *ps;
+
 	if(shift) {}
+	if(menu_player == MAX_PLAYERS)
+		return;
+
 	fire_event("leave", &menu_player);
 	ps = marfitude_get_player(NULL);
 	if(ps != NULL) {
@@ -1407,13 +1409,17 @@ void ConfigKeyHandler(const void *data)
 {
 	int tmp = mainMenu->activeMenuItem;
 	const struct joykey *jk = data;
+	int snd = snd_push;
 
-	if(set_button(configuring, jk, cur_player)) {
+	if(joykey_keybd_equal(jk, SDLK_ESCAPE)) {
+		unset_button(configuring, cur_player);
+		snd = snd_err;
+	} else if(set_button(configuring, jk, cur_player)) {
 		ELog(("Error setting configure button %i!\n", configuring));
 	}
 	configuring = -1;
 	deregister_event("key", ConfigKeyHandler);
-	MPlaySound(snd_push);
+	MPlaySound(snd);
 	newKeyText->active = 0;
 	input_mode(MENU);
 	ClearMenuItems(mainMenu);
@@ -1530,6 +1536,7 @@ int switch_menu(int n)
 	snd_tick = sound_num("wepnsel1.wav");
 	snd_push = sound_num("spnray03.wav");
 	snd_back = sound_num("spnray02.wav");
+	snd_err = sound_num("zoomout6.wav");
 
 	Log(("Switching Menu: %i\n", n));
 	if(activeMenu) activeMenu->quit();
