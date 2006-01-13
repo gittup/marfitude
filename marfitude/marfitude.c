@@ -162,6 +162,13 @@ void button_handler(const void *data)
 	const struct button_e *b = data;
 	int p;
 
+	if(b->player == MAX_PLAYERS) {
+		/* Don't do anything if one of the static buttons (eg: escape)
+		 * is pressed.
+		 */
+		return;
+	}
+
 	curp = &ps[b->player];
 	p = b->player;
 
