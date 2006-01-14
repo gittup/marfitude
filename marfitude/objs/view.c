@@ -86,10 +86,9 @@ void set_main_view(const void *data)
 	}
 
 	glLoadIdentity();
-	look_at(
-			eye.v[0], eye.v[1], eye.v[2],
-			view.v[0], view.v[1], view.v[2],
-			0.0, 1.0, 0.0);
+	look_at(eye.v[0], eye.v[1], eye.v[2],
+		view.v[0], view.v[1], view.v[2],
+		0.0, 1.0, 0.0);
 }
 
 double get_view_focus(void)
