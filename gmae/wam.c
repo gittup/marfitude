@@ -876,7 +876,6 @@ void remove_empty_tracks(struct wam *wam)
 {
 	int x;
 	int y;
-	int i;
 
 	for(x=wam->num_cols - 1; x>=0; x--) {
 		for(y=0; y<wam->num_rows; y++) {
