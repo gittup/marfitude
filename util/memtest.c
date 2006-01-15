@@ -61,13 +61,14 @@ void *my_malloc(size_t x, int line, const char *file)
 void my_free(void *p, int line, const char *file)
 {
 	int i;
-	for(i=start_block;i<num_blocks;i++)
-	{
-		if(mb[i].ptr == p && mb[i].active)
-		{
+
+	/* Freeing null doesn't do anything */
+	if(p == 0)
+		return;
+	for(i=start_block; i<num_blocks; i++) {
+		if(mb[i].ptr == p && mb[i].active) {
 			mb[i].active = 0;
-			if(i == start_block)
-			{
+			if(i == start_block) {
 				while(!mb[start_block].active && start_block < num_blocks) start_block++;
 			}
 			free(p);
@@ -83,15 +84,12 @@ void *my_realloc(void *p, int x, int line, const char *file)
 	int i;
 	if(p == NULL)
 		return my_malloc(x, line, file);
-	if(x == 0)
-	{
+	if(x == 0) {
 		my_free(p, line, file);
 		return NULL;
 	}
-	for(i=start_block; i<num_blocks; i++)
-	{
-		if(mb[i].ptr == p && mb[i].active)
-		{
+	for(i=start_block; i<num_blocks; i++) {
+		if(mb[i].ptr == p && mb[i].active) {
 			mb[i].ptr = realloc(mb[i].ptr, x);
 			mb[i].line = line;
 			mb[i].size = x;
@@ -125,10 +123,8 @@ void *my_calloc(size_t nm, size_t x, int line, const char *file)
 void check_mem_usage(void)
 {
 	int x;
-	for(x=0;x<num_blocks;x++)
-	{
-		if(mb[x].active)
-		{
+	for(x=0;x<num_blocks;x++) {
+		if(mb[x].active) {
 			printf("Block from %s line %i occupying %i bytes is active.\n", mb[x].file, mb[x].line, (int)mb[x].size);
 		}
 	}
@@ -139,8 +135,7 @@ int query_mem_usage(void)
 {
 	int x;
 	int total = 0;
-	for(x=0;x<num_blocks;x++)
-	{
+	for(x=0;x<num_blocks;x++) {
 		if(mb[x].active) total += mb[x].size;
 	}
 	return total;
