@@ -148,6 +148,7 @@ void delete_texture(int *tex)
 		if(entry->tex == tex) {
 			texlist = slist_remove(texlist, entry);
 			SDL_FreeSurface(entry->surface);
+			free(entry);
 			break;
 		}
 	}
