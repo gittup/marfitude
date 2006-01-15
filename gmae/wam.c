@@ -40,7 +40,7 @@
 #define WAM_MAX_TRACKS 7
 
 /** The magic at the top of the wam. */
-#define WAM_MAGIC "wam-1.1"
+#define WAM_MAGIC "wam-1.2"
 
 /** Length of the magic wam string. */
 #define WAM_MAGIC_LEN (sizeof(WAM_MAGIC) / sizeof(WAM_MAGIC[0]))
@@ -102,6 +102,7 @@ struct track {
 };
 
 static struct wam *load_track_data(void);
+static void remove_empty_tracks(struct wam *wam);
 static char *base_file_name(const char *file);
 static char *mod_to_wam(const char *file);
 static int get_note(UBYTE *trk, UWORD row);
@@ -866,8 +867,33 @@ struct wam *load_track_data(void)
 		free(tracks[x].channels);
 	}
 	free(tracks);
+	remove_empty_tracks(wam);
 	Log(("Track data Ready\n"));
 	return wam;
+}
+
+void remove_empty_tracks(struct wam *wam)
+{
+	int x;
+	int y;
+	int i;
+
+	for(x=wam->num_cols - 1; x>=0; x--) {
+		for(y=0; y<wam->num_rows; y++) {
+			if(wam->row_data[y].notes[x]) {
+				/* As soon as a note is found, we're done.
+				 * Since tracks are put in from 0 to num_cols-1,
+				 * the empty tracks will always be at the high
+				 * end. So once a non-empty track is found,
+				 * there can't be any more empty ones in
+				 * between.
+				 */
+				return;
+			}
+		}
+		/* Track is empty, remove it */
+		wam->num_cols--;
+	}
 }
 
 void write_col(int fno, struct column *col)
