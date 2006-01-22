@@ -270,11 +270,13 @@ int main_init()
 	wam = load_wam(cursong);
 	if(wam == NULL) {
 		ELog(("Error: Couldn't load WAM file\n"));
+		free(cursong);
 		return 1;
 	}
 	Log(("Start module\n"));
 	if(start_module(cursong)) {
 		ELog(("Error: Couldn't start module\n"));
+		free(cursong);
 		return 2;
 	}
 
