@@ -941,6 +941,11 @@ void FightActivate(int shift)
 	if(shift) {
 		struct screenMenu *m = &screenMenus[curMenu];
 		m->activeMenuItem = rand_int(m->numItems);
+		m->itemStart = m->activeMenuItem - m->menuSize / 2;
+		if(m->itemStart < 0)
+			m->itemStart = 0;
+		if(m->itemStart > m->numItems - m->menuSize)
+			m->itemStart = m->numItems - m->menuSize;
 		return;
 	}
 
