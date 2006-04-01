@@ -840,7 +840,7 @@ void NullMenu(void)
 void no_button_handler(const void *data)
 {
 	const struct button_e *b = data;
-	if(b->button == B_MENU) {
+	if(b->button == B_MENU && b->player == MAX_PLAYERS) {
 		show_menu(b->player);
 	}
 }
