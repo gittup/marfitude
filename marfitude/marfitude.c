@@ -236,6 +236,9 @@ void button_handler(const void *data)
 				Press(lastkeypressed[p][1], p);
 			}
 			break;
+		case B_MENU:
+			show_menu(p);
+			break;
 		case B_UP:
 		case B_DOWN:
 		default:
