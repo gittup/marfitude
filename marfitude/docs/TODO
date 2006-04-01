@@ -4,6 +4,7 @@ remove empty space at the end of a song (basket.s3m)
 buffer size calculation was incorrect on JAM's bsd box (large buffer not synced)
 fix macosx dep rule for .so files (they keep getting installed)
 remove duplicate libraries from compilation line
+replace long filenames in music and other thing with "..." in the middle
 
 multiple buttons for single action
 mk GRAPH=1 install fails to generate graph and leaves dep.dot around
