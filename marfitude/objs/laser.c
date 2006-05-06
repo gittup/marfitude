@@ -19,14 +19,13 @@
 
 /** Defines a laser */
 struct laser {
-	union vector p1; /**< One endpoint of the laser */
-	union vector p2; /**< The other endpoint of the laser */
-	float time;      /**< How long this laser has been 'round the block.
-			  * Starts at 1.0 and decreases to 0.0 when it dies.
-			  */
+	union vector p; /**< One endpoint of the laser */
+	union vector l; /**< The length of the laser */
+	float time;     /**< How long this laser has been 'round the block.
+			 * Starts at 1.0 and decreases to 0.0 when it dies.
+			 */
 };
 
-static double laser_adj(double a, double b, double dt);
 static void draw_laser(struct laser *l);
 static void make_laser(const void *);
 static void draw_lasers(const void *);
@@ -56,7 +55,7 @@ void laser_exit(void)
 void make_laser(const void *data)
 {
 	const struct button_e *b = data;
-	const int *offsets = marfitude_get_offsets();
+	const double *offsets = marfitude_get_offsets();
 	struct marfitude_pos p;
 	const float *fireball = fireball_get_pos();
 
@@ -64,42 +63,40 @@ void make_laser(const void *data)
 		return;
 	marfitude_get_pos(&p);
 
-	/* p1 is set to the light position */
-	laser[num_lasers].p1.v[0] = fireball[0];
-	laser[num_lasers].p1.v[1] = fireball[1];
-	laser[num_lasers].p1.v[2] = fireball[2];
+	/* p is set to where the note is */
+	laser[num_lasers].p.v[0] = p.channel + offsets[b->button];
+	laser[num_lasers].p.v[1] = 0.0;
+	laser[num_lasers].p.v[2] = p.tic;
+	marfitude_evalv(&laser[num_lasers].p);
 
-	/* p2 is set to where the note is */
-	laser[num_lasers].p2.v[0] = -p.channel * BLOCK_WIDTH - NOTE_WIDTH * offsets[b->button];
-	laser[num_lasers].p2.v[1] = 0.0;
-	laser[num_lasers].p2.v[2] = TIC_HEIGHT * p.tic;
+	/* Set l so p-l is where the light is. */
+	laser[num_lasers].l.v[0] = fireball[0] - laser[num_lasers].p.v[0];
+	laser[num_lasers].l.v[1] = fireball[1] - laser[num_lasers].p.v[1];
+	laser[num_lasers].l.v[2] = fireball[2] - laser[num_lasers].p.v[2];
+
 	laser[num_lasers].time = 1.0;
 	num_lasers++;
 	if(num_lasers >= NUM_LASERS) num_lasers = 0;
 }
 
-double laser_adj(double a, double b, double dt)
-{
-	return a * (1.0 - dt) + b * dt;
-}
-
 void draw_laser(struct laser *l)
 {
+	double x = l->l.v[0] * l->time;
+	double y = l->l.v[1] * l->time;
+	double z = l->l.v[2] * l->time;
+
+	glPushMatrix();
+	glTranslated(l->p.v[0], l->p.v[1], l->p.v[2]);
 	glColor4f(1.0, 0.0, 1.0, l->time);
 	glBegin(GL_QUADS); {
-		glTexCoord2f(0.0, 0.0);
-		glVertex3f(l->p1.v[0]-0.1, l->p1.v[1], l->p1.v[2]);
-		glTexCoord2f(1.0, 0.0);
-		glVertex3f(l->p1.v[0]+0.1, l->p1.v[1], l->p1.v[2]);
+		glTexCoord2f(1.0, 0.0); glVertex3f(0.1, 0.0, 0.0);
+		glTexCoord2f(0.0, 0.0); glVertex3f(-0.1, 0.0, 0.0);
 
-		glTexCoord2f(1.0, 1.0);
-		glVertex3f(l->p2.v[0]+0.1, l->p2.v[1], l->p2.v[2]);
-		glTexCoord2f(0.0, 1.0);
-		glVertex3f(l->p2.v[0]-0.1, l->p2.v[1], l->p2.v[2]);
+		glTexCoord2f(0.0, 1.0); glVertex3f(x-0.1, y, z);
+		glTexCoord2f(1.0, 1.0); glVertex3f(x+0.1, y, z);
 	} glEnd();
-	l->p1.v[0] = laser_adj(l->p1.v[0], l->p2.v[0], timeDiff * 4.0);
-	l->p1.v[1] = laser_adj(l->p1.v[1], l->p2.v[1], timeDiff * 4.0);
-	l->p1.v[2] = laser_adj(l->p1.v[2], l->p2.v[2], timeDiff * 4.0);
+	glPopMatrix();
+
 	l->time -= timeDiff * LASER_DECAY;
 }
 

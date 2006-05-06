@@ -134,7 +134,7 @@ static struct marfitude_player ps[MAX_PLAYERS] = {
 static struct marfitude_player *curp; /* The current player */
 
 static void *plugin = NULL;
-static int *noteOffset;
+static double *noteOffset;
 static MikMod_player_t oldHand;
 static int tickCounter;
 static double timerCounter;
@@ -300,11 +300,11 @@ int main_init()
 	songStarted = 0;
 	modTime = -5.0;
 	oldHand = MikMod_RegisterPlayer(TickHandler);
-	noteOffset = malloc(sizeof(int) * (MAX_NOTE+1));
+	noteOffset = malloc(sizeof(double) * (MAX_NOTE+1));
 
-	noteOffset[1] = -1;
-	noteOffset[2] = 0;
-	noteOffset[4] = 1;
+	noteOffset[1] = -1 * NOTE_WIDTH / BLOCK_WIDTH;
+	noteOffset[2] = 0 * NOTE_WIDTH / BLOCK_WIDTH;
+	noteOffset[4] = 1 * NOTE_WIDTH / BLOCK_WIDTH;
 
 	curRow = wam_row(wam, 0);
 
@@ -1156,6 +1156,24 @@ void UpdatePosition(void)
 	partialTic = (double)ticTime / 2500.0;
 }
 
+/** Change vertex v from marfitude space to world space */
+void marfitude_evalv(union vector *v)
+{
+	v->v[0] *= -BLOCK_WIDTH;
+	v->v[2] *= TIC_HEIGHT;
+}
+
+/** Perform translation on the x, y, z position. */
+void marfitude_translate3d(double x, double y, double z)
+{
+	glTranslated(x * -BLOCK_WIDTH, y, TIC_HEIGHT * z);
+}
+
+void marfitude_translatev(const union vector *v)
+{
+	marfitude_translate3d(v->v[0], v->v[1], v->v[2]);
+}
+
 /** Gets the wam structure for the current song.
  * @return The wam struct.
  */
@@ -1165,7 +1183,7 @@ const struct wam *marfitude_get_wam(void)
 }
 
 /** Gets the note offsets, size MAX_NOTE+1 */
-const int *marfitude_get_offsets(void)
+const double *marfitude_get_offsets(void)
 {
 	return noteOffset;
 }
@@ -1280,7 +1298,7 @@ int marfitude_get_note(int row, int col)
  */
 void marfitude_get_notepos(union vector *dest, int row, int col)
 {
-	dest->v[0] = -col * BLOCK_WIDTH - NOTE_WIDTH * (double)noteOffset[(int)wam->row_data[row].notes[col]];
+	dest->v[0] = col + noteOffset[(int)wam->row_data[row].notes[col]];
 	dest->v[1] = 0.0;
-	dest->v[2] = TIC_HEIGHT * (double)wam->row_data[row].ticpos;
+	dest->v[2] = (double)wam->row_data[row].ticpos + 0.3 / TIC_HEIGHT;
 }

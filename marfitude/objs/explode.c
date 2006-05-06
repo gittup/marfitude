@@ -88,8 +88,8 @@ void explosion_particle(const struct marfitude_pos *p, const float *c)
 	e = malloc(sizeof(struct explode));
 
 	new_obj(&e->o);
-	e->o.pos.v[0] = -p->channel * 2.0;
-	e->o.pos.v[2] = TIC_HEIGHT * p->tic;
+	e->o.pos.v[0] = p->channel;
+	e->o.pos.v[2] = p->tic;
 	e->o.vel.v[0] = rand_float() - 0.5;
 	e->o.vel.v[1] = 2.0 + rand_float();
 	e->o.vel.v[2] = 13.0 + rand_float();
@@ -99,6 +99,8 @@ void explosion_particle(const struct marfitude_pos *p, const float *c)
 	e->c[1] = c[1];
 	e->c[2] = c[2];
 	e->c[3] = c[3];
+
+	marfitude_evalv(&e->o.pos);
 
 	create_particle(e, draw_particle, free_particle);
 }

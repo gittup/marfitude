@@ -23,7 +23,6 @@
  * Provide access to marfitude's phatty boom beat-matching capabilities.
  */
 
-#define BLOCK_HEIGHT .75 /**< Height (into the screen) of a block */
 #define TIC_HEIGHT .25   /**< Height (into the screen) of a tic */
 #define BLOCK_WIDTH 2.0  /**< Width (left/right) of a block */
 #define NOTE_WIDTH .75   /**< Width positioning (left/right) of a note */
@@ -114,7 +113,7 @@ struct marfitude_player {
 };
 
 const struct wam *marfitude_get_wam(void);
-const int *marfitude_get_offsets(void);
+const double *marfitude_get_offsets(void);
 const struct marfitude_score *marfitude_get_score(int player);
 int marfitude_get_highscore(void);
 int marfitude_get_local_highscore(void);
@@ -128,5 +127,8 @@ const struct marfitude_player *marfitude_get_player(const struct marfitude_playe
 void marfitude_get_pos(struct marfitude_pos *);
 int marfitude_get_note(int row, int col);
 void marfitude_get_notepos(union vector *dest, int row, int col);
+void marfitude_evalv(union vector *v);
+void marfitude_translate3d(double, double, double);
+void marfitude_translatev(const union vector *);
 
 #define marfitude_foreach_player(ps) for(ps=marfitude_get_player(0); ps != 0; ps=marfitude_get_player(ps))

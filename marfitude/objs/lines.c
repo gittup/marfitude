@@ -52,12 +52,14 @@ void create_line(const void *data)
 	const struct wam *wam = marfitude_get_wam();
 
 	if(r->line) {
-		lines[stop_line].p1.v[0] = 1.0;
-		lines[stop_line].p1.v[1] = 0.0;
-		lines[stop_line].p1.v[2] = TIC_HEIGHT * (double)r->ticpos;
-		lines[stop_line].p2.v[0] = 1.0 - 2.0 * wam->num_cols;
+		lines[stop_line].p1.v[0] = -0.5;
+		lines[stop_line].p1.v[1] = 0.005;
+		lines[stop_line].p1.v[2] = (double)r->ticpos;
+		lines[stop_line].p2.v[0] = wam->num_cols - 0.5;
 		lines[stop_line].p2.v[1] = 0.005;
-		lines[stop_line].p2.v[2] = TIC_HEIGHT * (double)r->ticpos;
+		lines[stop_line].p2.v[2] = (double)r->ticpos;
+		marfitude_evalv(&lines[stop_line].p1);
+		marfitude_evalv(&lines[stop_line].p2);
 		lines[stop_line].row = r;
 		lines[stop_line].color = r->line;
 		stop_line++;

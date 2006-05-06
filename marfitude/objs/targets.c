@@ -82,7 +82,9 @@ void draw_targets(const void *data)
 			z++;
 		}
 		glPushMatrix();
-		glTranslated((double)ps->channel * -BLOCK_WIDTH, 0.0, TIC_HEIGHT * pos.tic);
+		marfitude_translate3d((double)ps->channel,
+				      0.0,
+				      pos.tic);
 		glTranslated(-NOTE_WIDTH, 0.0, -(double)z);
 		glNormal3f(0.0, 1.0, 0.0);
 		for(x=-1;x<=1;x++) {

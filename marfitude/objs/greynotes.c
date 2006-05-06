@@ -110,9 +110,7 @@ void draw_notes(const void *data)
 			active = 1;
 
 		glPushMatrix();
-		glTranslated(   sn->pos.v[0],
-				sn->pos.v[1],
-				sn->pos.v[2]+0.3);
+		marfitude_translatev(&sn->pos);
 		if(mat)
 			glColor4f(1.0, 0.4, 0.4, 1.0 - 0.4 * active);
 		else

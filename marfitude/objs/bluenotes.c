@@ -34,9 +34,7 @@ void draw_notes(const void *data)
 		struct marfitude_note *sn = t->data;
 
 		glPushMatrix();
-		glTranslated(   sn->pos.v[0],
-				sn->pos.v[1],
-				sn->pos.v[2]+0.3);
+		marfitude_translatev(&sn->pos);
 		setup_billboard();
 
 		if(sn->tic - p.tic <= 0)

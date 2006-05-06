@@ -51,19 +51,19 @@ void fireball_draw(const void *data)
 	fireball[2] = TIC_HEIGHT * p.tic;
 	glLightfv(GL_LIGHT1, GL_POSITION, fireball);
 
+	glPushMatrix();
+	glTranslated(fireball[0], fireball[1], fireball[2]);
+
 	glBindTexture(GL_TEXTURE_2D, texture_num("Fireball.png"));
 	glNormal3f(0.0, 1.0, 0.0);
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_QUADS); {
-		glTexCoord2f(0.0, 0.0);
-		glVertex3f(fireball[0]-.5, fireball[1]-.5, fireball[2]);
-		glTexCoord2f(0.0, 1.0);
-		glVertex3f(fireball[0]-.5, fireball[1]+.5, fireball[2]);
-		glTexCoord2f(1.0, 1.0);
-		glVertex3f(fireball[0]+.5, fireball[1]+.5, fireball[2]);
-		glTexCoord2f(1.0, 0.0);
-		glVertex3f(fireball[0]+.5, fireball[1]-.5, fireball[2]);
+		glTexCoord2f(0.0, 0.0); glVertex3f(-0.5, -0.5, 0.0);
+		glTexCoord2f(0.0, 1.0); glVertex3f(-0.5, +0.5, 0.0);
+		glTexCoord2f(1.0, 1.0); glVertex3f(+0.5, +0.5, 0.0);
+		glTexCoord2f(1.0, 0.0); glVertex3f(+0.5, -0.5, 0.0);
 	} glEnd();
+	glPopMatrix();
 }
 
 const float *fireball_get_pos(void)
