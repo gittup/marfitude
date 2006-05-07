@@ -401,22 +401,20 @@ void DrawPartialMenu(struct screenMenu *m, int start, int stop)
 
 	glColor3f(1.0, 1.0, 1.0);
 	set_ortho_projection();
-	if(m->itemStart)
-	{
-		glPushMatrix();
-			glTranslatef(orthox(m->menuX-20), orthoy(m->menuY), 0.0);
+	if(m->itemStart) {
+		glPushMatrix(); {
+			glTranslatef(orthox(m->menuX-20), orthoy(m->menuY),0.0);
 			glScalef(10.0, -10.0, 1.0);
 			EQTriangle(m != &screenMenus[curMenu]);
-		glPopMatrix();
+		} glPopMatrix();
 	}
-	if(m->menuSize != -1 && m->itemStart < m->numItems - m->menuSize)
-	{
+	if(m->menuSize != -1 && m->itemStart < m->numItems - m->menuSize) {
 		int tmp = m->minY + FONT_HEIGHT * m->menuSize;
-		glPushMatrix();
+		glPushMatrix(); {
 			glTranslatef(orthox(m->menuX-20), orthoy(tmp), 0.0);
 			glScalef(10.0, 10.0, 1.0);
 			EQTriangle(m != &screenMenus[curMenu]);
-		glPopMatrix();
+		} glPopMatrix();
 	}
 	reset_projection();
 }
@@ -942,10 +940,10 @@ void FightActivate(int shift)
 		struct screenMenu *m = &screenMenus[curMenu];
 		m->activeMenuItem = rand_int(m->numItems);
 		m->itemStart = m->activeMenuItem - m->menuSize / 2;
-		if(m->itemStart < 0)
-			m->itemStart = 0;
 		if(m->itemStart > m->numItems - m->menuSize)
 			m->itemStart = m->numItems - m->menuSize;
+		if(m->itemStart < 0)
+			m->itemStart = 0;
 		return;
 	}
 
