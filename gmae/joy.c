@@ -34,26 +34,7 @@
  */
 
 static SDL_Joystick **joys = NULL;
-static char joyButtonCfg[14] = "ignorejs00b00";
 static int joyInited = 0;
-
-/** Checks if a joystick button has been set to be ignored by the config file.
- * This is really just here cuz my joystick makes an SDL button event
- * whenever I hit the axis. Since all button events activate the menu, it was
- * pretty annoying.
- *
- * @param joy the joystick (event.jbutton.which)
- * @param button the button (event.jbutton.button)
- * @return 1 if the button is ignored, 0 if not.
- */
-int joy_ignore_button(int joy, int button)
-{
-	joyButtonCfg[8] = joy / 10 + '0';
-	joyButtonCfg[9] = joy % 10 + '0';
-	joyButtonCfg[11] = button / 10 + '0';
-	joyButtonCfg[12] = button % 10 + '0';
-	return cfg_get_int("joystick", joyButtonCfg, 0);
-}
 
 /** Opens all of the joysticks from SDL */
 void init_joystick(void)

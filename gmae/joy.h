@@ -21,7 +21,6 @@
  * Loads joysticks for use by SDL
  */
 
-int joy_ignore_button(int joy, int button);
 void init_joystick(void);
 void quit_joystick(void);
 

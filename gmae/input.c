@@ -44,6 +44,11 @@
 /** If a key hasn't been set */
 #define JK_UNSET -3
 
+/** Buffer size required to hold a string representing a 64 bit integer ==
+ * 20 characters, +1 for a minus sign.
+ */
+#define INT_LEN_MAX 21
+
 /** @file
  * Handles SDL events.
  */
@@ -65,12 +70,11 @@ static struct slist *keys = NULL;
 
 static void handle_action(struct keypush *kp, int action);
 static struct keypush *get_keypush(const struct joykey *jk, void (*)(struct joykey*));
-static char *malloc_bstr(int player);
 static int set_shift(const struct joykey *jk);
 static int fire_joykey(const struct joykey *jk);
 static int forbidden_button(const struct joykey *jk);
 static void reset_key_repeats(void);
-static char *next_dot(char *s);
+static const char *next_dot(const char *s);
 static int cfg_button(struct joykey *key, const char *cfgParam, int player);
 static int joykey_equal(const struct joykey *a, const struct joykey *b);
 static void key_handler(struct joykey *);
@@ -84,17 +88,26 @@ static void deactive(const void *);
 static int cur_mode = MENU;
 static struct joykey buttons[MAX_PLAYERS][B_LAST];
 static int shift[MAX_PLAYERS] = {0};
-static const char *cfgMsg[B_LAST] = {	"up",
-					"down",
-					"left",
-					"right",
-					"button1",
-					"button2",
-					"button3",
-					"button4",
-					"select",
-					"shift",
-					"menu"};
+static const char *cfgMsg[B_LAST] = {
+	"up",
+	"down",
+	"left",
+	"right",
+	"button1",
+	"button2",
+	"button3",
+	"button4",
+	"select",
+	"shift",
+	"menu"
+};
+
+static const char *bstr[MAX_PLAYERS] = {
+	"buttons0",
+	"buttons1",
+	"buttons2",
+	"buttons3"
+};
 
 /* The +1 is to allow a non-player color (the last element) */
 static float pc[MAX_PLAYERS+1][4] = {
@@ -183,7 +196,6 @@ void input_loop(void)
 					action = 0;
 				break;
 			case SDL_JOYBUTTONDOWN:
-				if(joy_ignore_button(event.jbutton.which, event.jbutton.button)) break;
 				jk.type = event.jbutton.which;
 				jk.button = event.jbutton.button;
 				jk.axis = JK_BUTTON;
@@ -191,7 +203,6 @@ void input_loop(void)
 				action = 1;
 				break;
 			case SDL_JOYBUTTONUP:
-				if(joy_ignore_button(event.jbutton.which, event.jbutton.button)) break;
 				jk.type = event.jbutton.which;
 				jk.button = event.jbutton.button;
 				jk.axis = JK_BUTTON;
@@ -199,6 +210,9 @@ void input_loop(void)
 				action = 0;
 				break;
 			case SDL_JOYHATMOTION:
+				/* Currently unsupported (obviously :), since
+				 * none of my joysticks do hat events
+				 */
 				printf("%i, %i, %i, %i\n", event.jhat.type, event.jhat.which, event.jhat.hat, event.jhat.value);
 				break;
 			case SDL_MOUSEBUTTONDOWN:
@@ -330,20 +344,15 @@ int unset_button(int b, int player)
  */
 int set_button(int b, const struct joykey *jk, int player)
 {
-	char *s;
-	char *bstr;
+	char s[INT_LEN_MAX * 3 + 3]; /* +3 for 2 .'s and 1 \0 */
 	if(b < 0 || b >= B_LAST) return 1;
 
-	bstr = malloc_bstr(player);
 	reset_key_repeats();
-	s = malloc(int_len(jk->type)+int_len(jk->button)+int_len(jk->axis)+3);
 	sprintf(s, "%i.%i.%i", jk->type, jk->button, jk->axis);
-	cfg_set(bstr, cfgMsg[b], s);
-	free(s);
+	cfg_set(bstr[player], cfgMsg[b], s);
 	buttons[player][b].type = jk->type;
 	buttons[player][b].button = jk->button;
 	buttons[player][b].axis = jk->axis;
-	free(bstr);
 	return 0;
 }
 
@@ -403,7 +412,7 @@ void handle_action(struct keypush *kp, int action)
 	}
 
 	/* If we're supposed to fire, and the joykey doesn't fire anything
-	 * on it's on, and we're in the menu, then use the special menu
+	 * on it's own, and we're in the menu, then use the special menu
 	 * handler to give default button settings.
 	 */
 	if(fire && fire_joykey(&kp->key) && cur_mode == MENU)
@@ -439,13 +448,6 @@ struct keypush *get_keypush(const struct joykey *jk, void (*handler)(struct joyk
 	kp->handler = handler;
 	keys = slist_append(keys, kp);
 	return kp;
-}
-
-char *malloc_bstr(int player)
-{
-	char *bstr = string_copy("buttonsx");
-	bstr[7] = player+'0';
-	return bstr;
 }
 
 int set_shift(const struct joykey *jk)
@@ -507,7 +509,8 @@ int forbidden_button(const struct joykey *jk)
 	    jk->button == SDLK_DOWN ||
 	    jk->button == SDLK_LEFT ||
 	    jk->button == SDLK_RIGHT ||
-	    jk->button == SDLK_RETURN))
+	    jk->button == SDLK_RETURN ||
+	    jk->button == SDLK_TAB))
 		return 1;
 	return 0;
 }
@@ -534,7 +537,7 @@ void button_event(int button, int player)
 /* finds the beginning of the next . number
  * in config file, key is a.b.c
  * so after atoi() gets a, next_dot returns "b.c" then we get b, etc. */
-char *next_dot(char *s)
+const char *next_dot(const char *s)
 {
 	if(s == NULL) return NULL;
 	while(*s && *s != '.') s++;
@@ -544,43 +547,32 @@ char *next_dot(char *s)
 
 int cfg_button(struct joykey *key, const char *cfgParam, int player)
 {
-	char *s;
-	char *t;
-	char *bstr = malloc_bstr(player);
 	const char *cfg;
 
-	cfg = cfg_get(bstr, cfgParam, NULL);
+	cfg = cfg_get(bstr[player], cfgParam, NULL);
 	if(cfg == NULL) {
 		key->type = JK_UNSET;
 		key->button = 0;
 		key->axis = 0;
-		free(bstr);
 		return 1;
 	}
-	s = malloc(sizeof(char) * (strlen(cfg)+1));
-	strcpy(s, cfg);
-	t = s;
-	key->type = atoi(s);
-	s = next_dot(s);
-	if(s == NULL)
+	key->type = atoi(cfg);
+	cfg = next_dot(cfg);
+	if(cfg == NULL)
 	{
-		ELog(("Invalid configuration string for '%s.%s'.\n", bstr, cfgParam));
-		free(t);
-		free(bstr);
+		ELog(("Invalid configuration string for '%s.%s'.\n",
+		      bstr[player], cfgParam));
 		return 1;
 	}
-	key->button = atoi(s);
-	s = next_dot(s);
-	if(s == NULL)
+	key->button = atoi(cfg);
+	cfg = next_dot(cfg);
+	if(cfg == NULL)
 	{
-		ELog(("Invalid configuration string for '%s.%s'.\n", bstr, cfgParam));
-		free(t);
-		free(bstr);
+		ELog(("Invalid configuration string for '%s.%s'.\n",
+		      bstr[player], cfgParam));
 		return 1;
 	}
-	key->axis = atoi(s);
-	free(t);
-	free(bstr);
+	key->axis = atoi(cfg);
 	return 0;
 }
 
@@ -637,26 +629,24 @@ void mouse_button_handler(struct joykey *jk)
 void joy_button_handler(struct joykey *jk)
 {
 	if(jk) {}
-	/* All joystick buttons activate the menu */
-	fire_event("enter", &shift[0]);
+	/* All joystick buttons do nothing. It would be cool if they could
+	 * activate the menu, but some controllers (specifically, mine :) fire
+	 * a joy button event *and* a joy axis event when using the directional
+	 * pad, which causes all sorts of havoc in the menu. So, the joy buttons
+	 * now always do nothing. This is favored over the previous solution
+	 * of manually specifying which joy-buttons to ignore in the cfg file.
+	 */
 }
 
 void joy_axis_handler(struct joykey *jk)
 {
-	/* Handle up and down in menu mode
-	 * (I think all vertical axi / axes / axisi are odd, maybe)
+	if(jk) {}
+	/* All joy axes (axises? axi?) do nothing. It would be cool if they
+	 * could automatically move up/down or left/right in the menu, but
+	 * there doesn't seem to be a standard as far as which is vertical and
+	 * which is horizontal. Plus my dance axis buttons send two axis events,
+	 * which is even more annoying :).
 	 */
-	if(jk->axis & 1) {
-		if(jk->button == 1)
-			button_event(B_DOWN, MAX_PLAYERS);
-		if(jk->button == -1)
-			button_event(B_UP, MAX_PLAYERS);
-	} else {
-		if(jk->button == 1)
-			button_event(B_RIGHT, MAX_PLAYERS);
-		if(jk->button == -1)
-			button_event(B_LEFT, MAX_PLAYERS);
-	}
 }
 
 void null_handler(struct joykey *jk)
