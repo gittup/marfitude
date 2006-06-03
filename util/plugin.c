@@ -22,6 +22,7 @@
 
 #include "plugin.h"
 #include "dl.h"
+#include "memtest.h"
 
 /** @file
  * Implements loading and freeing plugins
