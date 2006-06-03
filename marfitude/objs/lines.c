@@ -8,6 +8,8 @@
 #include "gmae/event.h"
 #include "gmae/wam.h"
 
+#include "util/memtest.h"
+
 static void create_line(const void *);
 static void remove_line(const void *);
 static void draw_lines(const void *);

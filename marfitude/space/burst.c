@@ -11,6 +11,7 @@
 #include "gmae/textures.h"
 #include "gmae/wam.h"
 
+#include "util/memtest.h"
 #include "util/myrand.h"
 #include "util/slist.h"
 
