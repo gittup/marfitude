@@ -38,19 +38,18 @@
  * Creates and draws particles
  */
 
-/** Describes a single particle */
-struct particle {
-	void *data; /**< User data to draw the particle */
-	void (*draw)(const void *, float); /**< The user draw function */
-	void (*del)(void *); /**< The user delete function */
+/** Contains a particle and the information needed to draw it. */
+struct particle_info {
+	struct particle p; /**< The underlying particle */
+	void (*draw)(const struct particle *); /**< The user draw function */
 	int active; /**< 1 = drawn, 0 not drawn */
-	float life; /**< TTL in seconds */
 };
 
 static int particlesInited = 0;
 static int numParticles;
 static int curParticle;
-static struct particle *particles;
+static struct particle_info *particles;
+static void free_particle(struct particle_info *pi);
 
 /** Allocates all memory for the particle engine */
 int init_particles(void)
@@ -58,7 +57,7 @@ int init_particles(void)
 	printf("Init particles\n");
 	numParticles = cfg_get_int("video", "particles", 128);
 	curParticle = 0;
-	particles = (struct particle*)calloc(numParticles, sizeof(struct particle));
+	particles = calloc(numParticles, sizeof(*particles));
 	particlesInited = 1;
 	return 0;
 }
@@ -79,14 +78,13 @@ void draw_particles(void)
 	Log(("Draw Particles()\n"));
 	for(x=0;x<numParticles;x++)
 	{
-		struct particle *p = &particles[x];
-		if(p->active) {
-			p->draw(p->data, p->life / MAX_LIFE);
+		struct particle_info *pi = &particles[x];
+		if(pi->active) {
+			pi->draw(&pi->p);
 
-			p->life -= timeDiff;
-			if(p->life <= 0.0) {
-				p->active = 0;
-				p->del(p->data);
+			pi->p.life -= timeDiff / MAX_LIFE;
+			if(pi->p.life <= 0.0) {
+				free_particle(pi);
 			}
 		}
 	}
@@ -97,28 +95,33 @@ void draw_particles(void)
  * @param data The user data to pass to the draw function.
  * @param draw The user's draw function. Will get the data passed in.
  */
-void create_particle(void *data, void (*draw)(const void *, float), void (*del)(void *))
+struct particle *create_particle(void (*draw)(const struct particle *))
 {
-	struct particle *p;
+	struct particle_info *pi;
 
 	Log(("Create Particle()\n"));
-	if(numParticles <= 0) return;
+	if(numParticles <= 0) return 0;
 
-	p = &particles[curParticle];
-	if(p->active)
-		p->del(p->data);
+	pi = &particles[curParticle];
+	if(pi->active) {
+		free_particle(pi);
+	}
 
-	p->data = data;
-	p->draw = draw;
-	p->del = del;
-	p->active = 1;
-	p->life = MAX_LIFE;
+	new_obj(&pi->p.o);
+	pi->p.c[0] = 1.0;
+	pi->p.c[1] = 1.0;
+	pi->p.c[2] = 1.0;
+	pi->p.c[3] = 1.0;
+	pi->p.life = 1.0;
+	pi->draw = draw;
+	pi->active = 1;
 
 	curParticle++;
 	if(curParticle >= numParticles)
 		curParticle = 0;
 
 	Log(("Create Particle done\n"));
+	return &pi->p;
 }
 
 /** Deletes all of the objects associated with the particles */
@@ -128,9 +131,15 @@ void clear_particles(void)
 	Log(("clear_particles()\n"));
 	for(x=0;x<numParticles;x++) {
 		if(particles[x].active) {
-			particles[x].active = 0;
-			particles[x].del(particles[x].data);
+			free_particle(&particles[x]);
 		}
 	}
 	Log(("clear_particles done\n"));
+}
+
+/** Frees the particle and makes it inactive. */
+void free_particle(struct particle_info *pi)
+{
+	pi->active = 0;
+	delete_obj(&pi->p.o);
 }

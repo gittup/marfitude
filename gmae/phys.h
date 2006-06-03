@@ -20,6 +20,8 @@
 /** @file
  * Adds some mechanics (velocity/acceleration, etc) to objects
  */
+#ifndef phys_h
+#define phys_h
 
 #include "util/math/vector.h"
 
@@ -40,3 +42,5 @@ void new_obj(struct obj *o);
 void delete_obj(struct obj *o);
 void update_objs(double dt);
 void check_objs(void);
+
+#endif

@@ -20,9 +20,17 @@
 /** @file
  * A particle manager
  */
+#include "phys.h"
+
+/** Describes a single particle */
+struct particle {
+	struct obj o; /**< The particle's object info */
+	float c[4];   /**< The particle's color */
+	float life;   /**< TTL in seconds */
+};
 
 int init_particles(void);
 void quit_particles(void);
 void draw_particles(void);
-void create_particle(void *data, void (*draw)(const void *, float), void (*del)(void *));
+struct particle *create_particle(void (*draw)(const struct particle *));
 void clear_particles(void);
