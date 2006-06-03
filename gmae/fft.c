@@ -24,6 +24,8 @@
 #include "cmp.h"
 #include "sdl_mixer/mikmod/sample_callback.h"
 #include "sdl_mixer/mikmod/mikmod.h"
+
+#include "util/memtest.h"
 #include "util/math/pi.h"
 
 /** @file
