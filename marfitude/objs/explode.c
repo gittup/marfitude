@@ -17,16 +17,10 @@
 #include "util/myrand.h"
 #include "util/slist.h"
 
-struct explode {
-	struct obj o;
-	float c[4];
-};
-
 static void explode(const void *);
 static void victory(const void *);
-static void explosion_particle(const struct marfitude_pos *p, const float *c);
-static void draw_particle(const void *, float);
-static void free_particle(void *data);
+static void explosion_particle(const struct marfitude_pos *pos, const float *c);
+static void draw_particle(const struct particle *);
 
 void explode_init(void)
 {
@@ -42,7 +36,7 @@ void explode_exit(void)
 
 void explode(const void *data)
 {
-	const struct marfitude_pos *p = data;
+	const struct marfitude_pos *pos = data;
 	float col[4];
 	int x;
 
@@ -56,7 +50,7 @@ void explode(const void *data)
 	if(x&2) col[GREEN] = 1.0;
 	if(x&4) col[BLUE] = 1.0;
 
-	explosion_particle(p, col);
+	explosion_particle(pos, col);
 }
 
 void victory(const void *data)
@@ -82,42 +76,34 @@ void victory(const void *data)
 	}
 }
 
-void explosion_particle(const struct marfitude_pos *p, const float *c)
+void explosion_particle(const struct marfitude_pos *pos, const float *c)
 {
-	struct explode *e;
+	struct particle *p = create_particle(draw_particle);
+	if(!p) return;
 
-	e = malloc(sizeof(struct explode));
+	p->o.pos.v[0] = pos->channel;
+	p->o.pos.v[2] = pos->tic;
+	p->o.vel.v[0] = rand_float() - 0.5;
+	p->o.vel.v[1] = 2.0 + rand_float();
+	p->o.vel.v[2] = 13.0 + rand_float();
+	p->o.rotvel = rand_float() * 720.0 - 360.0;
+	p->o.acc.v[1] = -3.98;
+	p->c[0] = c[0];
+	p->c[1] = c[1];
+	p->c[2] = c[2];
+	p->c[3] = c[3];
 
-	new_obj(&e->o);
-	e->o.pos.v[0] = p->channel;
-	e->o.pos.v[2] = p->tic;
-	e->o.vel.v[0] = rand_float() - 0.5;
-	e->o.vel.v[1] = 2.0 + rand_float();
-	e->o.vel.v[2] = 13.0 + rand_float();
-	e->o.rotvel = rand_float() * 720.0 - 360.0;
-	e->o.acc.v[1] = -3.98;
-	e->c[0] = c[0];
-	e->c[1] = c[1];
-	e->c[2] = c[2];
-	e->c[3] = c[3];
-
-	marfitude_evalv(&e->o.pos);
-
-	create_particle(e, draw_particle, free_particle);
+	marfitude_evalv(&p->o.pos);
 }
 
-void draw_particle(const void *data, float life)
+void draw_particle(const struct particle *p)
 {
-	const struct explode *e = data;
-
-	if(life) {}
-
 	glPushMatrix();
-	glTranslated(e->o.pos.v[0], e->o.pos.v[1], e->o.pos.v[2]);
+	glTranslated(p->o.pos.v[0], p->o.pos.v[1], p->o.pos.v[2]);
 	setup_billboard();
-	glRotatef(e->o.theta, e->o.axis.v[0], e->o.axis.v[1], e->o.axis.v[2]);
+	glRotatef(p->o.theta, p->o.axis.v[0], p->o.axis.v[1], p->o.axis.v[2]);
 
-	glColor4fv(e->c);
+	glColor4fv(p->c);
 
 	glBindTexture(GL_TEXTURE_2D, texture_num("StarBurst.png"));
 	glBegin(GL_QUADS); {
@@ -137,12 +123,4 @@ void draw_particle(const void *data, float life)
 	} glEnd();
 
 	glPopMatrix();
-}
-
-void free_particle(void *data)
-{
-	struct explode *e = data;
-
-	delete_obj(&e->o);
-	free(e);
 }
