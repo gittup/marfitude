@@ -114,21 +114,25 @@ void draw_lines(const void *data)
 
 	glColor4f(0.8, 0.8, 0.8, 0.3);
 	for(x=0; x<=wam->num_cols; x++) {
-		double min;
-		double max;
+		union vector v1;
+		union vector v2;
 
-		min = pos.tic - NEGATIVE_TICKS;
-		max = pos.tic + POSITIVE_TICKS;
-		if(min < 0.0)
-			min = 0.0;
-		if(max > wam->num_tics)
-			max = wam->num_tics;
+		v1.v[0] = x - 0.5;
+		v1.v[1] = 0.0;
+		v1.v[2] = pos.tic - NEGATIVE_TICKS;
+		if(v1.v[2] < 0.0)
+			v1.v[2] = 0.0;
+		v2.v[0] = x - 0.5;
+		v2.v[1] = 0.0;
+		v2.v[2] = pos.tic + POSITIVE_TICKS;
+		if(v2.v[2] > wam->num_tics)
+			v2.v[2] = wam->num_tics;
 
-		min *= TIC_HEIGHT;
-		max *= TIC_HEIGHT;
+		marfitude_evalv(&v1);
+		marfitude_evalv(&v2);
 
-		glVertex3f(1.0 - 2.0 * x, 0.0, min);
-		glVertex3f(1.0 - 2.0 * x, 0.0, max);
+		glVertex3dv(v1.v);
+		glVertex3dv(v2.v);
 	}
 	glEnd();
 	glEnable(GL_TEXTURE_2D);

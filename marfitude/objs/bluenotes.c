@@ -24,10 +24,10 @@ void bluenotes_exit(void)
 void draw_notes(const void *data)
 {
 	const struct slist *t;
-	struct marfitude_pos p;
+	struct marfitude_pos pos;
 
 	if(data) {}
-	marfitude_get_pos(&p);
+	marfitude_get_pos(&pos);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
 	slist_foreach(t, marfitude_get_hitnotes()) {
@@ -37,7 +37,7 @@ void draw_notes(const void *data)
 		marfitude_translatev(&sn->pos);
 		setup_billboard();
 
-		if(sn->tic - p.tic <= 0)
+		if(sn->tic - pos.tic <= 0)
 			glColor4f(1.0, 1.0, 1.0, 1.0);
 		else
 			glColor4f(0.5, 0.5, 0.5, 1.0);

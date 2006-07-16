@@ -25,7 +25,7 @@
 
 #define TIC_HEIGHT .25   /**< Height (into the screen) of a tic */
 #define BLOCK_WIDTH 2.0  /**< Width (left/right) of a block */
-#define NOTE_WIDTH .75   /**< Width positioning (left/right) of a note */
+#define NOTE_WIDTH .375  /**< Width positioning (left/right) of a note */
 
 #define NEGATIVE_TICKS 7*6  /**< How many ticks before the player to display */
 #define POSITIVE_TICKS 57*6 /**< How many ticks after the player to display */
@@ -127,8 +127,11 @@ const struct marfitude_player *marfitude_get_player(const struct marfitude_playe
 void marfitude_get_pos(struct marfitude_pos *);
 int marfitude_get_note(int row, int col);
 void marfitude_get_notepos(union vector *dest, int row, int col);
-void marfitude_evalv(union vector *v);
-void marfitude_translate3d(double, double, double);
-void marfitude_translatev(const union vector *);
+
+extern void (*marfitude_eval3d)(double *, double *, double *);
+extern void (*marfitude_dv)(union vector *dv, const union vector *v, double dt);
+extern void (*marfitude_translate3d)(double, double, double);
+#define marfitude_evalv(t) marfitude_eval3d(&(t)->v[0], &(t)->v[1], &(t)->v[2])
+#define marfitude_translatev(t) marfitude_translate3d((t)->v[0], (t)->v[1], (t)->v[2])
 
 #define marfitude_foreach_player(ps) for(ps=marfitude_get_player(0); ps != 0; ps=marfitude_get_player(ps))

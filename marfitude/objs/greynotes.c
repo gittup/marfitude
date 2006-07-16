@@ -69,13 +69,13 @@ void gen_list(const void *data)
 void draw_notes(const void *data)
 {
 	const struct slist *t;
-	struct marfitude_pos p;
+	struct marfitude_pos pos;
 	GLuint rotnoteList;
 
 	if(data) {}
 
 	glDisable(GL_TEXTURE_2D);
-	marfitude_get_pos(&p);
+	marfitude_get_pos(&pos);
 
 	rotnoteList = glGenLists(1);
 	glNewList(rotnoteList, GL_COMPILE); {
@@ -89,7 +89,7 @@ void draw_notes(const void *data)
 		struct marfitude_note *sn = t->data;
 		const struct wam *wam = marfitude_get_wam();
 		const struct marfitude_attack_col *col;
-		int mat = fabs(sn->time - p.modtime) <= MARFITUDE_TIME_ERROR;
+		int mat = fabs(sn->time - pos.modtime) <= MARFITUDE_TIME_ERROR;
 
 		col = &marfitude_get_ac()[sn->col];
 

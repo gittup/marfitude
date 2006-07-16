@@ -91,11 +91,11 @@ void createstar(unsigned char *p, int x, int y, int rad)
 void draw_stars(const void *data)
 {
 	const struct slist *t;
-	struct marfitude_pos p;
+	struct marfitude_pos pos;
 	const float *c;
 
 	if(data) {}
-	marfitude_get_pos(&p);
+	marfitude_get_pos(&pos);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
 	slist_foreach(t, marfitude_get_hitnotes()) {
@@ -107,7 +107,7 @@ void draw_stars(const void *data)
 
 		c = get_player_color(marfitude_get_ac()[sn->col].player);
 		glColor4fv(c);
-		if(sn->tic - p.tic <= 0)
+		if(sn->tic - pos.tic <= 0)
 			glBindTexture(GL_TEXTURE_2D, stars[0]);
 		else
 			glBindTexture(GL_TEXTURE_2D, stars[1]);

@@ -53,6 +53,7 @@ void set_main_view(const void *data)
 	union vector dest;
 	const struct marfitude_player *ps;
 	struct marfitude_pos pos;
+	double ex, ey, ez, vx, vy, vz;
 
 	if(data) {}
 	marfitude_get_pos(&pos);
@@ -61,15 +62,15 @@ void set_main_view(const void *data)
 		/* Get the active player */
 		ps = marfitude_get_player(0);
 
-		dest.v[0] = -(double)ps->channel * BLOCK_WIDTH;
+		dest.v[0] = (double)ps->channel;
 		dest.v[1] = 3.0;
-		dest.v[2] = TIC_HEIGHT * pos.tic - 8.0;
+		dest.v[2] = pos.tic - 32.0;
 		eye.v[2] = dest.v[2];
 		vector_transition(&eye, &dest, timeDiff * 8.0, 0.003);
 
-		/* v[0] stays the same */
+		dest.v[0] = (double)ps->channel;
 		dest.v[1] = 0.8;
-		dest.v[2] = TIC_HEIGHT * pos.tic;
+		dest.v[2] = pos.tic;
 		view.v[2] = dest.v[2];
 		vector_transition(&view, &dest, timeDiff * 8.0, 0.003);
 	} else {
@@ -86,8 +87,16 @@ void set_main_view(const void *data)
 	}
 
 	glLoadIdentity();
-	look_at(eye.v[0], eye.v[1], eye.v[2],
-		view.v[0], view.v[1], view.v[2],
+	ex = eye.v[0];
+	ey = eye.v[1];
+	ez = eye.v[2];
+	vx = view.v[0];
+	vy = view.v[1];
+	vz = view.v[2];
+	marfitude_eval3d(&ex, &ey, &ez);
+	marfitude_eval3d(&vx, &vy, &vz);
+	look_at(ex, ey, ez,
+		vx, vy, vz,
 		0.0, 1.0, 0.0);
 }
 

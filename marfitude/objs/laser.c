@@ -56,18 +56,17 @@ void make_laser(const void *data)
 {
 	const struct button_e *b = data;
 	const double *offsets = marfitude_get_offsets();
-	struct marfitude_pos p;
-	const float *fireball = fireball_get_pos();
+	struct marfitude_pos pos;
+	const double *fireball = fireball_get_pos();
 
 	if(marfitude_num_players() != 1)
 		return;
-	marfitude_get_pos(&p);
+	marfitude_get_pos(&pos);
 
 	/* p is set to where the note is */
-	laser[num_lasers].p.v[0] = p.channel + offsets[b->button];
+	laser[num_lasers].p.v[0] = pos.channel + offsets[b->button];
 	laser[num_lasers].p.v[1] = 0.0;
-	laser[num_lasers].p.v[2] = p.tic;
-	marfitude_evalv(&laser[num_lasers].p);
+	laser[num_lasers].p.v[2] = pos.tic;
 
 	/* Set l so p-l is where the light is. */
 	laser[num_lasers].l.v[0] = fireball[0] - laser[num_lasers].p.v[0];
@@ -86,7 +85,8 @@ void draw_laser(struct laser *l)
 	double z = l->l.v[2] * l->time;
 
 	glPushMatrix();
-	glTranslated(l->p.v[0], l->p.v[1], l->p.v[2]);
+	marfitude_translatev(&l->p);
+	marfitude_eval3d(&x, &y, &z);
 	glColor4f(1.0, 0.0, 1.0, l->time);
 	glBegin(GL_QUADS); {
 		glTexCoord2f(1.0, 0.0); glVertex3f(0.1, 0.0, 0.0);
@@ -106,7 +106,7 @@ void draw_lasers(const void *data)
 	if(data) {}
 
 	glBindTexture(GL_TEXTURE_2D, laser_tex);
-	for(x=0;x<NUM_LASERS;x++) {
+	for(x=0; x<NUM_LASERS; x++) {
 		draw_laser(&laser[x]);
 	}
 }

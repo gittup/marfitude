@@ -60,6 +60,11 @@
  * way.
  */
 
+/** Change vertex x, y, z from marfitude space to world space */
+void (*marfitude_eval3d)(double *x, double *y, double *z);
+void (*marfitude_dv)(union vector *dv, const union vector *v, double dt);
+void (*marfitude_translate3d)(double, double, double);
+
 static Uint32 ticTime;
 static struct wam *wam; /* note file */
 static int difficulty = 0;
@@ -113,6 +118,10 @@ static int SortByTic(const void *a, const void *b);
 static void menu_handler(const void *data);
 static void button_handler(const void *data);
 static void leaver(const void *data);
+
+static void marfitude_standard_eval3d(double *x, double *y, double *z);
+static void marfitude_standard_dv(union vector *dv, const union vector *v, double dt);
+static void marfitude_standard_translate3d(double x, double y, double z);
 
 static struct marfitude_attack_col ac[MAX_COLS];
 static struct marfitude_note *notesOnScreen; /* little ring buffer of notes */
@@ -288,6 +297,10 @@ int main_init()
 	 */
 	Log(("Module ready\n"));
 
+	marfitude_eval3d = marfitude_standard_eval3d;
+	marfitude_dv = marfitude_standard_dv;
+	marfitude_translate3d = marfitude_standard_translate3d;
+
 	difficulty = cfg_get_int("main", "difficulty", 1);
 	if(difficulty < 0)
 		difficulty = 0;
@@ -299,12 +312,13 @@ int main_init()
 	timerCounter = 0.0;
 	songStarted = 0;
 	modTime = -5.0;
+	curp = 0;
 	oldHand = MikMod_RegisterPlayer(TickHandler);
 	noteOffset = malloc(sizeof(double) * (MAX_NOTE+1));
 
-	noteOffset[1] = -1 * NOTE_WIDTH / BLOCK_WIDTH;
-	noteOffset[2] = 0 * NOTE_WIDTH / BLOCK_WIDTH;
-	noteOffset[4] = 1 * NOTE_WIDTH / BLOCK_WIDTH;
+	noteOffset[1] = -1 * NOTE_WIDTH;
+	noteOffset[2] = 0 * NOTE_WIDTH;
+	noteOffset[4] = 1 * NOTE_WIDTH;
 
 	curRow = wam_row(wam, 0);
 
@@ -1073,6 +1087,7 @@ void UpdatePosition(void)
 
 		ticTime -= 2500;
 		curTic++;
+		fire_event("tic", &curTic);
 		curVb++;
 		firstVb++;
 		lastVb++;
@@ -1156,22 +1171,33 @@ void UpdatePosition(void)
 	partialTic = (double)ticTime / 2500.0;
 }
 
-/** Change vertex v from marfitude space to world space */
-void marfitude_evalv(union vector *v)
+/** Standard marfitude -> world conversion. Flat world space, adjusted for
+ * size and orientation.
+ */
+void marfitude_standard_eval3d(double *x, double *y, double *z)
 {
-	v->v[0] *= -BLOCK_WIDTH;
-	v->v[2] *= TIC_HEIGHT;
+	*x *= -BLOCK_WIDTH;
+	if(y) {}
+	*z *= TIC_HEIGHT;
 }
 
-/** Perform translation on the x, y, z position. */
-void marfitude_translate3d(double x, double y, double z)
+/** Calculate the delta vector @a dv from at the position vector @a v using time
+ * delta @a dt.
+ */
+void marfitude_standard_dv(union vector *dv, const union vector *v, double dt)
 {
-	glTranslated(x * -BLOCK_WIDTH, y, TIC_HEIGHT * z);
+	if(dt) {}
+	if(v) {}
+	dv->v[0] = 0.0;
+	dv->v[1] = 0.0;
+	dv->v[2] = 1.0;
 }
 
-void marfitude_translatev(const union vector *v)
+/** Perform translation using the x, y, z position. */
+void marfitude_standard_translate3d(double x, double y, double z)
 {
-	marfitude_translate3d(v->v[0], v->v[1], v->v[2]);
+	marfitude_eval3d(&x, &y, &z);
+	glTranslated(x, y, z);
 }
 
 /** Gets the wam structure for the current song.
@@ -1271,13 +1297,17 @@ const struct marfitude_player *marfitude_get_player(const struct marfitude_playe
 	return NULL;
 }
 
-/** Gets the current module position information, and store it in @a p */
-void marfitude_get_pos(struct marfitude_pos *p)
+/** Gets the current module position information, and store it in @a pos */
+void marfitude_get_pos(struct marfitude_pos *pos)
 {
-	p->modtime = modTime;
-	p->tic = (double)curTic + partialTic;
-	p->row_index = rowIndex;
-	p->channel = curp->channel;
+	pos->modtime = modTime;
+	pos->tic = (double)curTic + partialTic;
+	pos->row_index = rowIndex;
+	if(curp) {
+		pos->channel = curp->channel;
+	} else {
+		pos->channel = 0;
+	}
 }
 
 /** Gets the note at the specified @a row, @a col. If there is no note, 0 is

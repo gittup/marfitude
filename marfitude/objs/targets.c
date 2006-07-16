@@ -81,12 +81,6 @@ void draw_targets(const void *data)
 				break;
 			z++;
 		}
-		glPushMatrix();
-		marfitude_translate3d((double)ps->channel,
-				      0.0,
-				      pos.tic);
-		glTranslated(-NOTE_WIDTH, 0.0, -(double)z);
-		glNormal3f(0.0, 1.0, 0.0);
 		for(x=-1;x<=1;x++) {
 			int n = 4;
 
@@ -94,6 +88,11 @@ void draw_targets(const void *data)
 				n = 2;
 			if(x == 1)
 				n = 1;
+			glPushMatrix();
+			marfitude_translate3d((double)ps->channel-NOTE_WIDTH*x,
+					      0.0,
+					      pos.tic - (double)z);
+			glNormal3f(0.0, 1.0, 0.0);
 			glBindTexture(GL_TEXTURE_2D, target_tex[ps->num]);
 			glColor4f(1.0, 1.0, 1.0, 1.0);
 			draw_target();
@@ -108,10 +107,8 @@ void draw_targets(const void *data)
 				glEnable(GL_DEPTH_TEST);
 				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			}
-
-			glTranslated(NOTE_WIDTH, 0.0, 0.0);
+			glPopMatrix();
 		}
-		glPopMatrix();
 	}
 
 	marfitude_foreach_player(ps) {
