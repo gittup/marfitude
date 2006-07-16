@@ -79,13 +79,13 @@ void matrix_3x3inv(union matrix *dest, const union matrix *src)
 	div(dest, 1 / det3x3(src));
 }
 
-/** Display the matrix m */
+/** Display the matrix m in OpenGL format */
 void matrix_print(union matrix *m)
 {
-	printf("%f\t%f\t%f\t%f\n", m->v[0], m->v[1], m->v[2], m->v[3]);
-	printf("%f\t%f\t%f\t%f\n", m->v[4], m->v[5], m->v[6], m->v[7]);
-	printf("%f\t%f\t%f\t%f\n", m->v[8], m->v[9], m->v[10], m->v[11]);
-	printf("%f\t%f\t%f\t%f\n", m->v[12], m->v[13], m->v[14], m->v[15]);
+	printf("%f\t%f\t%f\t%f\n", m->v[0], m->v[4], m->v[8], m->v[12]);
+	printf("%f\t%f\t%f\t%f\n", m->v[1], m->v[5], m->v[9], m->v[13]);
+	printf("%f\t%f\t%f\t%f\n", m->v[2], m->v[6], m->v[10], m->v[14]);
+	printf("%f\t%f\t%f\t%f\n", m->v[3], m->v[7], m->v[11], m->v[15]);
 }
 
 /** Multiply 4x4 matricies @a dest x @a src, and store the result in @a dest. */

@@ -51,26 +51,28 @@ double vector_mag(const union vector *v)
 }
 
 /** Divide each element in vector @a v by the magnitude of @a v. If the vector
- * is close to 0, no normalization is done and the function returns 0.
- * Otherwise, the function returns 1.
+ * is close to 0, no normalization is done and the function returns 1.
+ * Otherwise, the vector is normalized and the function returns 0.
  *
  * @param v The vector to normalize.
- * @retval 0 The normalization did not complete successfully (vector likely
+ * @retval 0 The normalization worked.
+ * @retval 1 The normalization did not complete successfully (vector likely
  *           too small)
- * @retval 1 The normalization worked.
+ * @retval 2 The normalization did not complete successfully - for some reason
+ *           the magnitude was less than 0.9 after normalization.
  */
 int vector_normalize(union vector *v)
 {
 	double m;
 	m = vector_mag(v);
 	if(m <= 0.000001)
-		return 0;
+		return 1;
 	v->v[0] /= m;
 	v->v[1] /= m;
 	v->v[2] /= m;
 	if(vector_mag(v) < 0.9)
-		return 0;
-	return 1;
+		return 2;
+	return 0;
 }
 
 /** Transition the vector @a src towards the vector @a dest by a scaling factor
