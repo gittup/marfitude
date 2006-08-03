@@ -58,11 +58,10 @@ void view_exit(void)
 void set_main_view(const void *data)
 {
 	double ex, ey, ez, vx, vy, vz;
-
-	if(data) {}
+	int eye_offset = *((const int *)data);
 
 	glLoadIdentity();
-	ex = eye.v[0];
+	ex = eye.v[0] + eye_offset * 0.03;
 	ey = eye.v[1];
 	ez = eye.v[2];
 	vx = view.v[0];

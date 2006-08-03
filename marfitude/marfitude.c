@@ -485,6 +485,7 @@ void main_quit(void)
 
 void main_scene(void)
 {
+	int eye_offset;
 	Log(("main_scene\n"));
 
 	/* Set key repeating here in case the configuration changes mid-game */
@@ -497,14 +498,20 @@ void main_scene(void)
 		case 0:
 		default:
 			/* Normal non-3d mode */
+			eye_offset = 0;
+			fire_event("set view", &eye_offset);
 			render_internal();
 			break;
 		case 1:
 			/* Red-Blue Anaglyph */
 			glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE);
+			eye_offset = -1;
+			fire_event("set view", &eye_offset);
 			render_internal();
 			glClear(GL_DEPTH_BUFFER_BIT);
 			glColorMask(GL_FALSE, GL_FALSE, GL_TRUE, GL_FALSE);
+			eye_offset = 1;
+			fire_event("set view", &eye_offset);
 			render_internal();
 			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 			break;
@@ -519,8 +526,6 @@ void main_scene(void)
 void render_internal(void)
 {
 	curp = &ps[0];
-
-	fire_event("set view", NULL);
 
 	fire_event("draw opaque", NULL);
 
