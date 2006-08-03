@@ -1200,6 +1200,7 @@ int option_menu_init(void)
 	int i;
 	int fullscreen;
 	int difficulty = cfg_get_int("main", "difficulty", 1);
+	int mode_3d = cfg_get_int("video", "3dmode", 0);
 	int width, height;
 	int buffersize;
 	int stereo;
@@ -1280,6 +1281,11 @@ int option_menu_init(void)
 	stereo = cfg_eq("sound", "stereo", "yes");
 	CreateBoolean(mainMenu, "Stereo sound", c, "On", "Off", stereo);
 
+	s = CreateSlider(mainMenu, "3D Mode", c, 0, 2, 1, mode_3d);
+	name_slider_item(mainMenu, s, 0, "Off");
+	name_slider_item(mainMenu, s, 1, "Red-Blue Anaglyph");
+	name_slider_item(mainMenu, s, 2, "Left-Right Split");
+
 	b = CreateButton(mainMenu, "Back", MenuBack);
 	b->sound_enabled = 0;
 	return 0;
@@ -1340,6 +1346,10 @@ void option_menu_quit(void)
 		cfg_set("sound", "stereo", s->val ? "yes" : "no");
 		restart_audio = 1;
 	}
+	i++;
+
+	s = (struct slider*)mainMenu->items[i].item;
+	cfg_set_int("video", "3dmode", s->val);
 	i++;
 
 	if(restart_audio || restart_video) {
