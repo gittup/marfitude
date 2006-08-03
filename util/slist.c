@@ -125,7 +125,7 @@ struct slist *slist_append(struct slist *l, void *d)
 	return head;
 }
 
-/** Removes @a d to from list @a l, if it exists. No action is taken
+/** Removes @a d from list @a l, if it exists. No action is taken
  * if @a d does not exist in @a l. O(n) operation.
  * @param l The list
  * @param d The data member to be removed.
