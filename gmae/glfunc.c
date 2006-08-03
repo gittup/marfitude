@@ -60,6 +60,7 @@ static unsigned char numChars; /* total number of characters = FONT_SIZE+space-n
 /* rearrange the font file for one character :) */
 
 static int screenWidth = 0, screenHeight = 0;
+static int viewWidth = 0, viewHeight = 0;
 
 static char *pbuf = NULL;    /* buffer used to hold messages for print_gl - it is
                               * allocated once and then doubled as necessary
@@ -283,8 +284,8 @@ int init_video(void)
 	float ambient_light[4] = {0.0, 0.0, 0.0, 0.0};
 	float diffuse_light[4] = {1.0, 1.0, 1.0, 1.0};
 
-	screenWidth = cfg_get_int("video", "width", 640);
-	screenHeight = cfg_get_int("video", "height", 480);
+	viewWidth = cfg_get_int("video", "width", 640);
+	viewHeight = cfg_get_int("video", "height", 480);
 	bpp = cfg_get_int("video", "bpp", 0);
 
 	switch(bpp)
@@ -308,7 +309,7 @@ int init_video(void)
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	if(cfg_eq("video", "fullscreen", "yes")) flags |= SDL_FULLSCREEN;
-	screen = SDL_SetVideoMode(screenWidth, screenHeight, bpp, flags);
+	screen = SDL_SetVideoMode(viewWidth, viewHeight, bpp, flags);
 	if(screen == NULL)
 	{
 		/* Screen may be too large, try a 640x480 screen */
@@ -317,10 +318,12 @@ int init_video(void)
 			SDLError("setting video mode");
 			return 2;
 		}
-		screenWidth = 640;
-		screenHeight = 480;
+		viewWidth = 640;
+		viewHeight = 480;
 	}
-	Log(("Video mode set: (%i, %i)\n", screenWidth, screenHeight));
+	screenWidth = viewWidth;
+	screenHeight = viewHeight;
+	Log(("Video mode set: (%i, %i)\n", viewWidth, viewHeight));
 	SDL_WM_SetCaption("Gmae", NULL); /* second arg is icon */
 	SDL_EnableKeyRepeat(0, 0); /* disable key repeating */
 	SDL_ShowCursor(SDL_DISABLE);
@@ -341,11 +344,11 @@ int init_video(void)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glViewport(0, 0, screenWidth, screenHeight);
+	glViewport(0, 0, viewWidth, viewHeight);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	perspective_projection(45.0f,(GLfloat)screenWidth/(GLfloat)screenHeight,0.1f,100.0f);
+	perspective_projection(45.0f,(GLfloat)viewWidth/(GLfloat)viewHeight,0.1f,100.0f);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -584,4 +587,25 @@ void print_gl(int x, int y, const char *msg, ...)
 	glPopAttrib();
 	glPopMatrix();
 	reset_projection();
+}
+
+void left_viewport(void)
+{
+	glViewport(0, 0, screenWidth, screenHeight);
+}
+
+void right_viewport(void)
+{
+	glViewport(screenWidth, 0, screenWidth, screenHeight);
+}
+
+void halve_viewport(void)
+{
+	screenWidth = viewWidth / 2;
+}
+
+void restore_viewport(void)
+{
+	screenWidth = viewWidth;
+	glViewport(0, 0, viewWidth, viewHeight);
 }

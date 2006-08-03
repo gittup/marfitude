@@ -39,6 +39,10 @@ void set_font_size(float size);
 void update_screen(void);
 int orthox(int);
 int orthoy(int);
+void left_viewport(void);
+void right_viewport(void);
+void halve_viewport(void);
+void restore_viewport(void);
 
 int display_width(void);
 int display_height(void);

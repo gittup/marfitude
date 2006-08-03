@@ -1349,7 +1349,10 @@ void option_menu_quit(void)
 	i++;
 
 	s = (struct slider*)mainMenu->items[i].item;
-	cfg_set_int("video", "3dmode", s->val);
+	if(cfg_get_int("video", "3dmode", 0) != s->val) {
+		cfg_set_int("video", "3dmode", s->val);
+		fire_event("3dmode shift", NULL);
+	}
 	i++;
 
 	if(restart_audio || restart_video) {
