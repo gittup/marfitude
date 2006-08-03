@@ -716,6 +716,11 @@ void Press(int button, int player)
 	b.shift = 0;
 	fire_event("shoot", &b);
 
+	if(curp != ac[curp->channel].ps->data) {
+		/* Don't do anything if we're not the first player. */
+		return;
+	}
+
 	rowStart = rowIndex;
 	while(rowStart > 0 && curRow->time - wam_row(wam, rowStart)->time < MARFITUDE_TIME_ERROR)
 		rowStart--;
