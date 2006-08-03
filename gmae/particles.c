@@ -17,13 +17,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "SDL_opengl.h"
-
 #include "particles.h"
 #include "cfg.h"
+#include "event.h"
 #include "log.h"
 #include "glfunc.h"
 #include "phys.h"
@@ -31,6 +27,11 @@
 #include "timer.h"
 
 #include "util/memtest.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "SDL_opengl.h"
 
 #define MAX_LIFE 3.0
 
@@ -50,6 +51,7 @@ static int numParticles;
 static int curParticle;
 static struct particle_info *particles;
 static void free_particle(struct particle_info *pi);
+static void update_particles(const void *data);
 
 /** Allocates all memory for the particle engine */
 int init_particles(void)
@@ -58,6 +60,7 @@ int init_particles(void)
 	numParticles = cfg_get_int("video", "particles", 128);
 	curParticle = 0;
 	particles = calloc(numParticles, sizeof(*particles));
+	register_event("timer delta", update_particles);
 	particlesInited = 1;
 	return 0;
 }
@@ -65,27 +68,40 @@ int init_particles(void)
 /** Frees the particle engine */
 void quit_particles(void)
 {
+	deregister_event("timer delta", update_particles);
 	clear_particles();
 	free(particles);
 	printf("Particles shutdown\n");
 	return;
 }
 
+void update_particles(const void *data)
+{
+	double dt = *((const double*)data);
+	int x;
+
+	for(x=0;x<numParticles;x++) {
+		struct particle_info *pi = &particles[x];
+		if(pi->active) {
+			pi->p.life -= dt / MAX_LIFE;
+			if(pi->p.life <= 0.0) {
+				free_particle(pi);
+			}
+		}
+	}
+}
+
 /** Draws all of the active particles */
 void draw_particles(void)
 {
 	int x;
+
 	Log(("Draw Particles()\n"));
-	for(x=0;x<numParticles;x++)
-	{
+
+	for(x=0;x<numParticles;x++) {
 		struct particle_info *pi = &particles[x];
 		if(pi->active) {
 			pi->draw(&pi->p);
-
-			pi->p.life -= timeDiff / MAX_LIFE;
-			if(pi->p.life <= 0.0) {
-				free_particle(pi);
-			}
 		}
 	}
 	Log(("Draw Particles done\n"));

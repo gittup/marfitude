@@ -17,19 +17,39 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "phys.h"
 #include "log.h"
+#include "event.h"
 
 #include "util/slist.h" 
+
+#include <stdio.h>
+#include <stdlib.h>
 
 /** @file
  * Keeps track of objects and updates them based on some uber fake physics
  */
 
 static struct slist *objs = NULL; 
+static void update_objs(const void *data);
+
+/** Initialize physics engine. */
+void phys_init(void)
+{
+	register_event("timer delta", update_objs);
+}
+
+/** Check to see how many objects exist. Call at the end to see if some objects
+ * have not been accounted for.
+ */
+void phys_quit(void)
+{
+	deregister_event("timer delta", update_objs);
+	if(slist_length(objs))
+	{
+		ELog(("Error: %i objects remaining!\n", slist_length(objs)));
+	}
+}
 
 /** Creates a new object structure and returns it. All parameters are zero
  * except the rotation axis, which is (0.0, 0.0, 1.0) and the mass, which is
@@ -67,10 +87,10 @@ void delete_obj(struct obj *o)
 
 /** Update the positions of objects based on velocity/acceleration/rotation
  * parameters.
- * @param dt The time that has elapsed, in seconds
  */
-void update_objs(double dt)
+void update_objs(const void *data)
 {
+	double dt = *((const double*)data);
 	struct slist *t;
 
 	slist_foreach(t, objs) {
@@ -91,16 +111,5 @@ void update_objs(double dt)
 		o->vel.v[1] += tmpy;
 		o->vel.v[2] += tmpz;
 		o->rotvel += tmpr;
-	}
-}
-
-/** Check to see how many objects exist. Call at the end to see if some objects
- * have not been accounted for.
- */
-void check_objs(void)
-{
-	if(slist_length(objs))
-	{
-		ELog(("Error: %i objects remaining!\n", slist_length(objs)));
 	}
 }

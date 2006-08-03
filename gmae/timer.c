@@ -17,42 +17,45 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include "SDL.h"
-
 #include "timer.h"
+#include "event.h"
+#include "SDL.h"
 
 /** @file
  * Updates some timer variables each frame
  */
 
-Uint32 curTime;  /**< current time since initialization */
-Uint32 ticDiff;	 /**< number of ticks between frames */
-double timeDiff; /**< time (seconds) between frames */
+static Uint32 cur_time;  /**< current time since initialization */
+static Uint32 tic_delta; /**< number of ticks between frames */
 
 /** Starts the timer */
 void init_timer(void)
 {
-	curTime = SDL_GetTicks();
-	timeDiff = 0;
+	cur_time = SDL_GetTicks();
 }
 
 /** Update the timer. This should be called each frame */
 void update_timer(void)
 {
 	Uint32 tmp;
+	double timer_delta;
+
 	tmp = SDL_GetTicks();
-	ticDiff = tmp - curTime;
-	timeDiff = (double)ticDiff / 1000.0;
-	curTime = tmp;
+	tic_delta = tmp - cur_time;
+	timer_delta = (double)tic_delta / 1000.0;
+	cur_time = tmp;
+	fire_event("timer tic delta", &tic_delta);
+	fire_event("timer delta", &timer_delta);
 }
 
-/** Adjust the timer by @a ticks values. This updates all timer variables. */
-void adjust_timer(int ticks)
+/** Gets the current time, in timer tics. */
+Uint32 timer_cur(void)
 {
-	/* Don't adjust past 0 */
-	if(-ticks > (signed)ticDiff)
-		ticks = -ticDiff;
-	curTime += ticks;
-	ticDiff += ticks;
-	timeDiff = (double)ticDiff / 1000.0;
+	return cur_time;
+}
+
+/** Gets the delta in timer tics between the current and previous frame. */
+Uint32 timer_tic_delta(void)
+{
+	return tic_delta;
 }

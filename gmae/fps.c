@@ -53,7 +53,7 @@ void print_fps(void)
 void update_fps(void)
 {
 	frames++;
-	fpsticks += ticDiff;
+	fpsticks += timer_tic_delta();
 	if(fpsticks >= 1000) { /* one second */
 		fps = (float)frames*1000.0/(float)(fpsticks);
 		frames = 0;

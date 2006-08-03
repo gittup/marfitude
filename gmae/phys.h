@@ -38,9 +38,9 @@ struct obj {
 	float mass;         /**< object's mass */
 };
 
+void phys_init(void);
+void phys_quit(void);
 void new_obj(struct obj *o);
 void delete_obj(struct obj *o);
-void update_objs(double dt);
-void check_objs(void);
 
 #endif

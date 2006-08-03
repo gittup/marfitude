@@ -25,8 +25,5 @@
 
 void init_timer(void);
 void update_timer(void);
-void adjust_timer(int ticks);
-
-extern Uint32 curTime;
-extern Uint32 ticDiff;
-extern double timeDiff;
+Uint32 timer_cur(void);
+Uint32 timer_tic_delta(void);

@@ -388,7 +388,7 @@ void handle_action(struct keypush *kp, int action)
 
 	if(action == 1 && kp->active == 0) {
 		kp->active = 1;
-		kp->time_hit = curTime;
+		kp->time_hit = timer_cur();
 		fire = 1;
 	} else if(action == 0) {
 		int p;
@@ -400,11 +400,11 @@ void handle_action(struct keypush *kp, int action)
 		kp->repeating = 0;
 	} else {
 		if(kp->active && (kp->repeatable || cur_mode == MENU)) {
-			if(kp->repeating && curTime - kp->time_hit > 30) {
-				kp->time_hit = curTime;
+			if(kp->repeating && timer_cur() - kp->time_hit > 30) {
+				kp->time_hit = timer_cur();
 				fire = 1;
-			} else if(!kp->repeating && curTime - kp->time_hit > 500) {
-				kp->time_hit = curTime;
+			} else if(!kp->repeating && timer_cur() - kp->time_hit > 500) {
+				kp->time_hit = timer_cur();
 				kp->repeating = 1;
 				fire = 1;
 			}
