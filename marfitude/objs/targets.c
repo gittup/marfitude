@@ -14,6 +14,7 @@
 static void draw_target(void);
 static void draw_targets(const void *);
 static void update_shot(const void *data);
+static void update_targets(const void *data);
 
 static float flare[MAX_PLAYERS][MAX_NOTE+1];
 
@@ -26,10 +27,12 @@ void targets_init(void)
 			flare[p][i] = 0.0;
 	register_event("draw transparent", draw_targets);
 	register_event("shoot", update_shot);
+	register_event("timer delta", update_targets);
 }
 
 void targets_exit(void)
 {
+	deregister_event("timer delta", update_targets);
 	deregister_event("shoot", update_shot);
 	deregister_event("draw transparent", draw_targets);
 }
@@ -110,10 +113,17 @@ void draw_targets(const void *data)
 			glPopMatrix();
 		}
 	}
+}
+
+void update_targets(const void *data)
+{
+	const struct marfitude_player *ps;
+	double dt = *((const double *)data);
+	int x;
 
 	marfitude_foreach_player(ps) {
 		for(x=0; x<MAX_NOTE+1; x++) {
-			flare[ps->num][x] -= timeDiff * 3.3;
+			flare[ps->num][x] -= dt * 3.3;
 			if(flare[ps->num][x] < 0.0)
 				flare[ps->num][x] = 0.0;
 		}

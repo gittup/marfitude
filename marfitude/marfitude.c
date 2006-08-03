@@ -68,6 +68,7 @@ void (*marfitude_translate3d)(double, double, double);
 static Uint32 ticTime;
 static struct wam *wam; /* note file */
 static int difficulty = 0;
+static int mode_3d = 0;
 
 /** returns 1 if the row is valid, 0 otherwise */
 #define IsValidRow(row) ((row >= 0 && row < wam->num_rows) ? 1 : 0)
@@ -102,8 +103,8 @@ static void RemoveNotes(int row);
 
 static void Press(int button, int player);
 static void MoveHitNotes(int tic, int col);
-static void UpdateClearedCols(void);
-static void UpdatePosition(void);
+static void update_cleared_cols(Uint32 dtic);
+static void update_position(const void *);
 static int NearRow(void);
 static struct marfitude_note *FindNote(struct slist *list, int tic, int col);
 static struct marfitude_player *get_player(struct marfitude_player *player);
@@ -118,6 +119,7 @@ static int SortByTic(const void *a, const void *b);
 static void menu_handler(const void *data);
 static void button_handler(const void *data);
 static void leaver(const void *data);
+static void render_internal(void);
 
 static void marfitude_standard_eval3d(double *x, double *y, double *z);
 static void marfitude_standard_dv(union vector *dv, const union vector *v, double dt);
@@ -306,6 +308,8 @@ int main_init()
 		difficulty = 0;
 	if(difficulty > 3)
 		difficulty = 3;
+
+	mode_3d = cfg_get_int("video", "3dmode", 0);
 	highscore = cfg_get_int("highscore", cursong, 0);
 
 	tickCounter = 0;
@@ -357,6 +361,8 @@ int main_init()
 
 	partialTic = 0.0;
 
+	phys_init();
+
 	numNotes = wam->num_cols * NUM_TICKS;
 	notesOnScreen = malloc(sizeof(struct marfitude_note) * numNotes);
 	unusedList = NULL;
@@ -368,6 +374,11 @@ int main_init()
 	}
 	for(x=0;x<=lastRow;x++) AddNotes(x);
 
+	/* Currently need "timer tic delta" fired before "timer delta" since
+	 * view.c is dependent on the marfitude tic position, which is updated
+	 * in update_position.
+	 */
+	register_event("timer tic delta", update_position);
 	register_event("sound re-init", reinitializer);
 	register_event("button", button_handler);
 	register_event("leave", leaver);
@@ -455,12 +466,13 @@ void main_quit(void)
 	deregister_event("leave", leaver);
 	deregister_event("button", button_handler);
 	deregister_event("sound re-init", reinitializer);
+	deregister_event("timer tic delta", update_position);
 	Log(("A\n"));
 	free(notesOnScreen);
 	Log(("A\n"));
 	free(noteOffset);
 	Log(("A\n"));
-	check_objs();
+	phys_quit();
 	Log(("A\n"));
 	free_wam(wam);
 	Log(("A\n"));
@@ -481,8 +493,31 @@ void main_scene(void)
 	set_key_repeat(B_BUTTON3, 0);
 	set_key_repeat(B_BUTTON4, 0);
 
-	if(rowIndex != wam->num_rows) UpdatePosition();
-	update_objs(timeDiff);
+	switch(mode_3d) {
+		case 0:
+		default:
+			/* Normal non-3d mode */
+			render_internal();
+			break;
+		case 1:
+			/* Red-Blue Anaglyph */
+			glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE);
+			render_internal();
+			glClear(GL_DEPTH_BUFFER_BIT);
+			glColorMask(GL_FALSE, GL_FALSE, GL_TRUE, GL_FALSE);
+			render_internal();
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			break;
+		case 2:
+			/* Left-Right Split */
+			break;
+	}
+
+	Log(("endMainScene\n"));
+}
+
+void render_internal(void)
+{
 	curp = &ps[0];
 
 	fire_event("set view", NULL);
@@ -512,8 +547,6 @@ void main_scene(void)
 		ELog(("Someone left the lights on in ortho mode!\n"));
 	}
 	reset_projection();
-
-	Log(("endMainScene\n"));
 }
 
 void ChannelUp(int shift)
@@ -995,7 +1028,7 @@ void MoveHitNotes(int tic, int col)
 	Log(("movehit\n"));
 }
 
-void UpdateClearedCols(void)
+void update_cleared_cols(Uint32 dtic)
 {
 	int x;
 	int tic;
@@ -1004,7 +1037,7 @@ void UpdateClearedCols(void)
 	for(x=0;x<wam->num_cols;x++) {
 		r = wam_row(wam, ac[x].minRow);
 		/* Yes I realize this is a bunch of magic numbers. Sue me. */
-		ac[x].part += (double)ticDiff * (double)r->bpm / (833.0 * (double)r->sngspd);
+		ac[x].part += (double)dtic * (double)r->bpm / (833.0 * (double)r->sngspd);
 		while(ac[x].part >= 1.0 && ac[x].minRow < ac[x].cleared && ac[x].minRow < wam->num_rows) {
 			struct marfitude_pos p;
 
@@ -1044,12 +1077,16 @@ struct marfitude_player *get_player(struct marfitude_player *player)
 	return NULL;
 }
 
-void UpdatePosition(void)
+void update_position(const void *data)
 {
+	Uint32 dtic = *((const Uint32 *)data);
+	if(rowIndex >= wam->num_rows)
+		return;
+
 	/* calculate the amount of ticTime elapsed
 	 * every 2500 ticTime is one tick
 	 */
-	if(!is_menu_active()) ticTime += ticDiff * curRow->bpm;
+	if(!is_menu_active()) ticTime += dtic * curRow->bpm;
 
 	/* adjust the ticTime if our time is different from the
 	 * song time.  This is needed in case a little blip in the process
@@ -1167,7 +1204,7 @@ void UpdatePosition(void)
 			}
 		}
 	}
-	UpdateClearedCols();
+	update_cleared_cols(dtic);
 	partialTic = (double)ticTime / 2500.0;
 }
 

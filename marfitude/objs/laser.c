@@ -24,12 +24,14 @@ struct laser {
 	float time;     /**< How long this laser has been 'round the block.
 			 * Starts at 1.0 and decreases to 0.0 when it dies.
 			 */
+	int active;     /**< 1 if this laser is active, 0 if not. */
 };
 
 static void draw_laser(struct laser *l);
 static void make_laser(const void *);
 static void draw_lasers(const void *);
 static void create_laser(unsigned char *p, int x, int y);
+static void update_lasers(const void *);
 static const int width = 32;
 static const int height = 128;
 
@@ -43,10 +45,12 @@ void laser_init(void)
 	num_lasers = 0;
 	register_event("shoot", make_laser);
 	register_event("draw transparent", draw_lasers);
+	register_event("timer delta", update_lasers);
 }
 
 void laser_exit(void)
 {
+	deregister_event("timer delta", update_lasers);
 	deregister_event("draw transparent", draw_lasers);
 	deregister_event("shoot", make_laser);
 	delete_texture(&laser_tex);
@@ -74,6 +78,7 @@ void make_laser(const void *data)
 	laser[num_lasers].l.v[2] = fireball[2] - laser[num_lasers].p.v[2];
 
 	laser[num_lasers].time = 1.0;
+	laser[num_lasers].active = 1;
 	num_lasers++;
 	if(num_lasers >= NUM_LASERS) num_lasers = 0;
 }
@@ -96,8 +101,6 @@ void draw_laser(struct laser *l)
 		glTexCoord2f(1.0, 1.0); glVertex3f(x+0.1, y, z);
 	} glEnd();
 	glPopMatrix();
-
-	l->time -= timeDiff * LASER_DECAY;
 }
 
 void draw_lasers(const void *data)
@@ -107,7 +110,9 @@ void draw_lasers(const void *data)
 
 	glBindTexture(GL_TEXTURE_2D, laser_tex);
 	for(x=0; x<NUM_LASERS; x++) {
-		draw_laser(&laser[x]);
+		if(laser[x].active) {
+			draw_laser(&laser[x]);
+		}
 	}
 }
 
@@ -126,4 +131,19 @@ void create_laser(unsigned char *p, int x, int y)
 		p[ALPHA] = 0;
 	else
 		p[ALPHA] = tmp;
+}
+
+void update_lasers(const void *data)
+{
+	double dt = *((const double *)data);
+	int x;
+
+	for(x=0; x<NUM_LASERS; x++) {
+		if(laser[x].active) {
+			laser[x].time -= dt * LASER_DECAY;
+			if(laser[x].time <= 0.0) {
+				laser[x].active = 0;
+			}
+		}
+	}
 }

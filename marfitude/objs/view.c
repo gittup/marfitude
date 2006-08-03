@@ -14,6 +14,7 @@
 #include "util/math/vector.h"
 
 static void set_main_view(const void *);
+static void update_view(const void *);
 static double board_middle(void);
 static union vector eye;
 static union vector view;
@@ -25,7 +26,12 @@ static union vector view;
 
 void view_init(void)
 {
+	/* Make sure we use "timer delta" since we use the position from
+	 * marfitude_get_pos, which is updated in the "timer tic delta"
+	 * event.
+	 */
 	register_event("set view", set_main_view);
+	register_event("timer delta", update_view);
 	if(marfitude_num_players() == 1) {
 		eye.v[0] = 0.0;
 		eye.v[1] = 3.0;
@@ -45,46 +51,15 @@ void view_init(void)
 
 void view_exit(void)
 {
+	deregister_event("timer delta", update_view);
 	deregister_event("set view", set_main_view);
 }
 
 void set_main_view(const void *data)
 {
-	union vector dest;
-	const struct marfitude_player *ps;
-	struct marfitude_pos pos;
 	double ex, ey, ez, vx, vy, vz;
 
 	if(data) {}
-	marfitude_get_pos(&pos);
-
-	if(marfitude_num_players() == 1) {
-		/* Get the active player */
-		ps = marfitude_get_player(0);
-
-		dest.v[0] = (double)ps->channel;
-		dest.v[1] = 3.0;
-		dest.v[2] = pos.tic - 32.0;
-		eye.v[2] = dest.v[2];
-		vector_transition(&eye, &dest, timeDiff * 8.0, 0.003);
-
-		dest.v[0] = (double)ps->channel;
-		dest.v[1] = 0.8;
-		dest.v[2] = pos.tic;
-		view.v[2] = dest.v[2];
-		vector_transition(&view, &dest, timeDiff * 8.0, 0.003);
-	} else {
-		dest.v[0] = board_middle();
-		dest.v[1] = MULTI_Y_EYE;
-		dest.v[2] = MULTI_Z_EYE + TIC_HEIGHT * pos.tic;
-		eye.v[2] = dest.v[2];
-		vector_transition(&eye, &dest, timeDiff * 8.0, 0.003);
-
-		dest.v[1] = MULTI_Y_VIEW;
-		dest.v[2] = MULTI_Z_VIEW + TIC_HEIGHT * pos.tic;
-		view.v[2] = dest.v[2];
-		vector_transition(&view, &dest, timeDiff * 8.0, 0.003);
-	}
 
 	glLoadIdentity();
 	ex = eye.v[0];
@@ -98,6 +73,44 @@ void set_main_view(const void *data)
 	look_at(ex, ey, ez,
 		vx, vy, vz,
 		0.0, 1.0, 0.0);
+}
+
+void update_view(const void *data)
+{
+	double dt = *((const double *)data);
+	const struct marfitude_player *ps;
+	struct marfitude_pos pos;
+	union vector dest;
+
+	marfitude_get_pos(&pos);
+
+	if(marfitude_num_players() == 1) {
+		/* Get the active player */
+		ps = marfitude_get_player(0);
+
+		dest.v[0] = (double)ps->channel;
+		dest.v[1] = 3.0;
+		dest.v[2] = pos.tic - 32.0;
+		eye.v[2] = dest.v[2];
+		vector_transition(&eye, &dest, dt * 8.0, 0.003);
+
+		dest.v[0] = (double)ps->channel;
+		dest.v[1] = 0.8;
+		dest.v[2] = pos.tic;
+		view.v[2] = dest.v[2];
+		vector_transition(&view, &dest, dt * 8.0, 0.003);
+	} else {
+		dest.v[0] = board_middle();
+		dest.v[1] = MULTI_Y_EYE;
+		dest.v[2] = MULTI_Z_EYE + TIC_HEIGHT * pos.tic;
+		eye.v[2] = dest.v[2];
+		vector_transition(&eye, &dest, dt * 8.0, 0.003);
+
+		dest.v[1] = MULTI_Y_VIEW;
+		dest.v[2] = MULTI_Z_VIEW + TIC_HEIGHT * pos.tic;
+		view.v[2] = dest.v[2];
+		vector_transition(&view, &dest, dt * 8.0, 0.003);
+	}
 }
 
 double get_view_focus(void)

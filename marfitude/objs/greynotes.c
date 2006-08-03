@@ -14,6 +14,7 @@
 
 static void draw_notes(const void *);
 static void gen_list(const void *);
+static void update_theta(const void *);
 
 static GLuint note;
 static float theta;
@@ -22,6 +23,7 @@ void greynotes_init(void)
 {
 	register_event("draw opaque", draw_notes);
 	register_event("sdl re-init", gen_list);
+	register_event("timer delta", update_theta);
 
 	gen_list(0);
 	theta = 0.0;
@@ -30,6 +32,7 @@ void greynotes_init(void)
 void greynotes_exit(void)
 {
 	glDeleteLists(note, 1);
+	deregister_event("timer delta", update_theta);
 	deregister_event("sdl re-init", gen_list);
 	deregister_event("draw opaque", draw_notes);
 }
@@ -121,5 +124,10 @@ void draw_notes(const void *data)
 	glDeleteLists(rotnoteList, 1);
 	glEnable(GL_TEXTURE_2D);
 	Log(("dn\n"));
-	theta += timeDiff * 120.0;
+}
+
+void update_theta(const void *data)
+{
+	double dt = *((const double*)data);
+	theta += dt * 120.0;
 }
