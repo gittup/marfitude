@@ -311,8 +311,14 @@ int init_video(void)
 	screen = SDL_SetVideoMode(screenWidth, screenHeight, bpp, flags);
 	if(screen == NULL)
 	{
-		SDLError("setting video mode");
-		return 2;
+		/* Screen may be too large, try a 640x480 screen */
+		screen = SDL_SetVideoMode(640, 480, 0, flags);
+		if(screen == NULL) {
+			SDLError("setting video mode");
+			return 2;
+		}
+		screenWidth = 640;
+		screenHeight = 480;
 	}
 	Log(("Video mode set: (%i, %i)\n", screenWidth, screenHeight));
 	SDL_WM_SetCaption("Gmae", NULL); /* second arg is icon */
