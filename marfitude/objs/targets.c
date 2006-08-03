@@ -94,7 +94,7 @@ void draw_targets(const void *data)
 			glPushMatrix();
 			marfitude_translate3d((double)ps->channel-NOTE_WIDTH*x,
 					      0.0,
-					      pos.tic - (double)z);
+					      pos.tic - 2.0 * (double)z);
 			glNormal3f(0.0, 1.0, 0.0);
 			glBindTexture(GL_TEXTURE_2D, target_tex[ps->num]);
 			glColor4f(1.0, 1.0, 1.0, 1.0);
