@@ -112,6 +112,7 @@ static int get_clear_column(int start, int skip_lines);
 static void FixVb(int *vb, int *row);
 static void TickHandler(void);
 static void reinitializer(const void *);
+static void mode_shifter(const void *);
 static void CheckMissedNotes(void);
 static void CheckColumn(int row);
 static int NoteListTic(const void *snp, const void *tp);
@@ -309,8 +310,8 @@ int main_init()
 	if(difficulty > 3)
 		difficulty = 3;
 
-	mode_3d = cfg_get_int("video", "3dmode", 0);
 	highscore = cfg_get_int("highscore", cursong, 0);
+	mode_shifter(0);
 
 	tickCounter = 0;
 	timerCounter = 0.0;
@@ -382,6 +383,7 @@ int main_init()
 	register_event("sound re-init", reinitializer);
 	register_event("button", button_handler);
 	register_event("leave", leaver);
+	register_event("3dmode shift", mode_shifter);
 
 	scene = cfg_get("main", "scene", "scenes/default");
 	if(strcmp(scene, "scenes/default") == 0) {
@@ -463,6 +465,7 @@ void main_quit(void)
 	}
 	Log(("A\n"));
 	songStarted = 0;
+	deregister_event("3dmode shift", mode_shifter);
 	deregister_event("leave", leaver);
 	deregister_event("button", button_handler);
 	deregister_event("sound re-init", reinitializer);
@@ -508,15 +511,27 @@ void main_scene(void)
 			eye_offset = -1;
 			fire_event("set view", &eye_offset);
 			render_internal();
+
 			glClear(GL_DEPTH_BUFFER_BIT);
+
 			glColorMask(GL_FALSE, GL_FALSE, GL_TRUE, GL_FALSE);
 			eye_offset = 1;
 			fire_event("set view", &eye_offset);
 			render_internal();
+
 			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 			break;
 		case 2:
 			/* Left-Right Split */
+			left_viewport();
+			eye_offset = -1;
+			fire_event("set view", &eye_offset);
+			render_internal();
+
+			right_viewport();
+			eye_offset = 1;
+			fire_event("set view", &eye_offset);
+			render_internal();
 			break;
 	}
 
@@ -847,6 +862,19 @@ void reinitializer(const void *data)
 		return;
 	}
 	seek_module(tickCounter);
+}
+
+/* Reset the 3d mode */
+void mode_shifter(const void *data)
+{
+	if(data) {}
+	mode_3d = cfg_get_int("video", "3dmode", 0);
+
+	if(mode_3d == 2) {
+		halve_viewport();
+	} else {
+		restore_viewport();
+	}
 }
 
 /* gets either rowIndex or rowIndex+1, depending on which one row is closest
