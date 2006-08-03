@@ -43,6 +43,7 @@ void draw_scoreboard(const void *data)
 		marfitude_foreach_player(ps) {
 			if(ps->score.score > highscore) {
 				print_gl(640 / 2 - 85, 120, "New High Score!!!");
+				break;
 			}
 		}
 	} else if(pos.row_index < 0) {
