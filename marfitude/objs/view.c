@@ -19,8 +19,8 @@ static double board_middle(void);
 static union vector eye;
 static union vector view;
 
-#define MULTI_Y_EYE 7.0
-#define MULTI_Z_EYE -14.0
+#define MULTI_Y_EYE 10.0
+#define MULTI_Z_EYE -48.0
 #define MULTI_Y_VIEW 2.8
 #define MULTI_Z_VIEW 0.0
 
@@ -101,12 +101,12 @@ void update_view(const void *data)
 	} else {
 		dest.v[0] = board_middle();
 		dest.v[1] = MULTI_Y_EYE;
-		dest.v[2] = MULTI_Z_EYE + TIC_HEIGHT * pos.tic;
+		dest.v[2] = MULTI_Z_EYE + pos.tic;
 		eye.v[2] = dest.v[2];
 		vector_transition(&eye, &dest, dt * 8.0, 0.003);
 
 		dest.v[1] = MULTI_Y_VIEW;
-		dest.v[2] = MULTI_Z_VIEW + TIC_HEIGHT * pos.tic;
+		dest.v[2] = MULTI_Z_VIEW + pos.tic;
 		view.v[2] = dest.v[2];
 		vector_transition(&view, &dest, dt * 8.0, 0.003);
 	}
@@ -122,5 +122,5 @@ double board_middle(void)
 	const struct wam *wam;
 
 	wam = marfitude_get_wam();
-	return -BLOCK_WIDTH * ((double)wam->num_cols / 2.0 - 0.5);
+	return ((double)wam->num_cols / 2.0 - 0.5);
 }
