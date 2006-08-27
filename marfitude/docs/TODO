@@ -1,5 +1,6 @@
 fix start of bathtub.it
-remove empty tracks (dr0ids0f.mod)
+fix SDL_Delay(1) thing. For some reason it may delay twice, borking the
+    framerate
 remove empty space at the end of a song (basket.s3m)
 buffer size calculation was incorrect on JAM's bsd box (large buffer not synced)
 fix macosx dep rule for .so files (they keep getting installed)
