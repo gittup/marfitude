@@ -450,6 +450,9 @@ void look_at(double ex, double ey, double ez, double cx, double cy, double cz, d
 	glTranslated(-ex, -ey, -ez);
 }
 
+/** Modify the current (hopefully modelview) matrix so that drawing operations
+ * will be billboarded (ie: always facing the viewer).
+ */
 void setup_billboard(void)
 {
 	glMultMatrixd(billboard.v);
