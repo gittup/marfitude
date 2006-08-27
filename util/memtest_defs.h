@@ -22,6 +22,8 @@
  * called directly.
  */
 
+#include <stdio.h>
+
 void *my_malloc(size_t x, int line, const char *file);
 void my_free(void *p, int line, const char *file);
 void *my_realloc(void *p, int x, int line, const char *file);

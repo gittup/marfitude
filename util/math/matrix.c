@@ -17,8 +17,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <stdio.h>
 #include "matrix.h"
+#include <stdio.h>
 
 #define div(m, f) \
 	m->v[0] /= f;\

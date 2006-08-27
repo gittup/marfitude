@@ -16,11 +16,11 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "fatalerror.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-
-#include "fatalerror.h"
 
 /** @file
  * Wraps strerror with the file and line number.

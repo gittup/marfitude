@@ -17,9 +17,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <math.h>
-
 #include "vector.h"
+#include <math.h>
 
 /** @file
  * Provides some vector math functions
