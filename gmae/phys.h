@@ -23,7 +23,7 @@
 #ifndef phys_h
 #define phys_h
 
-#include "util/math/vector.h"
+#include "util/math/vector_t.h"
 
 /** An object structre */
 struct obj {
