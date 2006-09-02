@@ -917,9 +917,9 @@ void MainMenu(void)
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.0, 0.0); glVertex2i(0, 0);
-	glTexCoord2f(1.0, 0.0); glVertex2i(512, 0);
-	glTexCoord2f(1.0, 1.0); glVertex2i(512, 256);
 	glTexCoord2f(0.0, 1.0); glVertex2i(0, 256);
+	glTexCoord2f(1.0, 1.0); glVertex2i(512, 256);
+	glTexCoord2f(1.0, 0.0); glVertex2i(512, 0);
 	glEnd();
 	glEnable(GL_LIGHTING);
 	reset_projection();
