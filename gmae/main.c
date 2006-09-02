@@ -46,6 +46,7 @@
 #include "util/memtest.h"
 #include "util/fatalerror.h"
 #include "util/slist.h"
+#include "util/math/spline.h"
 
 /** @file
  * Initialize all the sub-systems and run the main execution loop.
@@ -73,6 +74,7 @@ void shutdown(void)
 	quit_events();
 	quit_slist();
 	quit_fft();
+	quit_spline();
 	quit_config();
 	quit_log();
 }
