@@ -153,3 +153,24 @@ void matrix_copy(union matrix *dest, const union matrix *src)
 		dest->v[x] = src->v[x];
 	}
 }
+
+/** Transpose the @a src matrix into @a dest */
+void matrix_transpose(union matrix *dest, const union matrix *src)
+{
+	dest->v[0] = src->v[0];
+	dest->v[1] = src->v[4];
+	dest->v[2] = src->v[8];
+	dest->v[3] = src->v[12];
+	dest->v[4] = src->v[1];
+	dest->v[5] = src->v[5];
+	dest->v[6] = src->v[9];
+	dest->v[7] = src->v[13];
+	dest->v[8] = src->v[2];
+	dest->v[9] = src->v[6];
+	dest->v[10] = src->v[10];
+	dest->v[11] = src->v[14];
+	dest->v[12] = src->v[3];
+	dest->v[13] = src->v[7];
+	dest->v[14] = src->v[11];
+	dest->v[15] = src->v[15];
+}

@@ -18,6 +18,8 @@
 */
 
 #include "vector.h"
+
+#include <stdio.h>
 #include <math.h>
 
 /** @file
@@ -34,9 +36,18 @@ static double trans(double x, double y, double t, double clip);
  */
 void vector_cross(union vector *c, const union vector *v1, const union vector *v2)
 {
-	c->v[0] = v1->v[1]*v2->v[2] - v1->v[2]*v2->v[1];
-	c->v[1] = v1->v[2]*v2->v[0] - v1->v[0]*v2->v[2];
-	c->v[2] = v1->v[0]*v2->v[1] - v1->v[1]*v2->v[0];
+	c->v[0] = v1->v[1] * v2->v[2] - v1->v[2] * v2->v[1];
+	c->v[1] = v1->v[2] * v2->v[0] - v1->v[0] * v2->v[2];
+	c->v[2] = v1->v[0] * v2->v[1] - v1->v[1] * v2->v[0];
+}
+
+/** Get the dot product of @a v1 and @a v2 */
+double vector_dot(const union vector *v1, const union vector *v2)
+{
+	return  v1->v[0] * v2->v[0] +
+		v1->v[1] * v2->v[1] +
+		v1->v[2] * v2->v[2] +
+		v1->v[3] * v2->v[3];
 }
 
 /** Return the magnitude of vector @a v
@@ -95,6 +106,11 @@ void vector_transition(union vector *src, const union vector *dest, double t, do
 	src->v[1] = trans(src->v[1], dest->v[1], t, clip);
 	src->v[2] = trans(src->v[2], dest->v[2], t, clip);
 	src->v[3] = trans(src->v[3], dest->v[3], t, clip);
+}
+
+void vector_print(const union vector *v)
+{
+	printf("%f %f %f %f\n", v->v[0], v->v[1], v->v[2], v->v[3]);
 }
 
 double trans(double x, double y, double t, double clip)

@@ -17,22 +17,22 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-/** @file
- * Some simple and crappy vector functions.
- */
+#ifndef spline_h
+#define spline_h
 
+#include "matrix_t.h"
 #include "vector_t.h"
 
-void vector_cross(union vector *c, const union vector *v1, const union vector *v2);
-double vector_dot(const union vector *v1, const union vector *v2);
-double vector_mag(const union vector *v);
-int vector_normalize(union vector *v);
-void vector_transition(union vector *src, const union vector *dest, double t, double clip);
-void vector_print(const union vector *v);
+void quit_spline(void);
+void bspline_patch(const matrix_array x_points,
+		   const matrix_array y_points,
+		   const matrix_array z_points,
+		   int mstride,
+		   union vector *point,
+		   union vector *tangent,
+		   union vector *binormal,
+		   union vector *normal,
+		   double t,
+		   double u);
 
-/** Macro to print the name of the vector, and then display the vector. */
-#define print_vector(s) do {\
-	printf("Vector: "#s"\n");\
-	vector_print(s);\
-	printf("\n");\
-} while(0)
+#endif

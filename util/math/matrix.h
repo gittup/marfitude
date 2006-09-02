@@ -21,14 +21,12 @@
  * Yay...matricizeamalize
  */
 
-union matrix {
-	double v[16];
-	double p[4][4];
-};
+#include "matrix_t.h"
 
 void matrix_3x3inv(union matrix *dest, const union matrix *src);
 void matrix_mul(union matrix *dest, const union matrix *src);
 void matrix_copy(union matrix *dest, const union matrix *src);
+void matrix_transpose(union matrix *dest, const union matrix *src);
 void matrix_print(union matrix *m);
 
 /** Macro to print the name of the matrix, and then display the matrix. */
