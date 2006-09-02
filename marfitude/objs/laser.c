@@ -61,7 +61,7 @@ void make_laser(const void *data)
 	const struct button_e *b = data;
 	const double *offsets = marfitude_get_offsets();
 	struct marfitude_pos pos;
-	const double *fireball = fireball_get_pos();
+	const union vector *fireball = fireball_get_pos();
 
 	if(marfitude_num_players() != 1)
 		return;
@@ -73,9 +73,9 @@ void make_laser(const void *data)
 	laser[num_lasers].p.v[2] = pos.tic;
 
 	/* Set l so p-l is where the light is. */
-	laser[num_lasers].l.v[0] = fireball[0] - laser[num_lasers].p.v[0];
-	laser[num_lasers].l.v[1] = fireball[1] - laser[num_lasers].p.v[1];
-	laser[num_lasers].l.v[2] = fireball[2] - laser[num_lasers].p.v[2];
+	laser[num_lasers].l.v[0] = fireball->v[0] - laser[num_lasers].p.v[0];
+	laser[num_lasers].l.v[1] = fireball->v[1] - laser[num_lasers].p.v[1];
+	laser[num_lasers].l.v[2] = fireball->v[2] - laser[num_lasers].p.v[2];
 
 	laser[num_lasers].time = 1.0;
 	laser[num_lasers].active = 1;
@@ -85,20 +85,22 @@ void make_laser(const void *data)
 
 void draw_laser(struct laser *l)
 {
-	double x = l->l.v[0] * l->time;
-	double y = l->l.v[1] * l->time;
-	double z = l->l.v[2] * l->time;
+	union vector v;
+
+	v.v[0] = l->l.v[0] * l->time;
+	v.v[1] = l->l.v[1] * l->time;
+	v.v[2] = l->l.v[2] * l->time;
 
 	glPushMatrix();
 	marfitude_translatev(&l->p);
-	marfitude_eval3d(&x, &y, &z);
+	marfitude_evalvec(&v);
 	glColor4f(1.0, 0.0, 1.0, l->time);
 	glBegin(GL_QUADS); {
 		glTexCoord2f(1.0, 0.0); glVertex3f(0.1, 0.0, 0.0);
 		glTexCoord2f(0.0, 0.0); glVertex3f(-0.1, 0.0, 0.0);
 
-		glTexCoord2f(0.0, 1.0); glVertex3f(x-0.1, y, z);
-		glTexCoord2f(1.0, 1.0); glVertex3f(x+0.1, y, z);
+		glTexCoord2f(0.0, 1.0); glVertex3f(v.v[0]-0.1, v.v[1], v.v[2]);
+		glTexCoord2f(1.0, 1.0); glVertex3f(v.v[0]+0.1, v.v[1], v.v[2]);
 	} glEnd();
 	glPopMatrix();
 }

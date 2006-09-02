@@ -72,19 +72,19 @@ void create_path(const void *data)
 	l->pts[0].v[0] = col;
 	l->pts[0].v[1] = 0.0;
 	l->pts[0].v[2] = p->ap.startTic;
-	marfitude_evalv(&l->pts[0]);
+	marfitude_evalvec(&l->pts[0]);
 
 	pcount = 1;
 	for(row = p->ap.startRow; row < p->ap.stopRow; row++) {
 		int note = marfitude_get_note(row, col);
 		if(note) {
 			marfitude_get_notepos(&l->pts[pcount], row, col);
-			marfitude_evalv(&l->pts[pcount]);
+			marfitude_evalvec(&l->pts[pcount]);
 			pcount++;
 			if(row == p->ap.startRow) {
 				/* Override the fake point */
 				marfitude_get_notepos(&l->pts[0], row, col);
-				marfitude_evalv(&l->pts[0]);
+				marfitude_evalvec(&l->pts[0]);
 			}
 			if(pcount == l->pts_used)
 				break;

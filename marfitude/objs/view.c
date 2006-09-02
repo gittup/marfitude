@@ -57,21 +57,21 @@ void view_exit(void)
 
 void set_main_view(const void *data)
 {
-	double ex, ey, ez, vx, vy, vz;
+	union vector e, v, n;
 	int eye_offset = *((const int *)data);
 
 	glLoadIdentity();
-	ex = eye.v[0] + eye_offset * 0.03;
-	ey = eye.v[1];
-	ez = eye.v[2];
-	vx = view.v[0];
-	vy = view.v[1];
-	vz = view.v[2];
-	marfitude_eval3d(&ex, &ey, &ez);
-	marfitude_eval3d(&vx, &vy, &vz);
-	look_at(ex, ey, ez,
-		vx, vy, vz,
-		0.0, 1.0, 0.0);
+	e.v[0] = eye.v[0] + eye_offset * 0.03;
+	e.v[1] = eye.v[1];
+	e.v[2] = eye.v[2];
+	v.v[0] = view.v[0];
+	v.v[1] = view.v[1];
+	v.v[2] = view.v[2];
+	marfitude_evalv(&e, 0, 0, &n, &e);
+	marfitude_evalvec(&v);
+	look_at(e.v[0], e.v[1], e.v[2],
+		v.v[0], v.v[1], v.v[2],
+		n.v[0], n.v[1], n.v[2]);
 }
 
 void update_view(const void *data)

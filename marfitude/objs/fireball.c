@@ -12,15 +12,15 @@
 
 static void fireball_draw(const void *);
 
-static double fireball[4];
+static union vector fireball;
 static float origin[4] = {0.0, 0.0, 0.0, 1.0};
 
 void fireball_init(void)
 {
-	fireball[0] = 0.0;
-	fireball[1] = 0.5;
-	fireball[2] = 0.0;
-	fireball[3] = 1.0;
+	fireball.v[0] = 0.0;
+	fireball.v[1] = 0.5;
+	fireball.v[2] = 0.0;
+	fireball.v[3] = 1.0;
 
 	register_event("draw transparent", fireball_draw);
 }
@@ -47,12 +47,12 @@ void fireball_draw(const void *data)
 	row = wam_row(wam, pos.row_index);
 	bounceTime = 2.0 * 3.1415 * ((double)row->ticprt + pos.tic - (double)row->ticpos) / (double)row->ticgrp;
 	sintmp = sin(bounceTime);
-	fireball[0] = get_view_focus() + cos(bounceTime) / 2.0;
-	fireball[1] = 1.0 + sintmp * sintmp;
-	fireball[2] = pos.tic;
+	fireball.v[0] = get_view_focus() + cos(bounceTime) / 2.0;
+	fireball.v[1] = 1.0 + sintmp * sintmp;
+	fireball.v[2] = pos.tic;
 
 	glPushMatrix();
-	marfitude_translate3d(fireball[0], fireball[1], fireball[2]);
+	marfitude_translatev(&fireball);
 	glLightfv(GL_LIGHT1, GL_POSITION, origin);
 
 	glBindTexture(GL_TEXTURE_2D, texture_num("Fireball.png"));
@@ -67,7 +67,7 @@ void fireball_draw(const void *data)
 	glPopMatrix();
 }
 
-const double *fireball_get_pos(void)
+const union vector *fireball_get_pos(void)
 {
-	return fireball;
+	return &fireball;
 }

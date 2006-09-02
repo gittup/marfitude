@@ -61,9 +61,12 @@
  */
 
 /** Change vertex x, y, z from marfitude space to world space */
-void (*marfitude_eval3d)(double *x, double *y, double *z);
-void (*marfitude_dv)(union vector *dv, const union vector *v, double dt);
-void (*marfitude_translate3d)(double, double, double);
+void (*marfitude_evalv)(union vector *V,
+			union vector *T,
+			union vector *B,
+			union vector *N,
+			const union vector *v);
+void (*marfitude_translatev)(const union vector *v);
 
 static Uint32 ticTime;
 static struct wam *wam; /* note file */
@@ -122,9 +125,12 @@ static void button_handler(const void *data);
 static void leaver(const void *data);
 static void render_internal(void);
 
-static void marfitude_standard_eval3d(double *x, double *y, double *z);
-static void marfitude_standard_dv(union vector *dv, const union vector *v, double dt);
-static void marfitude_standard_translate3d(double x, double y, double z);
+static void marfitude_standard_evalv(union vector *V,
+				     union vector *T,
+				     union vector *B,
+				     union vector *N,
+				     const union vector *v);
+static void marfitude_standard_translatev(const union vector *v);
 
 static struct marfitude_attack_col ac[MAX_COLS];
 static struct marfitude_note *notesOnScreen; /* little ring buffer of notes */
@@ -300,9 +306,8 @@ int main_init()
 	 */
 	Log(("Module ready\n"));
 
-	marfitude_eval3d = marfitude_standard_eval3d;
-	marfitude_dv = marfitude_standard_dv;
-	marfitude_translate3d = marfitude_standard_translate3d;
+	marfitude_evalv = marfitude_standard_evalv;
+	marfitude_translatev = marfitude_standard_translatev;
 
 	difficulty = cfg_get_int("main", "difficulty", 1);
 	if(difficulty < 0)
@@ -1249,30 +1254,43 @@ void update_position(const void *data)
 /** Standard marfitude -> world conversion. Flat world space, adjusted for
  * size and orientation.
  */
-void marfitude_standard_eval3d(double *x, double *y, double *z)
+void marfitude_standard_evalv(union vector *V,
+			      union vector *T,
+			      union vector *B,
+			      union vector *N,
+			      const union vector *v)
 {
-	*x *= -BLOCK_WIDTH;
-	if(y) {}
-	*z *= TIC_HEIGHT;
-}
-
-/** Calculate the delta vector @a dv from at the position vector @a v using time
- * delta @a dt.
- */
-void marfitude_standard_dv(union vector *dv, const union vector *v, double dt)
-{
-	if(dt) {}
-	if(v) {}
-	dv->v[0] = 0.0;
-	dv->v[1] = 0.0;
-	dv->v[2] = 1.0;
+	double x = v->v[0];
+	double y = v->v[1];
+	double z = v->v[2];
+	if(V) {
+		V->v[0] = x * -BLOCK_WIDTH;
+		V->v[1] = y;
+		V->v[2] = z * TIC_HEIGHT;
+	}
+	if(T) {
+		T->v[0] = 0.0;
+		T->v[1] = 0.0;
+		T->v[2] = 1.0;
+	}
+	if(B) {
+		B->v[0] = 1.0;
+		B->v[1] = 0.0;
+		B->v[2] = 0.0;
+	}
+	if(N) {
+		N->v[0] = 0.0;
+		N->v[1] = 1.0;
+		N->v[2] = 0.0;
+	}
 }
 
 /** Perform translation using the x, y, z position. */
-void marfitude_standard_translate3d(double x, double y, double z)
+void marfitude_standard_translatev(const union vector *v)
 {
-	marfitude_eval3d(&x, &y, &z);
-	glTranslated(x, y, z);
+	union vector V;
+	marfitude_evalv(&V, 0, 0, 0, v);
+	glTranslated(V.v[0], V.v[1], V.v[2]);
 }
 
 /** Gets the wam structure for the current song.

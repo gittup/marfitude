@@ -60,8 +60,8 @@ void create_line(const void *data)
 		lines[stop_line].p2.v[0] = wam->num_cols - 0.5;
 		lines[stop_line].p2.v[1] = 0.005;
 		lines[stop_line].p2.v[2] = (double)r->ticpos;
-		marfitude_evalv(&lines[stop_line].p1);
-		marfitude_evalv(&lines[stop_line].p2);
+		marfitude_evalvec(&lines[stop_line].p1);
+		marfitude_evalvec(&lines[stop_line].p2);
 		lines[stop_line].row = r;
 		lines[stop_line].color = r->line;
 		stop_line++;
@@ -128,8 +128,8 @@ void draw_lines(const void *data)
 		if(v2.v[2] > wam->num_tics)
 			v2.v[2] = wam->num_tics;
 
-		marfitude_evalv(&v1);
-		marfitude_evalv(&v2);
+		marfitude_evalvec(&v1);
+		marfitude_evalvec(&v2);
 
 		glVertex3dv(v1.v);
 		glVertex3dv(v2.v);

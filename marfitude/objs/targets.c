@@ -86,15 +86,18 @@ void draw_targets(const void *data)
 		}
 		for(x=-1;x<=1;x++) {
 			int n = 4;
+			union vector v;
+
+			v.v[0] = (double)ps->channel - NOTE_WIDTH * x;
+			v.v[1] = 0.0;
+			v.v[2] = pos.tic - 2.0 * (double)z;
 
 			if(x == 0)
 				n = 2;
 			if(x == 1)
 				n = 1;
 			glPushMatrix();
-			marfitude_translate3d((double)ps->channel-NOTE_WIDTH*x,
-					      0.0,
-					      pos.tic - 2.0 * (double)z);
+			marfitude_translatev(&v);
 			glNormal3f(0.0, 1.0, 0.0);
 			glBindTexture(GL_TEXTURE_2D, target_tex[ps->num]);
 			glColor4f(1.0, 1.0, 1.0, 1.0);

@@ -17,7 +17,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include "util/math/vector.h"
+#include "util/math/vector_t.h"
 
 /** @file
  * Provide access to marfitude's phatty boom beat-matching capabilities.
@@ -128,10 +128,13 @@ void marfitude_get_pos(struct marfitude_pos *);
 int marfitude_get_note(int row, int col);
 void marfitude_get_notepos(union vector *dest, int row, int col);
 
-extern void (*marfitude_eval3d)(double *, double *, double *);
-extern void (*marfitude_dv)(union vector *dv, const union vector *v, double dt);
-extern void (*marfitude_translate3d)(double, double, double);
-#define marfitude_evalv(t) marfitude_eval3d(&(t)->v[0], &(t)->v[1], &(t)->v[2])
-#define marfitude_translatev(t) marfitude_translate3d((t)->v[0], (t)->v[1], (t)->v[2])
+extern void (*marfitude_evalv)(union vector *V,
+			       union vector *T,
+			       union vector *B,
+			       union vector *N,
+			       const union vector *v);
+extern void (*marfitude_translatev)(const union vector *v);
+
+#define marfitude_evalvec(v) marfitude_evalv(v, 0, 0, 0, v)
 
 #define marfitude_foreach_player(ps) for(ps=marfitude_get_player(0); ps != 0; ps=marfitude_get_player(ps))

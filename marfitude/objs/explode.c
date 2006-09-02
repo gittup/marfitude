@@ -93,7 +93,7 @@ void explosion_particle(const struct marfitude_pos *pos, const float *c)
 	p->c[2] = c[2];
 	p->c[3] = c[3];
 
-	marfitude_evalv(&p->o.pos);
+	marfitude_evalvec(&p->o.pos);
 }
 
 void draw_particle(const struct particle *p)
