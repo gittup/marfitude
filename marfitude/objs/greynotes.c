@@ -109,7 +109,8 @@ void draw_notes(const void *data)
 		}
 
 		/* If the row is being cleared, fade the note then too */
-		if(sn->tic < wam_row(wam, col->cleared)->ticpos)
+		if(sn->tic < wam_row(wam, col->cleared)->ticpos ||
+		   col->cleared == wam->num_rows)
 			active = 1;
 
 		glPushMatrix();
