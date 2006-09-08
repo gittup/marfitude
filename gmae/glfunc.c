@@ -74,7 +74,6 @@ static GLuint fontList;      /* display lists to show individual characters in
                               * the texture
 			      */
 static float fontSize = 1.0; /* scaling factor for the font */
-static union matrix billboard; /* Billboard matrix from last look_at */
 
 /** Returns the current screen width */
 int display_width(void)
@@ -444,8 +443,6 @@ void look_at(double ex, double ey, double ez, double cx, double cy, double cz, d
 	M.v[11] = 0;
 	M.v[15] = 1;
 
-	matrix_3x3inv(&billboard, &M);
-
 	glMultMatrixd(M.v);
 	glTranslated(-ex, -ey, -ez);
 }
@@ -455,7 +452,19 @@ void look_at(double ex, double ey, double ez, double cx, double cy, double cz, d
  */
 void setup_billboard(void)
 {
-	glMultMatrixd(billboard.v);
+	union matrix m;
+	int i, j;
+	glGetDoublev(GL_MODELVIEW_MATRIX, m.v);
+	for(i=0; i<3; i++) {
+		for(j=0; j<3; j++) {
+			if(i == j) {
+				m.p[i][j] = 1.0;
+			} else {
+				m.p[i][j] = 0.0;
+			}
+		}
+	}
+	glLoadMatrixd(m.v);
 }
 
 /** Make a perspective projection with the given field of view, aspect, and
