@@ -17,6 +17,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#define _POSIX_C_SOURCE 199309
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -200,6 +201,7 @@ int main(int argc, char **argv)
 
 	while(!quit)
 	{
+		struct timespec ts;
 		Log(("input loop\n"));
 		input_loop();
 		Log(("update_timer\n"));
@@ -211,7 +213,9 @@ int main(int argc, char **argv)
 		Log(("Update Screen\n"));
 		update_screen();
 		Log(("Next loop\n"));
-		SDL_Delay(1);
+		ts.tv_sec = 0;
+		ts.tv_nsec = 100000;
+		nanosleep(&ts, 0);
 	}
 	
 	shutdown();
