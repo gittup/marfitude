@@ -1,0 +1,4 @@
+include_rules
+CFLAGS += `sdl-config --cflags`
+CFLAGS += -I..
+: foreach *.c |> !cc |>
