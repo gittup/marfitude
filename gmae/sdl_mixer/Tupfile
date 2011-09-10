@@ -1,0 +1,4 @@
+include_rules
+CFLAGS += -DMOD_MUSIC
+CFLAGS += `sdl-config --cflags`
+: foreach *.c |> !cc |>
