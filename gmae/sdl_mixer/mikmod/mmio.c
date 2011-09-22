@@ -1,17 +1,17 @@
 /*	MikMod sound library
-	(c) 1998, 1999 Miodrag Vallat and others - see file AUTHORS for
+	(c) 1998, 1999, 2000 Miodrag Vallat and others - see file AUTHORS for
 	complete list.
 
 	This library is free software; you can redistribute it and/or modify
 	it under the terms of the GNU Library General Public License as
 	published by the Free Software Foundation; either version 2 of
 	the License, or (at your option) any later version.
-
+ 
 	This program is distributed in the hope that it will be useful,
 	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU Library General Public License for more details.
-
+ 
 	You should have received a copy of the GNU Library General Public
 	License along with this library; if not, write to the Free Software
 	Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
@@ -20,7 +20,7 @@
 
 /*==============================================================================
 
-  $Id$
+  $Id: mmio.c,v 1.1.1.1 2004/01/21 01:36:35 raph Exp $
 
   Portable file I/O routines
 
@@ -56,97 +56,29 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 
 #include "mikmod_internals.h"
 
+#ifdef SUNOS
+extern int fclose(FILE *);
+extern int fgetc(FILE *);
+extern int fputc(int, FILE *);
+extern size_t fread(void *, size_t, size_t, FILE *);
+extern int fseek(FILE *, long, int);
+extern size_t fwrite(const void *, size_t, size_t, FILE *);
+#endif
+
 #define COPY_BUFSIZE  1024
 
 static long _mm_iobase=0,temp_iobase=0;
 
-
-/*
-
-  This section is added to use SDL_rwops for IO
-
-  -Matt Campbell (matt@campbellhome.dhs.org) April 2000
-
-*/
-
-#ifdef USE_RWOPS
-
-typedef struct MRWOPSREADER {
-	MREADER core;
-	SDL_RWops* rw;
-	int end;
-} MRWOPSREADER;
-
-static BOOL _mm_RWopsReader_Eof(MREADER* reader)
-{
-	if ( ((MRWOPSREADER*)reader)->end ==
-			SDL_RWtell(((MRWOPSREADER*)reader)->rw) ) return 1;
-	else return 0;
-}
-
-static BOOL _mm_RWopsReader_Read(MREADER* reader,void* ptr,size_t size)
-{
-	return SDL_RWread(((MRWOPSREADER*)reader)->rw, ptr, size, 1);
-}
-
-static int _mm_RWopsReader_Get(MREADER* reader)
-{
-	char buf;
-	if ( SDL_RWread(((MRWOPSREADER*)reader)->rw, &buf, 1, 1) != 1 ) return EOF;
-	else return (int)buf;
-}
-
-static BOOL _mm_RWopsReader_Seek(MREADER* reader,long offset,int whence)
-{
-	return SDL_RWseek(((MRWOPSREADER*)reader)->rw,
-			(whence==SEEK_SET)?offset+_mm_iobase:offset,whence);
-}
-
-static long _mm_RWopsReader_Tell(MREADER* reader)
-{
-	return SDL_RWtell(((MRWOPSREADER*)reader)->rw) - _mm_iobase;
-}
-
-MREADER *_mm_new_rwops_reader(SDL_RWops * rw)
-{
-	int here;
-	MRWOPSREADER* reader=(MRWOPSREADER*)_mm_malloc(sizeof(MRWOPSREADER));
-	if (reader) {
-		reader->core.Eof =&_mm_RWopsReader_Eof;
-		reader->core.Read=&_mm_RWopsReader_Read;
-		reader->core.Get =&_mm_RWopsReader_Get;
-		reader->core.Seek=&_mm_RWopsReader_Seek;
-		reader->core.Tell=&_mm_RWopsReader_Tell;
-		reader->rw=rw;
-
-		/* RWops does not explicitly support an eof check, so we shall find
-		   the end manually - this requires seek support for the RWop */
-		here = SDL_RWtell(rw);
-		reader->end = SDL_RWseek(rw, 0, SEEK_END);
-		SDL_RWseek(rw, here, SEEK_SET);   /* Move back */
-	}
-	return (MREADER*)reader;
-}
-
-void _mm_delete_rwops_reader (MREADER* reader)
-{
-	if(reader) free(reader);
-}
-
-#endif /* USE_RWOPS */
-
-/*
-
-  End SDL_rwops section
-
-*/
-
-FILE* _mm_fopen(const CHAR* fname,const CHAR* attrib)
+FILE* _mm_fopen(CHAR* fname,CHAR* attrib)
 {
 	FILE *fp;
 
@@ -165,6 +97,11 @@ BOOL _mm_FileExists(CHAR* fname)
 	fclose(fp);
 
 	return 1;
+}
+
+int _mm_fclose(FILE *fp)
+{
+	return fclose(fp);
 }
 
 /* Sets the current file-position as the new _mm_iobase */
@@ -329,7 +266,7 @@ void _mm_write_I_SLONG(SLONG data,MWRITER* writer)
 	_mm_write_I_ULONG((ULONG)data,writer);
 }
 
-#ifdef __STDC__
+#if defined __STDC__ || defined _MSC_VER
 #define DEFINE_MULTIPLE_WRITE_FUNCTION(type_name,type)						\
 void _mm_write_##type_name##S (type *buffer,int number,MWRITER* writer)		\
 {																			\
@@ -410,7 +347,7 @@ SLONG _mm_read_I_SLONG(MREADER* reader)
 	return((SLONG)_mm_read_I_ULONG(reader));
 }
 
-#ifdef __STDC__
+#if defined __STDC__ || defined _MSC_VER
 #define DEFINE_MULTIPLE_READ_FUNCTION(type_name,type)						\
 int _mm_read_##type_name##S (type *buffer,int number,MREADER* reader)		\
 {																			\

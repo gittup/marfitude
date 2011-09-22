@@ -1158,7 +1158,7 @@ int Mix_SetMusicCMD(const char *command)
 	return(0);
 }
 
-#ifdef LIBMIKMOD_MUSIC
+#ifndef LIBMIKMOD_MUSIC
 static int _pl_synchro_value;
 void Player_SetSynchroValue(int i)
 {
@@ -1226,10 +1226,6 @@ void close_music(void)
 #endif
 #if defined(MOD_MUSIC) || defined(LIBMIKMOD_MUSIC)
 	MikMod_Exit();
-# ifndef LIBMIKMOD_MUSIC
-	MikMod_UnregisterAllLoaders();
-	MikMod_UnregisterAllDrivers();
-# endif
 #endif
 }
 

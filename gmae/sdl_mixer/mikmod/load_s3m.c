@@ -1,6 +1,6 @@
 /*	MikMod sound library
-	(c) 1998, 1999, 2000 Miodrag Vallat and others - see file AUTHORS for
-	complete list.
+	(c) 1998, 1999, 2000, 2001, 2002 Miodrag Vallat and others - see file
+	AUTHORS for complete list.
 
 	This library is free software; you can redistribute it and/or modify
 	it under the terms of the GNU Library General Public License as
@@ -20,7 +20,7 @@
 
 /*==============================================================================
 
-  $Id$
+  $Id: load_s3m.c,v 1.1.1.1 2004/01/21 01:36:35 raph Exp $
 
   Screamtracker (S3M) module loader
 
@@ -30,9 +30,21 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#include <stdio.h>
+#ifdef HAVE_MEMORY_H
+#include <memory.h>
+#endif
 #include <string.h>
 
 #include "mikmod_internals.h"
+
+#ifdef SUNOS
+extern int fprintf(FILE *, const char *, ...);
+#endif
 
 /*========== Module structure */
 
@@ -88,10 +100,11 @@ typedef struct S3MNOTE {
 static S3MNOTE   *s3mbuf  = NULL; /* pointer to a complete S3M pattern */
 static S3MHEADER *mh      = NULL;
 static UWORD     *paraptr = NULL; /* parapointer array (see S3M docs) */
+static unsigned int tracker;	/* tracker id */
 
 /* tracker identifiers */
 #define NUMTRACKERS 4
-static const CHAR* S3M_Version[] = {
+static CHAR* S3M_Version[] = {
 	"Screamtracker x.xx",
 	"Imago Orpheus x.xx (S3M format)",
 	"Impulse Tracker x.xx (S3M format)",
@@ -104,7 +117,6 @@ static int numeric[NUMTRACKERS]={14,14,16,16};
 
 /*========== Loader code */
 
-BOOL S3M_Test(void);
 BOOL S3M_Test(void)
 {
 	UBYTE id[4];
@@ -115,7 +127,6 @@ BOOL S3M_Test(void)
 	return 0;
 }
 
-BOOL S3M_Init(void);
 BOOL S3M_Init(void)
 {
 	if(!(s3mbuf=(S3MNOTE*)_mm_malloc(32*64*sizeof(S3MNOTE)))) return 0;
@@ -126,7 +137,6 @@ BOOL S3M_Init(void)
 	return 1;
 }
 
-void S3M_Cleanup(void);
 void S3M_Cleanup(void)
 {
 	_mm_free(s3mbuf);
@@ -233,13 +243,13 @@ static UBYTE* S3M_ConvertTrack(S3MNOTE* tr)
 		}
 		if(vol<255) UniPTEffect(0xc,vol);
 
-		S3MIT_ProcessCmd(tr[t].cmd,tr[t].inf,1);
+		S3MIT_ProcessCmd(tr[t].cmd,tr[t].inf,
+			tracker == 1 ? S3MIT_OLDSTYLE | S3MIT_SCREAM : S3MIT_OLDSTYLE);
 		UniNewline();
 	}
 	return UniDup();
 }
 
-BOOL S3M_Load(BOOL curious);
 BOOL S3M_Load(BOOL curious)
 {
 	int t,u,track = 0;
@@ -273,6 +283,23 @@ BOOL S3M_Load(BOOL curious)
 		return 0;
 	}
 
+	/* then we can decide the module type */
+	tracker=mh->tracker>>12;
+	if((!tracker)||(tracker>=NUMTRACKERS))
+		tracker=NUMTRACKERS-1; /* unknown tracker */
+	else {
+		if(mh->tracker>=0x3217)
+			tracker=NUMTRACKERS+1; /* IT 2.14p4 */
+		else if(mh->tracker>=0x3216)
+			tracker=NUMTRACKERS; /* IT 2.14p3 */
+		else tracker--;
+	}
+	of.modtype = strdup(S3M_Version[tracker]);
+	if(tracker<NUMTRACKERS) {
+		of.modtype[numeric[tracker]] = ((mh->tracker>>8) &0xf)+'0';
+		of.modtype[numeric[tracker]+2] = ((mh->tracker>>4)&0xf)+'0';
+		of.modtype[numeric[tracker]+3] = ((mh->tracker)&0xf)+'0';
+	}
 	/* set module variables */
 	of.songname    = DupStr(mh->songname,28,0);
 	of.numpat      = mh->patnum;
@@ -281,9 +308,10 @@ BOOL S3M_Load(BOOL curious)
 	of.initspeed   = mh->initspeed;
 	of.inittempo   = mh->inittempo;
 	of.initvolume  = mh->mastervol<<1;
-	of.flags      |= UF_ARPMEM;
+	of.flags      |= UF_ARPMEM | UF_PANNING;
 	if((mh->tracker==0x1300)||(mh->flags&64))
 		of.flags|=UF_S3MSLIDES;
+	of.bpmlimit    = 32;
 
 	/* read the order data */
 	if(!AllocPositions(mh->ordnum)) return 0;
@@ -345,6 +373,10 @@ BOOL S3M_Load(BOOL curious)
 		_mm_read_string(s.sampname,28,modreader);
 		_mm_read_string(s.scrs,4,modreader);
 
+		/* ScreamTracker imposes a 64000 bytes (not 64k !) limit */
+		if (s.length > 64000)
+			s.length = 64000;
+
 		if(_mm_eof(modreader)) {
 			_mm_errno = MMERR_LOADING_SAMPLEINFO;
 			return 0;
@@ -353,8 +385,8 @@ BOOL S3M_Load(BOOL curious)
 		q->samplename = DupStr(s.sampname,28,0);
 		q->speed      = s.c2spd;
 		q->length     = s.length;
-		q->loopstart  = s.loopbeg>s.length?s.length:s.loopbeg;
-		q->loopend    = s.loopend>s.length?s.length:s.loopend;
+		q->loopstart  = s.loopbeg;
+		q->loopend    = s.loopend;
 		q->volume     = s.volume;
 		q->seekpos    = (((long)s.memsegh)<<16|s.memsegl)<<4;
 
@@ -376,23 +408,6 @@ BOOL S3M_Load(BOOL curious)
 		_mm_fseek(modreader,(long)((paraptr[of.numins+t])<<4)+2,SEEK_SET);
 		if(S3M_GetNumChannels()) return 0;
 	}
-	/* then we can decide the module type */
-	t=mh->tracker>>12;
-	if((!t)||(t>3))
-		t=NUMTRACKERS-1; /* unknown tracker */
-	else {
-		if(mh->tracker>=0x3217)
-			t=NUMTRACKERS+1; /* IT 2.14p4 */
-		else if(mh->tracker>=0x3216)
-			t=NUMTRACKERS; /* IT 2.14p3 */
-		else t--;
-	}
-	of.modtype = Mstrdup(S3M_Version[t]);
-	if(t<NUMTRACKERS) {
-		of.modtype[numeric[t]] = ((mh->tracker>>8) &0xf)+'0';
-		of.modtype[numeric[t]+2] = ((mh->tracker>>4)&0xf)+'0';
-		of.modtype[numeric[t]+3] = ((mh->tracker)&0xf)+'0';
-	}
 
 	/* build the remap array  */
 	for(t=0;t<32;t++)
@@ -403,9 +418,9 @@ BOOL S3M_Load(BOOL curious)
 	for(t=0;t<32;t++) 
 		if((mh->channels[t]<32)&&(remap[t]!=-1)) {
 			if(mh->channels[t]<8)
-				of.panning[remap[t]]=0x20;	/* 0x30 = std s3m val */
+				of.panning[remap[t]]=0x30;
 			else
-				of.panning[remap[t]]=0xd0;	/* 0xc0 = std s3m val */
+				of.panning[remap[t]]=0xc0;
 		}
 	if(mh->pantable==252)
 		/* set panning positions according to panning table (new for st3.2) */
@@ -429,7 +444,6 @@ BOOL S3M_Load(BOOL curious)
 	return 1;
 }
 
-CHAR *S3M_LoadTitle(void);
 CHAR *S3M_LoadTitle(void)
 {
 	CHAR s[28];

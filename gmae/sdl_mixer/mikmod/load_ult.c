@@ -1,6 +1,6 @@
 /*	MikMod sound library
-	(c) 1998, 1999, 2000 Miodrag Vallat and others - see file AUTHORS for
-	complete list.
+	(c) 1998, 1999, 2000, 2001, 2002 Miodrag Vallat and others - see file
+	AUTHORS for complete list.
 
 	This library is free software; you can redistribute it and/or modify
 	it under the terms of the GNU Library General Public License as
@@ -20,7 +20,7 @@
 
 /*==============================================================================
 
-  $Id$
+  $Id: load_ult.c,v 1.1.1.1 2004/01/21 01:36:35 raph Exp $
 
   Ultratracker (ULT) module loader
 
@@ -30,9 +30,21 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#include <stdio.h>
+#ifdef HAVE_MEMORY_H
+#include <memory.h>
+#endif
 #include <string.h>
 
 #include "mikmod_internals.h"
+
+#ifdef SUNOS
+extern int fprintf(FILE *, const char *, ...);
+#endif
 
 /*========== Module structure */
 
@@ -74,7 +86,6 @@ static	ULTEVENT ev;
 
 /*========== Loader code */
 
-BOOL ULT_Test(void);
 BOOL ULT_Test(void)
 {
 	CHAR id[16];
@@ -85,13 +96,11 @@ BOOL ULT_Test(void)
 	return 1;
 }
 
-BOOL ULT_Init(void);
 BOOL ULT_Init(void)
 {
 	return 1;
 }
 
-void ULT_Cleanup(void);
 void ULT_Cleanup(void)
 {
 }
@@ -115,7 +124,6 @@ static UBYTE ReadUltEvent(ULTEVENT* event)
 	return rep;
 }
 
-BOOL ULT_Load(BOOL curious);
 BOOL ULT_Load(BOOL curious)
 {
 	int t,u,tracks=0;
@@ -124,7 +132,6 @@ BOOL ULT_Load(BOOL curious)
 	ULTHEADER mh;
 	UBYTE nos,noc,nop;
 
-	if(curious) {}
 	/* try to read module header */
 	_mm_read_string(mh.id,15,modreader);
 	_mm_read_string(mh.songtitle,32,modreader);
@@ -143,7 +150,7 @@ BOOL ULT_Load(BOOL curious)
 
 	/* read songtext */
 	if ((mh.id[14]>'1')&&(mh.reserved))
-		if(!ReadLinedComment(mh.reserved,32)) return 0;
+		if(!ReadLinedComment(mh.reserved * 32, 32)) return 0;
 
 	nos=_mm_read_UBYTE(modreader);
 	if(_mm_eof(modreader)) {
@@ -200,7 +207,10 @@ BOOL ULT_Load(BOOL curious)
 	for(t=0;t<256;t++)
 		of.positions[t]=_mm_read_UBYTE(modreader);
 	for(t=0;t<256;t++)
-		if(of.positions[t]==255) break;
+		if(of.positions[t]==255) {
+			of.positions[t]=LAST_PATTERN;
+			break;
+		}
 	of.numpos=t;
 
 	noc=_mm_read_UBYTE(modreader);
@@ -216,8 +226,10 @@ BOOL ULT_Load(BOOL curious)
 			of.patterns[(t*of.numchn)+u]=tracks++;
 
 	/* read pan position table for v1.5 and higher */
-	if(mh.id[14]>='3')
+	if(mh.id[14]>='3') {
 		for(t=0;t<of.numchn;t++) of.panning[t]=_mm_read_UBYTE(modreader)<<4;
+		of.flags |= UF_PANNING;
+	}
 
 	for(t=0;t<of.numtrk;t++) {
 		int rep,row=0;
@@ -253,6 +265,7 @@ BOOL ULT_Load(BOOL curious)
 						break;
 					case 0xb: /* panning */
 						UniPTEffect(8,ev.dat2*0xf);
+						of.flags |= UF_PANNING;
 						break;
 					case 0xc: /* volume */
 						UniPTEffect(eff,ev.dat2>>2);
@@ -276,6 +289,7 @@ BOOL ULT_Load(BOOL curious)
 						break;
 					case 0xb: /* panning */
 						UniPTEffect(8,ev.dat1*0xf);
+						of.flags |= UF_PANNING;
 						break;
 					case 0xc: /* volume */
 						UniPTEffect(eff,ev.dat1>>2);
@@ -294,7 +308,6 @@ BOOL ULT_Load(BOOL curious)
 	return 1;
 }
 
-CHAR *ULT_LoadTitle(void);
 CHAR *ULT_LoadTitle(void)
 {
 	CHAR s[32];

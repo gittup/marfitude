@@ -1,6 +1,6 @@
 /*	MikMod sound library
-	(c) 1998, 1999, 2000 Miodrag Vallat and others - see file AUTHORS for
-	complete list.
+	(c) 1998, 1999, 2000, 2001, 2002 Miodrag Vallat and others - see file
+	AUTHORS for complete list.
 
 	This library is free software; you can redistribute it and/or modify
 	it under the terms of the GNU Library General Public License as
@@ -20,7 +20,7 @@
 
 /*==============================================================================
 
-  $Id$
+  $Id: load_far.c,v 1.1.1.1 2004/01/21 01:36:35 raph Exp $
 
   Farandole (FAR) module loader
 
@@ -30,9 +30,21 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#include <stdio.h>
+#ifdef HAVE_MEMORY_H
+#include <memory.h>
+#endif
 #include <string.h>
 
 #include "mikmod_internals.h"
+
+#ifdef SUNOS
+extern int fprintf(FILE *, const char *, ...);
+#endif
 
 /*========== Module structure */
 
@@ -84,7 +96,6 @@ static	unsigned char FARSIG[4+3]={'F','A','R',0xfe,13,10,26};
 
 /*========== Loader code */
 
-BOOL FAR_Test(void);
 BOOL FAR_Test(void)
 {
 	UBYTE id[47];
@@ -94,7 +105,6 @@ BOOL FAR_Test(void)
 	return 1;
 }
 
-BOOL FAR_Init(void);
 BOOL FAR_Init(void)
 {
 	if(!(mh1 = (FARHEADER1*)_mm_malloc(sizeof(FARHEADER1)))) return 0;
@@ -104,7 +114,6 @@ BOOL FAR_Init(void)
 	return 1;
 }
 
-void FAR_Cleanup(void);
 void FAR_Cleanup(void)
 {
 	_mm_free(mh1);
@@ -128,6 +137,9 @@ static UBYTE *FAR_ConvertTrack(FARNOTE* n,int rows)
 				case 0x3: /* porta to note */
 					UniPTEffect(0x3,(n->eff&0xf)<<4);
 					break;
+				case 0x4: /* retrigger */
+					UniPTEffect(0x0e, 0x90 | (n->eff & 0x0f));
+					break;
 				case 0x5: /* set vibrato depth */
 					vibdepth=n->eff&0xf;
 					break;
@@ -139,6 +151,9 @@ static UBYTE *FAR_ConvertTrack(FARNOTE* n,int rows)
 					break;
 				case 0x8: /* volume slide down */
 					UniPTEffect(0xa,n->eff&0xf);
+					break;
+				case 0xb: /* panning */
+					UniPTEffect(0xe,0x80|(n->eff&0xf));
 					break;
 				case 0xf: /* set speed */
 					UniPTEffect(0xf,n->eff&0xf);
@@ -158,7 +173,6 @@ static UBYTE *FAR_ConvertTrack(FARNOTE* n,int rows)
 	return UniDup();
 }
 
-BOOL FAR_Load(BOOL curious);
 BOOL FAR_Load(BOOL curious)
 {
 	int t,u,tracks=0;
@@ -167,7 +181,6 @@ BOOL FAR_Load(BOOL curious)
 	FARNOTE *crow;
 	UBYTE smap[8];
 
-	if(curious) {}
 	/* try to read module header (first part) */
 	_mm_read_UBYTES(mh1->id,4,modreader);
 	_mm_read_SBYTES(mh1->songname,40,modreader);
@@ -182,17 +195,18 @@ BOOL FAR_Load(BOOL curious)
 	mh1->stlen     = _mm_read_I_UWORD (modreader);
 
 	/* init modfile data */
-	of.modtype   = Mstrdup(FAR_Version);
+	of.modtype   = strdup(FAR_Version);
 	of.songname  = DupStr(mh1->songname,40,1);
 	of.numchn    = 16;
 	of.initspeed = mh1->speed;
 	of.inittempo = 80;
 	of.reppos    = 0;
+	of.flags    |= UF_PANNING;
 	for(t=0;t<16;t++) of.panning[t]=mh1->panning[t]<<4;
 
 	/* read songtext into comment field */
 	if(mh1->stlen)
-		if(!ReadComment(mh1->stlen)) return 0;
+		if (!ReadLinedComment(mh1->stlen, 66)) return 0;
 
 	/* try to read module header (second part) */
 	_mm_read_UBYTES(mh2->orders,256,modreader);
@@ -306,7 +320,6 @@ BOOL FAR_Load(BOOL curious)
 	return 1;
 }
 
-CHAR *FAR_LoadTitle(void);
 CHAR *FAR_LoadTitle(void)
 {
 	CHAR s[40];

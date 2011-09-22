@@ -1,17 +1,17 @@
 /*	MikMod sound library
-	(c) 1998, 1999 Miodrag Vallat and others - see file AUTHORS for
-	complete list.
+	(c) 1998, 1999, 2000, 2001, 2002 Miodrag Vallat and others - see file
+	AUTHORS for complete list.
 
 	This library is free software; you can redistribute it and/or modify
 	it under the terms of the GNU Library General Public License as
 	published by the Free Software Foundation; either version 2 of
 	the License, or (at your option) any later version.
-
+ 
 	This program is distributed in the hope that it will be useful,
 	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU Library General Public License for more details.
-
+ 
 	You should have received a copy of the GNU Library General Public
 	License along with this library; if not, write to the Free Software
 	Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
@@ -20,7 +20,7 @@
 
 /*==============================================================================
 
-  $Id$
+  $Id: virtch.c,v 1.1.1.1 2004/01/21 01:36:35 raph Exp $
 
   Sample mixing routines, using a 32 bits mixing buffer.
 
@@ -39,10 +39,12 @@
 #endif
 
 #include <stddef.h>
+#ifdef HAVE_MEMORY_H
+#include <memory.h>
+#endif
 #include <string.h>
 
 #include "mikmod_internals.h"
-
 
 /*
    Constant definitions
@@ -128,259 +130,366 @@ static	SLONG *RVbufR1=NULL,*RVbufR2=NULL,*RVbufR3=NULL,*RVbufR4=NULL,
 /*========== 32 bit sample mixers - only for 32 bit platforms */
 #ifndef NATIVE_64BIT_INT
 
-static SLONG Mix32MonoNormal(SWORD* srce,SLONG* dest,SLONG myindex,SLONG increment,SLONG todo)
+static SLONG Mix32MonoNormal(SWORD* srce,SLONG* dest,SLONG index,SLONG increment,SLONG todo)
 {
 	SWORD sample;
+	SLONG lvolsel = vnf->lvolsel;
 
 	while(todo--) {
-		sample = srce[myindex >> FRACBITS];
-		myindex += increment;
+		sample = srce[index >> FRACBITS];
+		index += increment;
 
-		*dest++ += vnf->lvolsel * sample;
+		*dest++ += lvolsel * sample;
 	}
-	return myindex;
+	return index;
 }
 
-static SLONG Mix32StereoNormal(SWORD* srce,SLONG* dest,SLONG myindex,SLONG increment,SLONG todo)
+static SLONG Mix32StereoNormal(SWORD* srce,SLONG* dest,SLONG index,SLONG increment,SLONG todo)
 {
 	SWORD sample;
+	SLONG lvolsel = vnf->lvolsel;
+	SLONG rvolsel = vnf->rvolsel;
 
 	while(todo--) {
-		sample=srce[myindex >> FRACBITS];
-		myindex += increment;
+		sample=srce[index >> FRACBITS];
+		index += increment;
 
-		*dest++ += vnf->lvolsel * sample;
-		*dest++ += vnf->rvolsel * sample;
+		*dest++ += lvolsel * sample;
+		*dest++ += rvolsel * sample;
 	}
-	return myindex;
+	return index;
 }
 
-static SLONG Mix32SurroundNormal(SWORD* srce,SLONG* dest,SLONG myindex,SLONG increment,SLONG todo)
+static SLONG Mix32SurroundNormal(SWORD* srce,SLONG* dest,SLONG index,SLONG increment,SLONG todo)
 {
 	SWORD sample;
+	SLONG lvolsel = vnf->lvolsel;
+	SLONG rvolsel = vnf->rvolsel;
 
-	while(todo--) {
-		sample = srce[myindex >> FRACBITS];
-		myindex += increment;
+	if (lvolsel>=rvolsel) {
+		while(todo--) {
+			sample = srce[index >> FRACBITS];
+			index += increment;
 
-		if(vnf->lvolsel>=vnf->rvolsel) {
-			*dest++ += vnf->lvolsel*sample;
-			*dest++ -= vnf->lvolsel*sample;
-		} else {
-			*dest++ -= vnf->rvolsel*sample;
-			*dest++ += vnf->rvolsel*sample;
+			*dest++ += lvolsel*sample;
+			*dest++ -= lvolsel*sample;
+		}
+	} else {
+		while(todo--) {
+			sample = srce[index >> FRACBITS];
+			index += increment;
+
+			*dest++ -= rvolsel*sample;
+			*dest++ += rvolsel*sample;
 		}
 	}
-	return myindex;
+	return index;
 }
 
-static SLONG Mix32MonoInterp(SWORD* srce,SLONG* dest,SLONG myindex,SLONG increment,SLONG todo)
+static SLONG Mix32MonoInterp(SWORD* srce,SLONG* dest,SLONG index,SLONG increment,SLONG todo)
 {
 	SLONG sample;
+	SLONG lvolsel = vnf->lvolsel;
+	SLONG rampvol = vnf->rampvol;
 
-	while(todo--) {
-		sample=(SLONG)srce[myindex>>FRACBITS]+
-		       ((SLONG)(srce[(myindex>>FRACBITS)+1]-srce[myindex>>FRACBITS])
-		        *(myindex&FRACMASK)>>FRACBITS);
-		myindex += increment;
+	if (rampvol) {
+		SLONG oldlvol = vnf->oldlvol - lvolsel;
+		while(todo--) {
+			sample=(SLONG)srce[index>>FRACBITS]+
+			       ((SLONG)(srce[(index>>FRACBITS)+1]-srce[index>>FRACBITS])
+			        *(index&FRACMASK)>>FRACBITS);
+			index += increment;
 
-		if(vnf->rampvol) {
-			*dest++ += (((SLONG)vnf->lvolsel<<CLICK_SHIFT) +
-			            (SLONG)(vnf->oldlvol-vnf->lvolsel)*vnf->rampvol
-			           )*sample>>CLICK_SHIFT;
-			vnf->rampvol--;
-		} else
-			*dest++ += vnf->lvolsel * sample;
-	}
-	return myindex;
-}
-
-static SLONG Mix32StereoInterp(SWORD* srce,SLONG* dest,SLONG myindex,SLONG increment,SLONG todo)
-{
-	SLONG sample;
-
-	while(todo--) {
-		sample=(SLONG)srce[myindex>>FRACBITS]+
-		       ((SLONG)(srce[(myindex>>FRACBITS)+1]-srce[myindex>>FRACBITS])
-		        *(myindex&FRACMASK)>>FRACBITS);
-		myindex += increment;
-
-		if(vnf->rampvol) {
-			*dest++ += (((SLONG)vnf->lvolsel<<CLICK_SHIFT)+
-			            (SLONG)(vnf->oldlvol-vnf->lvolsel)*vnf->rampvol
-			           )*sample>>CLICK_SHIFT;
-			*dest++ += (((SLONG)vnf->rvolsel<<CLICK_SHIFT)+
-			            (SLONG)(vnf->oldrvol-vnf->rvolsel)*vnf->rampvol
-			           )*sample>>CLICK_SHIFT;
-			vnf->rampvol--;
-		} else {
-			*dest++ += vnf->lvolsel * sample;
-			*dest++ += vnf->rvolsel * sample;
+			*dest++ += ((lvolsel << CLICK_SHIFT) + oldlvol * rampvol)
+			           * sample >> CLICK_SHIFT;
+			if (!--rampvol)
+				break;
 		}
+		vnf->rampvol = rampvol;
+		if (todo < 0)
+			return index;
 	}
-	return myindex;
-}
-
-static SLONG Mix32SurroundInterp(SWORD* srce,SLONG* dest,SLONG myindex,SLONG increment,SLONG todo)
-{
-	SLONG sample;
 
 	while(todo--) {
-		int oldvol,vol;
+		sample=(SLONG)srce[index>>FRACBITS]+
+		       ((SLONG)(srce[(index>>FRACBITS)+1]-srce[index>>FRACBITS])
+		        *(index&FRACMASK)>>FRACBITS);
+		index += increment;
 
-		sample=(SLONG)srce[myindex>>FRACBITS]+
-		       ((SLONG)(srce[(myindex>>FRACBITS)+1]-srce[myindex>>FRACBITS])
-		        *(myindex&FRACMASK)>>FRACBITS);
-		myindex += increment;
+		*dest++ += lvolsel * sample;
+	}
+	return index;
+}
 
-		if(vnf->lvolsel>=vnf->rvolsel) {
-			vol=vnf->lvolsel;oldvol=vnf->oldlvol;
-		} else {
-			vol=vnf->rvolsel;oldvol=vnf->oldrvol;
+static SLONG Mix32StereoInterp(SWORD* srce,SLONG* dest,SLONG index,SLONG increment,SLONG todo)
+{
+	SLONG sample;
+	SLONG lvolsel = vnf->lvolsel;
+	SLONG rvolsel = vnf->rvolsel;
+	SLONG rampvol = vnf->rampvol;
+
+	if (rampvol) {
+		SLONG oldlvol = vnf->oldlvol - lvolsel;
+		SLONG oldrvol = vnf->oldrvol - rvolsel;
+		while(todo--) {
+			sample=(SLONG)srce[index>>FRACBITS]+
+			       ((SLONG)(srce[(index>>FRACBITS)+1]-srce[index>>FRACBITS])
+			        *(index&FRACMASK)>>FRACBITS);
+			index += increment;
+
+			*dest++ += ((lvolsel << CLICK_SHIFT) + oldlvol * rampvol)
+			           * sample >> CLICK_SHIFT;
+			*dest++ += ((rvolsel << CLICK_SHIFT) + oldrvol * rampvol)
+					   * sample >> CLICK_SHIFT;
+			if (!--rampvol)
+				break;
 		}
+		vnf->rampvol = rampvol;
+		if (todo < 0)
+			return index;
+	}
 
-		if(vnf->rampvol) {
-			sample=(((SLONG)vnf->lvolsel<<CLICK_SHIFT)+
-			        (SLONG)(vnf->oldlvol-vnf->lvolsel)*vnf->rampvol
-			       )*sample>>CLICK_SHIFT;
+	while(todo--) {
+		sample=(SLONG)srce[index>>FRACBITS]+
+		       ((SLONG)(srce[(index>>FRACBITS)+1]-srce[index>>FRACBITS])
+		        *(index&FRACMASK)>>FRACBITS);
+		index += increment;
+
+		*dest++ += lvolsel * sample;
+		*dest++ += rvolsel * sample;
+	}
+	return index;
+}
+
+static SLONG Mix32SurroundInterp(SWORD* srce,SLONG* dest,SLONG index,SLONG increment,SLONG todo)
+{
+	SLONG sample;
+	SLONG lvolsel = vnf->lvolsel;
+	SLONG rvolsel = vnf->rvolsel;
+	SLONG rampvol = vnf->rampvol;
+	SLONG oldvol, vol;
+
+	if (lvolsel >= rvolsel) {
+		vol = lvolsel;
+		oldvol = vnf->oldlvol;
+	} else {
+		vol = rvolsel;
+		oldvol = vnf->oldrvol;
+	}
+
+	if (rampvol) {
+		oldvol -= vol;
+		while(todo--) {
+			sample=(SLONG)srce[index>>FRACBITS]+
+			       ((SLONG)(srce[(index>>FRACBITS)+1]-srce[index>>FRACBITS])
+			        *(index&FRACMASK)>>FRACBITS);
+			index += increment;
+
+			sample=((vol << CLICK_SHIFT) + oldvol * rampvol)
+				   * sample >> CLICK_SHIFT;
 			*dest++ += sample;
 			*dest++ -= sample;
-			vnf->rampvol--;
-		} else {
-			*dest++ += vol*sample;
-			*dest++ -= vol*sample;
+
+			if (!--rampvol)
+				break;
 		}
+		vnf->rampvol = rampvol;
+		if (todo < 0)
+			return index;
 	}
-	return myindex;
+
+	while(todo--) {
+		sample=(SLONG)srce[index>>FRACBITS]+
+		       ((SLONG)(srce[(index>>FRACBITS)+1]-srce[index>>FRACBITS])
+		        *(index&FRACMASK)>>FRACBITS);
+		index += increment;
+
+		*dest++ += vol*sample;
+		*dest++ -= vol*sample;
+	}
+	return index;
 }
 #endif
 
 /*========== 64 bit sample mixers - all platforms */
 
-static SLONGLONG MixMonoNormal(SWORD* srce,SLONG* dest,SLONGLONG myindex,SLONGLONG increment,SLONG todo)
+static SLONGLONG MixMonoNormal(SWORD* srce,SLONG* dest,SLONGLONG index,SLONGLONG increment,SLONG todo)
 {
 	SWORD sample;
+	SLONG lvolsel = vnf->lvolsel;
 
 	while(todo--) {
-		sample = srce[myindex >> FRACBITS];
-		myindex += increment;
+		sample = srce[index >> FRACBITS];
+		index += increment;
 
-		*dest++ += vnf->lvolsel * sample;
+		*dest++ += lvolsel * sample;
 	}
-	return myindex;
+	return index;
 }
 
-static SLONGLONG MixStereoNormal(SWORD* srce,SLONG* dest,SLONGLONG myindex,SLONGLONG increment,SLONG todo)
+static SLONGLONG MixStereoNormal(SWORD* srce,SLONG* dest,SLONGLONG index,SLONGLONG increment,SLONG todo)
 {
 	SWORD sample;
+	SLONG lvolsel = vnf->lvolsel;
+	SLONG rvolsel = vnf->rvolsel;
 
 	while(todo--) {
-		sample=srce[myindex >> FRACBITS];
-		myindex += increment;
+		sample=srce[index >> FRACBITS];
+		index += increment;
 
-		*dest++ += vnf->lvolsel * sample;
-		*dest++ += vnf->rvolsel * sample;
+		*dest++ += lvolsel * sample;
+		*dest++ += rvolsel * sample;
 	}
-	return myindex;
+	return index;
 }
 
-static SLONGLONG MixSurroundNormal(SWORD* srce,SLONG* dest,SLONGLONG myindex,SLONGLONG increment,SLONG todo)
+static SLONGLONG MixSurroundNormal(SWORD* srce,SLONG* dest,SLONGLONG index,SLONGLONG increment,SLONG todo)
 {
 	SWORD sample;
+	SLONG lvolsel = vnf->lvolsel;
+	SLONG rvolsel = vnf->rvolsel;
 
-	while(todo--) {
-		sample = srce[myindex >> FRACBITS];
-		myindex += increment;
+	if(vnf->lvolsel>=vnf->rvolsel) {
+		while(todo--) {
+			sample = srce[index >> FRACBITS];
+			index += increment;
 
-		if(vnf->lvolsel>=vnf->rvolsel) {
-			*dest++ += vnf->lvolsel*sample;
-			*dest++ -= vnf->lvolsel*sample;
-		} else {
-			*dest++ -= vnf->rvolsel*sample;
-			*dest++ += vnf->rvolsel*sample;
+			*dest++ += lvolsel*sample;
+			*dest++ -= lvolsel*sample;
+		}
+	} else {
+		while(todo--) {
+			sample = srce[index >> FRACBITS];
+			index += increment;
+
+			*dest++ -= rvolsel*sample;
+			*dest++ += rvolsel*sample;
 		}
 	}
-	return myindex;
+	return index;
 }
 
-static SLONGLONG MixMonoInterp(SWORD* srce,SLONG* dest,SLONGLONG myindex,SLONGLONG increment,SLONG todo)
+static SLONGLONG MixMonoInterp(SWORD* srce,SLONG* dest,SLONGLONG index,SLONGLONG increment,SLONG todo)
 {
 	SLONG sample;
+	SLONG lvolsel = vnf->lvolsel;
+	SLONG rampvol = vnf->rampvol;
 
-	while(todo--) {
-		sample=(SLONG)srce[myindex>>FRACBITS]+
-		       ((SLONG)(srce[(myindex>>FRACBITS)+1]-srce[myindex>>FRACBITS])
-		        *(myindex&FRACMASK)>>FRACBITS);
-		myindex += increment;
+	if (rampvol) {
+		SLONG oldlvol = vnf->oldlvol - lvolsel;
+		while(todo--) {
+			sample=(SLONG)srce[index>>FRACBITS]+
+			       ((SLONG)(srce[(index>>FRACBITS)+1]-srce[index>>FRACBITS])
+			        *(index&FRACMASK)>>FRACBITS);
+			index += increment;
 
-		if(vnf->rampvol) {
-			*dest++ += (((SLONG)vnf->lvolsel<<CLICK_SHIFT)+
-			            (SLONG)(vnf->oldlvol-vnf->lvolsel)*vnf->rampvol
-			           )*sample>>CLICK_SHIFT;
-			vnf->rampvol--;
-		} else
-			*dest++ += vnf->lvolsel * sample;
-	}
-	return myindex;
-}
-
-static SLONGLONG MixStereoInterp(SWORD* srce,SLONG* dest,SLONGLONG myindex,SLONGLONG increment,SLONG todo)
-{
-	SLONG sample;
-
-	while(todo--) {
-		sample=(SLONG)srce[myindex>>FRACBITS]+
-		       ((SLONG)(srce[(myindex>>FRACBITS)+1]-srce[myindex>>FRACBITS])
-		        *(myindex&FRACMASK)>>FRACBITS);
-		myindex += increment;
-
-		if(vnf->rampvol) {
-			*dest++ +=(((SLONG)vnf->lvolsel<<CLICK_SHIFT)+
-			           (SLONG)(vnf->oldlvol-vnf->lvolsel)*vnf->rampvol
-			          )*sample>>CLICK_SHIFT;
-			*dest++ +=(((SLONG)vnf->rvolsel<<CLICK_SHIFT)+
-			           (SLONG)(vnf->oldrvol-vnf->rvolsel)*vnf->rampvol
-			          )*sample>>CLICK_SHIFT;
-			vnf->rampvol--;
-		} else {
-			*dest++ += vnf->lvolsel * sample;
-			*dest++ += vnf->rvolsel * sample;
+			*dest++ += ((lvolsel << CLICK_SHIFT) + oldlvol * rampvol)
+					   * sample >> CLICK_SHIFT;
+			if (!--rampvol)
+				break;
 		}
+		vnf->rampvol = rampvol;
+		if (todo < 0)
+			return index;
 	}
-	return myindex;
-}
-
-static SLONGLONG MixSurroundInterp(SWORD* srce,SLONG* dest,SLONGLONG myindex,SLONGLONG increment,SLONG todo)
-{
-	SLONG sample;
 
 	while(todo--) {
-		int oldvol,vol;
+		sample=(SLONG)srce[index>>FRACBITS]+
+		       ((SLONG)(srce[(index>>FRACBITS)+1]-srce[index>>FRACBITS])
+		        *(index&FRACMASK)>>FRACBITS);
+		index += increment;
 
-		sample=(SLONG)srce[myindex>>FRACBITS]+
-		       ((SLONG)(srce[(myindex>>FRACBITS)+1]-srce[myindex>>FRACBITS])
-		        *(myindex&FRACMASK)>>FRACBITS);
-		myindex += increment;
+		*dest++ += lvolsel * sample;
+	}
+	return index;
+}
 
-		if(vnf->lvolsel>=vnf->rvolsel) {
-			vol=vnf->lvolsel;oldvol=vnf->oldlvol;
-		} else {
-			vol=vnf->rvolsel;oldvol=vnf->oldrvol;
+static SLONGLONG MixStereoInterp(SWORD* srce,SLONG* dest,SLONGLONG index,SLONGLONG increment,SLONG todo)
+{
+	SLONG sample;
+	SLONG lvolsel = vnf->lvolsel;
+	SLONG rvolsel = vnf->rvolsel;
+	SLONG rampvol = vnf->rampvol;
+
+	if (rampvol) {
+		SLONG oldlvol = vnf->oldlvol - lvolsel;
+		SLONG oldrvol = vnf->oldrvol - rvolsel;
+		while(todo--) {
+			sample=(SLONG)srce[index>>FRACBITS]+
+			       ((SLONG)(srce[(index>>FRACBITS)+1]-srce[index>>FRACBITS])
+			        *(index&FRACMASK)>>FRACBITS);
+			index += increment;
+
+			*dest++ +=((lvolsel << CLICK_SHIFT) + oldlvol * rampvol)
+					   * sample >> CLICK_SHIFT;
+			*dest++ +=((rvolsel << CLICK_SHIFT) + oldrvol * rampvol)
+					   * sample >> CLICK_SHIFT;
+			if (!--rampvol)
+				break;
 		}
+		vnf->rampvol = rampvol;
+		if (todo < 0)
+			return index;
+	}
 
-		if(vnf->rampvol) {
-			sample=(((SLONG)vnf->lvolsel<<CLICK_SHIFT)+
-			        (SLONG)(vnf->oldlvol-vnf->lvolsel)*vnf->rampvol
-			       )*sample>>CLICK_SHIFT;
+	while(todo--) {
+		sample=(SLONG)srce[index>>FRACBITS]+
+		       ((SLONG)(srce[(index>>FRACBITS)+1]-srce[index>>FRACBITS])
+		        *(index&FRACMASK)>>FRACBITS);
+		index += increment;
+
+		*dest++ += lvolsel * sample;
+		*dest++ += rvolsel * sample;
+	}
+	return index;
+}
+
+static SLONGLONG MixSurroundInterp(SWORD* srce,SLONG* dest,SLONGLONG index,SLONGLONG increment,SLONG todo)
+{
+	SLONG sample;
+	SLONG lvolsel = vnf->lvolsel;
+	SLONG rvolsel = vnf->rvolsel;
+	SLONG rampvol = vnf->rampvol;
+	SLONG oldvol, vol;
+
+	if (lvolsel >= rvolsel) {
+		vol = lvolsel;
+		oldvol = vnf->oldlvol;
+	} else {
+		vol = rvolsel;
+		oldvol = vnf->oldrvol;
+	}
+
+	if (rampvol) {
+		oldvol -= vol;
+		while(todo--) {
+			sample=(SLONG)srce[index>>FRACBITS]+
+			       ((SLONG)(srce[(index>>FRACBITS)+1]-srce[index>>FRACBITS])
+			        *(index&FRACMASK)>>FRACBITS);
+			index += increment;
+
+			sample=((vol << CLICK_SHIFT) + oldvol * rampvol)
+				   * sample >> CLICK_SHIFT;
 			*dest++ += sample;
 			*dest++ -= sample;
-			vnf->rampvol--;
-		} else {
-			*dest++ += vol*sample;
-			*dest++ -= vol*sample;
+			if (!--rampvol)
+				break;
 		}
+		vnf->rampvol = rampvol;
+		if (todo < 0)
+			return index;
 	}
-	return myindex;
+
+	while(todo--) {
+		sample=(SLONG)srce[index>>FRACBITS]+
+		       ((SLONG)(srce[(index>>FRACBITS)+1]-srce[index>>FRACBITS])
+		        *(index&FRACMASK)>>FRACBITS);
+		index += increment;
+
+		*dest++ += vol*sample;
+		*dest++ -= vol*sample;
+	}
+	return index;
 }
 
 static void (*MixReverb)(SLONG* srce,NATIVE count);
@@ -525,6 +634,7 @@ static void AddChannel(SLONG* ptr,NATIVE todo)
 	   reached the end of the sample */
 	while(todo>0) {
 		SLONGLONG endpos;
+
 		if(vnf->flags & SF_REVERSE) {
 			/* The sample is playing in reverse */
 			if((vnf->flags&SF_LOOP)&&(vnf->current<idxlpos)) {
@@ -549,7 +659,8 @@ static void AddChannel(SLONG* ptr,NATIVE todo)
 			}
 		} else {
 			/* The sample is playing forward */
-			if((vnf->flags & SF_LOOP) && (vnf->current >= idxlend)) {
+			if((vnf->flags & SF_LOOP) &&
+			   (vnf->current >= idxlend)) {
 				/* the sample is looping, check the loopend index */
 				if(vnf->flags & SF_BIDI) {
 					/* sample is doing bidirectional loops, so 'bounce' the
@@ -596,7 +707,7 @@ static void AddChannel(SLONG* ptr,NATIVE todo)
 			if((vnf->current<0x7fffffff)&&(endpos<0x7fffffff)) {
 				if((md_mode & DMODE_INTERP)) {
 					if(vc_mode & DMODE_STEREO) {
-						if((vnf->pan==PAN_SURROUND)&&(vc_mode&DMODE_SURROUND))
+						if((vnf->pan==PAN_SURROUND)&&(md_mode&DMODE_SURROUND))
 							vnf->current=Mix32SurroundInterp
 							           (s,ptr,vnf->current,vnf->increment,done);
 						else
@@ -606,7 +717,7 @@ static void AddChannel(SLONG* ptr,NATIVE todo)
 						vnf->current=Mix32MonoInterp
 						               (s,ptr,vnf->current,vnf->increment,done);
 				} else if(vc_mode & DMODE_STEREO) {
-					if((vnf->pan==PAN_SURROUND)&&(vc_mode&DMODE_SURROUND))
+					if((vnf->pan==PAN_SURROUND)&&(md_mode&DMODE_SURROUND))
 						vnf->current=Mix32SurroundNormal
 						               (s,ptr,vnf->current,vnf->increment,done);
 					else
@@ -620,7 +731,7 @@ static void AddChannel(SLONG* ptr,NATIVE todo)
 			       {
 				if((md_mode & DMODE_INTERP)) {
 					if(vc_mode & DMODE_STEREO) {
-						if((vnf->pan==PAN_SURROUND)&&(vc_mode&DMODE_SURROUND))
+						if((vnf->pan==PAN_SURROUND)&&(md_mode&DMODE_SURROUND))
 							vnf->current=MixSurroundInterp
 							           (s,ptr,vnf->current,vnf->increment,done);
 						else
@@ -630,7 +741,7 @@ static void AddChannel(SLONG* ptr,NATIVE todo)
 						vnf->current=MixMonoInterp
 						               (s,ptr,vnf->current,vnf->increment,done);
 				} else if(vc_mode & DMODE_STEREO) {
-					if((vnf->pan==PAN_SURROUND)&&(vc_mode&DMODE_SURROUND))
+					if((vnf->pan==PAN_SURROUND)&&(md_mode&DMODE_SURROUND))
 						vnf->current=MixSurroundNormal
 						               (s,ptr,vnf->current,vnf->increment,done);
 					else
@@ -640,20 +751,12 @@ static void AddChannel(SLONG* ptr,NATIVE todo)
 					vnf->current=MixMonoNormal
 					                   (s,ptr,vnf->current,vnf->increment,done);
 			}
-
 		} else
 			/* update sample position */
 			vnf->current=endpos;
 
 		todo-=done;
-#if 1
-		if ( vc_mode & DMODE_STEREO )
-			ptr += done*2;
-		else
-			ptr += done;
-#else
 		ptr +=(vc_mode & DMODE_STEREO)?(done<<1):done;
-#endif
 	}
 }
 
@@ -669,11 +772,12 @@ void register_sample_callback(void (*c)(signed char *,int,int))
 {
 	sample_callback = c;
 }
-
+		
 void deregister_sample_callback(void)
 {
 	sample_callback = NULL;
 }
+
 
 void VC1_WriteSamples(SBYTE* buf,ULONG todo)
 {
@@ -689,7 +793,7 @@ void VC1_WriteSamples(SBYTE* buf,ULONG todo)
 			if(vc_mode & DMODE_SOFT_MUSIC) md_player();
 			tickleft=(md_mixfreq*125L)/(md_bpm*50L);
 		}
-		left = MIN(tickleft, (signed)todo);
+		left = MIN(tickleft, todo);
 		buffer    = buf;
 		tickleft -= left;
 		todo     -= left;
@@ -753,7 +857,7 @@ void VC1_WriteSamples(SBYTE* buf,ULONG todo)
 BOOL VC1_Init(void)
 {
 	VC_SetupPointers();
-
+	
 	if (md_mode&DMODE_HQMIXER)
 		return VC2_Init();
 
@@ -772,7 +876,6 @@ BOOL VC1_Init(void)
 	return 0;
 }
 
-BOOL VC1_PlayStart(void);
 BOOL VC1_PlayStart(void)
 {
 	samplesthatfit=TICKLSIZE;
@@ -810,7 +913,6 @@ BOOL VC1_PlayStart(void)
 	return 0;
 }
 
-void VC1_PlayStop(void);
 void VC1_PlayStop(void)
 {
 	if(RVbufL1) free(RVbufL1);
@@ -833,7 +935,6 @@ void VC1_PlayStop(void)
 	RVbufR1=RVbufR2=RVbufR3=RVbufR4=RVbufR5=RVbufR6=RVbufR7=RVbufR8=NULL;
 }
 
-BOOL VC1_SetNumVoices(void);
 BOOL VC1_SetNumVoices(void)
 {
 	int t;

@@ -176,7 +176,7 @@ int get_note(UBYTE *trk, UWORD row)
 				return note;
 				break;
 			default:
-				UniSkipOpcode(c);
+				UniSkipOpcode();
 				break;
 		}
 	}
@@ -205,7 +205,7 @@ int get_instrument(UBYTE *trk, UWORD row)
 				return instrument;
 				break;
 			default:
-				UniSkipOpcode(c);
+				UniSkipOpcode();
 				break;
 		}
 	}
@@ -660,7 +660,7 @@ int set_sample(struct sample *s, int chan)
 	 * first "struck."  Instead we get the info
 	 * from MikMod's internal format
 	 */
-	s->vol = mod->control[chan].outvolume;
+	s->vol = mod->control[chan].volume;
 	s->ins = get_instrument(mod->control[chan].row, 0);
 	s->note = get_note(mod->control[chan].row, 0);
 

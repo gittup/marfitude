@@ -1,6 +1,6 @@
 /*	MikMod sound library
-	(c) 1998, 1999, 2000 Miodrag Vallat and others - see file AUTHORS for
-	complete list.
+	(c) 1998, 1999, 2000, 2001, 2002 Miodrag Vallat and others - see file
+	AUTHORS for complete list.
 
 	This library is free software; you can redistribute it and/or modify
 	it under the terms of the GNU Library General Public License as
@@ -20,7 +20,7 @@
 
 /*==============================================================================
 
-  $Id$
+  $Id: load_stx.c,v 1.1.1.1 2004/01/21 01:36:35 raph Exp $
 
   STMIK 0.2 (STX) module loader
 
@@ -36,9 +36,21 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#include <stdio.h>
+#ifdef HAVE_MEMORY_H
+#include <memory.h>
+#endif
 #include <string.h>
 
 #include "mikmod_internals.h"
+
+#ifdef SUNOS
+extern int fprintf(FILE *, const char *, ...);
+#endif
 
 /*========== Module structure */
 
@@ -245,6 +257,7 @@ static UBYTE* STX_ConvertTrack(STXNOTE* tr)
 			   in ST2 */
 			case 0x18:	/* Xxx amiga panning command 8xx */
 				UniPTEffect(0x8,inf);
+				of.flags |= UF_PANNING;
 				break;
 		}
 		UniNewline();
@@ -294,6 +307,7 @@ static BOOL STX_Load(BOOL curious)
 	of.inittempo   = 125;
 	of.numchn      = 4;
 	of.flags      |= UF_S3MSLIDES;
+	of.bpmlimit    = 32;
 
 	if(!(paraptr=(UWORD*)_mm_malloc((of.numins+of.numpat)*sizeof(UWORD))))
 		return 0;
@@ -309,10 +323,10 @@ static BOOL STX_Load(BOOL curious)
 	version=_mm_read_I_UWORD(modreader);
 	if(version==mh->patsize) {
 		version    = 0x10;
-		of.modtype = Mstrdup("STMIK 0.2 (STM2STX 1.0)");
+		of.modtype = strdup("STMIK 0.2 (STM2STX 1.0)");
 	} else {
 		version    = 0x11;
-		of.modtype = Mstrdup("STMIK 0.2 (STM2STX 1.1)");
+		of.modtype = strdup("STMIK 0.2 (STM2STX 1.1)");
 	}
 
 	/* read the order data */
@@ -325,12 +339,14 @@ static BOOL STX_Load(BOOL curious)
 
 	of.numpos=0;poslookupcnt=mh->ordnum;
 	for(t=0;t<mh->ordnum;t++) {
-		of.positions[of.numpos]=of.positions[t];
+		int order=of.positions[t];
+		if(order==255) order=LAST_PATTERN;
+		of.positions[of.numpos]=order;
 		poslookup[t]=of.numpos;	/* bug fix for freaky S3Ms */
 		if(of.positions[t]<254) of.numpos++;        
 		else
 		  /* special end of song pattern */
-		  if((of.positions[t]==255)&&(!curious)) break;
+		  if((order==LAST_PATTERN)&&(!curious)) break;
 	}
 
 	if(_mm_eof(modreader)) {
@@ -376,16 +392,7 @@ static BOOL STX_Load(BOOL curious)
 		q->seekpos    = (((long)s.memsegh)<<16|s.memsegl)<<4;
 		q->flags     |= SF_SIGNED;
 
-		/* fix for bad converted STMs */
-		if (q->loopstart>=q->length)
-			q->loopstart=q->loopend=0;
-
-		/* some modules come with loopstart == loopend == 0, yet have the
-		   looping flag set */
-		if((s.flags&1)&&(q->loopstart!=q->loopend)) {
-			q->flags |= SF_LOOP;
-			if(q->loopend>q->length) q->loopend=q->length;
-		}
+		if(s.flags&1) q->flags |= SF_LOOP;
 		if(s.flags&4) q->flags |= SF_16BITS;
 	}
 

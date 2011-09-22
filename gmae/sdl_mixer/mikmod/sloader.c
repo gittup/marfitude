@@ -1,17 +1,17 @@
 /*	MikMod sound library
-	(c) 1998, 1999 Miodrag Vallat and others - see file AUTHORS for
-	complete list.
+	(c) 1998, 1999, 2000, 2001 Miodrag Vallat and others - see file AUTHORS
+	for complete list.
 
 	This library is free software; you can redistribute it and/or modify
 	it under the terms of the GNU Library General Public License as
 	published by the Free Software Foundation; either version 2 of
 	the License, or (at your option) any later version.
-
+ 
 	This program is distributed in the hope that it will be useful,
 	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU Library General Public License for more details.
-
+ 
 	You should have received a copy of the GNU Library General Public
 	License along with this library; if not, write to the Free Software
 	Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
@@ -20,7 +20,7 @@
 
 /*==============================================================================
 
-  $Id$
+  $Id: sloader.c,v 1.1.1.1 2004/01/21 01:36:35 raph Exp $
 
   Routines for loading samples. The sample loader utilizes the routines
   provided by the "registered" sample loader.
@@ -31,7 +31,11 @@
 #include "config.h"
 #endif
 
-#include <mikmod_internals.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#include "mikmod_internals.h"
 
 static	int sl_rlength;
 static	SWORD sl_old;
@@ -71,9 +75,9 @@ void SL_Exit(SAMPLOAD *s)
 }
 
 /* unpack a 8bit IT packed sample */
-static BOOL read_itcompr8(ITPACK* status,MREADER *reader,SWORD *mysl_buffer,UWORD count,UWORD* incnt)
+static BOOL read_itcompr8(ITPACK* status,MREADER *reader,SWORD *sl_buffer,UWORD count,UWORD* incnt)
 {
-	SWORD *dest=mysl_buffer,*end=mysl_buffer+count;
+	SWORD *dest=sl_buffer,*end=sl_buffer+count;
 	UWORD x,y,needbits,havebits,new_count=0;
 	UWORD bits = status->bits;
 	UWORD bufbits = status->bufbits;
@@ -141,13 +145,13 @@ static BOOL read_itcompr8(ITPACK* status,MREADER *reader,SWORD *mysl_buffer,UWOR
 	status->bufbits = bufbits;
 	status->last = last;
 	status->buf = buf;
-	return dest-mysl_buffer;
+	return dest-sl_buffer;
 }
 
 /* unpack a 16bit IT packed sample */
-static BOOL read_itcompr16(ITPACK *status,MREADER *reader,SWORD *mysl_buffer,UWORD count,UWORD* incnt)
+static BOOL read_itcompr16(ITPACK *status,MREADER *reader,SWORD *sl_buffer,UWORD count,UWORD* incnt)
 {
-	SWORD *dest=mysl_buffer,*end=mysl_buffer+count;
+	SWORD *dest=sl_buffer,*end=sl_buffer+count;
 	SLONG x,y,needbits,havebits,new_count=0;
 	UWORD bits = status->bits;
 	UWORD bufbits = status->bufbits;
@@ -215,7 +219,7 @@ static BOOL read_itcompr16(ITPACK *status,MREADER *reader,SWORD *mysl_buffer,UWO
 	status->bufbits = bufbits;
 	status->last = last;
 	status->buf = buf;
-	return dest-mysl_buffer;
+	return dest-sl_buffer;
 }
 
 static BOOL SL_LoadInternal(void* buffer,UWORD infmt,UWORD outfmt,int scalefactor,ULONG length,MREADER* reader,BOOL dither)
@@ -281,7 +285,7 @@ static BOOL SL_LoadInternal(void* buffer,UWORD infmt,UWORD outfmt,int scalefacto
 				sl_old = sl_buffer[t];
 			}
 
-		if((infmt^outfmt) & SF_SIGNED)
+		if((infmt^outfmt) & SF_SIGNED) 
 			for(t=0;t<stodo;t++)
 				sl_buffer[t]^= 0x8000;
 
@@ -350,7 +354,7 @@ SAMPLOAD* SL_RegisterSample(SAMPLE* s,int type,MREADER* reader)
 		cruise = sndfxlist;
 	} else
 		return NULL;
-
+	
 	/* Allocate and add structure to the END of the list */
 	if(!(news=(SAMPLOAD*)_mm_malloc(sizeof(SAMPLOAD)))) return NULL;
 
@@ -400,7 +404,7 @@ static ULONG SampleTotal(SAMPLOAD* samplist,int type)
 static ULONG RealSpeed(SAMPLOAD *s)
 {
 	return(s->sample->speed/(s->scalefactor?s->scalefactor:1));
-}
+}    
 
 static BOOL DitherSamples(SAMPLOAD* samplist,int type)
 {
@@ -410,7 +414,7 @@ static BOOL DitherSamples(SAMPLOAD* samplist,int type)
 
 	if(!samplist) return 0;
 
-	if((maxsize=MD_SampleSpace(type)*1024))
+	if((maxsize=MD_SampleSpace(type)*1024)) 
 		while(SampleTotal(samplist,type)>maxsize) {
 			/* First Pass - check for any 16 bit samples */
 			s = samplist;

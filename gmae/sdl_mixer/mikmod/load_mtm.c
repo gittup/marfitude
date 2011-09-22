@@ -1,6 +1,6 @@
 /*	MikMod sound library
-	(c) 1998, 1999, 2000 Miodrag Vallat and others - see file AUTHORS for
-	complete list.
+	(c) 1998, 1999, 2000, 2001, 2002 Miodrag Vallat and others - see file
+	AUTHORS for complete list.
 
 	This library is free software; you can redistribute it and/or modify
 	it under the terms of the GNU Library General Public License as
@@ -20,7 +20,7 @@
 
 /*==============================================================================
 
-  $Id$
+  $Id: load_mtm.c,v 1.1.1.1 2004/01/21 01:36:35 raph Exp $
 
   MTM module loader
 
@@ -30,9 +30,21 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#include <stdio.h>
+#ifdef HAVE_MEMORY_H
+#include <memory.h>
+#endif
 #include <string.h>
 
 #include "mikmod_internals.h"
+
+#ifdef SUNOS
+extern int fprintf(FILE *, const char *, ...);
+#endif
 
 /*========== Module structure */
 
@@ -75,7 +87,6 @@ static CHAR MTM_Version[] = "MTM";
 
 /*========== Loader code */
 
-BOOL MTM_Test(void);
 BOOL MTM_Test(void)
 {
 	UBYTE id[3];
@@ -85,7 +96,6 @@ BOOL MTM_Test(void)
 	return 0;
 }
 
-BOOL MTM_Init(void);
 BOOL MTM_Init(void)
 {
 	if(!(mtmtrk=(MTMNOTE*)_mm_calloc(64,sizeof(MTMNOTE)))) return 0;
@@ -94,7 +104,6 @@ BOOL MTM_Init(void)
 	return 1;
 }
 
-void MTM_Cleanup(void);
 void MTM_Cleanup(void)
 {
 	_mm_free(mtmtrk);
@@ -131,14 +140,12 @@ static UBYTE* MTM_Convert(void)
 	return UniDup();
 }
 
-BOOL MTM_Load(BOOL curious);
 BOOL MTM_Load(BOOL curious)
 {
 	int t,u;
 	MTMSAMPLE s;
 	SAMPLE *q;
 
-	if(curious) {}
 	/* try to read module header  */
 	_mm_read_UBYTES(mh->id,3,modreader);
 	mh->version     =_mm_read_UBYTE(modreader);
@@ -161,13 +168,14 @@ BOOL MTM_Load(BOOL curious)
 	/* set module variables */
 	of.initspeed = 6;
 	of.inittempo = 125;
-	of.modtype   = Mstrdup(MTM_Version);
+	of.modtype   = strdup(MTM_Version);
 	of.numchn    = mh->numchannels;
 	of.numtrk    = mh->numtracks+1;           /* get number of channels */
 	of.songname  = DupStr(mh->songname,20,1); /* make a cstr of songname */
 	of.numpos    = mh->lastorder+1;           /* copy the songlength */
 	of.numpat    = mh->lastpattern+1;
 	of.reppos    = 0;
+	of.flags    |= UF_PANNING;
 	for(t=0;t<32;t++) of.panning[t]=mh->panpos[t]<< 4;
 	of.numins=of.numsmp=mh->numsamples;
 
@@ -205,7 +213,6 @@ BOOL MTM_Load(BOOL curious)
 			q->loopstart>>=1;
 			q->loopend>>=1;
 		}
-
 		q++;
 	}
 
@@ -223,12 +230,12 @@ BOOL MTM_Load(BOOL curious)
 
 	of.tracks[0]=MTM_Convert();		/* track 0 is empty */
 	for(t=1;t<of.numtrk;t++) {
-		int mys;
+		int s;
 
-		for(mys=0;mys<64;mys++) {
-			mtmtrk[mys].a=_mm_read_UBYTE(modreader);
-			mtmtrk[mys].b=_mm_read_UBYTE(modreader);
-			mtmtrk[mys].c=_mm_read_UBYTE(modreader);
+		for(s=0;s<64;s++) {
+			mtmtrk[s].a=_mm_read_UBYTE(modreader);
+			mtmtrk[s].b=_mm_read_UBYTE(modreader);
+			mtmtrk[s].c=_mm_read_UBYTE(modreader);
 		}
 
 		if(_mm_eof(modreader)) {
@@ -247,12 +254,11 @@ BOOL MTM_Load(BOOL curious)
 
 	/* read comment field */
 	if(mh->commentsize)
-		if(!ReadLinedComment(mh->commentsize/40,40)) return 0;
+		if(!ReadLinedComment(mh->commentsize, 40)) return 0;
 
 	return 1;
 }
 
-CHAR *MTM_LoadTitle(void);
 CHAR *MTM_LoadTitle(void)
 {
 	CHAR s[20];

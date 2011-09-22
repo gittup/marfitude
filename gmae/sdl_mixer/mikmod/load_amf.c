@@ -1,6 +1,6 @@
 /*	MikMod sound library
-	(c) 1998, 1999, 2000 Miodrag Vallat and others - see file AUTHORS for
-	complete list.
+	(c) 1998, 1999, 2000, 2001, 2002 Miodrag Vallat and others - see file
+	AUTHORS for complete list.
 
 	This library is free software; you can redistribute it and/or modify
 	it under the terms of the GNU Library General Public License as
@@ -20,7 +20,7 @@
 
 /*==============================================================================
 
-  $Id$
+  $Id: load_amf.c,v 1.1.1.1 2004/01/21 01:36:35 raph Exp $
 
   DMP Advanced Module Format loader
 
@@ -30,9 +30,21 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#include <stdio.h>
+#ifdef HAVE_MEMORY_H
+#include <memory.h>
+#endif
 #include <string.h>
 
 #include "mikmod_internals.h"
+
+#ifdef SUNOS
+extern int fprintf(FILE *, const char *, ...);
+#endif
 
 /*========== Module structure */
 
@@ -76,7 +88,6 @@ static AMFNOTE *track = NULL;
 
 /*========== Loader code */
 
-BOOL AMF_Test(void);
 BOOL AMF_Test(void)
 {
 	UBYTE id[3],ver;
@@ -89,7 +100,6 @@ BOOL AMF_Test(void)
 	return 0;
 }
 
-BOOL AMF_Init(void);
 BOOL AMF_Init(void)
 {
 	if(!(mh=(AMFHEADER*)_mm_malloc(sizeof(AMFHEADER)))) return 0;
@@ -98,14 +108,13 @@ BOOL AMF_Init(void)
 	return 1;
 }
 
-void AMF_Cleanup(void);
 void AMF_Cleanup(void)
 {
 	_mm_free(mh);
 	_mm_free(track);
 }
 
-static BOOL AMF_UnpackTrack(MREADER* myreader)
+static BOOL AMF_UnpackTrack(MREADER* modreader)
 {
 	ULONG tracksize;
 	UBYTE row,cmd;
@@ -115,14 +124,14 @@ static BOOL AMF_UnpackTrack(MREADER* myreader)
 	memset(track,0,64*sizeof(AMFNOTE));
 
 	/* read packed track */
-	if (myreader) {
-		tracksize=_mm_read_I_UWORD(myreader);
-		tracksize+=((ULONG)_mm_read_UBYTE(myreader))<<16;
+	if (modreader) {
+		tracksize=_mm_read_I_UWORD(modreader);
+		tracksize+=((ULONG)_mm_read_UBYTE(modreader))<<16;
 		if (tracksize)
 			while(tracksize--) {
-				row=_mm_read_UBYTE(myreader);
-				cmd=_mm_read_UBYTE(myreader);
-				arg=_mm_read_SBYTE(myreader);
+				row=_mm_read_UBYTE(modreader);
+				cmd=_mm_read_UBYTE(modreader);
+				arg=_mm_read_SBYTE(modreader);
 				/* unexpected end of track */
 				if(!tracksize) {
 					if((row==0xff)&&(cmd==0xff)&&(arg==-1))
@@ -156,6 +165,12 @@ static BOOL AMF_UnpackTrack(MREADER* myreader)
 					/* volume without note */
 					track[row].volume=(UBYTE)arg+1;
 				} else 
+				  if (cmd==0xff) {
+					/* apparently, some M2AMF version fail to estimate the
+					   size of the compressed patterns correctly, and end
+					   up with blanks, i.e. dead triplets. Those are marked
+					   with cmd == 0xff. Let's ignore them. */
+				} else
 				  if(track[row].fxcnt<3) {
 					/* effect, param */
 					if(cmd>0x97)
@@ -304,6 +319,7 @@ static UBYTE* AMF_ConvertTrack(void)
 						UniEffect(UNI_ITEFFECTS0,0x91); /* surround */
 					else
 						UniPTEffect(0x8,(inf==64)?255:(inf+64)<<1);
+					of.flags |= UF_PANNING;
 					break;
 			}
 			
@@ -314,17 +330,15 @@ static UBYTE* AMF_ConvertTrack(void)
 	return UniDup();
 }
 
-BOOL AMF_Load(BOOL curious);
 BOOL AMF_Load(BOOL curious)
 {
-	int t,u,realtrackcnt,realsmpcnt;
+	int t,u,realtrackcnt,realsmpcnt,defaultpanning;
 	AMFSAMPLE s;
 	SAMPLE *q;
 	UWORD *track_remap;
 	ULONG samplepos;
 	int channel_remap[16];
 
-	if(curious) {}
 	/* try to read module header  */
 	_mm_read_UBYTES(mh->id,3,modreader);
 	mh->version     =_mm_read_UBYTE(modreader);
@@ -370,20 +384,48 @@ BOOL AMF_Load(BOOL curious)
 	of.inittempo = mh->songbpm;
 	AMF_Version[AMFTEXTLEN-3]='0'+(mh->version/10);
 	AMF_Version[AMFTEXTLEN-1]='0'+(mh->version%10);
-	of.modtype   = Mstrdup(AMF_Version);
+	of.modtype   = strdup(AMF_Version);
 	of.numchn    = mh->numchannels;
 	of.numtrk    = mh->numorders*mh->numchannels;
-	if(mh->numtracks>of.numtrk) of.numtrk=mh->numtracks;
+	if (mh->numtracks>of.numtrk)
+		of.numtrk=mh->numtracks;
+	of.numtrk++;	/* add room for extra, empty track */
 	of.songname  = DupStr(mh->songname,32,1);
 	of.numpos    = mh->numorders;
 	of.numpat    = mh->numorders;
 	of.reppos    = 0;
 	of.flags    |= UF_S3MSLIDES;
-	for(t=0;t<32;t++) {
-		if(mh->panpos[t]>64) of.panning[t]=PAN_SURROUND;
-		else if(mh->panpos[t]==64) of.panning[t]=255;
-		else of.panning[t]=(mh->panpos[t]+64)<<1;
+	/* XXX whenever possible, we should try to determine the original format.
+	   Here we assume it was S3M-style wrt bpmlimit... */
+	of.bpmlimit = 32;
+	
+	/*
+	 * Play with the panning table. Although the AMF format embeds a
+	 * panning table, if the module was a MOD or an S3M with default
+	 * panning and didn't use any panning commands, don't flag
+	 * UF_PANNING, to use our preferred panning table for this case.
+	 */
+	defaultpanning = 1;
+	for (t = 0; t < 32; t++) {
+		if (mh->panpos[t] > 64) {
+			of.panning[t] = PAN_SURROUND;
+			defaultpanning = 0;
+		} else
+			if (mh->panpos[t] == 64)
+				of.panning[t] = PAN_RIGHT;
+			else
+				of.panning[t] = (mh->panpos[t] + 64) << 1;
 	}
+	if (defaultpanning) {
+		for (t = 0; t < of.numchn; t++)
+			if (of.panning[t] == (((t + 1) & 2) ? PAN_RIGHT : PAN_LEFT)) {
+				defaultpanning = 0;	/* not MOD canonical panning */
+				break;
+			}
+	}
+	if (defaultpanning)
+		of.flags |= UF_PANNING;
+
 	of.numins=of.numsmp=mh->numsamples;
 
 	if(!AllocPositions(of.numpos)) return 0;
@@ -480,7 +522,7 @@ BOOL AMF_Load(BOOL curious)
 		if(!(of.tracks[t]=AMF_ConvertTrack()))
 			return 0;
 	}
-	/* add en extra void track */
+	/* add an extra void track */
 	UniReset();
 	for(t=0;t<64;t++) UniNewline();
 	of.tracks[realtrackcnt++]=UniDup();
@@ -489,11 +531,11 @@ BOOL AMF_Load(BOOL curious)
 	/* compute sample offsets */
 	samplepos=_mm_ftell(modreader);
 	for(realsmpcnt=t=0;t<of.numsmp;t++)
-		if(realsmpcnt<(signed)of.samples[t].seekpos)
+		if(realsmpcnt<of.samples[t].seekpos)
 			realsmpcnt=of.samples[t].seekpos;
 	for(t=1;t<=realsmpcnt;t++) {
 		q=of.samples;
-		while((signed)q->seekpos!=t) q++;
+		while(q->seekpos!=t) q++;
 		q->seekpos=samplepos;
 		samplepos+=q->length;
 	}
@@ -501,7 +543,6 @@ BOOL AMF_Load(BOOL curious)
 	return 1;
 }
 
-CHAR *AMF_LoadTitle(void);
 CHAR *AMF_LoadTitle(void)
 {
 	CHAR s[32];

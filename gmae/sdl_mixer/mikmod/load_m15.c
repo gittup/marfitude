@@ -1,6 +1,6 @@
 /*	MikMod sound library
-	(c) 1998, 1999, 2000 Miodrag Vallat and others - see file AUTHORS for
-	complete list.
+	(c) 1998, 1999, 2000, 2001, 2002 Miodrag Vallat and others - see file
+	AUTHORS for complete list.
 
 	This library is free software; you can redistribute it and/or modify
 	it under the terms of the GNU Library General Public License as
@@ -20,7 +20,7 @@
 
 /*==============================================================================
 
-  $Id$
+  $Id: load_m15.c,v 1.1.1.1 2004/01/21 01:36:35 raph Exp $
 
   15 instrument MOD loader
   Also supports Ultimate Sound Tracker (old M15 format)
@@ -31,10 +31,22 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #include <ctype.h>
+#include <stdio.h>
+#ifdef HAVE_MEMORY_H
+#include <memory.h>
+#endif
 #include <string.h>
 
 #include "mikmod_internals.h"
+
+#ifdef SUNOS
+extern int fprintf(FILE *, const char *, ...);
+#endif
 
 /*========== Module Structure */
 
@@ -67,7 +79,7 @@ static BOOL ust_loader = 0;		/* if TRUE, load as an ust module. */
 
 /* known file formats which can confuse the loader */
 #define REJECT 2
-static const char *signatures[REJECT]={
+static char *signatures[REJECT]={
 	"CAKEWALK",	/* cakewalk midi files */
 	"SZDD"		/* Microsoft compressed files */
 };
@@ -75,22 +87,22 @@ static int siglen[REJECT]={8,4};
 
 /*========== Loader code */
 
-static BOOL LoadModuleHeader(MODULEHEADER *mymh)
+static BOOL LoadModuleHeader(MODULEHEADER *mh)
 {
 	int t,u;
 
-	_mm_read_string(mymh->songname,20,modreader);
-	mymh->songname[20]=0;	/* just in case */
+	_mm_read_string(mh->songname,20,modreader);
+	mh->songname[20]=0;	/* just in case */
 
 	/* sanity check : title should contain printable characters and a bunch
 	   of null chars */
 	for(t=0;t<20;t++)
-		if((mymh->songname[t])&&(mymh->songname[t]<32)) return 0;
-	for(t=0;(mymh->songname[t])&&(t<20);t++);
-	if(t<20) for(;t<20;t++) if(mymh->songname[t]) return 0;
+		if((mh->songname[t])&&(mh->songname[t]<32)) return 0;
+	for(t=0;(mh->songname[t])&&(t<20);t++);
+	if(t<20) for(;t<20;t++) if(mh->songname[t]) return 0;
 
 	for(t=0;t<15;t++) {
-		MSAMPINFO *s=&mymh->samples[t];
+		MSAMPINFO *s=&mh->samples[t];
 
 		_mm_read_string(s->samplename,22,modreader);
 		s->samplename[22]=0;	/* just in case */
@@ -111,19 +123,19 @@ static BOOL LoadModuleHeader(MODULEHEADER *mymh)
 		if(s->finetune>>4) return 0;
 	}
 
-	mymh->songlength  =_mm_read_UBYTE(modreader);
-	mymh->magic1      =_mm_read_UBYTE(modreader);	/* should be 127 */
+	mh->songlength  =_mm_read_UBYTE(modreader);
+	mh->magic1      =_mm_read_UBYTE(modreader);	/* should be 127 */
 
 	/* sanity check : no more than 128 positions, restart position in range */
-	if((!mymh->songlength)||(mymh->songlength>128)) return 0;
+	if((!mh->songlength)||(mh->songlength>128)) return 0;
 	/* values encountered so far are 0x6a and 0x78 */
-	if(((mymh->magic1&0xf8)!=0x78)&&(mymh->magic1!=0x6a)&&(mymh->magic1>mymh->songlength)) return 0;
+	if(((mh->magic1&0xf8)!=0x78)&&(mh->magic1!=0x6a)&&(mh->magic1>mh->songlength)) return 0;
 
-	_mm_read_UBYTES(mymh->positions,128,modreader);
+	_mm_read_UBYTES(mh->positions,128,modreader);
 
 	/* sanity check : pattern range is 0..63 */
 	for(t=0;t<128;t++)
-		if(mymh->positions[t]>63) return 0;
+		if(mh->positions[t]>63) return 0;
 
 	return(!_mm_eof(modreader));
 }
@@ -138,7 +150,7 @@ static int CheckPatternType(int numpat)
 	int t;
 	UBYTE eff, dat;
 
-	for(t=0;(unsigned)t<numpat*(64U*4);t++) {
+	for(t=0;t<numpat*(64U*4);t++) {
 		/* Load the pattern into the temp buffer and scan it */
 		_mm_read_UBYTE(modreader);_mm_read_UBYTE(modreader);
 		eff = _mm_read_UBYTE(modreader);
@@ -165,45 +177,45 @@ static int CheckPatternType(int numpat)
 static BOOL M15_Test(void)
 {
 	int t, numpat;
-	MODULEHEADER mymh;
+	MODULEHEADER mh;
 
 	ust_loader = 0;
-	if(!LoadModuleHeader(&mymh)) return 0;
+	if(!LoadModuleHeader(&mh)) return 0;
 
 	/* reject other file types */
 	for(t=0;t<REJECT;t++)
-		if(!memcmp(mymh.songname,signatures[t],siglen[t])) return 0;
+		if(!memcmp(mh.songname,signatures[t],siglen[t])) return 0;
 
-	if(mymh.magic1>127) return 0;
-	if((!mymh.songlength)||(mymh.songlength>mymh.magic1)) return 0;
+	if(mh.magic1>127) return 0;
+	if((!mh.songlength)||(mh.songlength>mh.magic1)) return 0;
 
 	for(t=0;t<15;t++) {
 		/* all finetunes should be zero */
-		if(mymh.samples[t].finetune) return 0;
+		if(mh.samples[t].finetune) return 0;
 
 		/* all volumes should be <= 64 */
-		if(mymh.samples[t].volume>64) return 0;
+		if(mh.samples[t].volume>64) return 0;
 
 		/* all instrument names should begin with s, st-, or a number */
-		if((mymh.samples[t].samplename[0]=='s')||
-		   (mymh.samples[t].samplename[0]=='S')) {
-			if((memcmp(mymh.samples[t].samplename,"st-",3)) &&
-			   (memcmp(mymh.samples[t].samplename,"ST-",3)) &&
-			   (*mymh.samples[t].samplename))
+		if((mh.samples[t].samplename[0]=='s')||
+		   (mh.samples[t].samplename[0]=='S')) {
+			if((memcmp(mh.samples[t].samplename,"st-",3)) &&
+			   (memcmp(mh.samples[t].samplename,"ST-",3)) &&
+			   (*mh.samples[t].samplename))
 				ust_loader = 1;
 		} else
-		  if(!isdigit(mymh.samples[t].samplename[0]))
+		  if(!isdigit((int)mh.samples[t].samplename[0]))
 				ust_loader = 1;
 
-		if(mymh.samples[t].length>4999||mymh.samples[t].reppos>9999) {
+		if(mh.samples[t].length>4999||mh.samples[t].reppos>9999) {
 			ust_loader = 0;
-			if(mymh.samples[t].length>32768) return 0;
+			if(mh.samples[t].length>32768) return 0;
 		}
 
 		/* if loop information is incorrect as words, but correct as bytes,
 		   this is likely to be an ust-style module */
-		if((mymh.samples[t].reppos+mymh.samples[t].replen>mymh.samples[t].length)&&
-		   (mymh.samples[t].reppos+mymh.samples[t].replen<(mymh.samples[t].length<<1))){
+		if((mh.samples[t].reppos+mh.samples[t].replen>mh.samples[t].length)&&
+		   (mh.samples[t].reppos+mh.samples[t].replen<(mh.samples[t].length<<1))){
 			ust_loader = 1;
 			return 1;
 		}
@@ -211,9 +223,9 @@ static BOOL M15_Test(void)
 		if(!ust_loader) return 1; 
 	}
 
-	for(numpat=0,t=0;t<mymh.songlength;t++) 
-		if(mymh.positions[t]>numpat)
-			numpat = mymh.positions[t];
+	for(numpat=0,t=0;t<mh.songlength;t++) 
+		if(mh.positions[t]>numpat)
+			numpat = mh.positions[t];
 	numpat++;
 	switch(CheckPatternType(numpat)) {
 		case 0:   /* indecisive, so check more clues... */
@@ -252,7 +264,7 @@ bits of sam-  note period.   bits of sam-
 ple number.                  ple number.
 */
 
-static void M15_ConvertNote(MODNOTE* n)
+static UBYTE M15_ConvertNote(MODNOTE* n, UBYTE lasteffect)
 {
 	UBYTE instrument,effect,effdat,note;
 	UWORD period;
@@ -328,21 +340,29 @@ static void M15_ConvertNote(MODNOTE* n)
 				break;
 		}
 	} else {
-		/* Ignore 100, 200 and 300 (there is no porta memory in mod files) */
-		if ((!effdat) && ((effect == 1)||(effect == 2)||(effect == 3)))
+		/* An isolated 100, 200 or 300 effect should be ignored (no
+		   "standalone" porta memory in mod files). However, a sequence
+		   such as 1XX, 100, 100, 100 is fine. */
+		if ((!effdat) && ((effect == 1)||(effect == 2)||(effect ==3)) &&
+			(lasteffect < 0x10) && (effect != lasteffect))
 			effect = 0;
 
 		UniPTEffect(effect,effdat);
 	}
+	if (effect == 8)
+		of.flags |= UF_PANNING;
+	
+	return effect;
 }
 
 static UBYTE *M15_ConvertTrack(MODNOTE* n)
 {
 	int t;
+	UBYTE lasteffect = 0x10;	/* non existant effect */
 
 	UniReset();
 	for(t=0;t<64;t++) {
-		M15_ConvertNote(n);
+		lasteffect = M15_ConvertNote(n,lasteffect);
 		UniNewline();
 		n+=4;
 	}
@@ -362,7 +382,7 @@ static BOOL M15_LoadPatterns(void)
 
 	for(t=0;t<of.numpat;t++) {
 		/* Load the pattern into the temp buffer and convert it */
-		for(s=0;(unsigned)s<(64U*4);s++) {
+		for(s=0;s<(64U*4);s++) {
 			patbuf[s].a=_mm_read_UBYTE(modreader);
 			patbuf[s].b=_mm_read_UBYTE(modreader);
 			patbuf[s].c=_mm_read_UBYTE(modreader);
@@ -388,9 +408,9 @@ static BOOL M15_Load(BOOL curious)
 	}
 
 	if(ust_loader)
-		of.modtype = Mstrdup("Ultimate Soundtracker");
+		of.modtype = strdup("Ultimate Soundtracker");
 	else
-		of.modtype = Mstrdup("Soundtracker");
+		of.modtype = strdup("Soundtracker");
 
 	/* set module variables */
 	of.initspeed = 6;
@@ -448,9 +468,6 @@ static BOOL M15_Load(BOOL curious)
 		q->flags = SF_SIGNED;
 	   	if(ust_loader) q->flags |= SF_UST_LOOP;
 		if(s->replen>2) q->flags |= SF_LOOP;
-
-		/* fix replen if repend>length */
-		if(q->loopend>q->length) q->loopend = q->length;
 
 		s++;
 		q++;

@@ -1,6 +1,6 @@
 /*	MikMod sound library
-	(c) 1998, 1999, 2000 Miodrag Vallat and others - see file AUTHORS for
-	complete list.
+	(c) 1998, 1999, 2000, 2001, 2002 Miodrag Vallat and others - see file
+	AUTHORS for complete list.
 
 	This library is free software; you can redistribute it and/or modify
 	it under the terms of the GNU Library General Public License as
@@ -20,7 +20,7 @@
 
 /*==============================================================================
 
-  $Id$
+  $Id: load_stm.c,v 1.1.1.1 2004/01/21 01:36:35 raph Exp $
 
   Screamtracker 2 (STM) module loader
 
@@ -30,9 +30,21 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#include <stdio.h>
+#ifdef HAVE_MEMORY_H
+#include <memory.h>
+#endif
 #include <string.h>
 
 #include "mikmod_internals.h"
+
+#ifdef SUNOS
+extern int fprintf(FILE *, const char *, ...);
+#endif
 
 /*========== Module structure */
 
@@ -78,7 +90,7 @@ static STMNOTE *stmbuf = NULL;
 static STMHEADER *mh = NULL;
 
 /* tracker identifiers */
-static const CHAR* STM_Version[STM_NTRACKERS] = {
+static CHAR* STM_Version[STM_NTRACKERS] = {
 	"Screamtracker 2",
 	"Converted by MOD2STM (STM format)",
 	"Wuzamod (STM format)"
@@ -86,7 +98,6 @@ static const CHAR* STM_Version[STM_NTRACKERS] = {
 
 /*========== Loader code */
 
-BOOL STM_Test(void);
 BOOL STM_Test(void)
 {
 	UBYTE str[44];
@@ -107,7 +118,6 @@ BOOL STM_Test(void)
 	return 0;
 }
 
-BOOL STM_Init(void);
 BOOL STM_Init(void)
 {
 	if(!(mh=(STMHEADER*)_mm_malloc(sizeof(STMHEADER)))) return 0;
@@ -194,6 +204,7 @@ static void STM_ConvertNote(STMNOTE *n)
 			   in ST2 */
 			case 0x18:	/* Xxx amiga panning command 8xx */
 				UniPTEffect(0x8,inf);
+				of.flags |= UF_PANNING;
 				break;
 		}
 }
@@ -220,7 +231,7 @@ static BOOL STM_LoadPatterns(void)
 
 	/* Allocate temporary buffer for loading and converting the patterns */
 	for(t=0;t<of.numpat;t++) {
-		for(s=0;(unsigned)s<(64U*of.numchn);s++) {
+		for(s=0;s<(64U*of.numchn);s++) {
 			stmbuf[s].note   = _mm_read_UBYTE(modreader);
 			stmbuf[s].insvol = _mm_read_UBYTE(modreader);
 			stmbuf[s].volcmd = _mm_read_UBYTE(modreader);
@@ -238,14 +249,12 @@ static BOOL STM_LoadPatterns(void)
 	return 1;
 }
 
-BOOL STM_Load(BOOL curious);
 BOOL STM_Load(BOOL curious)
 {
 	int t; 
 	ULONG MikMod_ISA; /* We must generate our own ISA, it's not stored in stm */
 	SAMPLE *q;
 
-	if(curious) {}
 	/* try to read stm header */
 	_mm_read_string(mh->songname,20,modreader);
 	_mm_read_string(mh->trackername,8,modreader);
@@ -288,7 +297,7 @@ BOOL STM_Load(BOOL curious)
 	/* set module variables */
 	for(t=0;t<STM_NTRACKERS;t++)
 		if(!memcmp(mh->trackername,STM_Signatures[t],8)) break;
-	of.modtype   = Mstrdup(STM_Version[t]);
+	of.modtype   = strdup(STM_Version[t]);
 	of.songname  = DupStr(mh->songname,20,1); /* make a cstr of songname */
 	of.numpat    = mh->numpat;
 	of.inittempo = 125;                     /* mh->inittempo+0x1c; */
@@ -296,15 +305,16 @@ BOOL STM_Load(BOOL curious)
 	of.numchn    = 4;                       /* get number of channels */
 	of.reppos    = 0;
 	of.flags    |= UF_S3MSLIDES;
+	of.bpmlimit  = 32;
 
 	t=0;
 	if(!AllocPositions(0x80)) return 0;
 	/* 99 terminates the patorder list */
-	while((mh->patorder[t]!=99)&&(mh->patorder[t]<mh->numpat)) {
+	while((mh->patorder[t]<=99)&&(mh->patorder[t]<mh->numpat)) {
 		of.positions[t]=mh->patorder[t];
 		t++;
 	}
-	if(mh->patorder[t]!=99) t++;
+	if(mh->patorder[t]<=99) t++;
 	of.numpos=t;
 	of.numtrk=of.numpat*of.numchn;
 	of.numins=of.numsmp=31;
@@ -331,18 +341,12 @@ BOOL STM_Load(BOOL curious)
 		/* contrary to the STM specs, sample data is signed */
 		q->flags = SF_SIGNED;
 
-		/* fix for bad STMs */
-		if (q->loopstart>=q->length) q->loopstart=q->loopend=0;
-
-		if((q->loopend>0)&&(q->loopend!=0xffff)&&(q->loopend!=q->loopstart))
-			q->flags|=SF_LOOP;
-		/* fix replen if repend>length */
-		if(q->loopend>q->length) q->loopend = q->length;
+		if(q->loopend && q->loopend != 0xffff)
+				q->flags|=SF_LOOP;
 	}
 	return 1;
 }
 
-CHAR *STM_LoadTitle(void);
 CHAR *STM_LoadTitle(void)
 {
 	CHAR s[20];

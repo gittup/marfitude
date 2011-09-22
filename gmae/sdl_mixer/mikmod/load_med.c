@@ -1,6 +1,6 @@
 /*	MikMod sound library
-	(c) 1998, 1999, 2000 Miodrag Vallat and others - see file AUTHORS for
-	complete list.
+	(c) 1998, 1999, 2000, 2001, 2002 Miodrag Vallat and others - see file
+	AUTHORS for complete list.
 
 	This library is free software; you can redistribute it and/or modify
 	it under the terms of the GNU Library General Public License as
@@ -20,7 +20,7 @@
 
 /*==============================================================================
 
-  $Id$
+  $Id: load_med.c,v 1.1.1.1 2004/01/21 01:36:35 raph Exp $
 
   Amiga MED module loader
 
@@ -33,13 +33,18 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+
+#include <stdio.h>
 #ifdef HAVE_MEMORY_H
 #include <memory.h>
 #endif
-
 #include <string.h>
 
 #include "mikmod_internals.h"
+
+#ifdef SUNOS
+extern int fprintf(FILE *, const char *, ...);
+#endif
 
 /*========== Module information */
 
@@ -154,7 +159,6 @@ static CHAR MED_Version[] = "OctaMED (MMDx)";
 
 /*========== Loader code */
 
-BOOL MED_Test(void);
 BOOL MED_Test(void)
 {
 	UBYTE id[4];
@@ -166,7 +170,6 @@ BOOL MED_Test(void)
 	return 0;
 }
 
-BOOL MED_Init(void);
 BOOL MED_Init(void)
 {
 	if (!(me = (MEDEXP *)_mm_malloc(sizeof(MEDEXP))))
@@ -178,7 +181,6 @@ BOOL MED_Init(void)
 	return 1;
 }
 
-void MED_Cleanup(void);
 void MED_Cleanup(void)
 {
 	_mm_free(me);
@@ -424,7 +426,6 @@ static BOOL LoadMMD1Patterns(void)
 	return 1;
 }
 
-BOOL MED_Load(BOOL curious);
 BOOL MED_Load(BOOL curious)
 {
 	int t;
@@ -570,7 +571,7 @@ BOOL MED_Load(BOOL curious)
 		of.flags |= UF_HIGHBPM;
 	}
 	MED_Version[12] = mh->id;
-	of.modtype = Mstrdup(MED_Version);
+	of.modtype = strdup(MED_Version);
 	of.numchn = 0;				/* will be counted later */
 	of.numpat = ms->numblocks;
 	of.numpos = ms->songlen;
@@ -605,9 +606,7 @@ BOOL MED_Load(BOOL curious)
 
 			if (s.type) {
 #ifdef MIKMOD_DEBUG
-				fputs
-				  ("\rNon-sample instruments not supported in MED loader yet\n",
-				   stderr);
+				fprintf(stderr, "\rNon-sample instruments not supported in MED loader yet\n");
 #endif
 				if (!curious) {
 					_mm_errno = MMERR_MED_SYNTHSAMPLES;
@@ -681,7 +680,6 @@ BOOL MED_Load(BOOL curious)
 	return 1;
 }
 
-CHAR *MED_LoadTitle(void);
 CHAR *MED_LoadTitle(void)
 {
 	ULONG posit, namelen;

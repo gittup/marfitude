@@ -1,17 +1,17 @@
 /*	MikMod sound library
-	(c) 1998, 1999 Miodrag Vallat and others - see file AUTHORS for
-	complete list.
+	(c) 1998, 1999, 2000 Miodrag Vallat and others - see file AUTHORS
+	for complete list.
 
 	This library is free software; you can redistribute it and/or modify
 	it under the terms of the GNU Library General Public License as
 	published by the Free Software Foundation; either version 2 of
 	the License, or (at your option) any later version.
-
+ 
 	This program is distributed in the hope that it will be useful,
 	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU Library General Public License for more details.
-
+ 
 	You should have received a copy of the GNU Library General Public
 	License along with this library; if not, write to the Free Software
 	Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
@@ -20,7 +20,7 @@
 
 /*==============================================================================
 
-  $Id$
+  $Id: mikmod.h.in,v 1.1.1.1 2004/01/21 01:36:35 raph Exp $
 
   MikMod sound library include file
 
@@ -39,7 +39,8 @@ extern "C" {
 /*
  * ========== Compiler magic for shared libraries
  */
-#if defined(WIN32) && 0 /* We're not building a shared library */
+
+#if defined WIN32 && defined _DLL
 #ifdef DLL_EXPORTS
 #define MIKMODAPI __declspec(dllexport)
 #else
@@ -53,9 +54,9 @@ extern "C" {
  *	========== Library version
  */
 
-#define LIBMIKMOD_VERSION_MAJOR 3
-#define LIBMIKMOD_VERSION_MINOR 1
-#define LIBMIKMOD_REVISION      8
+#define LIBMIKMOD_VERSION_MAJOR 3L
+#define LIBMIKMOD_VERSION_MINOR 1L
+#define LIBMIKMOD_REVISION      10L
 
 #define LIBMIKMOD_VERSION \
 	((LIBMIKMOD_VERSION_MAJOR<<16)| \
@@ -72,20 +73,19 @@ MIKMODAPI extern long MikMod_GetVersion(void);
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <io.h>
+#include <mmsystem.h>
 #endif
 
 #if defined(__OS2__)||defined(__EMX__)
 #define INCL_DOSSEMAPHORES
 #include <os2.h>
 #else
-#ifndef WIN32
 typedef char CHAR;
 #endif
-#endif
 
-/*@DOES_NOT_HAVE_SIGNED@*/
 
-#if defined(__alpha)
+
+#if defined(__arch64__) || defined(__alpha)
 /* 64 bit architectures */
 
 typedef signed char     SBYTE;      /* 1 byte, signed */
@@ -206,7 +206,7 @@ typedef MikMod_handler *MikMod_handler_t;
 
 MIKMODAPI extern int  MikMod_errno;
 MIKMODAPI extern BOOL MikMod_critical;
-MIKMODAPI extern const char *MikMod_strerror(int);
+MIKMODAPI extern char *MikMod_strerror(int);
 
 MIKMODAPI extern MikMod_handler_t MikMod_RegisterErrorHandler(MikMod_handler_t);
 
@@ -217,7 +217,6 @@ MIKMODAPI extern MikMod_handler_t MikMod_RegisterErrorHandler(MikMod_handler_t);
 struct MDRIVER;
 
 MIKMODAPI extern void   MikMod_RegisterAllDrivers(void);
-MIKMODAPI extern void   MikMod_UnregisterAllDrivers(void);
 
 MIKMODAPI extern CHAR*  MikMod_InfoDriver(void);
 MIKMODAPI extern void   MikMod_RegisterDriver(struct MDRIVER*);
@@ -289,10 +288,12 @@ typedef struct MWRITER {
 #define SF_EXTRAPLAYBACKMASK	0x3000
 
 /* Panning constants */
-#define PAN_LEFT       0
-#define PAN_CENTER   128
-#define PAN_RIGHT    255
-#define PAN_SURROUND 512 /* panning value for Dolby Surround */
+#define PAN_LEFT		0
+#define PAN_HALFLEFT 	64
+#define PAN_CENTER		128
+#define PAN_HALFRIGHT	192
+#define PAN_RIGHT		255
+#define PAN_SURROUND	512 /* panning value for Dolby Surround */
 
 typedef struct SAMPLE {
 	SWORD  panning;     /* panning (0-255 or PAN_SURROUND) */
@@ -412,17 +413,28 @@ typedef struct INSTRUMENT {
 struct MP_CONTROL;
 struct MP_VOICE;
 
+/*
+	Module definition
+*/
+
+/* maximum master channels supported */
+#define UF_MAXCHAN	64
+
 /* Module flags */
-#define UF_XMPERIODS 0x0001 /* XM periods / finetuning */
-#define UF_LINEAR    0x0002 /* LINEAR periods (UF_XMPERIODS must be set) */
-#define UF_INST      0x0004 /* Instruments are used */
-#define UF_NNA       0x0008 /* IT: NNA used, set numvoices rather than numchn */
-#define UF_S3MSLIDES 0x0010 /* uses old S3M volume slides */
-#define UF_BGSLIDES  0x0020 /* continue volume slides in the background */
-#define UF_HIGHBPM   0x0040 /* MED: can use >255 bpm */
-#define UF_NOWRAP    0x0080 /* XM-type (i.e. illogical) pattern brk semantics */
-#define UF_ARPMEM    0x0100 /* IT: need arpeggio memory */
-#define UF_FT2QUIRKS 0x0200 /* emulate some FT2 replay quirks */
+#define UF_XMPERIODS	0x0001 /* XM periods / finetuning */
+#define UF_LINEAR		0x0002 /* LINEAR periods (UF_XMPERIODS must be set) */
+#define UF_INST			0x0004 /* Instruments are used */
+#define UF_NNA			0x0008 /* IT: NNA used, set numvoices rather
+								  than numchn */
+#define UF_S3MSLIDES	0x0010 /* uses old S3M volume slides */
+#define UF_BGSLIDES		0x0020 /* continue volume slides in the background */
+#define UF_HIGHBPM		0x0040 /* MED: can use >255 bpm */
+#define UF_NOWRAP		0x0080 /* XM-type (i.e. illogical) pattern break
+								  semantics */
+#define UF_ARPMEM		0x0100 /* IT: need arpeggio memory */
+#define UF_FT2QUIRKS	0x0200 /* emulate some FT2 replay quirks */
+#define UF_PANNING		0x0400 /* module uses panning effects or have
+								  non-tracker default initial panning */
 
 typedef struct MODULE {
 	/* general module information */
@@ -447,8 +459,8 @@ struct  SAMPLE*     samples;     /* all samples */
 		UBYTE       initspeed;   /* initial song speed */
 		UWORD       inittempo;   /* initial song tempo */
 		UBYTE       initvolume;  /* initial global volume (0 - 128) */
-		UWORD       panning[64]; /* 64 panning positions */
-		UBYTE       chanvol[64]; /* 64 channel positions */
+		UWORD       panning[UF_MAXCHAN]; /* panning positions */
+		UBYTE       chanvol[UF_MAXCHAN]; /* channel positions */
 		UWORD       bpm;         /* current beats-per-minute speed */
 		UWORD       sngspd;      /* current song speed */
 		SWORD       volume;      /* song volume (0-128) (or user volume) */
@@ -486,6 +498,7 @@ struct MP_VOICE*    voice;       /* Audio Voice information (size md_numchn) */
 		UBYTE       patdly;      /* patterndelay counter (command memory) */
 		UBYTE       patdly2;     /* patterndelay counter (real one) */
 		SWORD       posjmp;      /* flag to indicate a jump is needed... */
+		UWORD		bpmlimit;	 /* threshold to detect bpm or speed values */
 } MODULE;
 
 /*
@@ -496,7 +509,6 @@ struct MLOADER;
 
 MIKMODAPI extern CHAR*   MikMod_InfoLoader(void);
 MIKMODAPI extern void    MikMod_RegisterAllLoaders(void);
-MIKMODAPI extern void    MikMod_UnregisterAllLoaders(void);
 MIKMODAPI extern void    MikMod_RegisterLoader(struct MLOADER*);
 
 MIKMODAPI extern struct MLOADER load_669; /* 669 and Extended-669 (by Tran/Renaissance) */
@@ -510,10 +522,11 @@ MIKMODAPI extern struct MLOADER load_med; /* Amiga MED modules (by Teijo Kinnune
 MIKMODAPI extern struct MLOADER load_m15; /* Soundtracker 15-instrument */
 MIKMODAPI extern struct MLOADER load_mod; /* Standard 31-instrument Module loader */
 MIKMODAPI extern struct MLOADER load_mtm; /* Multi-Tracker Module (by Renaissance) */
+MIKMODAPI extern struct MLOADER load_okt; /* Amiga Oktalyzer */
 MIKMODAPI extern struct MLOADER load_stm; /* ScreamTracker 2 (by Future Crew) */
 MIKMODAPI extern struct MLOADER load_stx; /* STMIK 0.2 (by Future Crew) */
 MIKMODAPI extern struct MLOADER load_s3m; /* ScreamTracker 3 (by Future Crew) */
-MIKMODAPI extern struct MLOADER load_ult; /* UltraTracker  (by MAS) */
+MIKMODAPI extern struct MLOADER load_ult; /* UltraTracker (by MAS) */
 MIKMODAPI extern struct MLOADER load_uni; /* MikMod and APlayer internal module format */
 MIKMODAPI extern struct MLOADER load_xm;  /* FastTracker 2 (by Triton) */
 
@@ -521,16 +534,11 @@ MIKMODAPI extern struct MLOADER load_xm;  /* FastTracker 2 (by Triton) */
  *	========== Module player
  */
 
-/* SDL_RWops compatability */
-#ifdef USE_RWOPS
-#include "SDL_rwops.h"
-MIKMODAPI extern MODULE* Player_LoadRW(SDL_RWops*,int,BOOL);
-#endif /* USE_RWOPS */
-/* End SDL_RWops compatability */
-MIKMODAPI extern MODULE* Player_Load(const CHAR*,int,BOOL);
+MIKMODAPI extern MODULE* Player_Load(CHAR*,int,BOOL);
 MIKMODAPI extern MODULE* Player_LoadFP(FILE*,int,BOOL);
 MIKMODAPI extern MODULE* Player_LoadGeneric(MREADER*,int,BOOL);
-MIKMODAPI extern CHAR*   Player_LoadTitle(const CHAR*);
+MIKMODAPI extern CHAR*   Player_LoadTitle(CHAR*);
+MIKMODAPI extern CHAR*   Player_LoadTitleFP(FILE*);
 MIKMODAPI extern void    Player_Free(MODULE*);
 MIKMODAPI extern void    Player_Start(MODULE*);
 MIKMODAPI extern BOOL    Player_Active(void);
@@ -550,8 +558,6 @@ MIKMODAPI extern void    Player_Mute(SLONG,...);
 MIKMODAPI extern void    Player_ToggleMute(SLONG,...);
 MIKMODAPI extern int     Player_GetChannelVoice(UBYTE);
 MIKMODAPI extern UWORD   Player_GetChannelPeriod(UBYTE);
-MIKMODAPI extern void    Player_SetSynchroValue(int);
-MIKMODAPI extern int     Player_GetSynchroValue(void);
 
 typedef void (MikMod_player)(void);
 typedef MikMod_player *MikMod_player_t;
@@ -591,13 +597,13 @@ enum {
 struct SAMPLOAD;
 typedef struct MDRIVER {
 struct MDRIVER* next;
-	const CHAR*       Name;
-	const CHAR*       Version;
+	CHAR*       Name;
+	CHAR*       Version;
 
 	UBYTE       HardVoiceLimit; /* Limit of hardware mixer voices */
 	UBYTE       SoftVoiceLimit; /* Limit of software mixer voices */
 
-	const CHAR*       Alias;
+	CHAR*       Alias;
 
 	void        (*CommandLine)      (CHAR*);
 	BOOL        (*IsPresent)        (void);
@@ -653,6 +659,7 @@ MIKMODAPI extern struct MDRIVER drv_stdout; /* output to stdout */
 MIKMODAPI extern struct MDRIVER drv_wav;    /* RIFF WAVE file disk writer [music.wav] */
 
 MIKMODAPI extern struct MDRIVER drv_ultra;  /* Linux Ultrasound driver */
+MIKMODAPI extern struct MDRIVER drv_sam9407;	/* Linux sam9407 driver */
 
 MIKMODAPI extern struct MDRIVER drv_AF;     /* Dec Alpha AudioFile */
 MIKMODAPI extern struct MDRIVER drv_aix;    /* AIX audio device */

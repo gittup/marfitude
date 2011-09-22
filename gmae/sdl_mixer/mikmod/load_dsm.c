@@ -1,6 +1,6 @@
 /*	MikMod sound library
-	(c) 1998, 1999, 2000 Miodrag Vallat and others - see file AUTHORS for
-	complete list.
+	(c) 1998, 1999, 2000, 2001, 2002 Miodrag Vallat and others - see file
+	AUTHORS for complete list.
 
 	This library is free software; you can redistribute it and/or modify
 	it under the terms of the GNU Library General Public License as
@@ -20,7 +20,7 @@
 
 /*==============================================================================
 
-  $Id$
+  $Id: load_dsm.c,v 1.1.1.1 2004/01/21 01:36:35 raph Exp $
 
   DSIK internal format (DSM) module loader
 
@@ -30,9 +30,21 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#include <stdio.h>
+#ifdef HAVE_MEMORY_H
+#include <memory.h>
+#endif
 #include <string.h>
 
 #include "mikmod_internals.h"
+
+#ifdef SUNOS
+extern int fprintf(FILE *, const char *, ...);
+#endif
 
 /*========== Module structure */
 
@@ -77,9 +89,9 @@ typedef struct DSMNOTE {
 
 /*========== Loader variables */
 
-static	const CHAR* SONGID="SONG";
-static	const CHAR* INSTID="INST";
-static	const CHAR* PATTID="PATT";
+static	CHAR* SONGID="SONG";
+static	CHAR* INSTID="INST";
+static	CHAR* PATTID="PATT";
 
 static	UBYTE blockid[4];
 static	ULONG blockln;
@@ -93,7 +105,6 @@ static	unsigned char DSMSIG[4+4]={'R','I','F','F','D','S','M','F'};
 
 /*========== Loader code */
 
-BOOL DSM_Test(void);
 BOOL DSM_Test(void)
 {
 	UBYTE id[12];
@@ -104,7 +115,6 @@ BOOL DSM_Test(void)
 	return 0;
 }
 
-BOOL DSM_Init(void);
 BOOL DSM_Init(void)
 {
 	if(!(dsmbuf=(DSMNOTE *)_mm_malloc(DSM_MAXCHAN*64*sizeof(DSMNOTE)))) return 0;
@@ -112,7 +122,6 @@ BOOL DSM_Init(void)
 	return 1;
 }
 
-void DSM_Cleanup(void);
 void DSM_Cleanup(void)
 {
 	_mm_free(dsmbuf);
@@ -222,7 +231,6 @@ static UBYTE *DSM_ConvertTrack(DSMNOTE *tr)
 	return UniDup();
 }
 
-BOOL DSM_Load(BOOL curious);
 BOOL DSM_Load(BOOL curious)
 {
 	int t;
@@ -230,7 +238,6 @@ BOOL DSM_Load(BOOL curious)
 	SAMPLE *q;
 	int cursmp=0,curpat=0,track=0;
 
-	if(curious) {}
 	blocklp=0;
 	blockln=12;
 
@@ -258,12 +265,16 @@ BOOL DSM_Load(BOOL curious)
 	/* set module variables */
 	of.initspeed=mh->speed;
 	of.inittempo=mh->bpm;
-	of.modtype=Mstrdup(DSM_Version);
+	of.modtype=strdup(DSM_Version);
 	of.numchn=mh->numtrk;
 	of.numpat=mh->numpat;
 	of.numtrk=of.numchn*of.numpat;
 	of.songname=DupStr(mh->songname,28,1); /* make a cstr of songname */
 	of.reppos=0;
+	of.flags |= UF_PANNING;
+	/* XXX whenever possible, we should try to determine the original format.
+	   Here we assume it was S3M-style wrt bpmlimit... */
+	of.bpmlimit = 32;
 
 	for(t=0;t<DSM_MAXCHAN;t++)
 		of.panning[t]=mh->panpos[t]==DSM_SURROUND?PAN_SURROUND:
@@ -272,7 +283,9 @@ BOOL DSM_Load(BOOL curious)
 	if(!AllocPositions(mh->numord)) return 0;
 	of.numpos=0;
 	for(t=0;t<mh->numord;t++) {
-		of.positions[of.numpos]=mh->orders[t];
+		int order=mh->orders[t];
+		if(order==255) order=LAST_PATTERN;
+		of.positions[of.numpos]=order;
 		if(mh->orders[t]<254) of.numpos++;
 	}
 
@@ -324,7 +337,6 @@ BOOL DSM_Load(BOOL curious)
 	return 1;
 }
 
-CHAR *DSM_LoadTitle(void);
 CHAR *DSM_LoadTitle(void)
 {
 	CHAR s[28];

@@ -1,6 +1,6 @@
 /*	MikMod sound library
-	(c) 1998,1999, 2000 Miodrag Vallat and others - see file AUTHORS for
-	complete list.
+	(c) 1998, 1999, 2000, 2001, 2002 Miodrag Vallat and others - see file
+	AUTHORS for complete list.
 
 	This library is free software;you can redistribute it and/or modify
 	it under the terms of the GNU Library General Public License as
@@ -20,7 +20,7 @@
 
 /*==============================================================================
 
-  $Id$
+  $Id: load_gdm.c,v 1.1.1.1 2004/01/21 01:36:35 raph Exp $
 
   General DigiMusic (GDM) module loader
 
@@ -38,10 +38,21 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #include <stdio.h>
+#ifdef HAVE_MEMORY_H
+#include <memory.h>
+#endif
 #include <string.h>
 
 #include "mikmod_internals.h"
+
+#ifdef SUNOS
+extern int fprintf(FILE *, const char *, ...);
+#endif
 
 typedef struct GDMNOTE {
 	UBYTE note;
@@ -105,7 +116,6 @@ static GDMNOTE *gdmbuf=NULL;	/* pointer to a complete GDM pattern */
 
 CHAR GDM_Version[]="General DigiMusic 1.xx";
 
-BOOL GDM_Test(void);
 BOOL GDM_Test(void)
 {
 	/* test for gdm magic numbers */
@@ -124,7 +134,6 @@ BOOL GDM_Test(void)
 	return 0;
 }
 
-BOOL GDM_Init(void);
 BOOL GDM_Init(void)
 {
 	if (!(gdmbuf=(GDMNOTE*)_mm_malloc(32*64*sizeof(GDMNOTE)))) return 0;
@@ -133,14 +142,12 @@ BOOL GDM_Init(void)
 	return 1;
 }
 
-void GDM_Cleanup(void);
 void GDM_Cleanup(void)
 {
 	_mm_free(mh);
 	_mm_free(gdmbuf);
 }
 
-BOOL GDM_ReadPattern(void);
 BOOL GDM_ReadPattern(void)
 {
 	int pos,flag,ch,i,maxch;
@@ -193,11 +200,10 @@ BOOL GDM_ReadPattern(void)
 	return 1;
 }
 
-UBYTE *GDM_ConvertTrack(GDMNOTE*tr);
 UBYTE *GDM_ConvertTrack(GDMNOTE*tr)
 {
 	int t,i=0;
-	UBYTE note,ins;
+	UBYTE note,ins,inf;
 
 	UniReset();
 	for (t=0;t<64;t++) {
@@ -210,129 +216,119 @@ UBYTE *GDM_ConvertTrack(GDMNOTE*tr)
 			UniNote(((note>>4)*OCTAVE)+(note&0xf)-1);
 		}
 		for (i=0;i<4;i++) {
+			inf = tr[t].effect[i].param;
 			switch (tr[t].effect[i].effect) {
 				case 1:	/* toneslide up */
-					UniEffect(UNI_S3MEFFECTF,tr[t].effect[i].param);
+					UniEffect(UNI_S3MEFFECTF,inf);
 					break;
 				case 2:	/* toneslide down */
-					UniEffect(UNI_S3MEFFECTE,tr[t].effect[i].param);
+					UniEffect(UNI_S3MEFFECTE,inf);
 					break;
 				case 3:	/* glissando to note */
-					UniEffect(UNI_ITEFFECTG,tr[t].effect[i].param);
+					UniEffect(UNI_ITEFFECTG,inf);
 					break;
 				case 4:	/* vibrato */
-					UniEffect(UNI_ITEFFECTH,tr[t].effect[i].param);
+					UniEffect(UNI_ITEFFECTH,inf);
 					break;
 				case 5:	/* portamento+volslide */
 					UniEffect(UNI_ITEFFECTG,0);
-					UniEffect(UNI_S3MEFFECTD,tr[t].effect[i].param);
+					UniEffect(UNI_S3MEFFECTD,inf);
 					break;
 				case 6:	/* vibrato+volslide */
 					UniEffect(UNI_ITEFFECTH,0);
-					UniEffect(UNI_S3MEFFECTD,tr[t].effect[i].param);
+					UniEffect(UNI_S3MEFFECTD,inf);
 					break;
 				case 7:	/* tremolo */
-					UniEffect(UNI_S3MEFFECTR,tr[t].effect[i].param);
+					UniEffect(UNI_S3MEFFECTR,inf);
 					break;
 				case 8:	/* tremor */
-					UniEffect(UNI_S3MEFFECTI,tr[t].effect[i].param);
+					UniEffect(UNI_S3MEFFECTI,inf);
 					break;
 				case 9:	/* offset */
-					UniPTEffect(0x09,tr[t].effect[i].param);
+					UniPTEffect(0x09,inf);
 					break;
 				case 0x0a:	/* volslide */
-					UniEffect(UNI_S3MEFFECTD,tr[t].effect[i].param);
+					UniEffect(UNI_S3MEFFECTD,inf);
 					break;
 				case 0x0b:	/* jump to order */
-					UniPTEffect(0x0b,tr[t].effect[i].param);
+					UniPTEffect(0x0b,inf);
 					break;
 				case 0x0c:	/* volume set */
-					UniPTEffect(0x0c,tr[t].effect[i].param);
+					UniPTEffect(0x0c,inf);
 					break;
 				case 0x0d:	/* pattern break */
-					UniPTEffect(0x0d,tr[t].effect[i].param);
+					UniPTEffect(0x0d,inf);
 					break;
 				case 0x0e:	/* extended */
-					switch (tr[t].effect[i].param&0xf0) {
+					switch (inf&0xf0) {
 						case 0x10:	/* fine portamento up */
-							UniEffect(UNI_S3MEFFECTF,
-							          0x0f|((tr[t].effect[i].param<<4)&0x0f));
+							UniEffect(UNI_S3MEFFECTF, 0x0f|((inf<<4)&0x0f));
 							break;
 						case 0x20:	/* fine portamento down */
-							UniEffect(UNI_S3MEFFECTE,
-							          0xf0|(tr[t].effect[i].param&0x0f));
+							UniEffect(UNI_S3MEFFECTE, 0xf0|(inf&0x0f));
 							break;
 						case 0x30:	/* glissando control */
-							UniEffect(SS_GLISSANDO,
-							          tr[t].effect[i].param&0x0f);
+							UniEffect(SS_GLISSANDO, inf&0x0f);
 							break;
 						case 0x40:	/* vibrato waveform */
-							UniEffect(SS_VIBWAVE,
-							          tr[t].effect[i].param&0x0f);
+							UniEffect(SS_VIBWAVE, inf&0x0f);
 							break;
 						case 0x50:	/* set c4spd */
-							UniEffect(SS_FINETUNE,
-							          tr[t].effect[i].param&0x0f);
+							UniEffect(SS_FINETUNE, inf&0x0f);
 							break;
 						case 0x60:	/* loop fun */
-							UniEffect(UNI_ITEFFECTS0,
-							          (tr[t].effect[i].param&0x0f)|0xb0);
+							UniEffect(UNI_ITEFFECTS0, (inf&0x0f)|0xb0);
 							break;
 						case 0x70:	/* tremolo waveform */
-							UniEffect(SS_TREMWAVE,
-							          tr[t].effect[i].param&0x0f);
+							UniEffect(SS_TREMWAVE, inf&0x0f);
 							break;
 						case 0x80:	/* extra fine porta up */
-							UniEffect(UNI_S3MEFFECTF,
-							          0x0e|((tr[t].effect[i].param<<4)&0x0f));
+							UniEffect(UNI_S3MEFFECTF, 0x0e|((inf<<4)&0x0f));
 							break;
 						case 0x90:	/* extra fine porta down */
-							UniEffect(UNI_S3MEFFECTE,
-							          0xe0|(tr[t].effect[i].param&0x0f));
+							UniEffect(UNI_S3MEFFECTE, 0xe0|(inf&0x0f));
 							break;
 						case 0xa0:	/* fine volslide up */
-							UniEffect(UNI_S3MEFFECTD,
-							          0x0f|((tr[t].effect[i].param<<4)&0x0f));
+							UniEffect(UNI_S3MEFFECTD, 0x0f|((inf<<4)&0x0f));
 							break;
 						case 0xb0:	/* fine volslide down */
-							UniEffect(UNI_S3MEFFECTE,
-							          0xf0|(tr[t].effect[i].param&0x0f));
+							UniEffect(UNI_S3MEFFECTE, 0xf0|(inf&0x0f));
 							break;
 						case 0xc0:	/* note cut */
 						case 0xd0:	/* note delay */
 						case 0xe0:	/* extend row */
-							UniPTEffect(0xe,tr[t].effect[i].param);
+							UniPTEffect(0xe,inf);
 							break;
 					}
 					break;
 				case 0x0f:	/* set tempo */
-					UniEffect(UNI_S3MEFFECTA,tr[t].effect[i].param);
+					UniEffect(UNI_S3MEFFECTA,inf);
 					break;
 				case 0x10:	/* arpeggio */
-					UniPTEffect(0x0,tr[t].effect[i].param);
+					UniPTEffect(0x0,inf);
 					break;
 				case 0x12:	/* retrigger */
-					UniEffect(UNI_S3MEFFECTQ,tr[t].effect[i].param);
+					UniEffect(UNI_S3MEFFECTQ,inf);
 					break;
 				case 0x13:	/* set global volume */
-					UniEffect(UNI_XMEFFECTG,tr[t].effect[i].param);
+					UniEffect(UNI_XMEFFECTG,inf<<1);
 					break;
 				case 0x14:	/* fine vibrato */
-					UniEffect(UNI_ITEFFECTU,tr[t].effect[i].param);
+					UniEffect(UNI_ITEFFECTU,inf);
 					break;
 				case 0x1e:	/* special */
-					switch (tr[t].effect[i].param&0xf0) {
+					switch (inf&0xf0) {
 						case 8:	/* set pan position */
-							if (tr[t].effect[i].param >=128)
+							if (inf >=128)
 								UniPTEffect(0x08,255);
 							else
-								UniPTEffect(0x08,tr[t].effect[i].param<<1);
+								UniPTEffect(0x08,inf<<1);
 							break;
 					}
 					break;
 				case 0x1f:	/* set bpm */
-					if (tr[t].effect[i].param >=0x20)
-						UniEffect(UNI_S3MEFFECTT,tr[t].effect[i].param);
+					if (inf >=0x20)
+						UniEffect(UNI_S3MEFFECTT,inf);
 					break;
 			}
 		}
@@ -341,7 +337,6 @@ UBYTE *GDM_ConvertTrack(GDMNOTE*tr)
 	return UniDup();
 }
 
-BOOL GDM_Load(BOOL curious);
 BOOL GDM_Load(BOOL curious)
 {
 	int i,x,u,track;
@@ -349,7 +344,6 @@ BOOL GDM_Load(BOOL curious)
 	GDMSAMPLE s;
 	ULONG position;
 
-	if(curious) {}
 	/* read header */
 	_mm_read_string(mh->id1,4,modreader);
 	_mm_read_string(mh->songname,32,modreader);
@@ -395,7 +389,7 @@ BOOL GDM_Load(BOOL curious)
 	}
 
 	/* now we fill */
-	of.modtype=Mstrdup(GDM_Version);
+	of.modtype=strdup(GDM_Version);
 	of.modtype[18]=mh->majorver+'0';
 	of.modtype[20]=mh->minorver/10+'0';
 	of.modtype[21]=mh->minorver%10+'0';
@@ -406,7 +400,10 @@ BOOL GDM_Load(BOOL curious)
 	of.initspeed=mh->mastertempo;
 	of.inittempo=mh->masterbpm;
 	of.initvolume=mh->mastervol<<1;
-	of.flags|=UF_S3MSLIDES;
+	of.flags|=UF_S3MSLIDES | UF_PANNING;
+	/* XXX whenever possible, we should try to determine the original format.
+	   Here we assume it was S3M-style wrt bpmlimit... */
+	of.bpmlimit = 32;
 
 	/* read the order data */
 	if (!AllocPositions(mh->ordernum+1)) {
@@ -420,7 +417,9 @@ BOOL GDM_Load(BOOL curious)
 
 	of.numpos=0;
 	for (i=0;i<mh->ordernum+1;i++) {
-		of.positions[of.numpos]=of.positions[i];
+		int order=of.positions[i];
+		if(order==255) order=LAST_PATTERN;
+		of.positions[of.numpos]=order;
 		if (of.positions[i]<254) of.numpos++;
 	}
 
@@ -534,7 +533,6 @@ BOOL GDM_Load(BOOL curious)
 	return 1;
 }
 
-CHAR *GDM_LoadTitle(void);
 CHAR *GDM_LoadTitle(void)
 {
 	CHAR s[32];

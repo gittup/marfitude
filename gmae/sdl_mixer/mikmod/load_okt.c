@@ -1,6 +1,6 @@
 /*	MikMod sound library
-	(c) 1999, 2000 Miodrag Vallat and others - see file AUTHORS for
-	complete list.
+	(c) 1998, 1999, 2000, 2001, 2002 Miodrag Vallat and others - see file
+	AUTHORS for complete list.
 
 	This library is free software; you can redistribute it and/or modify
 	it under the terms of the GNU Library General Public License as
@@ -20,7 +20,7 @@
 
 /*==============================================================================
 
-  $Id$
+  $Id: load_okt.c,v 1.1.1.1 2004/01/21 01:36:35 raph Exp $
 
   Oktalyzer (OKT) module loader
 
@@ -42,9 +42,16 @@
 #endif
 
 #include <stdio.h>
+#ifdef HAVE_MEMORY_H
+#include <memory.h>
+#endif
 #include <string.h>
 
 #include "mikmod_internals.h"
+
+#ifdef SUNOS
+extern int fprintf(FILE *, const char *, ...);
+#endif
 
 /*========== Module blocks */
 
@@ -67,7 +74,6 @@ static OKTNOTE *okttrk = NULL;
 
 /*========== Loader code */
 
-BOOL OKT_Test(void);
 BOOL OKT_Test(void)
 {
 	CHAR id[8];
@@ -105,33 +111,39 @@ static UBYTE *OKT_ConvertTrack(UBYTE patrows)
 		dat = okttrk[t].dat;
 
 		if (note) {
-			UniNote(note + 3*OCTAVE - 1);
+			UniNote(note + 3 * OCTAVE - 1);
 			UniInstrument(ins);
 		}
 
 		if (eff)
 			switch (eff) {
-			  case 1:			/* Porta Up */
+			case 1:				/* Porta Up */
 				UniPTEffect(0x1, dat);
 				break;
-			  case 2:			/* Portamento Down */
+			case 2:				/* Portamento Down */
 				UniPTEffect(0x2, dat);
 				break;
-			  case 10:			/* Arpeggio 3 supported */
-				UniPTEffect(0x0, dat);
+			/* case 9: what is this? */
+			case 10:			/* Arpeggio 3 */
+			case 11:			/* Arpeggio 4 */
+			case 12:			/* Arpeggio 5 */
+				UniWriteByte(UNI_OKTARP);
+				UniWriteByte(eff + 3 - 10);
+				UniWriteByte(dat);
 				break;
-			  case 15:	/* Amiga filter toggle, ignored */
+			case 15:			/* Amiga filter toggle, ignored */
 				break;
-			  case 25:			/* Pattern Jump */
+			case 25:			/* Pattern Jump */
+				dat = (dat >> 4) * 10 + (dat & 0x0f);
 				UniPTEffect(0xb, dat);
 				break;
-			  case 27:			/* Release - similar to Keyoff */
+			case 27:			/* Release - similar to Keyoff */
 				UniWriteByte(UNI_KEYOFF);
 				break;
-			  case 28:			/* Set Tempo */
-				UniPTEffect(0xf, dat);
+			case 28:			/* Set Tempo */
+				UniPTEffect(0xf, dat & 0x0f);
 				break;
-			  case 31:			/* volume Control */
+			case 31:			/* volume Control */
 				if (dat <= 0x40)
 					UniPTEffect(0xc, dat);
 				else if (dat <= 0x50)
@@ -144,7 +156,7 @@ static UBYTE *OKT_ConvertTrack(UBYTE patrows)
 					UniEffect(UNI_XMEFFECTEA, (dat - 0x70));	/* slow fade in */
 				break;
 #ifdef MIKMOD_DEBUG
-			  default:
+			default:
 				fprintf(stderr, "\rUnimplemented effect (%02d,%02x)\n",
 						eff, dat);
 #endif
@@ -163,6 +175,7 @@ static void OKT_doCMOD(void)
 	int t;
 
 	of.numchn = 0;
+	of.flags |= UF_PANNING;
 
 	for (t = 0; t < 4; t++)
 		if (_mm_read_M_UWORD(modreader)) {
@@ -188,8 +201,8 @@ static BOOL OKT_doSAMP(int len)
 	for (t = 0, q = of.samples; t < of.numins; t++, q++) {
 		_mm_read_UBYTES(s.sampname, 20, modreader);
 		s.len = _mm_read_M_ULONG(modreader);
-		s.loopbeg = _mm_read_M_UWORD(modreader);
-		s.looplen = _mm_read_M_UWORD(modreader);
+		s.loopbeg = _mm_read_M_UWORD(modreader) * 2;
+		s.looplen = _mm_read_M_UWORD(modreader) * 2;
 		_mm_read_UBYTE(modreader);
 		s.volume = _mm_read_UBYTE(modreader);
 		_mm_read_M_UWORD(modreader);
@@ -204,9 +217,9 @@ static BOOL OKT_doSAMP(int len)
 		else {
 			s.len--;
 			/* sanity checks */
-			if (s.loopbeg > (signed)s.len)
+			if (s.loopbeg > s.len)
 				s.loopbeg = s.len;
-			if (s.loopbeg + s.looplen > (signed)s.len)
+			if (s.loopbeg + s.looplen > s.len)
 				s.looplen = s.len - s.loopbeg;
 			if (s.looplen < 2)
 				s.looplen = 0;
@@ -221,7 +234,7 @@ static BOOL OKT_doSAMP(int len)
 				q->flags |= SF_LOOP;
 		}
 		q->samplename = DupStr(s.sampname, 20, 1);
-		q->speed = 8363;
+		q->speed = 8287;
 	}
 	return 1;
 }
@@ -256,7 +269,7 @@ static BOOL OKT_doPATT(void)
 
 	for (t = 0; t < 128; t++)
 		if (t < of.numpos)
-			of.positions[t] = (UWORD)_mm_read_UBYTE(modreader);
+			of.positions[t] = _mm_read_UBYTE(modreader);
 		else
 			break;
 
@@ -309,7 +322,6 @@ static void OKT_doSBOD(int insnum)
 	of.samples[insnum].seekpos = _mm_ftell(modreader);
 }
 
-BOOL OKT_Load(BOOL curious);
 BOOL OKT_Load(BOOL curious)
 {
 	UBYTE id[4];
@@ -319,12 +331,11 @@ BOOL OKT_Load(BOOL curious)
 			= 0, seen_spee = 0;
 	int patnum = 0, insnum = 0;
 
-	if(curious) {}
 	/* skip OKTALYZER header */
 	_mm_fseek(modreader, 8, SEEK_SET);
-	of.songname = Mstrdup("");
+	of.songname = strdup("");
 
-	of.modtype = Mstrdup("Amiga Oktalyzer");
+	of.modtype = strdup("Amiga Oktalyzer");
 	of.numpos = of.reppos = 0;
 	
 	/* default values */
@@ -428,10 +439,9 @@ BOOL OKT_Load(BOOL curious)
 	return 1;
 }
 
-CHAR *OKT_LoadTitle(void);
 CHAR *OKT_LoadTitle(void)
 {
-	return Mstrdup("");
+	return strdup("");
 }
 
 /*========== Loader information */
