@@ -3037,7 +3037,7 @@ MIKMODAPI void Player_Start(MODULE *mod)
 	if (!MikMod_Active())
 		MikMod_EnableOutput();
 
-	mod->forbid=0;
+	mod->forbid=1;
 
 	MUTEX_LOCK(vars);
 	if (pf!=mod) {
@@ -3130,6 +3130,9 @@ MIKMODAPI void Player_SetPosition(UWORD pos)
 	MUTEX_LOCK(vars);
 	if (pf) {
 		int t;
+		int m;
+
+		m = pf->forbid;
 
 		pf->forbid=1;
 		if (pos>=pf->numpos) pos=pf->numpos;
@@ -3147,7 +3150,8 @@ MIKMODAPI void Player_SetPosition(UWORD pos)
 			pf->control[t].main.i=NULL;
 			pf->control[t].main.s=NULL;
 		}
-		pf->forbid=0;
+		if(!m)
+			pf->forbid=0;
 		
 		if (!pos)
 			Player_Init_internal(pf);
