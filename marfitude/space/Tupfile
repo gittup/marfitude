@@ -1,0 +1,11 @@
+include_rules
+CFLAGS += `sdl-config --cflags`
+CFLAGS += -I..
+CFLAGS += -fpic
+: foreach *.c |> !cc |> {objs}
+
+LDFLAGS += `sdl-config --libs`
+LDFLAGS += -lGL
+LDFLAGS += -lSDL_image
+LDFLAGS += -shared
+: {objs} $(libs) |> !ld |> space.so
