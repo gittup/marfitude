@@ -1,0 +1,4 @@
+PACKAGES = sdl
+EXTRACFLAGS += -DMOD_MUSIC
+INCDIRS = $(d)/mikmod
+NODOX = 1

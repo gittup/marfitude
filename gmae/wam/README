@@ -1,0 +1,4 @@
+These *.wam files are just a cache of the note data that was used to play the
+song so that it'll load faster next time you play. Feel free to delete them if
+they're taking up space - they'll just be regenerated the next time you play the
+song :).
