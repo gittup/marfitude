@@ -7,5 +7,7 @@ libs += $(MARFITUDE_ROOT)/util/libutil.a
 LDFLAGS += `pkg-config sdl --libs`
 LDFLAGS += -lGL
 LDFLAGS += -lSDL_image
+LDFLAGS += -lm
+LDFLAGS += -ldl
 LDFLAGS += -Wl,-export-dynamic
 : {objs} objs/*.o $(libs) |> !ld |> marfitude
