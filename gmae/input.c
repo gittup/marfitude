@@ -529,7 +529,11 @@ void button_event(int button, int player)
 {
 	struct button_e b;
 	b.button = button;
-	b.shift = shift[player];
+	if(player >= MAX_PLAYERS) {
+		b.shift = 0;
+	} else {
+		b.shift = shift[player];
+	}
 	b.player = player;
 	fire_event("button", &b);
 }
