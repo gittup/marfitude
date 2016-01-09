@@ -1,0 +1,4 @@
+include_rules
+files += $(MARFITUDE_ROOT)/marfitude/marfitude
+files += $(MARFITUDE_ROOT)/gmae/data/Font.png
+: foreach $(files) |> !cp |>

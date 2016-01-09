@@ -1,0 +1,31 @@
+.gitignore
+
+MARFITUDE_ROOT = $(TUP_CWD)
+
+CFLAGS += -W
+CFLAGS += -Wall
+CFLAGS += -O2
+CFLAGS += -Wbad-function-cast
+CFLAGS += -Wcast-align
+CFLAGS += -Wcast-qual
+CFLAGS += -Wchar-subscripts
+CFLAGS += -Winline
+CFLAGS += -Wmissing-prototypes
+CFLAGS += -Wnested-externs
+CFLAGS += -Wpointer-arith
+CFLAGS += -Wredundant-decls
+CFLAGS += -Wshadow
+CFLAGS += -Wstrict-prototypes
+CFLAGS += -Wwrite-strings
+CFLAGS += -fomit-frame-pointer
+CFLAGS += -fno-common
+CFLAGS += -I$(TUP_CWD)
+
+CFLAGS += -DMARFSHLIBEXT=\".so\"
+CFLAGS += -DATTRIBUTE_UNUSED_RESULT="__attribute__((warn_unused_result))"
+CFLAGS += -DMARFDATADIR=\"\"
+
+!cc = |> ^ CC %f^ gcc -c %f -o %o $(CFLAGS) |> %B.o
+!ar = |> ^ AR %o^ ar crs %o %f |>
+!ld = |> ^ LINK %o^ gcc %f -o %o $(LDFLAGS) |>
+!cp = |> ^ CP %f -> %o^ cp %f %o |> %b
