@@ -1032,7 +1032,7 @@ void CheckColumn(int row)
 
 int NoteListTic(const void *snp, const void *tp)
 {
-	int tic = (int)tp;
+	int tic = *((const int*)tp);
 	const struct marfitude_note *sn = (const struct marfitude_note*)snp;
 	return sn->tic - tic;
 }
@@ -1050,7 +1050,7 @@ void MoveHitNotes(int tic, int col)
 	struct slist *tmp;
 	struct slist *holder = NULL;
 	Log(("moveHIt\n"));
-	tmp = slist_find_custom(notesList, (void *)tic, NoteListTic);
+	tmp = slist_find_custom(notesList, (void *)&tic, NoteListTic);
 	while(tmp) {
 		sn = (struct marfitude_note*)tmp->data;
 
