@@ -895,10 +895,26 @@ void remove_empty_tracks(struct wam *wam)
 	}
 }
 
+static void mwrite(int fd, const void *buf, size_t count)
+{
+	if(write(fd, buf, count) < 0) {
+		perror("write");
+		exit(1);
+	}
+}
+
+static void mread(int fd, void *buf, size_t count)
+{
+	if(read(fd, buf, count) < 0) {
+		perror("read");
+		exit(1);
+	}
+}
+
 void write_col(int fno, struct column *col)
 {
-	write(fno, &col->numchn, sizeof(int));
-	write(fno, col->chan, sizeof(int) * col->numchn);
+	mwrite(fno, &col->numchn, sizeof(int));
+	mwrite(fno, col->chan, sizeof(int) * col->numchn);
 }
 
 int save_wam(struct wam *wam, const char *wam_file)
@@ -913,12 +929,12 @@ int save_wam(struct wam *wam, const char *wam_file)
 		Error("Opening Wam for write.");
 		return 0;
 	}
-	write(fno, WAM_MAGIC, WAM_MAGIC_LEN);
-	write(fno, &wam->num_cols, sizeof(int));
-	write(fno, &wam->num_tics, sizeof(int));
-	write(fno, &wam->num_pats, sizeof(int));
-	write(fno, &wam->num_rows, sizeof(int));
-	write(fno, &wam->song_length, sizeof(double));
+	mwrite(fno, WAM_MAGIC, WAM_MAGIC_LEN);
+	mwrite(fno, &wam->num_cols, sizeof(int));
+	mwrite(fno, &wam->num_tics, sizeof(int));
+	mwrite(fno, &wam->num_pats, sizeof(int));
+	mwrite(fno, &wam->num_rows, sizeof(int));
+	mwrite(fno, &wam->song_length, sizeof(double));
 	for(x=0;x<wam->num_pats;x++)
 	{
 		for(y=0;y<wam->num_cols;y++)
@@ -927,7 +943,7 @@ int save_wam(struct wam *wam, const char *wam_file)
 		}
 		write_col(fno, &wam->patterns[x].unplayed);
 	}
-	write(fno, wam->row_data, sizeof(struct row) * wam->num_rows);
+	mwrite(fno, wam->row_data, sizeof(struct row) * wam->num_rows);
 	close(fno);
 	return 1;
 }
@@ -949,11 +965,11 @@ struct wam *create_wam(const char *file)
 
 void read_col(int fno, struct column *col)
 {
-	read(fno, &col->numchn, sizeof(int));
+	mread(fno, &col->numchn, sizeof(int));
 	if(col->numchn)
 	{
 		col->chan = malloc(sizeof(int) * col->numchn);
-		read(fno, col->chan, sizeof(int) * col->numchn);
+		mread(fno, col->chan, sizeof(int) * col->numchn);
 	}
 	else
 	{
@@ -999,18 +1015,18 @@ struct wam *read_wam(const char *wam_file)
 	fno = open(wam_file, O_RDONLY | O_BINARY);
 	if(fno == -1)
 		return NULL;
-	read(fno, magic, WAM_MAGIC_LEN);
+	mread(fno, magic, WAM_MAGIC_LEN);
 	if(strcmp(magic, WAM_MAGIC) != 0) {
 		close(fno);
 		return NULL;
 	}
 	Log(("Loading wam\n"));
 	wam = malloc(sizeof(struct wam));
-	read(fno, &wam->num_cols, sizeof(int));
-	read(fno, &wam->num_tics, sizeof(int));
-	read(fno, &wam->num_pats, sizeof(int));
-	read(fno, &wam->num_rows, sizeof(int));
-	read(fno, &wam->song_length, sizeof(double));
+	mread(fno, &wam->num_cols, sizeof(int));
+	mread(fno, &wam->num_tics, sizeof(int));
+	mread(fno, &wam->num_pats, sizeof(int));
+	mread(fno, &wam->num_rows, sizeof(int));
+	mread(fno, &wam->song_length, sizeof(double));
 	Log(("Main info read: %i cols, %i tics, %i pats, %i rows\n", wam->num_cols, wam->num_tics, wam->num_pats, wam->num_rows));
 	wam->patterns = malloc(sizeof(struct pattern) * wam->num_pats);
 	wam->row_data = malloc(sizeof(struct row) * wam->num_rows);
@@ -1023,7 +1039,7 @@ struct wam *read_wam(const char *wam_file)
 		read_col(fno, &wam->patterns[x].unplayed);
 	}
 	Log(("Patterns read\n"));
-	read(fno, wam->row_data, sizeof(struct row) * wam->num_rows);
+	mread(fno, wam->row_data, sizeof(struct row) * wam->num_rows);
 	Log(("Rows read\n"));
 	close(fno);
 
