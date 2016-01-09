@@ -1,10 +1,10 @@
 include_rules
-CFLAGS += `sdl-config --cflags`
+CFLAGS += `pkg-config sdl --cflags`
 CFLAGS += -I..
 CFLAGS += -fpic
 : foreach *.c |> !cc |> {objs}
 
-LDFLAGS += `sdl-config --libs`
+LDFLAGS += `pkg-config sdl --libs`
 LDFLAGS += -lGL
 LDFLAGS += -lSDL_image
 LDFLAGS += -shared

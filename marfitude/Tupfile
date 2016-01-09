@@ -4,7 +4,7 @@ CFLAGS += `sdl-config --cflags`
 
 libs += $(MARFITUDE_ROOT)/gmae/libgmae.a
 libs += $(MARFITUDE_ROOT)/util/libutil.a
-LDFLAGS += `sdl-config --libs`
+LDFLAGS += `pkg-config sdl --libs`
 LDFLAGS += -lGL
 LDFLAGS += -lSDL_image
 LDFLAGS += -Wl,-export-dynamic
