@@ -129,12 +129,12 @@ int load_font(void)
 						(1+(double)y*16.0)/256.0);
 						glVertex2i(0, 0);
 				glTexCoord2f(	(3+(double)x*16.0)/256.0,
-						(1+(double)y*16.0 + 16.0)/256.0);
+						((double)y*16.0 + 16.0)/256.0);
 						glVertex2i(0, 16);
-				glTexCoord2f(	(3+(double)x*16.0 + 16.0)/256.0,
-						(1+(double)y*16.0 + 16.0)/256.0);
+				glTexCoord2f(	((double)x*16.0 + 16.0)/256.0,
+						((double)y*16.0 + 16.0)/256.0);
 						glVertex2i(16, 16);
-				glTexCoord2f(	(3+(double)x*16.0 + 16.0)/256.0,
+				glTexCoord2f(	((double)x*16.0 + 16.0)/256.0,
 						(1+(double)y*16.0)/256.0);
 						glVertex2i(16, 0);
 			} glEnd();
