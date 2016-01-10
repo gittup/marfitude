@@ -20,36 +20,18 @@
  * A little wrapper for dynamic loading functions for different OS's
  */
 
-#if defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
 # include <dlfcn.h>
-#else
-# if defined(WIN32)
+#elif defined(WIN32)
 #  include <windows.h>
 #  define dlopen(l, a) LoadLibrary(l)
 #  define dlclose FreeLibrary
 #  define dlsym GetProcAddress
 #  define dlerror() 0
-# else
-#   if defined(__APPLE__)
-/* Umm...yeah */
-#     include <CoreFoundation/CoreFoundation.h>
-#     define dlstrtmp(s) CFStringCreateWithCString(kCFAllocatorDefault, s,\
-				kCFStringEncodingASCII)
-#     define dlopentmp(l, a) CFBundleCreate(kCFAllocatorDefault, \
-		CFURLCreateWithFileSystemPath(kCFAllocatorDefault, \
-			dlstrtmp(l), \
-			kCFURLPOSIXPathStyle, true))
-#     define dlopen(l, a) (CFBundleLoadExecutable(dlopentmp(l, a)), \
-	dlopentmp(l, a))
-#     define dlclose CFBundleUnloadExecutable
-#     define dlsym(l, s) CFBundleGetFunctionPointerForName(l, dlstrtmp(s))
-#     define dlerror() strerror(errno)
-#   else
-#     warning "This platform does not have dynamic library support!"
-#     define dlopen(l, a) 0
-#     define dlclose(l)
-#     define dlsym(l, s) 0
-#     define dlerror() 0
-#   endif
-# endif
+#else
+#  warning "This platform does not have dynamic library support!"
+#  define dlopen(l, a) 0
+#  define dlclose(l)
+#  define dlsym(l, s) 0
+#  define dlerror() 0
 #endif

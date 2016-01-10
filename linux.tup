@@ -1,0 +1,3 @@
+GL_LDFLAGS += -lGL
+SHLIB_LDFLAGS += -Wl,-export-dynamic
+PLUGIN_LDFLAGS += -shared

@@ -29,6 +29,8 @@ CFLAGS += -DMARFDATADIR=\"\"
 CFLAGS += -m32
 LDFLAGS += -m32
 
+include @(TUP_PLATFORM).tup
+
 !cc = |> ^ CC %f^ gcc -c %f -o %o $(CFLAGS) |> %B.o
 !ar = |> ^ AR %o^ ar crs %o %f |>
 !ld = |> ^ LINK %o^ gcc %f -o %o $(LDFLAGS) |>

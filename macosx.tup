@@ -1,0 +1,3 @@
+GL_LDFLAGS += -framework OpenGL
+SHLIB_LDFLAGS =
+PLUGIN_LDFLAGS += -bundle -undefined suppress -flat_namespace

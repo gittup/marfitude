@@ -5,7 +5,7 @@ CFLAGS += -fpic
 : foreach *.c |> !cc |> {objs}
 
 LDFLAGS += `pkg-config sdl --libs`
-LDFLAGS += -lGL
+LDFLAGS += $(GL_LDFLAGS)
 LDFLAGS += -lSDL_image
-LDFLAGS += -shared
+LDFLAGS += $(PLUGIN_LDFLAGS)
 : {objs} $(libs) |> !ld |> space.so
