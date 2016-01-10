@@ -57,8 +57,12 @@ void MikMod_RegisterAllLoaders_internal(void)
 
 void MikMod_RegisterAllLoaders(void)
 {
+	static int inited = 0;
+	if(inited)
+		return;
 	MUTEX_LOCK(lists);
 	MikMod_RegisterAllLoaders_internal();
 	MUTEX_UNLOCK(lists);
+	inited = 1;
 }
 /* ex:set ts=4: */

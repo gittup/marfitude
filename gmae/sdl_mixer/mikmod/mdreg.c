@@ -43,9 +43,13 @@ void _mm_registeralldrivers(void)
 
 void MikMod_RegisterAllDrivers(void)
 {
+	static int inited = 0;
+	if(inited)
+		return;
 	MUTEX_LOCK(lists);
 	_mm_registeralldrivers();
 	MUTEX_UNLOCK(lists);
+	inited = 1;
 }
 
 /* ex:set ts=4: */
