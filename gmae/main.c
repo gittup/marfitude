@@ -201,7 +201,6 @@ int main(int argc, char **argv)
 
 	while(!quit)
 	{
-		struct timespec ts;
 		Log(("input loop\n"));
 		input_loop();
 		Log(("update_timer\n"));
@@ -213,9 +212,6 @@ int main(int argc, char **argv)
 		Log(("Update Screen\n"));
 		update_screen();
 		Log(("Next loop\n"));
-		ts.tv_sec = 0;
-		ts.tv_nsec = 100000;
-		nanosleep(&ts, 0);
 	}
 	
 	shutdown();
