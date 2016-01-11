@@ -40,6 +40,7 @@ extern "C" {
  * ========== Compiler magic for shared libraries
  */
 
+#include "marf_mingw_hacks.h"
 #if defined WIN32 && defined _DLL
 #ifdef DLL_EXPORTS
 #define MIKMODAPI __declspec(dllexport)

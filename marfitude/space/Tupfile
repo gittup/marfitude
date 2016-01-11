@@ -1,11 +1,13 @@
 include_rules
-CFLAGS += `pkg-config sdl --cflags`
+CFLAGS += $(SDL_CFLAGS)
 CFLAGS += -I..
-CFLAGS += -fpic
+CFLAGS += $(SHLIB_CFLAGS)
 : foreach *.c |> !cc |> {objs}
 
-LDFLAGS += `pkg-config sdl --libs`
+LDFLAGS += $(SDL_LDFLAGS)
 LDFLAGS += $(GL_LDFLAGS)
-LDFLAGS += -lSDL_image
 LDFLAGS += $(PLUGIN_LDFLAGS)
-: {objs} $(libs) |> !ld |> space.so
+ifeq (@(MARFITUDE_ARCH),mingw)
+libs += ../marfitude.exe.a
+endif
+: {objs} $(libs) |> !ld |> space$(SHLIBEXT)

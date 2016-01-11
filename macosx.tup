@@ -1,3 +1,10 @@
+CC = gcc
+
+SDL_CFLAGS += `pkg-config sdl --cflags`
+SDL_LDFLAGS += `pkg-config sdl --libs` -lSDL_image
+
 GL_LDFLAGS += -framework OpenGL
 SHLIB_LDFLAGS =
 PLUGIN_LDFLAGS += -bundle -undefined suppress -flat_namespace
+
+SHLIBEXT = .so

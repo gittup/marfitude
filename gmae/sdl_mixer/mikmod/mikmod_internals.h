@@ -68,6 +68,7 @@ typedef long long	SLONGLONG;
 extern MikMod_handler_t _mm_errorhandler;
 
 /*========== Memory allocation */
+#include "marf_mingw_hacks.h"
 
 extern void* _mm_malloc(size_t);
 extern void* _mm_calloc(size_t,size_t);

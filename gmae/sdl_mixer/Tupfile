@@ -1,6 +1,6 @@
 include_rules
 CFLAGS += -DMOD_MUSIC
-CFLAGS += `pkg-config sdl --cflags`
+CFLAGS += $(SDL_CFLAGS)
 CFLAGS += -Imikmod
 CFLAGS += -w
 : foreach *.c |> !cc |>

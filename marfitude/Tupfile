@@ -1,13 +1,16 @@
 include_rules
-CFLAGS += `sdl-config --cflags`
+CFLAGS += $(SDL_CFLAGS)
 : foreach *.c |> !cc |> {objs}
 
 libs += $(MARFITUDE_ROOT)/gmae/libgmae.a
 libs += $(MARFITUDE_ROOT)/util/libutil.a
-LDFLAGS += `pkg-config sdl --libs`
+LDFLAGS += $(SDL_LDFLAGS)
 LDFLAGS += $(GL_LDFLAGS)
-LDFLAGS += -lSDL_image
 LDFLAGS += -lm
-LDFLAGS += -ldl
+LDFLAGS += $(DL_LDFLAGS)
 LDFLAGS += $(SHLIB_LDFLAGS)
-: {objs} objs/*.o $(libs) |> !ld |> marfitude
+ifeq (@(MARFITUDE_ARCH),mingw)
+LDFLAGS += -Wl,--out-implib,marfitude.exe.a
+extra_outputs += marfitude.exe.a
+endif
+: {objs} objs/*.o $(libs) |> !ld |> marfitude$(BINARYEXT) | $(extra_outputs)

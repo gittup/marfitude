@@ -1,0 +1,19 @@
+CC = i686-w64-mingw32-gcc
+
+SDL_BASE = /home/marf/sdl-cross/install
+SDL_CFLAGS += `$(SDL_BASE)/bin/i586-mingw32msvc-sdl-config --cflags`
+SDL_LDFLAGS += `$(SDL_BASE)/bin/i586-mingw32msvc-sdl-config --libs`
+
+# For SDL_image
+SDL_CFLAGS += -I$(SDL_BASE)/include
+SDL_LDFLAGS += -lSDL_image
+
+GL_LDFLAGS += -lopengl32
+
+LDFLAGS += -Wl,--export-all-symbols
+LDFLAGS += -lws2_32
+
+PLUGIN_LDFLAGS += -shared
+
+BINARYEXT = .exe
+SHLIBEXT = .dll

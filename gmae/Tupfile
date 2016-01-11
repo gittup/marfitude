@@ -1,4 +1,4 @@
 include_rules
-CFLAGS += `pkg-config sdl --cflags`
+CFLAGS += $(SDL_CFLAGS)
 : foreach *.c |> !cc |> {objs}
 : {objs} sdl_mixer/*.o sdl_mixer/mikmod/*.o |> !ar |> libgmae.a

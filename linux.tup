@@ -1,3 +1,12 @@
+CC = gcc
+
+SDL_CFLAGS += `pkg-config sdl --cflags`
+SDL_LDFLAGS += `pkg-config sdl --libs` -lSDL_image
+
+SHLIB_CFLAGS += -fPIC
+DL_LDFLAGS += -ldl
 GL_LDFLAGS += -lGL
 SHLIB_LDFLAGS += -Wl,-export-dynamic
 PLUGIN_LDFLAGS += -shared
+
+SHLIBEXT = .so

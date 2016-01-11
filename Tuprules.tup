@@ -2,6 +2,12 @@
 
 MARFITUDE_ROOT = $(TUP_CWD)
 
+ifdef MARFITUDE_ARCH
+include @(MARFITUDE_ARCH).tup
+else
+include @(TUP_PLATFORM).tup
+endif
+
 CFLAGS += -W
 CFLAGS += -Wall
 CFLAGS += -O2
@@ -21,7 +27,7 @@ CFLAGS += -fomit-frame-pointer
 CFLAGS += -fno-common
 CFLAGS += -I$(TUP_CWD)
 
-CFLAGS += -DMARFSHLIBEXT=\".so\"
+CFLAGS += -DMARFSHLIBEXT=\"$(SHLIBEXT)\"
 CFLAGS += -DATTRIBUTE_UNUSED_RESULT="__attribute__((warn_unused_result))"
 CFLAGS += -DMARFDATADIR=\"\"
 
@@ -29,9 +35,7 @@ CFLAGS += -DMARFDATADIR=\"\"
 CFLAGS += -m32
 LDFLAGS += -m32
 
-include @(TUP_PLATFORM).tup
-
-!cc = |> ^ CC %f^ gcc -c %f -o %o $(CFLAGS) |> %B.o
+!cc = |> ^ CC %f^ $(CC) -c %f -o %o $(CFLAGS) |> %B.o
 !ar = |> ^ AR %o^ ar crs %o %f |>
-!ld = |> ^ LINK %o^ gcc %f -o %o $(LDFLAGS) |>
+!ld = |> ^ LINK %o^ $(CC) %f -o %o $(LDFLAGS) |>
 !cp = |> ^ CP %f -> %o^ cp %f %o |> %b
