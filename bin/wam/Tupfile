@@ -1,0 +1,2 @@
+include_rules
+: |> echo 'WAM files are generated here' > %o |> stub.txt | $(MARFITUDE_ROOT)/<install>
