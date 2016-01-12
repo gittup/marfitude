@@ -267,10 +267,19 @@ int init_textures(void)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		switch(s->format->BytesPerPixel) {
 			case 3:
+#ifdef __APPLE__
+				/* WTF Apple? */
+				format = GL_BGR;
+#else
 				format = GL_RGB;
+#endif
 				break;
 			case 4:
+#ifdef __APPLE__
+				format = GL_BGRA;
+#else
 				format = GL_RGBA;
+#endif
 				break;
 			default:
 				ELog(("\nERROR: Incorrect image format in tex.dat - image must be RGB or RGBA\n"));
