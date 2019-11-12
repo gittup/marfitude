@@ -913,8 +913,8 @@ static void mread(int fd, void *buf, size_t count)
 
 void write_col(int fno, struct column *col)
 {
-	mwrite(fno, &col->numchn, sizeof(int));
-	mwrite(fno, col->chan, sizeof(int) * col->numchn);
+	mwrite(fno, &col->numchn, sizeof(int32_t));
+	mwrite(fno, col->chan, sizeof(int32_t) * col->numchn);
 }
 
 int save_wam(struct wam *wam, const char *wam_file)
@@ -930,10 +930,10 @@ int save_wam(struct wam *wam, const char *wam_file)
 		return 0;
 	}
 	mwrite(fno, WAM_MAGIC, WAM_MAGIC_LEN);
-	mwrite(fno, &wam->num_cols, sizeof(int));
-	mwrite(fno, &wam->num_tics, sizeof(int));
-	mwrite(fno, &wam->num_pats, sizeof(int));
-	mwrite(fno, &wam->num_rows, sizeof(int));
+	mwrite(fno, &wam->num_cols, sizeof(int32_t));
+	mwrite(fno, &wam->num_tics, sizeof(int32_t));
+	mwrite(fno, &wam->num_pats, sizeof(int32_t));
+	mwrite(fno, &wam->num_rows, sizeof(int32_t));
 	mwrite(fno, &wam->song_length, sizeof(double));
 	for(x=0;x<wam->num_pats;x++)
 	{
@@ -965,11 +965,11 @@ struct wam *create_wam(const char *file)
 
 void read_col(int fno, struct column *col)
 {
-	mread(fno, &col->numchn, sizeof(int));
+	mread(fno, &col->numchn, sizeof(int32_t));
 	if(col->numchn)
 	{
-		col->chan = malloc(sizeof(int) * col->numchn);
-		mread(fno, col->chan, sizeof(int) * col->numchn);
+		col->chan = malloc(sizeof(int32_t) * col->numchn);
+		mread(fno, col->chan, sizeof(int32_t) * col->numchn);
 	}
 	else
 	{
@@ -1022,10 +1022,10 @@ struct wam *read_wam(const char *wam_file)
 	}
 	Log(("Loading wam\n"));
 	wam = malloc(sizeof(struct wam));
-	mread(fno, &wam->num_cols, sizeof(int));
-	mread(fno, &wam->num_tics, sizeof(int));
-	mread(fno, &wam->num_pats, sizeof(int));
-	mread(fno, &wam->num_rows, sizeof(int));
+	mread(fno, &wam->num_cols, sizeof(int32_t));
+	mread(fno, &wam->num_tics, sizeof(int32_t));
+	mread(fno, &wam->num_pats, sizeof(int32_t));
+	mread(fno, &wam->num_rows, sizeof(int32_t));
 	mread(fno, &wam->song_length, sizeof(double));
 	Log(("Main info read: %i cols, %i tics, %i pats, %i rows\n", wam->num_cols, wam->num_tics, wam->num_pats, wam->num_rows));
 	wam->patterns = malloc(sizeof(struct pattern) * wam->num_pats);
