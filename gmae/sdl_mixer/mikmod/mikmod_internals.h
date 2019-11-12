@@ -41,7 +41,7 @@ extern "C" {
 #define strcasecmp(s,t) stricmp(s,t)
 #endif
 
-#include "mikmod_build.h"
+#include "mikmod.h"
 
 #ifdef WIN32
 #pragma warning(disable:4761)
