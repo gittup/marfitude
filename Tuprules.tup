@@ -31,10 +31,6 @@ CFLAGS += -DMARFSHLIBEXT=\"$(SHLIBEXT)\"
 CFLAGS += -DATTRIBUTE_UNUSED_RESULT="__attribute__((warn_unused_result))"
 CFLAGS += -DMARFDATADIR=\"\"
 
-# mikmod doesn't work on 64-bit
-CFLAGS += -m32
-LDFLAGS += -m32
-
 !cc = |> ^ CC %f^ $(CC) -c %f -o %o $(CFLAGS) |> %B.o
 !ar = |> ^ AR %o^ ar crs %o %f |>
 !ld = |> ^ LINK %o^ $(CC) %f -o %o $(LDFLAGS) |>
